@@ -57,6 +57,9 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `--instance <pid>` targeting so commands (and mutations) can pick one
       editor when several are live.
 - [x] `version` command + linker-injected version string.
+- [x] `signal` command: `list` a node's signals + connections; `connect` /
+      `disconnect` (undoable, `CONNECT_PERSIST`). Closes the last of Godot's core
+      concepts (Node/Scene/Resource/Signal) without a command surface.
 - [x] Release pipeline (`.github/workflows/release.yml`): on a `v*` tag,
       cross-compile the CLI (linux/darwin/windows × amd64/arm64), package the
       addon zip + checksums, and publish a GitHub release.

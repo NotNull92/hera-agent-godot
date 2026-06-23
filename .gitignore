@@ -15,5 +15,6 @@
 .idea/
 .vscode/
 .omc/
+.omo/
 .DS_Store
 Thumbs.db

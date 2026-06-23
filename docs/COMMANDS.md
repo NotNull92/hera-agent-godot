@@ -21,6 +21,9 @@ selected editor instance.
 | `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). |
 | `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
+| `signal list <node>` | `signal` | ☑ | List the signals a node exposes (name + arg names) and scene-local connections; editor-internal targets are counted as `external_connections`. |
+| `signal connect <from> <sig> <to> <method>` | `signal` | ☑ | Connect a node's signal to a method on another node (undoable; persistent, saved with the scene). |
+| `signal disconnect <from> <sig> <to> <method>` | `signal` | ☑ | Remove that connection (undoable). |
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
 | `screenshot [--path <p>] [--width N] [--height N] [--transparent]` | `screenshot` | ☑ | Render the edited scene off-screen to a PNG and return the path. Needs a GUI editor (no render under `--headless`); frames from the world origin unless the scene has a camera. |
 | `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially. |
@@ -29,13 +32,15 @@ selected editor instance.
 > are read when the project loads. If the editor is already open, reload it
 > (Project → Reload Current Project) for `run` (main scene) to pick them up.
 
-> **Note (mutations):** `node add/set/remove` register with the editor's undo
-> history, so agent changes are undoable (Ctrl+Z). `eval` runs a single
+> **Note (mutations):** `node add/set/remove` and `signal connect/disconnect`
+> register with the editor's undo history, so agent changes are undoable
+> (Ctrl+Z). `signal connect` uses `CONNECT_PERSIST`, so the wiring is saved with
+> the scene like the editor's "Connect a Signal" dialog. `eval` runs a single
 > expression via the `Expression` class (not full GDScript statements), with the
 > edited scene root as the base instance. Expressions can call methods with side
-> effects and are not registered with UndoRedo. Mutation commands require exactly
-> one live editor instance, or `--instance <pid>` to disambiguate when several
-> are running.
+> effects and are not registered with UndoRedo. Hera assumes one live editor per
+> project; mutation commands enforce that precondition unless `--instance <pid>`
+> is passed explicitly.
 
 ## Global flags
 
@@ -47,7 +52,7 @@ Global flags go **before** the command (e.g. `hera-agent-godot --ids node find`,
 | `--json` | ☑ | Pretty-print the response Data. |
 | `--ids` | ☑ | Print only node paths (for `scene tree` / `node find`); compact JSON otherwise. |
 | (default) | ☑ | Compact JSON — minimal tokens. |
-| `--instance <pid>` | ☑ | Target a specific editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
+| `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
 | `--timeout <ms>` | ☐ | Request timeout. |
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the request lifecycle and

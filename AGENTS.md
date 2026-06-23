@@ -37,6 +37,9 @@ hera node get <path>                         # dump a node's properties
 hera node add <type> [--parent p] [--name n] # add a node (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
 hera node remove <path>                      # remove a node (undoable)
+hera signal list <node>                      # signals a node exposes + connections
+hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
+hera signal disconnect <from> <sig> <to> <method>  # unwire (undoable)
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
 hera output [--type log|error|warning|all] [--lines N]
@@ -45,8 +48,8 @@ hera batch [--file f] [--continue]           # run a JSON array of {tool, params
 ```
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
-only node paths, for `scene tree` / `node find`), `--instance <pid>` (target a
-specific editor when several are live). Default output is compact JSON.
+only node paths, for `scene tree` / `node find`), `--instance <pid>` (explicitly
+target a pid shown by `status`). Default output is compact JSON.
 
 ## Conventions & safety
 
@@ -54,11 +57,11 @@ specific editor when several are live). Default output is compact JSON.
   node paths when scanning, `--json` only when you need the full structure.
 - **Mutations are undoable.** `node add/set/remove` register with the editor's
   undo history, so the user can Ctrl+Z your changes.
-- **Mutations need exactly one editor.** `node add/set/remove`, `scene open/save`,
-  `eval`, and `batch` refuse to run if more than one editor is live (to avoid
-  editing the wrong one) — pass `--instance <pid>` to pick one explicitly
-  (`status` output and multi-editor guard errors show pids). Read commands
-  always target the most recent.
+- **Run one live editor per project.** Hera is designed for a single active
+  Godot editor. Mutation commands (`node add/set/remove`, `signal
+  connect/disconnect`, `scene open/save`, `eval`, and `batch`) enforce that by
+  refusing to run when several editors are live unless `--instance <pid>` is
+  passed explicitly.
 - **`eval` is powerful.** It runs one GDScript expression (not statements) with
   the edited scene root as base, so `get_node("X").something()` works — and can
   have side effects. It is **not** registered with undo. Prefer `node set` for
