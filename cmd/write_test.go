@@ -98,7 +98,7 @@ func TestSelectEditor_rejectsMultipleInstancesForMutation(t *testing.T) {
 		{PID: 2, Port: 8771},
 	}
 
-	_, err := selectEditor(instances, true)
+	_, err := selectEditor(instances, true, 0)
 
 	if err == nil {
 		t.Fatalf("expected error")
@@ -114,12 +114,45 @@ func TestSelectEditor_allowsMultipleInstancesForReadOnly(t *testing.T) {
 		{PID: 2, Port: 8771},
 	}
 
-	got, err := selectEditor(instances, false)
+	got, err := selectEditor(instances, false, 0)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if got.PID != 1 {
 		t.Fatalf("pid = %d, want 1", got.PID)
+	}
+}
+
+func TestSelectEditor_targetPIDOverridesMutationGuard(t *testing.T) {
+	instances := []discovery.Instance{
+		{PID: 1, Port: 8770},
+		{PID: 2, Port: 8771},
+	}
+
+	// --instance picks the second editor even for a mutation (requireSingle).
+	got, err := selectEditor(instances, true, 2)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.PID != 2 || got.Port != 8771 {
+		t.Fatalf("got pid %d port %d, want pid 2 port 8771", got.PID, got.Port)
+	}
+}
+
+func TestSelectEditor_targetPIDNotFound(t *testing.T) {
+	instances := []discovery.Instance{
+		{PID: 1, Port: 8770},
+		{PID: 2, Port: 8771},
+	}
+
+	_, err := selectEditor(instances, false, 99)
+
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "pid 99") {
+		t.Fatalf("error = %q, want it to mention the missing pid", err)
 	}
 }

@@ -100,3 +100,57 @@ func TestExecute_resetsOutputMode_whenNoGlobalFlag(t *testing.T) {
 		t.Fatalf("outputMode = %q, want empty", outputMode)
 	}
 }
+
+func TestExecute_instanceFlag(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		wantCode int
+		wantPID  int
+	}{
+		{name: "space form", args: []string{"--instance", "123", "help"}, wantCode: 0, wantPID: 123},
+		{name: "equals form", args: []string{"--instance=456", "help"}, wantCode: 0, wantPID: 456},
+		{name: "with output mode", args: []string{"--json", "--instance", "7", "help"}, wantCode: 0, wantPID: 7},
+		{name: "before output mode", args: []string{"--instance", "8", "--ids", "help"}, wantCode: 0, wantPID: 8},
+		{name: "missing value", args: []string{"--instance"}, wantCode: 2, wantPID: 0},
+		{name: "missing equals value", args: []string{"--instance="}, wantCode: 2, wantPID: 0},
+		{name: "non-numeric", args: []string{"--instance", "abc"}, wantCode: 2, wantPID: 0},
+		{name: "zero pid", args: []string{"--instance", "0"}, wantCode: 2, wantPID: 0},
+		{name: "negative pid", args: []string{"--instance", "-3"}, wantCode: 2, wantPID: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code := Execute(tt.args)
+			if code != tt.wantCode {
+				t.Fatalf("exit code = %d, want %d", code, tt.wantCode)
+			}
+			if targetPID != tt.wantPID {
+				t.Fatalf("targetPID = %d, want %d", targetPID, tt.wantPID)
+			}
+		})
+	}
+}
+
+func TestExecute_instanceFlagAfterCommandIsNotGlobal(t *testing.T) {
+	code := Execute([]string{"node", "find", "--instance", "123"})
+
+	if code != 2 {
+		t.Fatalf("exit code = %d, want 2", code)
+	}
+	if targetPID != 0 {
+		t.Fatalf("targetPID = %d, want 0", targetPID)
+	}
+}
+
+func TestExecute_resetsTargetPID_whenNoInstanceFlag(t *testing.T) {
+	targetPID = 42
+
+	code := Execute([]string{"help"})
+
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0", code)
+	}
+	if targetPID != 0 {
+		t.Fatalf("targetPID = %d, want 0", targetPID)
+	}
+}

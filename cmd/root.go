@@ -1,25 +1,62 @@
 package cmd
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"strings"
+)
 
 // outputMode is set from leading global flags (--json / --ids) and consumed by
 // printData. Empty = compact JSON (the default).
 var outputMode string
 
-// Execute is the CLI entry point. Leading --json/--ids set the output mode; the
-// first non-flag argument is the command. Commands map 1:1 to addon tools (see
-// docs/COMMANDS.md).
+// targetPID is set from the leading global flag --instance <pid>. 0 = unset, in
+// which case commands target the most recent live editor. When set, every
+// command targets that specific editor and the multi-editor mutation guard is
+// satisfied (the user picked one explicitly). Consumed by selectEditor.
+var targetPID int
+
+// Execute is the CLI entry point. Leading --json/--ids/--instance set global
+// options; the first non-flag argument is the command. Commands map 1:1 to
+// addon tools (see docs/COMMANDS.md).
 func Execute(args []string) int {
 	outputMode = ""
+	targetPID = 0
 	start := 0
 	for start < len(args) {
-		switch args[start] {
-		case "--json":
+		arg := args[start]
+		if arg == "--json" {
 			outputMode = "json"
 			start++
 			continue
-		case "--ids":
+		}
+		if arg == "--ids" {
 			outputMode = "ids"
+			start++
+			continue
+		}
+		if arg == "--instance" {
+			if start+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "--instance requires a pid argument")
+				return 2
+			}
+			pid, ok := parsePID(args[start+1])
+			if !ok {
+				fmt.Fprintf(os.Stderr, "--instance: invalid pid %q\n", args[start+1])
+				return 2
+			}
+			targetPID = pid
+			start += 2
+			continue
+		}
+		if v, ok := strings.CutPrefix(arg, "--instance="); ok {
+			pid, ok := parsePID(v)
+			if !ok {
+				fmt.Fprintf(os.Stderr, "--instance: invalid pid %q\n", v)
+				return 2
+			}
+			targetPID = pid
 			start++
 			continue
 		}
@@ -64,7 +101,7 @@ func Execute(args []string) int {
 func usage() {
 	fmt.Print(`hera-agent-godot — drive a live Godot 4.x editor from the shell
 
-usage: hera-agent-godot [--json|--ids] <command> [flags]
+usage: hera-agent-godot [--json|--ids] [--instance <pid>] <command> [flags]
 
 commands:
   status     show the connected editor (project, version, active scene)
@@ -78,9 +115,21 @@ commands:
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
 
 global flags (before the command):
-  --json     pretty-print the response
-  --ids      print only node paths (for scene tree / node find)
+  --json         pretty-print the response
+  --ids          print only node paths (for scene tree / node find)
+  --instance N   target the editor with pid N (required for mutations when
+                 more than one editor is live; status output includes the pid)
 
 See docs/COMMANDS.md for details.
 `)
+}
+
+// parsePID parses a positive process id. Returns ok=false for non-numeric or
+// non-positive input.
+func parsePID(s string) (int, bool) {
+	pid, err := strconv.Atoi(s)
+	if err != nil || pid <= 0 {
+		return 0, false
+	}
+	return pid, true
 }

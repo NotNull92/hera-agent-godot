@@ -44,7 +44,8 @@ hera batch [--file f] [--continue]           # run a JSON array of {tool, params
 ```
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
-only node paths, for `scene tree` / `node find`). Default output is compact JSON.
+only node paths, for `scene tree` / `node find`), `--instance <pid>` (target a
+specific editor when several are live). Default output is compact JSON.
 
 ## Conventions & safety
 
@@ -54,7 +55,9 @@ only node paths, for `scene tree` / `node find`). Default output is compact JSON
   undo history, so the user can Ctrl+Z your changes.
 - **Mutations need exactly one editor.** `node add/set/remove`, `scene open/save`,
   `eval`, and `batch` refuse to run if more than one editor is live (to avoid
-  editing the wrong one). Read commands always target the most recent.
+  editing the wrong one) — pass `--instance <pid>` to pick one explicitly
+  (`status` output and multi-editor guard errors show pids). Read commands
+  always target the most recent.
 - **`eval` is powerful.** It runs one GDScript expression (not statements) with
   the edited scene root as base, so `get_node("X").something()` works — and can
   have side effects. It is **not** registered with undo. Prefer `node set` for

@@ -34,18 +34,20 @@ selected editor instance.
 > expression via the `Expression` class (not full GDScript statements), with the
 > edited scene root as the base instance. Expressions can call methods with side
 > effects and are not registered with UndoRedo. Mutation commands require exactly
-> one live editor instance until `--instance <pid>` targeting is implemented.
+> one live editor instance, or `--instance <pid>` to disambiguate when several
+> are running.
 
 ## Global flags
 
-Output flags go **before** the command (e.g. `hera-agent-godot --ids node find`).
+Global flags go **before** the command (e.g. `hera-agent-godot --ids node find`,
+`hera-agent-godot --instance 2840 node add Node2D`).
 
 | Flag | Status | Meaning |
 |------|--------|---------|
 | `--json` | ☑ | Pretty-print the response Data. |
 | `--ids` | ☑ | Print only node paths (for `scene tree` / `node find`); compact JSON otherwise. |
 | (default) | ☑ | Compact JSON — minimal tokens. |
-| `--instance <pid>` | ☐ | Target a specific editor when several are running. |
+| `--instance <pid>` | ☑ | Target a specific editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
 | `--timeout <ms>` | ☐ | Request timeout. |
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the request lifecycle and
