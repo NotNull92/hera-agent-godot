@@ -114,6 +114,13 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 - Go 1.25+ (CLI)
 - Godot **4.7+** 표준 빌드 (애드온)
 
+## 자매 프로젝트: hera-agent-unity
+
+Unity도 쓰신다면 — [**hera-agent-unity**](https://github.com/NotNull92/hera-agent-unity)는
+동일한 저토큰·셸 친화 철학을 **Unity 에디터**에 적용합니다: 콘솔 에러 읽기, C# 실행,
+Play Mode 진입, GameObject 관리, UI 빌드, 테스트 실행 — 전부 compact·에이전트 친화
+출력으로. 두 엔진을 오가도 에이전트는 일관된 방식으로 각각을 제어합니다.
+
 ## 후원
 
 Hera는 무료이며 MIT 라이선스입니다. 도움이 되었다면 개발을 후원하실 수 있습니다:

@@ -104,6 +104,14 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 - Go 1.25+ (CLI)
 - Godot **4.7+** standard build (addon)
 
+## Sibling: hera-agent-unity
+
+Working in Unity too? [**hera-agent-unity**](https://github.com/NotNull92/hera-agent-unity)
+brings the same low-token, shell-native philosophy to the **Unity Editor** — read
+console errors, run C#, enter Play Mode, manage GameObjects, build UI, and run
+tests, all in compact, agent-friendly output. Across both engines, your agents
+get one consistent way to drive each.
+
 ## Support
 
 Hera is free and MIT-licensed. If it saves you time, you can support development:
