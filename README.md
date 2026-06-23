@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/hera_godot_logo.png" alt="hera-agent-godot logo" width="420">
+</p>
+
 # hera-agent-godot
 
 **English** · [한국어](README.ko.md)
