@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go (build · vet · test · gofmt)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go build
+        run: go build ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...
+
+      - name: gofmt
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "::error::These files are not gofmt-clean (run 'gofmt -w .'):"
+            echo "$unformatted"
+            exit 1
+          fi
+
+  gdscript:
+    name: GDScript (--check-only)
+    runs-on: ubuntu-latest
+    env:
+      # Bump this to re-validate against a newer Godot. Must be a real
+      # github.com/godotengine/godot release tag (e.g. 4.7-stable).
+      GODOT_VERSION: 4.7-stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot binary
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-bin
+          key: godot-${{ runner.os }}-${{ env.GODOT_VERSION }}-linux-x86_64
+
+      - name: Install Godot runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libfontconfig1 \
+            libgl1 \
+            libx11-6 \
+            libxcursor1 \
+            libxext6 \
+            libxi6 \
+            libxinerama1 \
+            libxrandr2 \
+            libxrender1
+
+      - name: Download Godot ${{ env.GODOT_VERSION }} (headless)
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          name="Godot_v${GODOT_VERSION}_linux.x86_64"
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${name}.zip"
+          echo "Downloading $url"
+          curl -fL -o /tmp/godot.zip "$url"
+          unzip -o /tmp/godot.zip -d /tmp/godot
+          mkdir -p ~/godot-bin
+          mv "/tmp/godot/${name}" ~/godot-bin/godot
+          chmod +x ~/godot-bin/godot
+
+      - name: Godot version
+        run: ~/godot-bin/godot --headless --version
+
+      - name: Check-only all GDScript
+        run: |
+          set -uo pipefail
+          status=0
+          while IFS= read -r -d '' f; do
+            rel="res://${f#godot/}"
+            echo "── checking $rel"
+            out_file="$(mktemp)"
+            if ! timeout 60s ~/godot-bin/godot --headless --path godot/ --check-only --script "$rel" >"$out_file" 2>&1; then
+              status=1
+            fi
+            cat "$out_file"
+            if grep -Eiq 'SCRIPT ERROR|Parse Error|Parser Error' "$out_file"; then
+              status=1
+            fi
+            rm -f "$out_file"
+          done < <(find godot/addons -name '*.gd' -print0 | sort -z)
+          if [ "$status" -ne 0 ]; then
+            echo "::error::GDScript --check-only reported problems"
+          fi
+          exit "$status"
