@@ -11,20 +11,22 @@ There are two separate costs to an agent's context budget. Hera wins on both.
 
 ## 1. Fixed surface cost — what the agent must "know" each turn
 
-An MCP server advertises its tools by putting every tool's **definition**
-(name + description + JSON input schema) in the `tools` array of *every* request.
-That cost scales with the number of tools, and the real Godot MCP servers expose
-a lot of them:
+An MCP client normally exposes every server tool's **definition** (name +
+description + JSON input schema) to the model in the request tool list. That
+cost scales with the number of MCP tools, and real Godot MCP servers expose a
+lot of them:
 
-| Godot MCP addon | Tools | Tool definitions resident **per turn** (est.) |
-|-----------------|------:|----------------------------------------------:|
-| `godot-ai` (dlight)        | 120+ | ~12,000 – 24,000 tok |
-| `godot-mcp-native`         | 155  | ~15,500 – 31,000 tok |
+| Godot MCP addon | Publicly documented surface | Tool definitions resident **per turn** (est.) |
+|-----------------|----------------------------:|----------------------------------------------:|
+| [`godot-ai` (dlight)](https://github.com/hi-godot/godot-ai/blob/main/docs/TOOLS.md) | ~41 MCP tools / 120+ ops | ~4,100 – 8,200 tok |
+| [`godot-mcp-native`](https://github.com/yurineko73/Godot-MCP-Native#readme) | 155 MCP tools | ~15,500 – 31,000 tok |
 
-> Estimate: tool counts are from the assets' own store pages; per-tool schema is
-> assumed at **100–200 tokens** (a name, a one-line description, and a small JSON
-> input schema). We did not run those servers — this is an order-of-magnitude
-> figure, not billing.
+> Estimate: tool counts are from each project's public docs. `godot-ai` uses
+> roll-up MCP tools with an `op` enum, so the honest resident-schema count is
+> its documented ~41 MCP tools, not its 120+ underlying operations. Per-tool
+> schema is assumed at **100–200 tokens** (name, description, and JSON input
+> schema). We did not run those servers — this is an order-of-magnitude figure,
+> not billing.
 
 Hera carries **zero tool schemas** in context. The agent just runs a shell
 command. The only surface it loads is one doc, read once and prompt-cacheable,
@@ -35,9 +37,9 @@ and it stays **flat no matter how many commands exist**:
 | `AGENTS.md` (how to drive the CLI) | 4,182 chars (~1,045 tok) |
 | `docs/COMMANDS.md` (full reference) | 3,813 chars (~953 tok) |
 
-So before any work is done, an agent pays **~12k–31k resident tokens** to a
-120–155-tool Godot MCP server, versus **~1k tokens** (one cacheable doc) for
-Hera — and Hera's number does not grow as the command surface grows.
+So before any work is done, an agent pays **~4k–31k resident tokens** to the
+sampled Godot MCP servers, versus **~1k tokens** (one cacheable doc) for Hera —
+and Hera's number does not grow as the command surface grows.
 
 ---
 
@@ -66,6 +68,9 @@ or find result down to one path per line.
 - **Hera figures are measured** on a live Godot 4.7 editor; **MCP figures are
   estimated** from public tool counts × an assumed per-tool schema size. We did
   not run the MCP servers.
+- **Tool count means MCP tools, not internal operations.** `godot-ai` documents
+  120+ operations across ~41 MCP tools; the table uses ~41 for its resident
+  schema estimate.
 - Token counts use a **`chars / 4`** approximation (no model tokenizer). It is
   fine for relative scale, not for exact billing. JSON tends to tokenize a little
   denser than 4 chars/token, so these slightly *under*count both sides.
@@ -95,5 +100,5 @@ done
 wc -c AGENTS.md docs/COMMANDS.md
 ```
 
-Approximate tokens by dividing chars by 4. The MCP side is arithmetic: tool count
-(from each addon's store page) × ~100–200 tokens per tool schema.
+Approximate tokens by dividing chars by 4. The MCP side is arithmetic:
+documented MCP tool count × ~100–200 tokens per tool schema.

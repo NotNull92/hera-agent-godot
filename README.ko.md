@@ -28,15 +28,16 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 
 "MCP급 범위, 더 적은 토큰" 주장을 수치로:
 
-| | 헤라 (CLI) | Godot MCP 서버 (도구 120~155개) |
+| | 헤라 (CLI) | Godot MCP 서버 (도구 약 41~155개) |
 |---|---|---|
-| **매 턴** 상주하는 도구 스키마 | **0** | ~12k~31k tok (도구 수에 비례 증가) |
+| **매 턴** 상주하는 도구 스키마 | **0** | ~4k~31k tok (도구 수에 비례 증가) |
 | 에이전트가 로드하는 표면 | 문서 1개, ~1.0k tok — 캐시 가능·평탄 | 전체 도구 목록, 매 턴 재전송 |
 | 액션당 응답 | compact JSON — `status` ≈48 tok, `node get` ≈186 tok | JSON, 보통 pretty |
 
 헤라 수치는 라이브 Godot 4.7 에디터에서 **실측**, MCP 열은 공개된 도구 수
-(`godot-ai` 120+, `godot-mcp-native` 155) × 도구 스키마당 ~100~200 tok 으로 낸
-**추정**입니다. 방법론·한계·재현법: **[docs/LOW_TOKEN.md](docs/LOW_TOKEN.md)**.
+(`godot-ai` 약 41개 MCP 도구 / 120+ op, `godot-mcp-native` 155개 도구) ×
+도구 스키마당 ~100~200 tok 으로 낸 **추정**입니다. 방법론·한계·재현법:
+**[docs/LOW_TOKEN.md](docs/LOW_TOKEN.md)**.
 
 ## 현재 상태
 

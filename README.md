@@ -28,15 +28,16 @@ same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
 The "MCP-grade reach, fewer tokens" claim — with numbers:
 
-| | Hera (CLI) | Godot MCP server (120–155 tools) |
+| | Hera (CLI) | Godot MCP servers (~41–155 tools) |
 |---|---|---|
-| Tool schemas resident **per turn** | **0** | ~12k–31k tok (grows with tool count) |
+| Tool schemas resident **per turn** | **0** | ~4k–31k tok (grows with tool count) |
 | Surface the agent loads | one doc, ~1.0k tok — cacheable & flat | full tool list, re-sent each turn |
 | Per-action response | compact JSON — `status` ≈48 tok, `node get` ≈186 tok | JSON, often pretty |
 
 Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
-**estimate** from public tool counts (`godot-ai` 120+, `godot-mcp-native` 155) ×
-~100–200 tok per tool schema. Method, caveats, and a reproducer:
+**estimate** from public tool counts (`godot-ai` ~41 MCP tools / 120+ ops,
+`godot-mcp-native` 155 tools) × ~100–200 tok per tool schema. Method, caveats,
+and a reproducer:
 **[docs/LOW_TOKEN.md](docs/LOW_TOKEN.md)**.
 
 ## Status
