@@ -122,11 +122,42 @@ func playingFlag(resp *protocol.Response) bool {
 
 // printData prints a response's Data as compact JSON. Returns a process exit code.
 func printData(resp *protocol.Response) int {
-	out, err := json.Marshal(resp.Data)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		return 1
+	switch outputMode {
+	case "json":
+		out, err := json.MarshalIndent(resp.Data, "", "  ")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return 1
+		}
+		fmt.Println(string(out))
+	case "ids":
+		printIDs(resp.Data)
+	default:
+		out, err := json.Marshal(resp.Data)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%v\n", err)
+			return 1
+		}
+		fmt.Println(string(out))
 	}
-	fmt.Println(string(out))
 	return 0
+}
+
+// printIDs prints just the node paths from a response carrying a "nodes" array
+// (scene tree / node find); otherwise it falls back to compact JSON.
+func printIDs(data any) {
+	if m, ok := data.(map[string]any); ok {
+		if nodes, ok := m["nodes"].([]any); ok {
+			for _, n := range nodes {
+				if nm, ok := n.(map[string]any); ok {
+					if p, ok := nm["path"].(string); ok {
+						fmt.Println(p)
+					}
+				}
+			}
+			return
+		}
+	}
+	out, _ := json.Marshal(data)
+	fmt.Println(string(out))
 }

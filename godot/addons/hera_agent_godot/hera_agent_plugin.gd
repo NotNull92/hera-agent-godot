@@ -12,6 +12,8 @@ const SceneTool = preload("res://addons/hera_agent_godot/tools/scene_tool.gd")
 const NodeTool = preload("res://addons/hera_agent_godot/tools/node_tool.gd")
 const EvalTool = preload("res://addons/hera_agent_godot/tools/eval_tool.gd")
 const OutputTool = preload("res://addons/hera_agent_godot/tools/output_tool.gd")
+const ScreenshotTool = preload("res://addons/hera_agent_godot/tools/screenshot_tool.gd")
+const BatchTool = preload("res://addons/hera_agent_godot/tools/batch_tool.gd")
 
 const HEARTBEAT_INTERVAL := 0.5
 
@@ -32,6 +34,10 @@ func _enter_tree() -> void:
 	_registry.register(node_tool)
 	_registry.register(EvalTool.new())
 	_registry.register(OutputTool.new())
+	_registry.register(ScreenshotTool.new())
+	var batch_tool := BatchTool.new()
+	batch_tool.set_registry(_registry)
+	_registry.register(batch_tool)
 
 	_queue = WorkQueue.new()
 	_server = HttpServer.new()

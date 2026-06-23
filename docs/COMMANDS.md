@@ -22,6 +22,8 @@ selected editor instance.
 | `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
+| `screenshot [--view 2d\|3d] [--path <p>]` | `screenshot` | ☑ | Capture the editor viewport to a PNG. **Known limitation (Godot 4.7):** the editor viewport texture reads back as a 2×2 placeholder, so this currently fails with "too small"; a working capture path is TODO. |
+| `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially. |
 
 > **Note (`run`):** the `run/main_scene` dev fixture and any newly added scenes
 > are read when the project loads. If the editor is already open, reload it
@@ -34,14 +36,17 @@ selected editor instance.
 > effects and are not registered with UndoRedo. Mutation commands require exactly
 > one live editor instance until `--instance <pid>` targeting is implemented.
 
-## Global flags (planned)
+## Global flags
 
-| Flag | Meaning |
-|------|---------|
-| `--instance <pid>` | Target a specific editor when several are running. |
-| `--compact` | Minimal output (default for most commands). |
-| `--json` | Raw JSON response (for tooling). |
-| `--timeout <ms>` | Request timeout. |
+Output flags go **before** the command (e.g. `hera-agent-godot --ids node find`).
+
+| Flag | Status | Meaning |
+|------|--------|---------|
+| `--json` | ☑ | Pretty-print the response Data. |
+| `--ids` | ☑ | Print only node paths (for `scene tree` / `node find`); compact JSON otherwise. |
+| (default) | ☑ | Compact JSON — minimal tokens. |
+| `--instance <pid>` | ☐ | Target a specific editor when several are running. |
+| `--timeout <ms>` | ☐ | Request timeout. |
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the request lifecycle and
 [ROADMAP.md](./ROADMAP.md) for delivery order.

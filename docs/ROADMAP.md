@@ -44,11 +44,12 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 
 ## Phase 5 — Polish & DX
 
-- [ ] `batch` (atomic multi-command).
-- [ ] Screenshot tool (viewport capture).
-- [ ] Token-optimized output modes (`--compact`, `--ids`).
-- [ ] Installers + Asset Library packaging for the addon source.
-- [ ] Agent rule files (`AGENTS.md`, `CLAUDE.md`).
+- [x] `batch_tool.gd`: run a JSON array of commands in one request (sequential; each mutation sub-command keeps its own undo step). CLI reads stdin or `--file`.
+- [x] `screenshot_tool.gd`: capture the 2D/3D editor viewport to PNG (GUI-only). **Known limitation:** in Godot 4.7 the editor viewport texture reads back as 2×2, so real captures currently fail with a clear "too small" error — a working capture path (e.g. capturing a played scene) is TODO.
+- [x] Output modes: `--json` (pretty) and `--ids` (node paths only); compact JSON is the default.
+- [x] Agent rule files (`AGENTS.md`, `CLAUDE.md`).
+- [ ] Installers + Asset Library packaging — deferred until a tagged release / binary distribution pipeline exists.
+- [x] Verified: `go build/vet/test` green; addon GDScript passes `--check-only`.
 
 ## Open questions to revisit
 
