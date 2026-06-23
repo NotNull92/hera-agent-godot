@@ -102,7 +102,11 @@ func _wire(root: Node, params: Dictionary, do_connect: bool) -> Dictionary:
 		if already:
 			return ToolResponse.failure("already connected: %s" % label)
 		if _undo_redo != null:
-			_undo_redo.create_action("Hera: connect %s.%s" % [String(from_node.name), sig_name], 0, root)
+			# No custom_context: the undo manager infers the (scene) history from
+			# the operated object, matching node_tool. Passing a context here would
+			# be redundant (from_node is in the scene history) and risks the
+			# history-mismatch footgun of godotengine/godot#100108.
+			_undo_redo.create_action("Hera: connect %s.%s" % [String(from_node.name), sig_name])
 			_undo_redo.add_do_method(from_node, "connect", sig_name, callable, CONNECT_PERSIST)
 			_undo_redo.add_undo_method(from_node, "disconnect", sig_name, callable)
 			_undo_redo.commit_action()
@@ -116,7 +120,7 @@ func _wire(root: Node, params: Dictionary, do_connect: bool) -> Dictionary:
 	if not already:
 		return ToolResponse.failure("not connected: %s" % label)
 	if _undo_redo != null:
-		_undo_redo.create_action("Hera: disconnect %s.%s" % [String(from_node.name), sig_name], 0, root)
+		_undo_redo.create_action("Hera: disconnect %s.%s" % [String(from_node.name), sig_name])
 		_undo_redo.add_do_method(from_node, "disconnect", sig_name, callable)
 		_undo_redo.add_undo_method(from_node, "connect", sig_name, callable, CONNECT_PERSIST)
 		_undo_redo.commit_action()
