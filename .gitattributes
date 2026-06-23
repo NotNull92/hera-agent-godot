@@ -1,0 +1,10 @@
+# Consistent line endings across platforms. Default to LF on checkout — shell
+# scripts (the shebang breaks with a trailing CR), Go, and Godot files all want
+# LF. Only Windows-native scripts stay CRLF.
+* text=auto eol=lf
+
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+
+# Binary assets — never normalize.
+*.png binary

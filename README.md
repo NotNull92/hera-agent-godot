@@ -26,6 +26,28 @@ same low-token, shell-native philosophy, but **designed for Godot**, not ported.
 [docs/ROADMAP.md](docs/ROADMAP.md) for the remaining polish (installers / Asset
 Library packaging).
 
+## Install
+
+**CLI** — one-liner that fetches the latest release binary:
+
+```sh
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps1 | iex
+```
+
+Set `HERA_VERSION` to pin a tag and `HERA_BIN_DIR` to change the target dir. Or
+build from source: `go build -o hera .` (Go 1.25+). Check it with `hera version`.
+
+**Addon** — download `hera-agent-godot-addon.zip` from the
+[latest release](https://github.com/NotNull92/hera-agent-godot/releases/latest),
+unzip it into your Godot project root (creating `addons/hera_agent_godot/`), and
+enable it under **Project → Project Settings → Plugins**.
+
 ## How it works
 
 ```

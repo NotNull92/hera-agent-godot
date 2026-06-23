@@ -48,8 +48,21 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `screenshot_tool.gd`: render the edited scene into an off-screen `SubViewport` and save a PNG (the editor's own viewport texture is a placeholder in 4.7). Runs async via one SceneTree frame (headless-safe — returns "empty image" rather than hanging; a GUI editor is needed for an actual render). Frames from origin unless the scene has a camera.
 - [x] Output modes: `--json` (pretty) and `--ids` (node paths only); compact JSON is the default.
 - [x] Agent rule files (`AGENTS.md`, `CLAUDE.md`).
-- [ ] Installers + Asset Library packaging — deferred until a tagged release / binary distribution pipeline exists.
 - [x] Verified: `go build/vet/test` green; addon GDScript passes `--check-only`.
+
+## Phase 6 — Distribution & CI
+
+- [x] CI (`.github/workflows/ci.yml`): Go build/vet/test + `gofmt` gate, and
+      GDScript `--check-only` over the addon on a real Godot 4.7 headless build.
+- [x] `--instance <pid>` targeting so commands (and mutations) can pick one
+      editor when several are live.
+- [x] `version` command + linker-injected version string.
+- [x] Release pipeline (`.github/workflows/release.yml`): on a `v*` tag,
+      cross-compile the CLI (linux/darwin/windows × amd64/arm64), package the
+      addon zip + checksums, and publish a GitHub release.
+- [x] One-line installers (`install.sh`, `install.ps1`) that fetch the latest
+      release binary.
+- [ ] Asset Library submission for the addon (needs a tagged release first).
 
 ## Open questions to revisit
 

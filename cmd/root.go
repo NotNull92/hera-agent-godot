@@ -88,6 +88,9 @@ func Execute(args []string) int {
 		return runScreenshot(args[1:])
 	case "batch":
 		return runBatch(args[1:])
+	case "version", "--version":
+		fmt.Println(version)
+		return 0
 	case "help", "-h", "--help":
 		usage()
 		return 0
@@ -113,6 +116,7 @@ commands:
   output     tail project log (--type log|error|warning|all, --lines N)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent)
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
+  version    print the CLI version
 
 global flags (before the command):
   --json         pretty-print the response

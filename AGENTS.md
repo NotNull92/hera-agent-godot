@@ -19,7 +19,8 @@ enabled, commands fail with "no live Godot editor found" — ask them to enable 
 1. Open the project in a **Godot 4.x** editor.
 2. Enable **Project → Project Settings → Plugins → Hera Agent Godot**. The Output
    panel should show `[hera] ... listening on 127.0.0.1:<port>`.
-3. Build the CLI: `go build -o hera .` (from the repo root).
+3. Get the CLI: install a release binary (see the README's Install section) or
+   build from source with `go build -o hera .` (from the repo root).
 
 The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 

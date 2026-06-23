@@ -26,6 +26,27 @@ CLI 방식입니다.)
 [docs/COMMANDS.md](docs/COMMANDS.md), 남은 폴ish(인스톨러 / Asset Library 패키징)는
 [docs/ROADMAP.md](docs/ROADMAP.md)를 참고하세요.
 
+## 설치
+
+**CLI** — 최신 릴리스 바이너리를 받아 설치하는 원라인:
+
+```sh
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.sh | sh
+```
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps1 | iex
+```
+
+특정 태그는 `HERA_VERSION`, 설치 경로는 `HERA_BIN_DIR`로 지정할 수 있습니다.
+소스 빌드는 `go build -o hera .` (Go 1.25+). `hera version`으로 확인하세요.
+
+**애드온** — [최신 릴리스](https://github.com/NotNull92/hera-agent-godot/releases/latest)에서
+`hera-agent-godot-addon.zip`을 받아 Godot 프로젝트 루트에 풀면(`addons/hera_agent_godot/` 생성)
+**프로젝트 → 프로젝트 설정 → 플러그인**에서 활성화할 수 있습니다.
+
 ## 동작 방식
 
 ```
