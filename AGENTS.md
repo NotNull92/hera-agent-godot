@@ -40,6 +40,7 @@ hera node remove <path>                      # remove a node (undoable)
 hera signal list <node>                      # signals a node exposes + connections
 hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
 hera signal disconnect <from> <sig> <to> <method>  # unwire (undoable)
+hera resource get <res://...>                # dump a resource's properties
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
 hera output [--type log|error|warning|all] [--lines N]

@@ -82,6 +82,8 @@ func Execute(args []string) int {
 		return runNode(args[1:])
 	case "signal":
 		return runSignal(args[1:])
+	case "resource":
+		return runResource(args[1:])
 	case "eval":
 		return runEval(args[1:])
 	case "output":
@@ -115,6 +117,7 @@ commands:
   scene      tree | list | open <res://...> | save
   node       find|get|add|set|remove  (see docs/COMMANDS.md)
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
+  resource   get <res://...>  (dump a resource's properties)
   eval       evaluate a GDScript expression in the editor
   output     tail project log (--type log|error|warning|all, --lines N)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent)
