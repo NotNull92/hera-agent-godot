@@ -11,11 +11,13 @@ selected editor instance.
 | `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene. |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the play session starts. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
-| `output [--type log\|error\|warning]` | `output` | ☐ | Read editor output / errors / warnings. |
-| `scene tree` | `scene` | ☐ | Print the edited scene's node tree (compact). |
+| `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the project log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Needs `debug/file_logging` enabled. |
+| `scene tree` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). |
+| `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☐ | Open a scene in the editor. |
 | `scene save` | `scene` | ☐ | Save the current scene. |
-| `node find <query>` | `node` | ☐ | Find nodes by name / type / path. |
+| `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
+| `node get <path>` | `node` | ☑ | Dump a node's editor-visible properties. |
 | `node add <type> --parent <path> [--name <n>]` | `node` | ☐ | Add a node under a parent. |
 | `node set <path> --prop <name> --value <v>` | `node` | ☐ | Set a node property. |
 | `node remove <path>` | `node` | ☐ | Remove a node. |

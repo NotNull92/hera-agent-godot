@@ -27,6 +27,26 @@ func dialEditor() (*client.Client, error) {
 	return client.New(fmt.Sprintf("http://127.0.0.1:%d", inst.Port)), nil
 }
 
+// dialPostPrint dials the editor, sends one tool request, and prints the
+// response Data as compact JSON. label is used in error messages.
+func dialPostPrint(tool string, params map[string]any, label string) int {
+	c, err := dialEditor()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", label, err)
+		return 1
+	}
+	resp, err := c.Post(tool, params)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s: %v\n", label, err)
+		return 1
+	}
+	if !resp.OK {
+		fmt.Fprintf(os.Stderr, "%s: %s\n", label, resp.Error)
+		return 1
+	}
+	return printData(resp)
+}
+
 func pollPlaying(c *client.Client, want bool, timeout time.Duration) (*protocol.Response, error) {
 	deadline := time.Now().Add(timeout)
 	var last *protocol.Response

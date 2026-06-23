@@ -48,10 +48,10 @@ commands:
   status     show the connected editor (project, version, active scene)
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
-  scene      tree | open <res://...> | save
-  node       find | add | set | remove
+  scene      tree | list
+  node       find [query] [--type Class] | get <path>
   eval       evaluate a GDScript expression in the editor
-  output     read editor output / errors / warnings
+  output     tail project log (--type log|error|warning|all, --lines N)
 
 See docs/COMMANDS.md for details.
 `)

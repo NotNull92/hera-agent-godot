@@ -30,9 +30,10 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 
 ## Phase 3 — Read the editor
 
-- [ ] `OutputTool`: log + error/warning entries.
-- [ ] `SceneTool`: describe edited scene root, list open scenes.
-- [ ] `NodeTool` (read): find nodes, dump properties — compact by default.
+- [x] `output_tool.gd`: tail the project log with type/lines filters (the editor Output panel / `EditorLog` isn't exposed to GDScript, so this reads `user://logs/godot.log`; needs `debug/file_logging`).
+- [x] `scene_tool.gd`: `tree` (edited scene node list) + `list` (open scenes).
+- [x] `node_tool.gd` (read): `find` (name/class) + `get` (property dump) — compact, capped.
+- [x] Verified: `go build/vet/test` green; all addon GDScript passes `--check-only` (caught & fixed a `_get` virtual-signature clash).
 
 ## Phase 4 — Mutate the scene
 
