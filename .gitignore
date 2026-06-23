@@ -5,10 +5,11 @@
 *.test
 *.out
 
-# Godot generated files (project-level ignores also in godot/.gitignore)
+# Godot generated files
 **/.godot/
 **/bin/
 **/obj/
+*.user
 
 # IDE / OS
 .vs/

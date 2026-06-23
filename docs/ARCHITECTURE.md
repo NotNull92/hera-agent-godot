@@ -43,7 +43,7 @@ Two processes talk over localhost HTTP:
 
 | # | Godot reality | Design consequence |
 |---|---------------|--------------------|
-| 1 | GDScript addons are standard Godot addons under `res://addons/<name>/`. | Distribution is just copying `godot/addons/hera_agent_godot/`; no .NET SDK or generated project files. |
+| 1 | GDScript addons are standard Godot addons under `res://addons/<name>/`. | Distribution is just copying `addons/hera_agent_godot/`; no .NET SDK or generated project files. The addon lives at the repo root so the Asset Library installs it correctly. |
 | 2 | Editor scripts use `@tool` and run inside the editor. | The plugin entrypoint is `hera_agent_plugin.gd`, extending `EditorPlugin`. |
 | 3 | Editor and scene-tree mutation should run on the editor main loop. | Network handling enqueues work; `_process` drains queued requests and calls tools. |
 | 4 | Godot's core concepts are Node, Scene, Resource, Signal, and NodePath. | Commands are named `scene`, `node`, `run`, `eval`, and `output`; no Unity vocabulary. |
@@ -55,37 +55,29 @@ Two processes talk over localhost HTTP:
 
 ```text
 hera-agent-godot/
+├── addons/
+│   └── hera_agent_godot/        # the distributable addon (ships to users)
+│       ├── plugin.cfg
+│       ├── hera_agent_plugin.gd
+│       ├── LICENSE, README.md
+│       ├── core/
+│       ├── server/
+│       └── tools/               # status, run, scene, node, signal, resource, …
+├── project.godot               # dev host project (root, so it loads the addon)
+├── scenes/                     # dev fixtures (run/save/screenshot target)
 ├── main.go
 ├── go.mod
-├── cmd/
-│   ├── root.go
-│   ├── status.go
-│   ├── run.go
-│   ├── scene.go
-│   ├── node.go
-│   ├── eval.go
-│   └── output.go
-├── internal/
-│   ├── client/
-│   ├── discovery/
-│   └── protocol/
-├── godot/
-│   ├── project.godot
-│   └── addons/
-│       └── hera_agent_godot/
-│           ├── plugin.cfg
-│           ├── hera_agent_plugin.gd
-│           ├── core/
-│           ├── server/
-│           └── tools/
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── COMMANDS.md
-    └── ROADMAP.md
+├── cmd/                        # Go CLI commands
+├── internal/                   # client / discovery / protocol
+├── docs/
+└── .gitattributes              # export-ignore keeps the AssetLib zip addon-only
 ```
 
-The `godot/` project is a small development host for the addon. Distribution is
-the `godot/addons/hera_agent_godot/` folder.
+The Godot dev project lives at the repo **root** (`project.godot` + `addons/` +
+`scenes/`) so it loads the addon during development *and* so the Asset Library —
+which installs the repo archive preserving paths — drops `addons/hera_agent_godot/`
+straight into a user's project. `.gitattributes` `export-ignore` strips the CLI,
+docs, CI, and dev project from that archive, leaving only the addon and `LICENSE`.
 
 ---
 

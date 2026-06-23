@@ -8,3 +8,25 @@
 
 # Binary assets — never normalize.
 *.png binary
+
+# Asset Library packaging. The Godot Asset Library installs the GitHub archive
+# ZIP into a user's project, preserving paths. Keep that ZIP to the addon (plus
+# LICENSE) only — everything else here is the dev project, Go CLI, CI, or docs
+# and would clobber the user's project.godot or pull in irrelevant files.
+# (git archive / GitHub codeload honor export-ignore.)
+/cmd export-ignore
+/internal export-ignore
+/docs export-ignore
+/scenes export-ignore
+/.github export-ignore
+/main.go export-ignore
+/go.mod export-ignore
+/project.godot export-ignore
+/install.sh export-ignore
+/install.ps1 export-ignore
+/AGENTS.md export-ignore
+/CLAUDE.md export-ignore
+/README.md export-ignore
+/README.ko.md export-ignore
+/.gitignore export-ignore
+/.gitattributes export-ignore

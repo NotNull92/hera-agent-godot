@@ -13,5 +13,6 @@ Quick reminders:
 - After editing, verify with `node get` / `scene tree` / `output --type error`.
 
 Repo conventions: Go CLI in `cmd/` + `internal/`; the Godot addon (GDScript) in
-`godot/addons/hera_agent_godot/`. Run `go build/vet/test` and `gofmt` for Go;
-validate addon scripts with `godot --headless --check-only --script <path>`.
+`addons/hera_agent_godot/`, with the dev host project (`project.godot`,
+`scenes/`) at the repo root. Run `go build/vet/test` and `gofmt` for Go;
+validate addon scripts with `godot --headless --path . --check-only --script <res://...>`.

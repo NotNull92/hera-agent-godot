@@ -72,7 +72,7 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 
 ```
 Go CLI  ──HTTP /rpc──▶  Godot 에디터 애드온 (@tool EditorPlugin, GDScript)
- (cmd/, internal/)        (godot/addons/hera_agent_godot/)
+ (cmd/, internal/)        (addons/hera_agent_godot/)
         ▲                          │
         └── ~/.hera-agent-godot/instances/ 스캔 ◀── Heartbeat
 ```
@@ -102,10 +102,11 @@ Godot은 에디터 확장 모델 자체가 달라 그대로 옮기지 않았습�
 ## 디렉토리 구조
 
 ```
-cmd/         Go CLI 명령 (status, run/stop, scene, node, signal, resource, output, eval, screenshot, batch)
-internal/    client / discovery / protocol
-godot/       개발용 Godot 4.7+ 프로젝트 + 애드온 (godot/addons/hera_agent_godot)
-docs/        ARCHITECTURE, COMMANDS, ROADMAP
+addons/hera_agent_godot/  배포용 Godot 4.7+ 애드온 (GDScript)
+project.godot, scenes/    개발용 호스트 프로젝트 — CLI의 run/save/screenshot 대상
+cmd/                      Go CLI 명령 (status, run/stop, scene, node, signal, resource, output, eval, screenshot, batch)
+internal/                 client / discovery / protocol
+docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 ```
 
 ## 요구 사항 (목표)

@@ -56,8 +56,8 @@ jobs:
         run: |
           set -euo pipefail
           # Entries are addons/hera_agent_godot/... so users unzip into a
-          # Godot project root.
-          (cd godot && zip -qr "../dist/hera-agent-godot-addon.zip" addons/hera_agent_godot)
+          # Godot project root. (The addon lives at the repo root.)
+          zip -qr "dist/hera-agent-godot-addon.zip" addons/hera_agent_godot
 
       - name: Checksums
         run: |

@@ -76,7 +76,7 @@ enable it under **Project → Project Settings → Plugins**.
 
 ```
 Go CLI  ──HTTP /rpc──▶  Godot editor addon (@tool EditorPlugin, GDScript)
- (cmd/, internal/)        (godot/addons/hera_agent_godot/)
+ (cmd/, internal/)        (addons/hera_agent_godot/)
         ▲                          │
         └── scans ~/.hera-agent-godot/instances/ ◀── Heartbeat
 ```
@@ -92,10 +92,11 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 ## Repository layout
 
 ```
-cmd/         Go CLI commands (status, run/stop, scene, node, signal, resource, output, eval, screenshot, batch)
-internal/    client / discovery / protocol
-godot/       dev Godot 4.7+ project + the addon (godot/addons/hera_agent_godot)
-docs/        ARCHITECTURE, COMMANDS, ROADMAP
+addons/hera_agent_godot/  the distributable Godot 4.7+ addon (GDScript)
+project.godot, scenes/    dev host project — the CLI's run/save/screenshot target
+cmd/                      Go CLI commands (status, run/stop, scene, node, signal, resource, output, eval, screenshot, batch)
+internal/                 client / discovery / protocol
+docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 ```
 
 ## Requirements (target)
