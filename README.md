@@ -19,8 +19,12 @@ same low-token, shell-native philosophy, but **designed for Godot**, not ported.
 
 ## Status
 
-🚧 **Phase 0 — skeleton.** Architecture and directory layout are in place; the
-implementation lands per [docs/ROADMAP.md](docs/ROADMAP.md).
+**Phases 0–5 complete.** The core tool surface is implemented and reviewed:
+`status`, `run`/`stop`, `scene`, `node` (read + write), `output`, `eval`,
+`screenshot`, and `batch`, with `--json`/`--ids` output modes. See
+[docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
+[docs/ROADMAP.md](docs/ROADMAP.md) for the remaining polish (installers / Asset
+Library packaging).
 
 ## How it works
 
@@ -42,7 +46,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 ## Repository layout
 
 ```
-cmd/         Go CLI commands (status, run, scene, node, eval, output)
+cmd/         Go CLI commands (status, run/stop, scene, node, output, eval, screenshot, batch)
 internal/    client / discovery / protocol
 godot/       dev Godot 4.7+ project + the addon (godot/addons/hera_agent_godot)
 docs/        ARCHITECTURE, COMMANDS, ROADMAP
