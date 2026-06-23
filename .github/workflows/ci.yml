@@ -13,12 +13,14 @@ jobs:
     name: Go (build · vet · test · gofmt)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
-          cache: true
+          # No go.sum (zero third-party deps), so module caching has nothing to
+          # key on — disable it to avoid a noisy cache-restore warning.
+          cache: false
 
       - name: go build
         run: go build ./...
@@ -46,11 +48,11 @@ jobs:
       # github.com/godotengine/godot release tag (e.g. 4.7-stable).
       GODOT_VERSION: 4.7-stable
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache Godot binary
         id: cache-godot
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/godot-bin
           key: godot-${{ runner.os }}-${{ env.GODOT_VERSION }}-linux-x86_64
