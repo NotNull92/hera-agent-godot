@@ -16,6 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Hera Agent Godot (dev)"
 config/features=PackedStringArray("4.7")
+run/main_scene="res://scenes/Main.tscn"
 
 [editor_plugins]
 

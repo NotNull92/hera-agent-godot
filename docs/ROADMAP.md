@@ -23,8 +23,10 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 
 ## Phase 2 — Run control
 
-- [ ] `RunTool`: play main / current / custom scene, stop.
-- [ ] CLI `run` / `stop` with `--wait`.
+- [x] `run_tool.gd`: play main / current / custom scene, stop, state (via `EditorInterface`).
+- [x] CLI `run` / `stop` with `--scene` / `--current` / `--wait`. (`go build/vet/test` green; `parseRunArgs` unit-tested.)
+- [x] Dev fixture: `scenes/Main.tscn` + `run/main_scene` so bare `run` works out of the box.
+- [ ] End-to-end play verification _(pending: not auto-tested to avoid driving a developer's live editor; see manual steps)_
 
 ## Phase 3 — Read the editor
 
