@@ -1,8 +1,10 @@
 extends RefCounted
 
-# `scene` — read scene structure via EditorInterface.
+# `scene` — read and manage scenes via EditorInterface.
 #   tree         -> flat node list of the edited scene { path, type, name }
 #   open_scenes  -> open scene paths + the current one
+#   open         -> open a scene by path
+#   save         -> save the edited scene
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
@@ -21,8 +23,12 @@ func execute(params: Dictionary) -> Dictionary:
 				"open": _to_strings(EditorInterface.get_open_scenes()),
 				"current": _current_scene(),
 			})
+		"open":
+			return _open(params)
+		"save":
+			return _save()
 		_:
-			return ToolResponse.failure("unknown scene action: %s (want tree|open_scenes)" % action)
+			return ToolResponse.failure("unknown scene action: %s (want tree|open_scenes|open|save)" % action)
 
 func _tree() -> Dictionary:
 	var root := EditorInterface.get_edited_scene_root()
@@ -39,6 +45,26 @@ func _tree() -> Dictionary:
 		"truncated": truncated,
 		"nodes": nodes,
 	})
+
+func _open(params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	if path == "":
+		return ToolResponse.failure("open requires a 'path'")
+	if not ResourceLoader.exists(path, "PackedScene"):
+		return ToolResponse.failure("scene not found or not a PackedScene: %s" % path)
+	EditorInterface.open_scene_from_path(path)
+	return ToolResponse.success({ "requested_open": path, "current": _current_scene() })
+
+func _save() -> Dictionary:
+	var root := EditorInterface.get_edited_scene_root()
+	if root == null:
+		return ToolResponse.failure("no scene to save")
+	if root.scene_file_path == "":
+		return ToolResponse.failure("scene has no path yet; save it once from the editor first")
+	var err := EditorInterface.save_scene()
+	if err != OK:
+		return ToolResponse.failure("save failed: %s" % error_string(err))
+	return ToolResponse.success({ "saved": root.scene_file_path })
 
 func _collect(node: Node, root: Node, out: Array) -> void:
 	if out.size() > MAX_NODES:

@@ -1,19 +1,20 @@
 package cmd
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strings"
+)
 
-// runEval implements `hera-agent-godot eval <gdscript-expression>`.
+// runEval implements `hera-agent-godot eval <expression>`.
 //
-// Maps to the addon `eval` tool, which uses GDScript's Expression evaluator.
-//
-// TODO(phase4).
+// Joins its args into one GDScript expression and evaluates it in the editor via
+// the addon's Expression-based `eval` tool.
 func runEval(args []string) int {
-	_ = args
-	notImplemented("eval")
-	return 1
-}
-
-// notImplemented is a shared placeholder for not-yet-built command handlers.
-func notImplemented(name string) {
-	fmt.Printf("hera-agent-godot: %q is not implemented yet (skeleton). See docs/ROADMAP.md\n", name)
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "eval: requires an expression")
+		return 2
+	}
+	expr := strings.Join(args, " ")
+	return dialMutationPostPrint("eval", map[string]any{"expr": expr}, "eval")
 }

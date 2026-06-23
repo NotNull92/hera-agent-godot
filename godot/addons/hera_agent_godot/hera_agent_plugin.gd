@@ -27,7 +27,9 @@ func _enter_tree() -> void:
 	_registry.register(StatusTool.new())
 	_registry.register(RunTool.new())
 	_registry.register(SceneTool.new())
-	_registry.register(NodeTool.new())
+	var node_tool := NodeTool.new()
+	node_tool.set_undo_redo(get_undo_redo())
+	_registry.register(node_tool)
 	_registry.register(EvalTool.new())
 	_registry.register(OutputTool.new())
 

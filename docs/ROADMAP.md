@@ -37,9 +37,10 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 
 ## Phase 4 — Mutate the scene
 
-- [ ] `NodeTool` (write): add / set-property / remove.
-- [ ] `SceneTool`: open / save.
-- [ ] `EvalTool`: GDScript `Expression` evaluation.
+- [x] `node_tool.gd` (write): `add` / `set` / `remove`, all registered with `EditorUndoRedoManager` (Ctrl+Z undoable).
+- [x] `scene_tool.gd`: `open` / `save`.
+- [x] `eval_tool.gd`: single GDScript expression via the `Expression` class (edited scene root as base instance).
+- [x] Verified: `go build/vet/test` green; addon GDScript passes `--check-only`.
 
 ## Phase 5 — Polish & DX
 

@@ -14,18 +14,25 @@ selected editor instance.
 | `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the project log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Needs `debug/file_logging` enabled. |
 | `scene tree` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
-| `scene open <res://...>` | `scene` | ☐ | Open a scene in the editor. |
-| `scene save` | `scene` | ☐ | Save the current scene. |
+| `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |
+| `scene save` | `scene` | ☑ | Save the edited scene. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
 | `node get <path>` | `node` | ☑ | Dump a node's editor-visible properties. |
-| `node add <type> --parent <path> [--name <n>]` | `node` | ☐ | Add a node under a parent. |
-| `node set <path> --prop <name> --value <v>` | `node` | ☐ | Set a node property. |
-| `node remove <path>` | `node` | ☐ | Remove a node. |
-| `eval <gdscript-expression>` | `eval` | ☐ | Evaluate a GDScript expression in the editor and return the result. |
+| `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). |
+| `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
+| `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
+| `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
 
 > **Note (`run`):** the `run/main_scene` dev fixture and any newly added scenes
 > are read when the project loads. If the editor is already open, reload it
 > (Project → Reload Current Project) for `run` (main scene) to pick them up.
+
+> **Note (mutations):** `node add/set/remove` register with the editor's undo
+> history, so agent changes are undoable (Ctrl+Z). `eval` runs a single
+> expression via the `Expression` class (not full GDScript statements), with the
+> edited scene root as the base instance. Expressions can call methods with side
+> effects and are not registered with UndoRedo. Mutation commands require exactly
+> one live editor instance until `--instance <pid>` targeting is implemented.
 
 ## Global flags (planned)
 
