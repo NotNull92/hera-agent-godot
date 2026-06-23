@@ -104,6 +104,12 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 - Go 1.25+ (CLI)
 - Godot **4.7+** standard build (addon)
 
+## Support
+
+Hera is free and MIT-licensed. If it saves you time, you can support development:
+
+[![Support on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/notnull92)
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

@@ -114,6 +114,12 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 - Go 1.25+ (CLI)
 - Godot **4.7+** 표준 빌드 (애드온)
 
+## 후원
+
+Hera는 무료이며 MIT 라이선스입니다. 도움이 되었다면 개발을 후원하실 수 있습니다:
+
+[![Ko-fi에서 후원](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/notnull92)
+
 ## 라이선스
 
 MIT — [LICENSE](LICENSE) 참고.
