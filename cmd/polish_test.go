@@ -4,18 +4,24 @@ import "testing"
 
 func TestParseScreenshotArgs(t *testing.T) {
 	tests := []struct {
-		name     string
-		args     []string
-		wantView any
-		wantPath any
-		wantErr  bool
+		name            string
+		args            []string
+		wantPath        any
+		wantWidth       any
+		wantHeight      any
+		wantTransparent bool
+		wantErr         bool
 	}{
 		{name: "empty"},
-		{name: "view 2d", args: []string{"--view", "2d"}, wantView: "2d"},
-		{name: "view 3d and path", args: []string{"--view", "3d", "--path", "user://x.png"}, wantView: "3d", wantPath: "user://x.png"},
-		{name: "bad view", args: []string{"--view", "iso"}, wantErr: true},
-		{name: "dangling view", args: []string{"--view"}, wantErr: true},
-		{name: "unknown flag", args: []string{"--zoom"}, wantErr: true},
+		{name: "path", args: []string{"--path", "user://x.png"}, wantPath: "user://x.png"},
+		{name: "width and height", args: []string{"--width", "640", "--height", "480"}, wantWidth: 640, wantHeight: 480},
+		{name: "transparent", args: []string{"--transparent"}, wantTransparent: true},
+		{name: "bad width", args: []string{"--width", "x"}, wantErr: true},
+		{name: "zero width", args: []string{"--width", "0"}, wantErr: true},
+		{name: "too large width", args: []string{"--width", "4097"}, wantErr: true},
+		{name: "too large height", args: []string{"--height", "4097"}, wantErr: true},
+		{name: "dangling path", args: []string{"--path"}, wantErr: true},
+		{name: "removed view flag", args: []string{"--view", "2d"}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -29,11 +35,17 @@ func TestParseScreenshotArgs(t *testing.T) {
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if tt.wantView != nil && p["view"] != tt.wantView {
-				t.Errorf("view = %v, want %v", p["view"], tt.wantView)
-			}
 			if tt.wantPath != nil && p["path"] != tt.wantPath {
 				t.Errorf("path = %v, want %v", p["path"], tt.wantPath)
+			}
+			if tt.wantWidth != nil && p["width"] != tt.wantWidth {
+				t.Errorf("width = %v, want %v", p["width"], tt.wantWidth)
+			}
+			if tt.wantHeight != nil && p["height"] != tt.wantHeight {
+				t.Errorf("height = %v, want %v", p["height"], tt.wantHeight)
+			}
+			if tt.wantTransparent && p["transparent"] != true {
+				t.Errorf("transparent = %v, want true", p["transparent"])
 			}
 		})
 	}

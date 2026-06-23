@@ -22,7 +22,7 @@ selected editor instance.
 | `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
-| `screenshot [--view 2d\|3d] [--path <p>]` | `screenshot` | ☑ | Capture the editor viewport to a PNG. **Known limitation (Godot 4.7):** the editor viewport texture reads back as a 2×2 placeholder, so this currently fails with "too small"; a working capture path is TODO. |
+| `screenshot [--path <p>] [--width N] [--height N] [--transparent]` | `screenshot` | ☑ | Render the edited scene off-screen to a PNG and return the path. Needs a GUI editor (no render under `--headless`); frames from the world origin unless the scene has a camera. |
 | `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially. |
 
 > **Note (`run`):** the `run/main_scene` dev fixture and any newly added scenes

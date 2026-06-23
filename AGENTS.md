@@ -9,7 +9,7 @@ don't guess scene structure or whether a change worked from memory.
 - You need the actual state of the open scene (node tree, a node's properties).
 - You want to change the scene (add/set/remove nodes) and confirm it stuck.
 - You want to run a scene, then read the log for errors.
-- You want to see the viewport (`screenshot`).
+- You want an off-screen preview render of the edited scene (`screenshot`).
 
 If the user is not running the Godot editor with the **Hera Agent** plugin
 enabled, commands fail with "no live Godot editor found" — ask them to enable it.
@@ -39,7 +39,7 @@ hera node remove <path>                      # remove a node (undoable)
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
 hera output [--type log|error|warning|all] [--lines N]
-hera screenshot [--view 2d|3d] [--path p]    # capture viewport to PNG (GUI only)
+hera screenshot [--path p] [--width N] [--height N]  # render edited scene to PNG (GUI editor)
 hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
 ```
 
@@ -69,7 +69,7 @@ After an edit, **confirm it** instead of assuming:
 - After `node add`/`set`: `hera node get <path>` and check the value.
 - After structural changes: `hera scene tree` (or `--ids`).
 - After `run`: `hera output --type error` to catch runtime errors.
-- For UI/visual changes: `hera screenshot` _(note: viewport capture is currently limited in Godot 4.7 — see docs/COMMANDS.md)_.
+- For UI/visual changes: `hera screenshot` (renders the edited scene off-screen; needs a GUI editor).
 
 Batch a change and its check together when it helps, e.g. pipe a JSON array of
 `[{set...}, {get...}]` into `hera batch`.

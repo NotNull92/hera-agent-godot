@@ -34,7 +34,9 @@ func _enter_tree() -> void:
 	_registry.register(node_tool)
 	_registry.register(EvalTool.new())
 	_registry.register(OutputTool.new())
-	_registry.register(ScreenshotTool.new())
+	var screenshot_tool := ScreenshotTool.new()
+	screenshot_tool.set_host(self)
+	_registry.register(screenshot_tool)
 	var batch_tool := BatchTool.new()
 	batch_tool.set_registry(_registry)
 	_registry.register(batch_tool)
@@ -55,8 +57,7 @@ func _process(delta: float) -> void:
 	if _server != null:
 		_server.poll(_queue)
 		for item in _queue.drain():
-			var response: Dictionary = _dispatch(item["request"])
-			_server.respond(item["conn"], response)
+			_handle(item)
 
 	if _heartbeat != null:
 		_heartbeat_accum += delta
@@ -75,6 +76,24 @@ func _exit_tree() -> void:
 	_queue = null
 	_registry = null
 	print("[hera] Hera Agent Godot exited")
+
+# Respond to one queued request. Tools exposing execute_async() are awaited
+# (e.g. screenshot needs a rendered frame); everything else runs synchronously.
+func _handle(item: Dictionary) -> void:
+	var request: Dictionary = item["request"]
+	var tool_name := String(request.get("tool", ""))
+	var tool = _registry.resolve(tool_name) if tool_name != "" else null
+	if tool != null and tool.has_method("execute_async"):
+		var params: Variant = request.get("params", {})
+		if typeof(params) != TYPE_DICTIONARY:
+			params = {}
+		var response: Dictionary = await tool.execute_async(params)
+		if _server != null:
+			_server.respond(item["conn"], response)
+		else:
+			(item["conn"] as StreamPeerTCP).disconnect_from_host()
+	else:
+		_server.respond(item["conn"], _dispatch(request))
 
 func _dispatch(request: Dictionary) -> Dictionary:
 	var tool_name := String(request.get("tool", ""))

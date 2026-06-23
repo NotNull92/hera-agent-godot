@@ -74,7 +74,7 @@ commands:
   node       find|get|add|set|remove  (see docs/COMMANDS.md)
   eval       evaluate a GDScript expression in the editor
   output     tail project log (--type log|error|warning|all, --lines N)
-  screenshot capture the editor viewport to PNG (--view 2d|3d, --path <p>)
+  screenshot render the edited scene to PNG (--path, --width, --height, --transparent)
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
 
 global flags (before the command):
