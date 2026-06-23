@@ -13,9 +13,16 @@ Godot 4.7+ editor** in real time — read the output/errors, run a scene, walk a
 edit the node tree, evaluate GDScript, and more. The agent acts on the *real*
 editor and checks the result instead of guessing from stale training data.
 
+**Why a CLI, not MCP?** Godot already has a healthy MCP-addon ecosystem — Hera
+makes the opposite bet on purpose. MCP servers pay for breadth in tokens: dozens
+to 100+ tool schemas plus verbose JSON responses sit in the agent's context
+every turn. Hera delivers **MCP-grade reach over the live editor as a
+compact-JSON-by-default CLI** — one command per action, minimal tokens, and it
+works with anything that can run a shell command (pipes, `batch`, CI, any
+agent), not just MCP clients.
+
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
-same low-token, shell-native philosophy, but **designed for Godot**, not ported.
-(There is no official Godot MCP server; this is a CLI by design.)
+same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
 ## Status
 

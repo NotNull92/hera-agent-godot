@@ -31,7 +31,11 @@ Two processes talk over localhost HTTP:
   single compact JSON request per command.
 - The addon is a GDScript `@tool` `EditorPlugin`. It binds a local HTTP server,
   queues each request, and executes editor work from the editor main loop.
-- No MCP server is used. Any agent that can run shell commands can use the CLI.
+- No MCP server — by design, not for lack of one. Godot's MCP-addon ecosystem is
+  active, but MCP pays for breadth in tokens: many tool schemas plus verbose JSON
+  sit in the agent's context every turn. Hera delivers comparable editor reach as
+  a compact-JSON CLI, so any agent that can run a shell command can use it — not
+  only MCP clients.
 
 ---
 
@@ -161,7 +165,8 @@ opportunistically.
 
 ## 8. Deliberate non-goals
 
-- No MCP server.
+- No MCP server — a deliberate bet on a low-token, shell-native CLI (see §1), not
+  an MCP gap: comparable editor reach at a fraction of the per-turn tokens.
 - No Godot 3.x or pre-4.7 support.
 - No C#/.NET addon requirement.
 - No reflection-based tool auto-discovery.
