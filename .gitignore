@@ -1,0 +1,19 @@
+# Go build output
+/hera-agent-godot
+/hera-agent-godot.exe
+*.exe
+*.test
+*.out
+
+# Godot generated files (project-level ignores also in godot/.gitignore)
+**/.godot/
+**/bin/
+**/obj/
+
+# IDE / OS
+.vs/
+.idea/
+.vscode/
+.omc/
+.DS_Store
+Thumbs.db
