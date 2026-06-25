@@ -23,6 +23,7 @@ selected editor instance.
 | `project info` | `project` | ☑ | Show project name, root path, Godot version, current scene, and file counts by type. |
 | `project list-files [--type all\|scene\|script\|resource\|asset\|shader] [--pattern <p>] [--limit N]` | `project` | ☑ | List project files from `res://`, with compact type tags and optional filtering. |
 | `project mkdir <res://dir>` | `project` | ☑ | Create a project directory under `res://` and refresh the editor filesystem. |
+| `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set `application/run/main_scene` in `project.godot` for the targeted live editor project. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
 | `node get <path>` | `node` | ☑ | Dump a node's editor-visible properties. |
 | `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). |
@@ -57,12 +58,13 @@ selected editor instance.
 | `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially, including async tools such as `game` and `screenshot`. |
 | `smoke [--run-game\|--skip-game]` | local + tools | ☑ | Run a quick live-editor smoke check. `--run-game` also plays the current scene, checks `game tree`, then stops. |
 
-> **Note (`run`):** the `run/main_scene` dev fixture and any newly added scenes
-> are read when the project loads. If the editor is already open, reload it
-> (Project → Reload Current Project) for `run` (main scene) to pick them up.
+> **Note (`run`):** use `project set-main-scene <res://scene.tscn>` when changing
+> the main scene from Hera. Newly added scenes can still require a filesystem
+> refresh or project reload before the editor resolves them as PackedScenes.
 
 > **Note (mutations):** `node add/set/set-resource/remove`, `node attach-script/detach-script`,
 > `scene open/save/create/save-as`, `script create`, `project mkdir`,
+> `project set-main-scene`,
 > `resource resave/update-uids/export-mesh-library`, and `signal connect/disconnect`
 > register with the editor's undo history, so agent changes are undoable
 > (Ctrl+Z) where Godot exposes UndoRedo for that operation. File and scene

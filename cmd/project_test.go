@@ -1,6 +1,11 @@
 package cmd
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestParseScriptArgs(t *testing.T) {
 	tests := []struct {
@@ -54,6 +59,7 @@ func TestParseProjectArgs(t *testing.T) {
 		wantErr    bool
 	}{
 		{name: "mkdir", args: []string{"mkdir", "res://scripts"}, wantAction: "mkdir", wantPath: "res://scripts"},
+		{name: "set main scene", args: []string{"set-main-scene", "res://main.tscn"}, wantAction: "set_main_scene", wantPath: "res://main.tscn"},
 		{name: "info", args: []string{"info"}, wantAction: "info"},
 		{name: "info extra", args: []string{"info", "extra"}, wantErr: true},
 		{name: "list files", args: []string{"list-files"}, wantAction: "list_files"},
@@ -66,6 +72,8 @@ func TestParseProjectArgs(t *testing.T) {
 		{name: "missing subcommand", wantErr: true},
 		{name: "mkdir missing path", args: []string{"mkdir"}, wantErr: true},
 		{name: "mkdir extra", args: []string{"mkdir", "res://a", "extra"}, wantErr: true},
+		{name: "set main scene missing path", args: []string{"set-main-scene"}, wantErr: true},
+		{name: "set main scene extra", args: []string{"set-main-scene", "res://main.tscn", "extra"}, wantErr: true},
 		{name: "unknown", args: []string{"nope"}, wantErr: true},
 	}
 	for _, tt := range tests {
@@ -92,6 +100,68 @@ func TestParseProjectArgs(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestProjectActionMutates(t *testing.T) {
+	tests := []struct {
+		action any
+		want   bool
+	}{
+		{action: "info"},
+		{action: "list_files"},
+		{action: "mkdir", want: true},
+		{action: "set_main_scene", want: true},
+		{action: nil},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprint(tt.action), func(t *testing.T) {
+			got := projectActionMutates(tt.action)
+			if got != tt.want {
+				t.Fatalf("projectActionMutates(%v) = %v, want %v", tt.action, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSetMainSceneInProjectFile(t *testing.T) {
+	dir := t.TempDir()
+	projectPath := filepath.Join(dir, "project.godot")
+	scenePath := filepath.Join(dir, "main.tscn")
+	if err := os.WriteFile(projectPath, []byte("[application]\nconfig/name=\"Demo\"\nrun/main_scene=\"res://old.tscn\"\n"), 0o600); err != nil {
+		t.Fatalf("write project: %v", err)
+	}
+	if err := os.WriteFile(scenePath, []byte("[gd_scene format=3]\n"), 0o600); err != nil {
+		t.Fatalf("write scene: %v", err)
+	}
+
+	if err := setMainSceneInProjectFile(dir, "res://main.tscn"); err != nil {
+		t.Fatalf("setMainSceneInProjectFile: %v", err)
+	}
+
+	got, err := os.ReadFile(projectPath)
+	if err != nil {
+		t.Fatalf("read project: %v", err)
+	}
+	want := "[application]\nconfig/name=\"Demo\"\nrun/main_scene=\"res://main.tscn\"\n"
+	if string(got) != want {
+		t.Fatalf("project.godot = %q, want %q", string(got), want)
+	}
+}
+
+func TestReadMainSceneFromProjectFile(t *testing.T) {
+	dir := t.TempDir()
+	projectPath := filepath.Join(dir, "project.godot")
+	if err := os.WriteFile(projectPath, []byte("[application]\nconfig/name=\"Demo\"\nrun/main_scene=\"res://main.tscn\"\n"), 0o600); err != nil {
+		t.Fatalf("write project: %v", err)
+	}
+
+	got, err := readMainSceneFromProjectFile(dir)
+	if err != nil {
+		t.Fatalf("readMainSceneFromProjectFile: %v", err)
+	}
+	if got != "res://main.tscn" {
+		t.Fatalf("main scene = %q, want res://main.tscn", got)
 	}
 }
 

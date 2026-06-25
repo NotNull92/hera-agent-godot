@@ -37,6 +37,7 @@ hera scene create res://Path.tscn [--root Node2D] [--force] [--open]
 hera scene save-as res://Path.tscn [--force]
 hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force]
 hera project mkdir res://scripts
+hera project set-main-scene res://Path.tscn # set ProjectSettings main scene
 hera node find [query] [--type Class]        # find nodes
 hera node get <path>                         # dump a node's properties
 hera node add <type> [--parent p] [--name n] # add a node (undoable)
@@ -81,8 +82,9 @@ target a pid shown by `status`). Default output is compact JSON.
 - **Run one live editor per project.** Hera is designed for a single active
   Godot editor. Mutation-capable commands (`node add/set/remove`,
   `node attach-script/detach-script`, `signal connect/disconnect`,
-  `scene open/save/create/save-as`, `script create`, `project mkdir`, `eval`,
-  `game node set/call`, `smoke --run-game`, and `batch`) enforce that by
+  `scene open/save/create/save-as`, `script create`, `project mkdir`,
+  `project set-main-scene`, `eval`, `game node set/call`, `smoke --run-game`,
+  and `batch`) enforce that by
   refusing to run when several editors are live unless `--instance <pid>` is
   passed explicitly.
 - **`eval` is powerful.** It runs one GDScript expression (not statements) with
@@ -97,9 +99,10 @@ target a pid shown by `status`). Default output is compact JSON.
 - **Prefer low-token QA reads.** Use `game node get --prop/--props`,
   `game assert`, `screenshot --runtime --analyze`, and `game qa --file` before
   dumping full node properties during automated QA.
-- **File and scene creation are persistent.** `script create`, `project mkdir`,
-  `scene create`, and `scene save-as` write project files; use `--force` only
-  when overwriting is intended.
+- **File, scene, and project setting changes are persistent.** `script create`,
+  `project mkdir`, `project set-main-scene`, `scene create`, and
+  `scene save-as` write project files; use `--force` only when overwriting is
+  intended.
 - **`node set` value** is coerced to the property's type. Pass GDScript-literal
   syntax for complex types, e.g. `--value "Vector2(10, 20)"`.
 

@@ -17,8 +17,10 @@ func execute(params: Dictionary) -> Dictionary:
 			return _list_files(params)
 		"mkdir":
 			return _mkdir(params)
+		"set_main_scene":
+			return _set_main_scene(params)
 		_:
-			return ToolResponse.failure("unknown project action: %s (want info|list_files|mkdir)" % action)
+			return ToolResponse.failure("unknown project action: %s (want info|list_files|mkdir|set_main_scene)" % action)
 
 func _info() -> Dictionary:
 	var files := _scan_files()
@@ -82,6 +84,24 @@ func _mkdir(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("could not create directory: %s" % path)
 	_refresh_filesystem()
 	return ToolResponse.success({ "created": path })
+
+func _set_main_scene(params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	if path == "":
+		return ToolResponse.failure("scene path is required")
+	if not path.begins_with("res://"):
+		return ToolResponse.failure("scene path must start with res://")
+	if not _is_safe_res_path(path):
+		return ToolResponse.failure("scene path must stay inside res://")
+	if path.get_extension().to_lower() != "tscn":
+		return ToolResponse.failure("scene path must end with .tscn")
+	if not ResourceLoader.exists(path, "PackedScene"):
+		return ToolResponse.failure("scene not found or not a PackedScene: %s" % path)
+	ProjectSettings.set_setting("application/run/main_scene", path)
+	var err := ProjectSettings.save()
+	if err != OK:
+		return ToolResponse.failure("could not save ProjectSettings: %s" % error_string(err))
+	return ToolResponse.success({ "main_scene": path })
 
 func _scan_files() -> Array:
 	var out := []

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"github.com/NotNull92/hera-agent-godot/internal/discovery"
 )
 
 const waitTimeout = 10 * time.Second
@@ -21,6 +23,10 @@ func runRun(args []string) int {
 
 	c, err := dialMutationEditor()
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "run: %v\n", err)
+		return 1
+	}
+	if err := resolveMainSceneRunParams(params); err != nil {
 		fmt.Fprintf(os.Stderr, "run: %v\n", err)
 		return 1
 	}
@@ -127,4 +133,28 @@ func parseRunArgs(args []string) (params map[string]any, wait bool, err error) {
 		params["action"] = "play_main"
 	}
 	return params, wait, nil
+}
+
+func resolveMainSceneRunParams(params map[string]any) error {
+	if params["action"] != "play_main" {
+		return nil
+	}
+	instances, err := discovery.Discover()
+	if err != nil {
+		return err
+	}
+	inst, err := selectEditor(instances, true, targetPID)
+	if err != nil {
+		return err
+	}
+	scenePath, err := readMainSceneFromProjectFile(inst.ProjectPath)
+	if err != nil {
+		return err
+	}
+	if scenePath == "" {
+		return nil
+	}
+	params["action"] = "play_custom"
+	params["scene"] = scenePath
+	return nil
 }

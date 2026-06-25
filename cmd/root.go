@@ -131,7 +131,7 @@ commands:
   scene      tree | list | open <res://...> | save | create [--open] | save-as
   node       find|get|add|set|set-resource|remove|attach-script|detach-script
   script     create <res://script.gd> [--extends Class] [--class-name Name] [--force]
-  project    info | list-files | mkdir <res://dir>
+  project    info | list-files | mkdir <res://dir> | set-main-scene <res://scene.tscn>
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|resave|update-uids|export-mesh-library
   classdb    info|methods|properties|inherits
