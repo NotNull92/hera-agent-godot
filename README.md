@@ -42,9 +42,10 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 ## Status
 
 **Core CLI/addon surface complete.** The implemented and reviewed commands are:
-`status`, `instances`, `run`/`stop`, `scene`, `script`, `project`, `node`
-(read + write), `signal`, `resource`, `game` (runtime inspect + set/call),
-`output`, `diagnostics`, `eval`, `screenshot`, `batch`, and `smoke`, with
+`status`, `instances`, `run`/`stop`, `scene`, `script`, `project`,
+`classdb`, `node` (read + write), `signal`, `resource`, `game`
+(runtime inspect + set/call + assert + QA + screenshot), `output`, `diagnostics`, `eval`, `screenshot`,
+`batch`, and `smoke`, with
 `--json`/`--ids` output modes. See
 [docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
 [docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Library
@@ -94,7 +95,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 ```
 addons/hera_agent_godot/  the distributable Godot 4.7+ addon (GDScript)
 project.godot, scenes/    dev host project — the CLI's run/save/screenshot target
-cmd/                      Go CLI commands (status, instances, run/stop, scene, script, project, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
+cmd/                      Go CLI commands (status, instances, run/stop, scene, script, project, classdb, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
 docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 ```

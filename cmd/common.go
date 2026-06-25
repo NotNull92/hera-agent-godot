@@ -122,6 +122,69 @@ func pollPlaying(c *client.Client, want bool, timeout time.Duration) (*protocol.
 	}
 }
 
+func pollGameReady(c *client.Client, expectedScene string, timeout time.Duration) (*protocol.Response, error) {
+	deadline := time.Now().Add(timeout)
+	var last *protocol.Response
+	var lastErr error
+	for {
+		resp, err := c.Post("game", map[string]any{"action": "tree"})
+		if err != nil {
+			lastErr = err
+		} else {
+			last = resp
+			if resp.OK && gameSceneMatches(resp, expectedScene) {
+				return resp, nil
+			}
+			if !resp.OK {
+				lastErr = fmt.Errorf("game tree: %s", resp.Error)
+			}
+		}
+		if !time.Now().Before(deadline) {
+			if lastErr != nil {
+				return last, fmt.Errorf("timed out waiting for game scene %q: %w", expectedScene, lastErr)
+			}
+			return last, fmt.Errorf("timed out waiting for game scene %q", expectedScene)
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+}
+
+func pollGameInstancesStopped(c *client.Client, timeout time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	var lastErr error
+	for {
+		resp, err := c.Post("game", map[string]any{"action": "instances"})
+		if err != nil {
+			lastErr = err
+		} else if !resp.OK {
+			lastErr = fmt.Errorf("game instances: %s", resp.Error)
+		} else if gameInstanceCount(resp) == 0 {
+			return nil
+		} else {
+			_, _ = c.Post("run", map[string]any{"action": "stop"})
+		}
+		if !time.Now().Before(deadline) {
+			if lastErr != nil {
+				return fmt.Errorf("timed out waiting for game instances to stop: %w", lastErr)
+			}
+			return fmt.Errorf("timed out waiting for game instances to stop")
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+}
+
+func gameInstanceCount(resp *protocol.Response) int {
+	m, ok := resp.Data.(map[string]any)
+	if !ok {
+		return 0
+	}
+	instances, ok := m["instances"].([]any)
+	if !ok {
+		return 0
+	}
+	return len(instances)
+}
+
 // playingFlag extracts the boolean "playing" field from a run/state response.
 func playingFlag(resp *protocol.Response) bool {
 	m, ok := resp.Data.(map[string]any)
@@ -130,6 +193,30 @@ func playingFlag(resp *protocol.Response) bool {
 	}
 	b, _ := m["playing"].(bool)
 	return b
+}
+
+func gameSceneMatches(resp *protocol.Response, expectedScene string) bool {
+	if expectedScene == "" {
+		return true
+	}
+	m, ok := resp.Data.(map[string]any)
+	if !ok {
+		return false
+	}
+	scene, _ := m["scene"].(string)
+	return scene == expectedScene
+}
+
+func sceneFromResponse(resp *protocol.Response) string {
+	if resp == nil {
+		return ""
+	}
+	m, ok := resp.Data.(map[string]any)
+	if !ok {
+		return ""
+	}
+	scene, _ := m["scene"].(string)
+	return scene
 }
 
 // printData prints a response's Data as compact JSON. Returns a process exit code.

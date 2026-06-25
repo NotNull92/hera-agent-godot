@@ -9,7 +9,8 @@ don't guess scene structure or whether a change worked from memory.
 - You need the actual state of the open scene (node tree, a node's properties).
 - You want to change the scene (add/set/remove nodes) and confirm it stuck.
 - You want to run a scene, then read the log for errors.
-- You want an off-screen preview render of the edited scene (`screenshot`).
+- You want an off-screen preview render of the edited scene (`screenshot`) or a
+  live game viewport capture (`screenshot --runtime` / `game screenshot`).
 
 If the user is not running the Godot editor with the **Hera Agent** plugin
 enabled, commands fail with "no live Godot editor found" — ask them to enable it.
@@ -48,14 +49,18 @@ hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
 hera signal disconnect <from> <sig> <to> <method>  # unwire (undoable)
 hera resource get <res://...>                # dump a resource's properties
 hera game tree                               # running game node tree
-hera game node get <path>                    # running game node properties
+hera game instances                          # running game process heartbeats
+hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
+hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
+hera game assert <path> <prop> <op> [value]  # assert runtime property for QA
+hera game qa --file scenario.json            # run generic QA scenario
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
 hera output [--type log|error|warning|all] [--lines N]
 hera diagnostics [--lines N]                 # summarize project log errors/warnings
-hera screenshot [--path p] [--width N] [--height N]  # render edited scene to PNG (GUI editor)
+hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or runtime viewport
 hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
 hera instances                               # list live Hera-enabled editors
 hera smoke [--run-game|--skip-game]          # quick live editor smoke check
@@ -86,6 +91,12 @@ target a pid shown by `status`). Default output is compact JSON.
   property changes.
 - **`game node set/call` is runtime-only.** It changes the running game process,
   is not registered with undo, and is lost when the play session stops.
+- **Runtime game requests are process-isolated.** If stale Godot game processes
+  are still alive, `game instances` shows them and mutation/read requests refuse
+  ambiguous targets instead of accepting an old response.
+- **Prefer low-token QA reads.** Use `game node get --prop/--props`,
+  `game assert`, `screenshot --runtime --analyze`, and `game qa --file` before
+  dumping full node properties during automated QA.
 - **File and scene creation are persistent.** `script create`, `project mkdir`,
   `scene create`, and `scene save-as` write project files; use `--force` only
   when overwriting is intended.
@@ -99,7 +110,8 @@ After an edit, **confirm it** instead of assuming:
 - After `node add`/`set`: `hera node get <path>` and check the value.
 - After structural changes: `hera scene tree` (or `--ids`).
 - After `run`: `hera output --type error` to catch runtime errors.
-- For UI/visual changes: `hera screenshot` (renders the edited scene off-screen; needs a GUI editor).
+- For UI/visual changes: `hera screenshot` for the edited scene, or
+  `hera screenshot --runtime` after `run` for the live game viewport.
 
 Batch a change and its check together when it helps, e.g. pipe a JSON array of
 `[{set...}, {get...}]` into `hera batch`.

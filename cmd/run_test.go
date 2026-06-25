@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -86,6 +87,82 @@ func TestPollPlaying_returnsToolError_whenStateRequestFails(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "state failed") {
 		t.Fatalf("err = %q, want tool error", err)
+	}
+}
+
+func TestPollGameReady_returnsReadyTree_whenSceneMatches(t *testing.T) {
+	// Given
+	c := newRunStateClient(t, `{"ok":true,"data":{"scene":"res://scenes/Main.tscn","count":3,"nodes":[]}}`)
+
+	// When
+	resp, err := pollGameReady(c, "res://scenes/Main.tscn", time.Second)
+
+	// Then
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("resp = nil, want game tree response")
+	}
+}
+
+func TestPollGameReady_returnsMismatchError_whenSceneDiffers(t *testing.T) {
+	// Given
+	c := newRunStateClient(t, `{"ok":true,"data":{"scene":"res://scenes/Main.tscn","count":3,"nodes":[]}}`)
+
+	// When
+	resp, err := pollGameReady(c, "res://scenes/Other.tscn", 0)
+
+	// Then
+	if err == nil {
+		t.Fatalf("err = nil, want scene mismatch with response %#v", resp)
+	}
+	if !strings.Contains(err.Error(), "timed out waiting for game scene") {
+		t.Fatalf("err = %q, want scene wait error", err)
+	}
+}
+
+func TestPollGameInstancesStopped_retriesStopUntilInstancesClear(t *testing.T) {
+	// Given
+	stopCalls := 0
+	instanceCalls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Tool   string         `json:"tool"`
+			Params map[string]any `json:"params"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		resp := `{"ok":true,"data":{}}`
+		if req.Tool == "run" {
+			stopCalls++
+		}
+		if req.Tool == "game" {
+			instanceCalls++
+			resp = `{"ok":true,"data":{"instances":[]}}`
+			if instanceCalls == 1 {
+				resp = `{"ok":true,"data":{"instances":[{"pid":1234}]}}`
+			}
+		}
+		_, _ = w.Write([]byte(resp))
+	}))
+	t.Cleanup(srv.Close)
+	c := client.New(srv.URL)
+
+	// When
+	err := pollGameInstancesStopped(c, time.Second)
+
+	// Then
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if stopCalls != 1 {
+		t.Fatalf("stopCalls = %d, want 1", stopCalls)
+	}
+	if instanceCalls != 2 {
+		t.Fatalf("instanceCalls = %d, want 2", instanceCalls)
 	}
 }
 

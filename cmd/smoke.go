@@ -84,10 +84,28 @@ func (r *smokeRunner) run(opts smokeOptions) ([]map[string]any, error) {
 	if !opts.runGame {
 		return r.steps, nil
 	}
-	if err := r.post("run", map[string]any{"action": "play_current"}); err != nil {
+	runResp, err := r.postResponse("run", map[string]any{"action": "play_current"})
+	if err != nil {
 		return nil, err
 	}
-	if _, err := pollPlaying(r.client, true, smokeWaitTimeout); err != nil {
+	stateResp, err := pollPlaying(r.client, true, smokeWaitTimeout)
+	if err != nil {
+		return nil, err
+	}
+	stopped := false
+	defer func() {
+		if !stopped {
+			_, _ = r.client.Post("run", map[string]any{"action": "stop"})
+		}
+	}()
+	scene := sceneFromResponse(stateResp)
+	if scene == "" {
+		scene = sceneFromResponse(runResp)
+	}
+	if _, err := pollGameReady(r.client, scene, smokeWaitTimeout); err != nil {
+		return nil, err
+	}
+	if err := r.post("game", map[string]any{"action": "instances"}); err != nil {
 		return nil, err
 	}
 	if err := r.post("game", map[string]any{"action": "tree"}); err != nil {
@@ -99,19 +117,28 @@ func (r *smokeRunner) run(opts smokeOptions) ([]map[string]any, error) {
 	if _, err := pollPlaying(r.client, false, smokeWaitTimeout); err != nil {
 		return nil, err
 	}
+	if err := pollGameInstancesStopped(r.client, smokeWaitTimeout); err != nil {
+		return nil, err
+	}
+	stopped = true
 	return r.steps, nil
 }
 
 func (r *smokeRunner) post(tool string, params map[string]any) error {
+	_, err := r.postResponse(tool, params)
+	return err
+}
+
+func (r *smokeRunner) postResponse(tool string, params map[string]any) (*protocol.Response, error) {
 	resp, err := r.client.Post(tool, params)
 	if err != nil {
-		return fmt.Errorf("%s: %w", tool, err)
+		return nil, fmt.Errorf("%s: %w", tool, err)
 	}
 	if !resp.OK {
-		return fmt.Errorf("%s: %s", tool, resp.Error)
+		return nil, fmt.Errorf("%s: %s", tool, resp.Error)
 	}
 	r.steps = append(r.steps, map[string]any{"tool": tool, "ok": true})
-	return nil
+	return resp, nil
 }
 
 func successData(steps []map[string]any) map[string]any {

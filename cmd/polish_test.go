@@ -10,12 +10,18 @@ func TestParseScreenshotArgs(t *testing.T) {
 		wantWidth       any
 		wantHeight      any
 		wantTransparent bool
+		wantRuntime     bool
 		wantErr         bool
 	}{
 		{name: "empty"},
 		{name: "path", args: []string{"--path", "user://x.png"}, wantPath: "user://x.png"},
 		{name: "width and height", args: []string{"--width", "640", "--height", "480"}, wantWidth: 640, wantHeight: 480},
 		{name: "transparent", args: []string{"--transparent"}, wantTransparent: true},
+		{name: "runtime", args: []string{"--runtime", "--path", "user://game.png"}, wantPath: "user://game.png", wantRuntime: true},
+		{name: "runtime analyze", args: []string{"--runtime", "--analyze", "--path", "user://game.png"}, wantPath: "user://game.png", wantRuntime: true},
+		{name: "runtime rejects width", args: []string{"--runtime", "--width", "640"}, wantErr: true},
+		{name: "runtime rejects height", args: []string{"--runtime", "--height", "480"}, wantErr: true},
+		{name: "runtime rejects transparent", args: []string{"--runtime", "--transparent"}, wantErr: true},
 		{name: "bad width", args: []string{"--width", "x"}, wantErr: true},
 		{name: "zero width", args: []string{"--width", "0"}, wantErr: true},
 		{name: "too large width", args: []string{"--width", "4097"}, wantErr: true},
@@ -46,6 +52,48 @@ func TestParseScreenshotArgs(t *testing.T) {
 			}
 			if tt.wantTransparent && p["transparent"] != true {
 				t.Errorf("transparent = %v, want true", p["transparent"])
+			}
+			if tt.wantRuntime && p["runtime"] != true {
+				t.Errorf("runtime = %v, want true", p["runtime"])
+			}
+			if tt.name == "runtime analyze" && p["analyze"] != true {
+				t.Errorf("analyze = %v, want true", p["analyze"])
+			}
+		})
+	}
+}
+
+func TestParseGameQAFlags(t *testing.T) {
+	tests := []struct {
+		name         string
+		args         []string
+		wantFile     string
+		wantContinue bool
+		wantErr      bool
+	}{
+		{name: "file", args: []string{"--file", "qa.json"}, wantFile: "qa.json"},
+		{name: "file and continue", args: []string{"--file", "qa.json", "--continue"}, wantFile: "qa.json", wantContinue: true},
+		{name: "missing file flag", args: []string{}, wantErr: true},
+		{name: "dangling file", args: []string{"--file"}, wantErr: true},
+		{name: "unknown flag", args: []string{"--bad"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			file, keepGoing, err := parseGameQAFlags(tt.args)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if file != tt.wantFile {
+				t.Fatalf("file = %q, want %q", file, tt.wantFile)
+			}
+			if keepGoing != tt.wantContinue {
+				t.Fatalf("continue = %v, want %v", keepGoing, tt.wantContinue)
 			}
 		})
 	}

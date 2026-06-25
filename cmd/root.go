@@ -88,6 +88,8 @@ func Execute(args []string) int {
 		return runSignal(args[1:])
 	case "resource":
 		return runResource(args[1:])
+	case "classdb":
+		return runClassDB(args[1:])
 	case "game":
 		return runGame(args[1:])
 	case "instances":
@@ -127,17 +129,18 @@ commands:
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
   scene      tree | list | open <res://...> | save | create [--open] | save-as
-  node       find|get|add|set|remove|attach-script|detach-script
+  node       find|get|add|set|set-resource|remove|attach-script|detach-script
   script     create <res://script.gd> [--extends Class] [--class-name Name] [--force]
-  project    mkdir <res://dir>
+  project    info | list-files | mkdir <res://dir>
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
-  resource   get <res://...>  (dump a resource's properties)
-  game       tree | node get|set|call  (inspect/control the running game)
+  resource   get|uid|resave|update-uids|export-mesh-library
+  classdb    info|methods|properties|inherits
+  game       tree | instances | screenshot | assert | qa | node get|set|call
   instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor
   output     tail project log (--type log|error|warning|all, --lines N)
   diagnostics summarize project log errors and warnings (--lines N)
-  screenshot render the edited scene to PNG (--path, --width, --height, --transparent)
+  screenshot render the edited scene to PNG (--path, --width, --height, --transparent, --runtime, --analyze)
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
   smoke      run a live editor smoke check [--run-game|--skip-game]
   version    print the CLI version

@@ -27,6 +27,11 @@ func TestParseNodeArgs_Write(t *testing.T) {
 		{name: "set missing prop", args: []string{"set", "Hero", "--value", "1"}, wantErr: true},
 		{name: "set missing value", args: []string{"set", "Hero", "--prop", "position"}, wantErr: true},
 		{name: "set no path", args: []string{"set"}, wantErr: true},
+		{name: "set resource", args: []string{"set-resource", "Hero", "--prop", "texture", "--resource", "res://hero.png"},
+			wantAction: "set_resource", want: map[string]any{"path": "Hero", "prop": "texture", "resource": "res://hero.png"}},
+		{name: "set resource missing prop", args: []string{"set-resource", "Hero", "--resource", "res://hero.png"}, wantErr: true},
+		{name: "set resource missing resource", args: []string{"set-resource", "Hero", "--prop", "texture"}, wantErr: true},
+		{name: "set resource no path", args: []string{"set-resource"}, wantErr: true},
 
 		{name: "remove", args: []string{"remove", "Hero"}, wantAction: "remove", want: map[string]any{"path": "Hero"}},
 		{name: "remove no path", args: []string{"remove"}, wantErr: true},

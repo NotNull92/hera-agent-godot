@@ -5,6 +5,7 @@ extends RefCounted
 #   get     -> dump a node's editor-visible properties (values stringified)
 #   add     -> instantiate a class and add it under a parent
 #   set     -> set a property on a node
+#   set_resource -> set a Resource property on a node
 #   remove  -> remove a node
 #
 # All mutations are registered with EditorUndoRedoManager so the developer can
@@ -37,6 +38,8 @@ func execute(params: Dictionary) -> Dictionary:
 			return _add_node(root, params)
 		"set":
 			return _set_property(root, params)
+		"set_resource":
+			return _set_resource_property(root, params)
 		"remove":
 			return _remove_node(root, params)
 		"attach_script":
@@ -44,7 +47,7 @@ func execute(params: Dictionary) -> Dictionary:
 		"detach_script":
 			return _detach_script(root, params)
 		_:
-			return ToolResponse.failure("unknown node action: %s (want find|get|add|set|remove|attach_script|detach_script)" % action)
+			return ToolResponse.failure("unknown node action: %s (want find|get|add|set|set_resource|remove|attach_script|detach_script)" % action)
 
 func _find(root: Node, params: Dictionary) -> Dictionary:
 	var query := String(params.get("query", "")).to_lower()
@@ -140,6 +143,41 @@ func _set_property(root: Node, params: Dictionary) -> Dictionary:
 
 	return ToolResponse.success({ "path": path, "prop": prop, "value": str(node.get(prop)) })
 
+func _set_resource_property(root: Node, params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", "."))
+	var node := _resolve(root, path)
+	if node == null:
+		return ToolResponse.failure("node not found: %s" % path)
+	var prop := String(params.get("prop", ""))
+	var prop_info := _property_info(node, prop)
+	if prop == "" or prop_info.is_empty():
+		return ToolResponse.failure("node has no property: %s" % prop)
+	if int(prop_info.get("type", TYPE_NIL)) != TYPE_OBJECT:
+		return ToolResponse.failure("property is not an object/resource property: %s" % prop)
+	var resource_path := String(params.get("resource", ""))
+	if not (resource_path.begins_with("res://") or resource_path.begins_with("user://")):
+		return ToolResponse.failure("resource path must start with res:// or user://")
+	if resource_path.begins_with("res://") and not _is_safe_res_path(resource_path):
+		return ToolResponse.failure("resource path must stay inside res://")
+	if not ResourceLoader.exists(resource_path):
+		return ToolResponse.failure("resource not found: %s" % resource_path)
+	var loaded := ResourceLoader.load(resource_path)
+	if loaded == null or not (loaded is Resource):
+		return ToolResponse.failure("not a resource: %s" % resource_path)
+	var expected := String(prop_info.get("class_name", ""))
+	if expected != "" and not loaded.is_class(expected):
+		return ToolResponse.failure("resource type %s is not compatible with property %s (%s)" % [loaded.get_class(), prop, expected])
+	var old_value: Variant = node.get(prop)
+	if _undo_redo != null:
+		_undo_redo.create_action("Hera: set resource %s.%s" % [String(node.name), prop])
+		_undo_redo.add_do_property(node, prop, loaded)
+		_undo_redo.add_undo_property(node, prop, old_value)
+		_undo_redo.add_do_reference(loaded)
+		_undo_redo.commit_action()
+	else:
+		node.set(prop, loaded)
+	return ToolResponse.success({ "path": path, "prop": prop, "resource": resource_path, "value": str(node.get(prop)) })
+
 func _remove_node(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
 	if path == "" or path == ".":
@@ -175,9 +213,19 @@ func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 	var script_path := String(params.get("script", ""))
 	if script_path == "":
 		return ToolResponse.failure("attach-script requires a script path")
-	var loaded := load(script_path)
-	if loaded == null or not (loaded is Script):
+	if not script_path.begins_with("res://") or not _is_safe_res_path(script_path):
+		return ToolResponse.failure("script path must be a safe res:// path")
+	if not (script_path.ends_with(".gd") or script_path.ends_with(".cs")):
+		return ToolResponse.failure("script path must end with .gd or .cs")
+	if not FileAccess.file_exists(script_path):
+		return ToolResponse.failure("script not found: %s" % script_path)
+	var loaded_res := ResourceLoader.load(script_path)
+	if loaded_res == null or not (loaded_res is Script):
 		return ToolResponse.failure("not a script resource: %s" % script_path)
+	var loaded: Script = loaded_res as Script
+	var base_type := loaded.get_instance_base_type()
+	if base_type != "" and not node.is_class(base_type):
+		return ToolResponse.failure("script base type %s is not compatible with node type %s" % [base_type, node.get_class()])
 
 	var old_script: Variant = node.get_script()
 	if _undo_redo != null:
@@ -189,7 +237,7 @@ func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 	else:
 		node.set_script(loaded)
 
-	return ToolResponse.success({ "path": path, "script": script_path })
+	return ToolResponse.success({ "path": path, "script": script_path, "base_type": base_type })
 
 func _detach_script(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
@@ -218,6 +266,17 @@ func _property_info(node: Node, prop: String) -> Dictionary:
 		if String(p.get("name", "")) == prop:
 			return p
 	return {}
+
+func _is_safe_res_path(path: String) -> bool:
+	if path.find("\\") != -1:
+		return false
+	var rel := path.substr("res://".length())
+	if rel == "" or rel.begins_with("/"):
+		return false
+	for part in rel.split("/", true):
+		if part == "" or part == "." or part == "..":
+			return false
+	return true
 
 func _coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
 	var target_type := int(prop_info.get("type", TYPE_NIL))

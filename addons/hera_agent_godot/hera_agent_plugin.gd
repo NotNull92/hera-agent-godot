@@ -12,6 +12,8 @@ const SceneTool = preload("res://addons/hera_agent_godot/tools/scene_tool.gd")
 const NodeTool = preload("res://addons/hera_agent_godot/tools/node_tool.gd")
 const SignalTool = preload("res://addons/hera_agent_godot/tools/signal_tool.gd")
 const ResourceTool = preload("res://addons/hera_agent_godot/tools/resource_tool.gd")
+const ProjectTool = preload("res://addons/hera_agent_godot/tools/project_tool.gd")
+const ClassDBTool = preload("res://addons/hera_agent_godot/tools/classdb_tool.gd")
 const EvalTool = preload("res://addons/hera_agent_godot/tools/eval_tool.gd")
 const OutputTool = preload("res://addons/hera_agent_godot/tools/output_tool.gd")
 const DiagnosticsTool = preload("res://addons/hera_agent_godot/tools/diagnostics_tool.gd")
@@ -131,53 +133,6 @@ class HeraScriptTool:
 	func _failure(message: String) -> Dictionary:
 		return { "ok": false, "error": message }
 
-class HeraProjectTool:
-	extends RefCounted
-
-	func get_name() -> String:
-		return "project"
-
-	func execute(params: Dictionary) -> Dictionary:
-		var action := String(params.get("action", ""))
-		match action:
-			"mkdir":
-				return _mkdir(params)
-			_:
-				return _failure("unknown project action: %s (want mkdir)" % action)
-
-	func _mkdir(params: Dictionary) -> Dictionary:
-		var path := String(params.get("path", ""))
-		if path == "":
-			return _failure("directory path is required")
-		if not path.begins_with("res://"):
-			return _failure("directory path must start with res://")
-		if not _is_safe_res_path(path):
-			return _failure("directory path must stay inside res://")
-		var err := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path))
-		if err != OK:
-			return _failure("could not create directory: %s" % path)
-		_refresh_filesystem()
-		return _success({ "created": path })
-
-	func _refresh_filesystem() -> void:
-		var fs := EditorInterface.get_resource_filesystem()
-		if fs != null:
-			fs.scan()
-
-	func _success(data: Dictionary) -> Dictionary:
-		return { "ok": true, "data": data }
-
-	func _failure(message: String) -> Dictionary:
-		return { "ok": false, "error": message }
-
-	func _is_safe_res_path(path: String) -> bool:
-		if path.find("\\") != -1: return false
-		var rel := path.substr("res://".length())
-		if rel == "" or rel.begins_with("/"): return false
-		for part in rel.split("/", true):
-			if ["", ".", ".."].has(part): return false
-		return true
-
 func _enter_tree() -> void:
 	set_process(true)
 	_ensure_game_autoload()
@@ -186,7 +141,7 @@ func _enter_tree() -> void:
 	_registry.register(RunTool.new())
 	_registry.register(SceneTool.new())
 	_registry.register(HeraScriptTool.new())
-	_registry.register(HeraProjectTool.new())
+	_registry.register(ProjectTool.new())
 	var node_tool := NodeTool.new()
 	node_tool.set_undo_redo(get_undo_redo())
 	_registry.register(node_tool)
@@ -194,6 +149,7 @@ func _enter_tree() -> void:
 	signal_tool.set_undo_redo(get_undo_redo())
 	_registry.register(signal_tool)
 	_registry.register(ResourceTool.new())
+	_registry.register(ClassDBTool.new())
 	_registry.register(EvalTool.new())
 	_registry.register(OutputTool.new())
 	_registry.register(DiagnosticsTool.new())

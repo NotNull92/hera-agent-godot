@@ -41,6 +41,10 @@ func runRun(args []string) int {
 			fmt.Fprintf(os.Stderr, "run: %v\n", err)
 			return 1
 		}
+		if _, err := pollGameReady(c, sceneFromResponse(resp), waitTimeout); err != nil {
+			fmt.Fprintf(os.Stderr, "run: %v\n", err)
+			return 1
+		}
 	}
 	return printData(resp)
 }
@@ -77,6 +81,10 @@ func runStop(args []string) int {
 	if wait {
 		resp, err = pollPlaying(c, false, waitTimeout)
 		if err != nil {
+			fmt.Fprintf(os.Stderr, "stop: %v\n", err)
+			return 1
+		}
+		if err := pollGameInstancesStopped(c, waitTimeout); err != nil {
 			fmt.Fprintf(os.Stderr, "stop: %v\n", err)
 			return 1
 		}

@@ -27,7 +27,7 @@ func runNode(args []string) int {
 
 func nodeActionMutates(action any) bool {
 	switch action {
-	case "add", "set", "remove", "attach_script", "detach_script":
+	case "add", "set", "set_resource", "remove", "attach_script", "detach_script":
 		return true
 	default:
 		return false
@@ -123,6 +123,37 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		return params, nil
 
+	case "set-resource":
+		if len(rest) == 0 {
+			return nil, fmt.Errorf("usage: node set-resource <path> --prop <name> --resource <res://path>")
+		}
+		params := map[string]any{"action": "set_resource", "path": rest[0]}
+		for i := 1; i < len(rest); i++ {
+			switch rest[i] {
+			case "--prop":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--prop requires a value")
+				}
+				i++
+				params["prop"] = rest[i]
+			case "--resource":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--resource requires a value")
+				}
+				i++
+				params["resource"] = rest[i]
+			default:
+				return nil, fmt.Errorf("unknown flag %q", rest[i])
+			}
+		}
+		if _, ok := params["prop"]; !ok {
+			return nil, fmt.Errorf("node set-resource requires --prop")
+		}
+		if _, ok := params["resource"]; !ok {
+			return nil, fmt.Errorf("node set-resource requires --resource")
+		}
+		return params, nil
+
 	case "remove":
 		if len(rest) != 1 {
 			return nil, fmt.Errorf("usage: node remove <path>")
@@ -142,6 +173,6 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		return map[string]any{"action": "detach_script", "path": rest[0]}, nil
 
 	default:
-		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|set|remove|attach-script|detach-script)", sub)
+		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|set|set-resource|remove|attach-script|detach-script)", sub)
 	}
 }

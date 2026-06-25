@@ -1,8 +1,8 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented and an initial tagged release
-published; remaining work is Asset Library submission.
+has the core CLI/addon surface implemented and v0.3.0 release preparation in
+progress; remaining work is Asset Library submission.
 
 ## Phase 0 — Skeleton (this commit)
 
@@ -52,9 +52,9 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `diagnostics`: summarize Godot log errors/warnings.
 - [x] `instances`: list live Hera-enabled editors.
 - [x] `smoke`: live editor smoke check, optionally including a play-session game check.
-- [x] `script create` and `project mkdir`: project file helpers.
+- [x] `script create`, `project info`, `project list-files`, and `project mkdir`: project file helpers.
 - [x] `scene create` and `scene save-as`: scene file helpers.
-- [x] `node attach-script` and `node detach-script`: script wiring helpers.
+- [x] `node set-resource`, `node attach-script`, and `node detach-script`: resource/script wiring helpers.
 - [x] `game tree`, `game node get`, `game node set`, `game node call`: runtime inspection and control through the `HeraGameInspector` autoload.
 - [x] `batch` awaits async tools such as `game` and `screenshot`.
 - [x] Verified: `go build/vet/test` green; addon GDScript passes `--check-only`.
@@ -68,15 +68,19 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `version` command + linker-injected version string.
 - [x] `signal` command: `list` a node's signals + connections; `connect` /
       `disconnect` (undoable, `CONNECT_PERSIST`).
-- [x] `resource get <res://...>` command: load a resource and dump its
-      properties (read-only). With `signal`, this rounds out command coverage of
-      Godot's core concepts (Node/Scene/Resource/Signal).
+- [x] `resource get`, `uid`, `resave`, `update-uids`, and
+      `export-mesh-library`: inspect and refresh resource metadata or build a
+      `MeshLibrary` from scene meshes.
+- [x] `classdb info|methods|properties|inherits`: inspect Godot ClassDB without
+      loading tool schemas into the agent context.
 - [x] Release pipeline (`.github/workflows/release.yml`): on a `v*` tag,
       cross-compile the CLI (linux/darwin/windows × amd64/arm64), package the
       addon zip + checksums, and publish a GitHub release.
 - [x] One-line installers (`install.sh`, `install.ps1`) that fetch the latest
       release binary.
 - [x] Tagged release published and assets generated (`v0.2.0` release train).
+- [x] v0.3.0 release prep: runtime QA surface, ClassDB/project/resource helpers,
+      race-test tooling, and live `smoke --run-game` cleanup hardening.
 - [ ] Asset Library submission for the addon.
 
 ## Open questions to revisit

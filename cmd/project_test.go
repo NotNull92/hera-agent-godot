@@ -54,6 +54,15 @@ func TestParseProjectArgs(t *testing.T) {
 		wantErr    bool
 	}{
 		{name: "mkdir", args: []string{"mkdir", "res://scripts"}, wantAction: "mkdir", wantPath: "res://scripts"},
+		{name: "info", args: []string{"info"}, wantAction: "info"},
+		{name: "info extra", args: []string{"info", "extra"}, wantErr: true},
+		{name: "list files", args: []string{"list-files"}, wantAction: "list_files"},
+		{name: "list files options", args: []string{"list-files", "--type", "scene", "--pattern", "levels", "--limit", "25"}, wantAction: "list_files"},
+		{name: "list files dangling type", args: []string{"list-files", "--type"}, wantErr: true},
+		{name: "list files bad type", args: []string{"list-files", "--type", "bad"}, wantErr: true},
+		{name: "list files dangling pattern", args: []string{"list-files", "--pattern"}, wantErr: true},
+		{name: "list files bad limit", args: []string{"list-files", "--limit", "x"}, wantErr: true},
+		{name: "list files zero limit", args: []string{"list-files", "--limit", "0"}, wantErr: true},
 		{name: "missing subcommand", wantErr: true},
 		{name: "mkdir missing path", args: []string{"mkdir"}, wantErr: true},
 		{name: "mkdir extra", args: []string{"mkdir", "res://a", "extra"}, wantErr: true},
@@ -76,6 +85,11 @@ func TestParseProjectArgs(t *testing.T) {
 			}
 			if tt.wantPath != nil && p["path"] != tt.wantPath {
 				t.Errorf("path = %v, want %v", p["path"], tt.wantPath)
+			}
+			if tt.name == "list files options" {
+				if p["type"] != "scene" || p["pattern"] != "levels" || p["limit"] != 25 {
+					t.Fatalf("params = %v, want type/pattern/limit", p)
+				}
 			}
 		})
 	}
