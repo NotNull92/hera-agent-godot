@@ -80,18 +80,30 @@ func Execute(args []string) int {
 		return runScene(args[1:])
 	case "node":
 		return runNode(args[1:])
+	case "script":
+		return runScript(args[1:])
+	case "project":
+		return runProject(args[1:])
 	case "signal":
 		return runSignal(args[1:])
 	case "resource":
 		return runResource(args[1:])
+	case "game":
+		return runGame(args[1:])
+	case "instances":
+		return runInstances(args[1:])
 	case "eval":
 		return runEval(args[1:])
 	case "output":
 		return runOutput(args[1:])
+	case "diagnostics":
+		return runDiagnostics(args[1:])
 	case "screenshot":
 		return runScreenshot(args[1:])
 	case "batch":
 		return runBatch(args[1:])
+	case "smoke":
+		return runSmoke(args[1:])
 	case "version", "--version":
 		fmt.Println(version)
 		return 0
@@ -114,14 +126,20 @@ commands:
   status     show the connected editor (project, version, active scene)
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
-  scene      tree | list | open <res://...> | save
-  node       find|get|add|set|remove  (see docs/COMMANDS.md)
+  scene      tree | list | open <res://...> | save | create [--open] | save-as
+  node       find|get|add|set|remove|attach-script|detach-script
+  script     create <res://script.gd> [--extends Class] [--class-name Name] [--force]
+  project    mkdir <res://dir>
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get <res://...>  (dump a resource's properties)
+  game       tree | node get|set|call  (inspect/control the running game)
+  instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor
   output     tail project log (--type log|error|warning|all, --lines N)
+  diagnostics summarize project log errors and warnings (--lines N)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent)
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
+  smoke      run a live editor smoke check [--run-game|--skip-game]
   version    print the CLI version
 
 global flags (before the command):

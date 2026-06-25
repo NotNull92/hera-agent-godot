@@ -35,20 +35,20 @@ The "MCP-grade reach, fewer tokens" claim — with numbers:
 | Per-action response | compact JSON — `status` ≈48 tok, `node get` ≈186 tok | JSON, often pretty |
 
 Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
-**estimate** from public tool counts (`godot-ai` ~41 MCP tools / 120+ ops,
-`godot-mcp-native` 155 tools) × ~100–200 tok per tool schema. Method, caveats,
-and a reproducer:
+**estimate** from sampled public Godot MCP tool counts (~41–155 tools) ×
+~100–200 tok per tool schema. Method, caveats, and a reproducer:
 **[docs/LOW_TOKEN.md](docs/LOW_TOKEN.md)**.
 
 ## Status
 
-**Phases 0–5 complete.** The core tool surface is implemented and reviewed:
-`status`, `run`/`stop`, `scene`, `node` (read + write), `signal`, `resource`,
-`output`, `eval`, `screenshot`, and `batch`, with `--json`/`--ids` output
-modes. See
+**Core CLI/addon surface complete.** The implemented and reviewed commands are:
+`status`, `instances`, `run`/`stop`, `scene`, `script`, `project`, `node`
+(read + write), `signal`, `resource`, `game` (runtime inspect + set/call),
+`output`, `diagnostics`, `eval`, `screenshot`, `batch`, and `smoke`, with
+`--json`/`--ids` output modes. See
 [docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
-[docs/ROADMAP.md](docs/ROADMAP.md) for the remaining polish (installers / Asset
-Library packaging).
+[docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Library
+packaging status.
 
 ## Install
 
@@ -94,7 +94,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 ```
 addons/hera_agent_godot/  the distributable Godot 4.7+ addon (GDScript)
 project.godot, scenes/    dev host project — the CLI's run/save/screenshot target
-cmd/                      Go CLI commands (status, run/stop, scene, node, signal, resource, output, eval, screenshot, batch)
+cmd/                      Go CLI commands (status, instances, run/stop, scene, script, project, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
 docs/                     ARCHITECTURE, COMMANDS, ROADMAP
 ```

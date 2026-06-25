@@ -18,6 +18,8 @@
 /internal export-ignore
 /docs export-ignore
 /scenes export-ignore
+/.claude export-ignore
+/.claude/** export-ignore
 /.github export-ignore
 /main.go export-ignore
 /go.mod export-ignore

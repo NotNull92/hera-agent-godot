@@ -13,7 +13,7 @@ jobs:
     name: Build and publish ${{ github.ref_name }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-go@v6
         with:
@@ -21,7 +21,7 @@ jobs:
           cache: false
 
       - name: Test
-        run: go test ./...
+        run: go test -race -shuffle=on -count=1 ./...
 
       - name: Install archive tools
         run: |
@@ -55,9 +55,24 @@ jobs:
       - name: Package Godot addon
         run: |
           set -euo pipefail
-          # Entries are addons/hera_agent_godot/... so users unzip into a
-          # Godot project root. (The addon lives at the repo root.)
-          zip -qr "dist/hera-agent-godot-addon.zip" addons/hera_agent_godot
+          zip -qr "dist/hera-agent-godot-addon.zip" addons/hera_agent_godot LICENSE
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+
+          archive = Path("dist/hera-agent-godot-addon.zip")
+          names = set(ZipFile(archive).namelist())
+          required = {
+              "LICENSE",
+              "addons/hera_agent_godot/plugin.cfg",
+              "addons/hera_agent_godot/hera_agent_plugin.gd",
+          }
+          missing = sorted(required - names)
+          if missing:
+              raise SystemExit(f"addon archive missing entries: {missing}")
+          if any(name.startswith(".claude/") or name == ".claude" for name in names):
+              raise SystemExit("addon archive must not include .claude")
+          PY
 
       - name: Checksums
         run: |

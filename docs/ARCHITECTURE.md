@@ -16,8 +16,8 @@ Two processes talk over localhost HTTP:
 
 ```text
  ┌─────────────────────┐         HTTP POST /rpc          ┌──────────────────────────────┐
- │   Go CLI             │  ─────────────────────────────▶ │  Godot Editor                │
- │  hera-agent-godot    │   { "tool": "...", "params": } │   addons/hera_agent_godot/    │
+│   Go CLI             │  ─────────────────────────────▶ │  Godot Editor                │
+│  hera-agent-godot    │   { "tool": "...", "params": } │   addons/hera_agent_godot/   │
  │                      │ ◀───────────────────────────── │   @tool EditorPlugin         │
  │  cmd/ internal/      │   { "ok": true, "data": ... }  │   GDScript                   │
  └─────────────────────┘                                 └──────────────────────────────┘
@@ -103,7 +103,7 @@ docs, CI, and dev project from that archive, leaving only the addon and `LICENSE
 
 | Component | Responsibility |
 |-----------|----------------|
-| `cmd/*` | Parse command flags, build requests, and format responses. |
+| `cmd/*` | Parse command flags, build requests, run local helper commands (`instances`, `smoke`), and format responses. |
 | `internal/discovery` | Scan `~/.hera-agent-godot/instances/` and return fresh editor instances. |
 | `internal/client` | POST one request to one editor instance with timeout and retry. |
 | `internal/protocol` | Request / response JSON contract. |
@@ -112,13 +112,14 @@ docs, CI, and dev project from that archive, leaving only the addon and `LICENSE
 
 | Component | Responsibility |
 |-----------|----------------|
-| `hera_agent_plugin.gd` | `@tool` `EditorPlugin`; owns server, queue, heartbeat, and registry. |
+| `hera_agent_plugin.gd` | `@tool` `EditorPlugin`; owns server, queue, heartbeat, registry, and tiny built-in file/project helper tools. |
 | `server/http_server.gd` | Local HTTP listener bound to `127.0.0.1`, rejecting remote/browser-origin calls. |
 | `server/work_queue.gd` | Main-loop handoff for pending HTTP requests. |
 | `server/heartbeat.gd` | Writes `~/.hera-agent-godot/instances/<pid>.json`. |
 | `core/tool_registry.gd` | Explicit tool name to handler mapping. |
 | `core/tool_response.gd` | Compact `{ ok, data/error }` response helpers. |
-| `tools/*_tool.gd` | One handler per capability: status, run, scene, node, eval, output. |
+| `tools/*_tool.gd` | One handler per capability: status, run, scene, node, signal, resource, eval, output, diagnostics, screenshot, batch, and game bridge. |
+| `runtime/game_inspector.gd` | Runtime autoload used by `game tree`, `game node get`, `game node set`, and `game node call` while a play session is running. |
 
 ---
 

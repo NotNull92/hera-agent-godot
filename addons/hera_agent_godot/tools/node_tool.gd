@@ -39,8 +39,12 @@ func execute(params: Dictionary) -> Dictionary:
 			return _set_property(root, params)
 		"remove":
 			return _remove_node(root, params)
+		"attach_script":
+			return _attach_script(root, params)
+		"detach_script":
+			return _detach_script(root, params)
 		_:
-			return ToolResponse.failure("unknown node action: %s (want find|get|add|set|remove)" % action)
+			return ToolResponse.failure("unknown node action: %s (want find|get|add|set|remove|attach_script|detach_script)" % action)
 
 func _find(root: Node, params: Dictionary) -> Dictionary:
 	var query := String(params.get("query", "")).to_lower()
@@ -162,6 +166,49 @@ func _remove_node(root: Node, params: Dictionary) -> Dictionary:
 		node.queue_free()
 
 	return ToolResponse.success({ "removed": path })
+
+func _attach_script(root: Node, params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	var node := _resolve(root, path)
+	if node == null:
+		return ToolResponse.failure("node not found: %s" % path)
+	var script_path := String(params.get("script", ""))
+	if script_path == "":
+		return ToolResponse.failure("attach-script requires a script path")
+	var loaded := load(script_path)
+	if loaded == null or not (loaded is Script):
+		return ToolResponse.failure("not a script resource: %s" % script_path)
+
+	var old_script: Variant = node.get_script()
+	if _undo_redo != null:
+		_undo_redo.create_action("Hera: attach script to %s" % String(node.name))
+		_undo_redo.add_do_method(node, "set_script", loaded)
+		_undo_redo.add_undo_method(node, "set_script", old_script)
+		_undo_redo.add_do_reference(loaded)
+		_undo_redo.commit_action()
+	else:
+		node.set_script(loaded)
+
+	return ToolResponse.success({ "path": path, "script": script_path })
+
+func _detach_script(root: Node, params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	var node := _resolve(root, path)
+	if node == null:
+		return ToolResponse.failure("node not found: %s" % path)
+	var old_script: Variant = node.get_script()
+
+	if _undo_redo != null:
+		_undo_redo.create_action("Hera: detach script from %s" % String(node.name))
+		_undo_redo.add_do_method(node, "set_script", null)
+		_undo_redo.add_undo_method(node, "set_script", old_script)
+		if old_script != null:
+			_undo_redo.add_undo_reference(old_script)
+		_undo_redo.commit_action()
+	else:
+		node.set_script(null)
+
+	return ToolResponse.success({ "path": path, "script": "" })
 
 func _resolve(root: Node, path: String) -> Node:
 	return root if path == "." else root.get_node_or_null(path)

@@ -17,7 +17,8 @@ The plugin starts a localhost HTTP server and advertises the editor to the
 | `hera_agent_plugin.gd` | `@tool` `EditorPlugin`; owns server, queue, heartbeat, registry. |
 | `core/` | response helpers and `ToolRegistry`. |
 | `server/` | `http_server`, `work_queue`, `heartbeat`. |
-| `tools/` | One handler per capability: status, run, scene, node, signal, resource, eval, output, screenshot, batch. |
+| `tools/` | Handlers for status, run, scene, node, signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
+| `runtime/` | Runtime autoload for live game inspection/control during play sessions. |
 
 The entry script uses `@tool`, so it runs inside the editor. Full design and CLI
 docs: <https://github.com/NotNull92/hera-agent-godot>.

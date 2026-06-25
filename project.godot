@@ -18,6 +18,10 @@ config/name="Hera Agent Godot (dev)"
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.7")
 
+[autoload]
+
+HeraGameInspector="*uid://c4ug7a211oav8"
+
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/hera_agent_godot/plugin.cfg")

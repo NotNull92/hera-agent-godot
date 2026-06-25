@@ -31,6 +31,14 @@ func TestParseNodeArgs_Write(t *testing.T) {
 		{name: "remove", args: []string{"remove", "Hero"}, wantAction: "remove", want: map[string]any{"path": "Hero"}},
 		{name: "remove no path", args: []string{"remove"}, wantErr: true},
 		{name: "remove extra", args: []string{"remove", "a", "b"}, wantErr: true},
+
+		{name: "attach script", args: []string{"attach-script", "Hero", "res://scripts/hero.gd"},
+			wantAction: "attach_script", want: map[string]any{"path": "Hero", "script": "res://scripts/hero.gd"}},
+		{name: "attach script no path", args: []string{"attach-script"}, wantErr: true},
+		{name: "attach script missing script", args: []string{"attach-script", "Hero"}, wantErr: true},
+		{name: "detach script", args: []string{"detach-script", "Hero"}, wantAction: "detach_script", want: map[string]any{"path": "Hero"}},
+		{name: "detach script no path", args: []string{"detach-script"}, wantErr: true},
+		{name: "detach script extra", args: []string{"detach-script", "Hero", "extra"}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -69,6 +77,15 @@ func TestParseSceneArgs_Write(t *testing.T) {
 		{name: "open extra", args: []string{"open", "a", "b"}, wantErr: true},
 		{name: "save", args: []string{"save"}, wantAction: "save"},
 		{name: "save extra", args: []string{"save", "x"}, wantErr: true},
+		{name: "create", args: []string{"create", "res://scenes/Enemy.tscn"}, wantAction: "create", wantPath: "res://scenes/Enemy.tscn"},
+		{name: "create root force open", args: []string{"create", "res://scenes/Enemy.tscn", "--root", "Node3D", "--force", "--open"}, wantAction: "create", wantPath: "res://scenes/Enemy.tscn"},
+		{name: "create no path", args: []string{"create"}, wantErr: true},
+		{name: "create dangling root", args: []string{"create", "res://A.tscn", "--root"}, wantErr: true},
+		{name: "create unknown flag", args: []string{"create", "res://A.tscn", "--bad"}, wantErr: true},
+		{name: "save as", args: []string{"save-as", "res://scenes/Copy.tscn"}, wantAction: "save_as", wantPath: "res://scenes/Copy.tscn"},
+		{name: "save as force", args: []string{"save-as", "res://scenes/Copy.tscn", "--force"}, wantAction: "save_as", wantPath: "res://scenes/Copy.tscn"},
+		{name: "save as no path", args: []string{"save-as"}, wantErr: true},
+		{name: "save as unknown flag", args: []string{"save-as", "res://A.tscn", "--bad"}, wantErr: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -87,6 +104,14 @@ func TestParseSceneArgs_Write(t *testing.T) {
 			}
 			if tt.wantPath != nil && p["path"] != tt.wantPath {
 				t.Errorf("path = %v, want %v", p["path"], tt.wantPath)
+			}
+			if tt.name == "create root force open" {
+				if p["root"] != "Node3D" || p["force"] != true || p["open"] != true {
+					t.Fatalf("params = %v, want root Node3D with force/open", p)
+				}
+			}
+			if tt.name == "save as force" && p["force"] != true {
+				t.Fatalf("force = %v, want true", p["force"])
 			}
 		})
 	}

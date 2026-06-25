@@ -8,8 +8,11 @@ Quick reminders:
 
 - Act on the real editor and **check the result**; don't guess scene state.
 - Output is compact JSON by default; `--ids` for paths, `--json` to pretty-print.
-- `node add/set/remove` are undoable. Mutation-capable commands (`scene
-  open/save`, `eval`, `batch`, and node writes) require exactly one live editor.
+- `node add/set/remove`, `node attach-script/detach-script`, and
+  `signal connect/disconnect` are undoable. Mutation-capable commands (`scene
+  open/save/create/save-as`, `script create`, `project mkdir`, `eval`,
+  `game node set/call`, `smoke --run-game`, `batch`, and node writes) require
+  exactly one live editor.
 - After editing, verify with `node get` / `scene tree` / `output --type error`.
 
 Repo conventions: Go CLI in `cmd/` + `internal/`; the Godot addon (GDScript) in

@@ -13,7 +13,7 @@ jobs:
     name: Go (build · vet · test · gofmt)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-go@v6
         with:
@@ -29,7 +29,10 @@ jobs:
         run: go vet ./...
 
       - name: go test
-        run: go test ./...
+        run: go test -shuffle=on -count=1 ./...
+
+      - name: go test -race
+        run: go test -race -shuffle=on -count=1 ./...
 
       - name: gofmt
         run: |
@@ -48,7 +51,7 @@ jobs:
       # github.com/godotengine/godot release tag (e.g. 4.7-stable).
       GODOT_VERSION: 4.7-stable
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v5
 
       - name: Cache Godot binary
         id: cache-godot

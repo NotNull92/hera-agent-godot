@@ -1,0 +1,4 @@
+interface:
+  display_name: "Hyper Mode"
+  short_description: "Safe workflow for hera-agent-godot code changes"
+  default_prompt: "Use hyper-mode for hera-agent-godot code changes."

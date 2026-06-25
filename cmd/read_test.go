@@ -1,6 +1,9 @@
 package cmd
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestParseOutputArgs(t *testing.T) {
 	tests := []struct {
@@ -37,6 +40,135 @@ func TestParseOutputArgs(t *testing.T) {
 			}
 			if tt.wantLine != nil && p["lines"] != tt.wantLine {
 				t.Errorf("lines = %v, want %v", p["lines"], tt.wantLine)
+			}
+		})
+	}
+}
+
+func TestParseDiagnosticsArgs(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []string
+		wantLine any
+		wantErr  bool
+	}{
+		{name: "empty"},
+		{name: "lines", args: []string{"--lines", "25"}, wantLine: 25},
+		{name: "zero lines", args: []string{"--lines", "0"}, wantErr: true},
+		{name: "non-int lines", args: []string{"--lines", "x"}, wantErr: true},
+		{name: "dangling lines", args: []string{"--lines"}, wantErr: true},
+		{name: "unknown flag", args: []string{"--bad"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := parseDiagnosticsArgs(tt.args)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got %v", p)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if tt.wantLine != nil && p["lines"] != tt.wantLine {
+				t.Errorf("lines = %v, want %v", p["lines"], tt.wantLine)
+			}
+		})
+	}
+}
+
+func TestParseGameArgs(t *testing.T) {
+	tests := []struct {
+		name       string
+		args       []string
+		wantAction string
+		wantPath   any
+		wantProp   any
+		wantMethod any
+		wantValue  any
+		wantErr    bool
+	}{
+		{name: "tree", args: []string{"tree"}, wantAction: "tree"},
+		{name: "node get", args: []string{"node", "get", "/root/Main"}, wantAction: "get", wantPath: "/root/Main"},
+		{name: "node set", args: []string{"node", "set", "/root/Main", "--prop", "visible", "--value", "false"}, wantAction: "set", wantPath: "/root/Main", wantProp: "visible", wantValue: "false"},
+		{name: "node call", args: []string{"node", "call", "/root/Main", "get_class"}, wantAction: "call", wantPath: "/root/Main", wantMethod: "get_class"},
+		{name: "empty", wantErr: true},
+		{name: "node missing get", args: []string{"node"}, wantErr: true},
+		{name: "node get missing path", args: []string{"node", "get"}, wantErr: true},
+		{name: "node get extra", args: []string{"node", "get", "a", "b"}, wantErr: true},
+		{name: "node set missing prop", args: []string{"node", "set", "/root/Main", "--value", "1"}, wantErr: true},
+		{name: "node set missing value", args: []string{"node", "set", "/root/Main", "--prop", "visible"}, wantErr: true},
+		{name: "node call missing method", args: []string{"node", "call", "/root/Main"}, wantErr: true},
+		{name: "unknown", args: []string{"nope"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p, err := parseGameArgs(tt.args)
+			if tt.wantErr {
+				if err == nil {
+					t.Fatalf("expected error, got %v", p)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if p["action"] != tt.wantAction {
+				t.Errorf("action = %v, want %v", p["action"], tt.wantAction)
+			}
+			if tt.wantPath != nil && p["path"] != tt.wantPath {
+				t.Errorf("path = %v, want %v", p["path"], tt.wantPath)
+			}
+			if tt.wantProp != nil && p["prop"] != tt.wantProp {
+				t.Errorf("prop = %v, want %v", p["prop"], tt.wantProp)
+			}
+			if tt.wantMethod != nil && p["method"] != tt.wantMethod {
+				t.Errorf("method = %v, want %v", p["method"], tt.wantMethod)
+			}
+			if tt.wantValue != nil && p["value"] != tt.wantValue {
+				t.Errorf("value = %v, want %v", p["value"], tt.wantValue)
+			}
+		})
+	}
+}
+
+func TestGameActionMutates(t *testing.T) {
+	tests := []struct {
+		action any
+		want   bool
+	}{
+		{action: "tree"},
+		{action: "get"},
+		{action: "set", want: true},
+		{action: "call", want: true},
+		{action: nil},
+	}
+	for _, tt := range tests {
+		t.Run(fmt.Sprint(tt.action), func(t *testing.T) {
+			got := gameActionMutates(tt.action)
+			if got != tt.want {
+				t.Fatalf("gameActionMutates(%v) = %v, want %v", tt.action, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSmokeRequiresMutation(t *testing.T) {
+	tests := []struct {
+		name string
+		opts smokeOptions
+		want bool
+	}{
+		{name: "default"},
+		{name: "skip game", opts: smokeOptions{skipGame: true}},
+		{name: "run game", opts: smokeOptions{runGame: true}, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := smokeRequiresMutation(tt.opts)
+			if got != tt.want {
+				t.Fatalf("smokeRequiresMutation(%+v) = %v, want %v", tt.opts, got, tt.want)
 			}
 		})
 	}

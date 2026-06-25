@@ -18,6 +18,9 @@ func get_name() -> String:
 	return "batch"
 
 func execute(params: Dictionary) -> Dictionary:
+	return ToolResponse.failure("batch requires async dispatch")
+
+func execute_async(params: Dictionary) -> Dictionary:
 	var commands: Variant = params.get("commands", [])
 	if typeof(commands) != TYPE_ARRAY:
 		return ToolResponse.failure("batch requires a 'commands' array")
@@ -26,7 +29,7 @@ func execute(params: Dictionary) -> Dictionary:
 	var stopped := false
 
 	for entry in commands:
-		var result := _run_one(entry)
+		var result := await _run_one(entry)
 		results.append(result)
 		if stop_on_error and not bool(result.get("ok", false)):
 			stopped = true
@@ -48,6 +51,10 @@ func _run_one(entry: Variant) -> Dictionary:
 	var sub_params: Variant = entry.get("params", {})
 	if typeof(sub_params) != TYPE_DICTIONARY:
 		return { "tool": tool_name, "ok": false, "error": "params must be an object" }
-	var result: Dictionary = tool.execute(sub_params)
+	var result: Dictionary
+	if tool.has_method("execute_async"):
+		result = await tool.execute_async(sub_params)
+	else:
+		result = tool.execute(sub_params)
 	result["tool"] = tool_name
 	return result

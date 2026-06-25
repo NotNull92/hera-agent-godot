@@ -32,20 +32,33 @@ hera scene tree                              # node tree of the edited scene
 hera scene list                              # open scenes + current
 hera scene open res://Path.tscn              # open a scene
 hera scene save                              # save the edited scene
+hera scene create res://Path.tscn [--root Node2D] [--force] [--open]
+hera scene save-as res://Path.tscn [--force]
+hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force]
+hera project mkdir res://scripts
 hera node find [query] [--type Class]        # find nodes
 hera node get <path>                         # dump a node's properties
 hera node add <type> [--parent p] [--name n] # add a node (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
 hera node remove <path>                      # remove a node (undoable)
+hera node attach-script <path> <res://script.gd> # attach a script (undoable)
+hera node detach-script <path>               # clear a node script (undoable)
 hera signal list <node>                      # signals a node exposes + connections
 hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
 hera signal disconnect <from> <sig> <to> <method>  # unwire (undoable)
 hera resource get <res://...>                # dump a resource's properties
+hera game tree                               # running game node tree
+hera game node get <path>                    # running game node properties
+hera game node set <path> --prop p --value v # set a running game property (not undoable)
+hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
 hera output [--type log|error|warning|all] [--lines N]
+hera diagnostics [--lines N]                 # summarize project log errors/warnings
 hera screenshot [--path p] [--width N] [--height N]  # render edited scene to PNG (GUI editor)
 hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
+hera instances                               # list live Hera-enabled editors
+hera smoke [--run-game|--skip-game]          # quick live editor smoke check
 ```
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
@@ -56,17 +69,26 @@ target a pid shown by `status`). Default output is compact JSON.
 
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
-- **Mutations are undoable.** `node add/set/remove` register with the editor's
-  undo history, so the user can Ctrl+Z your changes.
+- **Mutations are undoable where Godot exposes editor undo.**
+  `node add/set/remove`, `node attach-script/detach-script`, and
+  `signal connect/disconnect` register with the editor's undo history, so the
+  user can Ctrl+Z those changes.
 - **Run one live editor per project.** Hera is designed for a single active
-  Godot editor. Mutation commands (`node add/set/remove`, `signal
-  connect/disconnect`, `scene open/save`, `eval`, and `batch`) enforce that by
+  Godot editor. Mutation-capable commands (`node add/set/remove`,
+  `node attach-script/detach-script`, `signal connect/disconnect`,
+  `scene open/save/create/save-as`, `script create`, `project mkdir`, `eval`,
+  `game node set/call`, `smoke --run-game`, and `batch`) enforce that by
   refusing to run when several editors are live unless `--instance <pid>` is
   passed explicitly.
 - **`eval` is powerful.** It runs one GDScript expression (not statements) with
   the edited scene root as base, so `get_node("X").something()` works — and can
   have side effects. It is **not** registered with undo. Prefer `node set` for
   property changes.
+- **`game node set/call` is runtime-only.** It changes the running game process,
+  is not registered with undo, and is lost when the play session stops.
+- **File and scene creation are persistent.** `script create`, `project mkdir`,
+  `scene create`, and `scene save-as` write project files; use `--force` only
+  when overwriting is intended.
 - **`node set` value** is coerced to the property's type. Pass GDScript-literal
   syntax for complex types, e.g. `--value "Vector2(10, 20)"`.
 

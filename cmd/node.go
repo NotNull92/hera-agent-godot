@@ -27,7 +27,7 @@ func runNode(args []string) int {
 
 func nodeActionMutates(action any) bool {
 	switch action {
-	case "add", "set", "remove":
+	case "add", "set", "remove", "attach_script", "detach_script":
 		return true
 	default:
 		return false
@@ -129,7 +129,19 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		return map[string]any{"action": "remove", "path": rest[0]}, nil
 
+	case "attach-script":
+		if len(rest) != 2 {
+			return nil, fmt.Errorf("usage: node attach-script <path> <res://script.gd>")
+		}
+		return map[string]any{"action": "attach_script", "path": rest[0], "script": rest[1]}, nil
+
+	case "detach-script":
+		if len(rest) != 1 {
+			return nil, fmt.Errorf("usage: node detach-script <path>")
+		}
+		return map[string]any{"action": "detach_script", "path": rest[0]}, nil
+
 	default:
-		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|set|remove)", sub)
+		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|set|remove|attach-script|detach-script)", sub)
 	}
 }

@@ -5,12 +5,6 @@ import (
 	"os"
 )
 
-// runScene implements `hera-agent-godot scene <tree|list|open|save>`.
-//
-//	tree              describe the edited scene's node tree
-//	list              list open scenes and the current one
-//	open <res://...>  open a scene in the editor
-//	save              save the edited scene
 func runScene(args []string) int {
 	params, err := parseSceneArgs(args)
 	if err != nil {
@@ -25,7 +19,7 @@ func runScene(args []string) int {
 
 func sceneActionMutates(action any) bool {
 	switch action {
-	case "open", "save":
+	case "open", "save", "create", "save_as":
 		return true
 	default:
 		return false
@@ -57,7 +51,51 @@ func parseSceneArgs(args []string) (map[string]any, error) {
 			return nil, fmt.Errorf("scene save does not accept arguments")
 		}
 		return map[string]any{"action": "save"}, nil
+	case "create":
+		return parseSceneCreateArgs(args[1:])
+	case "save-as":
+		return parseSceneSaveAsArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown scene subcommand %q (want tree|list|open|save)", args[0])
+		return nil, fmt.Errorf("unknown scene subcommand %q (want tree|list|open|save|create|save-as)", args[0])
 	}
+}
+
+func parseSceneCreateArgs(args []string) (map[string]any, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("usage: scene create <res://...> [--root <type>] [--force] [--open]")
+	}
+	params := map[string]any{"action": "create", "path": args[0]}
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--root":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--root requires a value")
+			}
+			i++
+			params["root"] = args[i]
+		case "--force":
+			params["force"] = true
+		case "--open":
+			params["open"] = true
+		default:
+			return nil, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	return params, nil
+}
+
+func parseSceneSaveAsArgs(args []string) (map[string]any, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("usage: scene save-as <res://...> [--force]")
+	}
+	params := map[string]any{"action": "save_as", "path": args[0]}
+	for i := 1; i < len(args); i++ {
+		switch args[i] {
+		case "--force":
+			params["force"] = true
+		default:
+			return nil, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	return params, nil
 }

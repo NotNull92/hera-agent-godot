@@ -19,7 +19,7 @@ func runRun(args []string) int {
 		return 2
 	}
 
-	c, err := dialEditor()
+	c, err := dialMutationEditor()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "run: %v\n", err)
 		return 1
@@ -58,7 +58,7 @@ func runStop(args []string) int {
 		}
 	}
 
-	c, err := dialEditor()
+	c, err := dialMutationEditor()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "stop: %v\n", err)
 		return 1

@@ -1,7 +1,8 @@
 # Roadmap
 
-Phased build plan. Each phase is independently testable. The skeleton in this
-repo corresponds to **Phase 0**.
+Phased build plan. Each phase is independently testable. The current repository
+has the core CLI/addon surface implemented and an initial tagged release
+published; remaining work is Asset Library submission.
 
 ## Phase 0 — Skeleton (this commit)
 
@@ -26,7 +27,7 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `run_tool.gd`: play main / current / custom scene, stop, state (via `EditorInterface`).
 - [x] CLI `run` / `stop` with `--scene` / `--current` / `--wait`. (`go build/vet/test` green; `parseRunArgs` unit-tested.)
 - [x] Dev fixture: `scenes/Main.tscn` + `run/main_scene` so bare `run` works out of the box.
-- [ ] End-to-end play verification _(pending: not auto-tested to avoid driving a developer's live editor; see manual steps)_
+- [x] End-to-end play verification via live `smoke --run-game`.
 
 ## Phase 3 — Read the editor
 
@@ -48,6 +49,14 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `screenshot_tool.gd`: render the edited scene into an off-screen `SubViewport` and save a PNG (the editor's own viewport texture is a placeholder in 4.7). Runs async via one SceneTree frame (headless-safe — returns "empty image" rather than hanging; a GUI editor is needed for an actual render). Frames from origin unless the scene has a camera.
 - [x] Output modes: `--json` (pretty) and `--ids` (node paths only); compact JSON is the default.
 - [x] Agent rule files (`AGENTS.md`, `CLAUDE.md`).
+- [x] `diagnostics`: summarize Godot log errors/warnings.
+- [x] `instances`: list live Hera-enabled editors.
+- [x] `smoke`: live editor smoke check, optionally including a play-session game check.
+- [x] `script create` and `project mkdir`: project file helpers.
+- [x] `scene create` and `scene save-as`: scene file helpers.
+- [x] `node attach-script` and `node detach-script`: script wiring helpers.
+- [x] `game tree`, `game node get`, `game node set`, `game node call`: runtime inspection and control through the `HeraGameInspector` autoload.
+- [x] `batch` awaits async tools such as `game` and `screenshot`.
 - [x] Verified: `go build/vet/test` green; addon GDScript passes `--check-only`.
 
 ## Phase 6 — Distribution & CI
@@ -67,7 +76,8 @@ Goal: `hera-agent-godot status` prints info from a live editor.
       addon zip + checksums, and publish a GitHub release.
 - [x] One-line installers (`install.sh`, `install.ps1`) that fetch the latest
       release binary.
-- [ ] Asset Library submission for the addon (needs a tagged release first).
+- [x] Tagged release published and assets generated (`v0.2.0` release train).
+- [ ] Asset Library submission for the addon.
 
 ## Open questions to revisit
 
