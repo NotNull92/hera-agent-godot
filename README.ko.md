@@ -126,6 +126,8 @@ Play Mode 진입, GameObject 관리, UI 빌드, 테스트 실행 — 전부 comp
 
 Hera는 무료이며 MIT 라이선스입니다. 도움이 되었다면 개발을 후원하실 수 있습니다:
 
+[디스코드 커뮤니티 참여하기](https://discord.gg/QBzEVuYwK)
+
 [![Ko-fi에서 후원](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/notnull92)
 
 ## 라이선스

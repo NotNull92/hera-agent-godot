@@ -117,6 +117,8 @@ get one consistent way to drive each.
 
 Hera is free and MIT-licensed. If it saves you time, you can support development:
 
+[Join the Discord community](https://discord.gg/QBzEVuYwK)
+
 [![Support on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/notnull92)
 
 ## License
