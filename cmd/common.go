@@ -110,13 +110,13 @@ func pollPlaying(c *client.Client, want bool, timeout time.Duration) (*protocol.
 		}
 		last = resp
 		if !resp.OK {
-			return last, fmt.Errorf("run state: %s", resp.Error)
+			return last, enrichLaunchError(c, fmt.Errorf("run state: %s", resp.Error))
 		}
 		if resp.OK && playingFlag(resp) == want {
 			return resp, nil
 		}
 		if !time.Now().Before(deadline) {
-			return last, fmt.Errorf("timed out waiting for playing=%t", want)
+			return last, enrichLaunchError(c, fmt.Errorf("timed out waiting for playing=%t", want))
 		}
 		time.Sleep(150 * time.Millisecond)
 	}
@@ -141,9 +141,9 @@ func pollGameReady(c *client.Client, expectedScene string, timeout time.Duration
 		}
 		if !time.Now().Before(deadline) {
 			if lastErr != nil {
-				return last, fmt.Errorf("timed out waiting for game scene %q: %w", expectedScene, lastErr)
+				return last, enrichLaunchError(c, fmt.Errorf("timed out waiting for game scene %q: %w", expectedScene, lastErr))
 			}
-			return last, fmt.Errorf("timed out waiting for game scene %q", expectedScene)
+			return last, enrichLaunchError(c, fmt.Errorf("timed out waiting for game scene %q", expectedScene))
 		}
 		time.Sleep(150 * time.Millisecond)
 	}
@@ -217,6 +217,36 @@ func sceneFromResponse(resp *protocol.Response) string {
 	}
 	scene, _ := m["scene"].(string)
 	return scene
+}
+
+func enrichLaunchError(c *client.Client, base error) error {
+	details := make([]string, 0, 2)
+	if resp, err := c.Post("diagnostics", map[string]any{"lines": 20}); err == nil {
+		if resp.OK {
+			details = append(details, "diagnostics: "+compactJSON(resp.Data))
+		} else if resp.Error != "" {
+			details = append(details, "diagnostics: "+resp.Error)
+		}
+	}
+	if resp, err := c.Post("output", map[string]any{"type": "error", "lines": 40}); err == nil {
+		if resp.OK {
+			details = append(details, "output: "+compactJSON(resp.Data))
+		} else if resp.Error != "" {
+			details = append(details, "output: "+resp.Error)
+		}
+	}
+	if len(details) == 0 {
+		return base
+	}
+	return fmt.Errorf("%w\n%s", base, strings.Join(details, "\n"))
+}
+
+func compactJSON(v any) string {
+	out, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf("%v", v)
+	}
+	return string(out)
 }
 
 // printData prints a response's Data as compact JSON. Returns a process exit code.

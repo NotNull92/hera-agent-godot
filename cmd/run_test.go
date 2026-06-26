@@ -90,6 +90,54 @@ func TestPollPlaying_returnsToolError_whenStateRequestFails(t *testing.T) {
 	}
 }
 
+func TestPollPlaying_attachesLaunchDiagnosticsOnTimeout(t *testing.T) {
+	// Given
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Tool string `json:"tool"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		resp := `{"ok":true,"data":{}}`
+		switch req.Tool {
+		case "run":
+			resp = `{"ok":true,"data":{"playing":false,"scene":"res://scenes/Main.tscn"}}`
+		case "diagnostics":
+			resp = `{"ok":true,"data":{"clean":false,"errors":[{"line":1,"message":"Parse Error"}]}}`
+		case "output":
+			resp = `{"ok":true,"data":{"type":"error","lines":[{"text":"SCRIPT ERROR"}]}}`
+		default:
+			t.Fatalf("unexpected tool %q", req.Tool)
+		}
+		_, _ = w.Write([]byte(resp))
+	}))
+	t.Cleanup(srv.Close)
+	c := client.New(srv.URL)
+
+	// When
+	resp, err := pollPlaying(c, true, 0)
+
+	// Then
+	if err == nil {
+		t.Fatalf("err = nil, want timeout with diagnostics")
+	}
+	if resp == nil {
+		t.Fatalf("resp = nil, want last state response")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "timed out waiting for playing=true") {
+		t.Fatalf("err = %q, want timeout message", msg)
+	}
+	if !strings.Contains(msg, "diagnostics:") || !strings.Contains(msg, "Parse Error") {
+		t.Fatalf("err = %q, want diagnostics details", msg)
+	}
+	if !strings.Contains(msg, "output:") || !strings.Contains(msg, "SCRIPT ERROR") {
+		t.Fatalf("err = %q, want output details", msg)
+	}
+}
+
 func TestPollGameReady_returnsReadyTree_whenSceneMatches(t *testing.T) {
 	// Given
 	c := newRunStateClient(t, `{"ok":true,"data":{"scene":"res://scenes/Main.tscn","count":3,"nodes":[]}}`)
@@ -119,6 +167,54 @@ func TestPollGameReady_returnsMismatchError_whenSceneDiffers(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "timed out waiting for game scene") {
 		t.Fatalf("err = %q, want scene wait error", err)
+	}
+}
+
+func TestPollGameReady_attachesLaunchDiagnosticsOnTimeout(t *testing.T) {
+	// Given
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Tool string `json:"tool"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		resp := `{"ok":true,"data":{}}`
+		switch req.Tool {
+		case "game":
+			resp = `{"ok":true,"data":{"scene":"res://scenes/Main.tscn","count":0,"nodes":[]}}`
+		case "diagnostics":
+			resp = `{"ok":true,"data":{"clean":false,"warnings":[{"line":1,"message":"Type warning"}]}}`
+		case "output":
+			resp = `{"ok":true,"data":{"type":"error","lines":[{"text":"Failed to load script"}]}}`
+		default:
+			t.Fatalf("unexpected tool %q", req.Tool)
+		}
+		_, _ = w.Write([]byte(resp))
+	}))
+	t.Cleanup(srv.Close)
+	c := client.New(srv.URL)
+
+	// When
+	resp, err := pollGameReady(c, "res://scenes/Other.tscn", 0)
+
+	// Then
+	if err == nil {
+		t.Fatalf("err = nil, want timeout with diagnostics")
+	}
+	if resp == nil {
+		t.Fatalf("resp = nil, want last tree response")
+	}
+	msg := err.Error()
+	if !strings.Contains(msg, "timed out waiting for game scene") {
+		t.Fatalf("err = %q, want scene wait error", msg)
+	}
+	if !strings.Contains(msg, "diagnostics:") || !strings.Contains(msg, "Type warning") {
+		t.Fatalf("err = %q, want diagnostics details", msg)
+	}
+	if !strings.Contains(msg, "output:") || !strings.Contains(msg, "Failed to load script") {
+		t.Fatalf("err = %q, want output details", msg)
 	}
 }
 
