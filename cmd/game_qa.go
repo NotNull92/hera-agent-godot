@@ -16,6 +16,8 @@ type gameQAStep struct {
 	Prop        string         `json:"prop"`
 	Op          string         `json:"op"`
 	Value       any            `json:"value"`
+	X           int            `json:"x"`
+	Y           int            `json:"y"`
 	Action      string         `json:"action"`
 	Scene       string         `json:"scene"`
 	Current     bool           `json:"current"`
@@ -164,6 +166,8 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		return c.Post("game", map[string]any{"action": "set", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "value": step.Value})
 	case "game.node.call":
 		return c.Post("game", map[string]any{"action": "call", "path": normalizeGameNodePath(step.Path), "method": step.Method, "args": step.Args})
+	case "game.click":
+		return c.Post("game", map[string]any{"action": "click", "x": step.X, "y": step.Y})
 	case "game.assert":
 		return c.Post("game", map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value})
 	case "screenshot.runtime":

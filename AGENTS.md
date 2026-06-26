@@ -52,6 +52,7 @@ hera resource get <res://...>                # dump a resource's properties
 hera game tree                               # running game node tree
 hera game instances                          # running game process heartbeats
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
+hera game click --x N --y N                  # click the running game viewport
 hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
@@ -97,7 +98,7 @@ target a pid shown by `status`). Default output is compact JSON.
   constants such as `Control.PRESET_FULL_RECT`.
   After any GDScript edit, run `godot --headless --path . --check-only` on the
   affected scene or script before calling the work done.
-- **`game node set/call` is runtime-only.** It changes the running game process,
+- **`game node set/call` and `game click` are runtime-only.** They change the running game process,
   is not registered with undo, and is lost when the play session stops.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
   are still alive, `game instances` shows them and mutation/read requests refuse

@@ -135,7 +135,7 @@ commands:
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|resave|update-uids|export-mesh-library
   classdb    info|methods|properties|inherits
-  game       tree | instances | screenshot | assert | qa | node get|set|call
+  game       tree | instances | screenshot | click | assert | qa | node get|set|call
   instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor
   output     tail project log (--type log|error|warning|all, --lines N)

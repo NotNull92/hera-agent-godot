@@ -73,10 +73,12 @@ func _handle(request: Dictionary) -> Dictionary:
 			return _assert_node(request)
 		"call":
 			return _call_node(request)
+		"click":
+			return _click_viewport(request)
 		"screenshot":
 			return _screenshot(request)
 		_:
-			return _response(request, false, { "error": "unknown game action: %s (want tree|get|set|assert|call|screenshot)" % action })
+			return _response(request, false, { "error": "unknown game action: %s (want tree|get|set|assert|call|click|screenshot)" % action })
 
 func _tree(request: Dictionary) -> Dictionary:
 	var root := get_tree().root
@@ -161,6 +163,31 @@ func _call_node(request: Dictionary) -> Dictionary:
 		"result": str(result),
 		"type": type_string(typeof(result)),
 	})
+
+func _click_viewport(request: Dictionary) -> Dictionary:
+	if not request.has("x") or not request.has("y"):
+		return _response(request, false, { "error": "click requires x and y" })
+	var position := Vector2(float(request.get("x", 0)), float(request.get("y", 0)))
+	var viewport_size := get_viewport().get_visible_rect().size
+	if position.x < 0.0 or position.y < 0.0 or position.x >= viewport_size.x or position.y >= viewport_size.y:
+		return _response(request, false, { "error": "click position outside viewport: %s" % position })
+	_push_mouse_button(position, true)
+	_push_mouse_button(position, false)
+	return _response(request, true, {
+		"x": int(position.x),
+		"y": int(position.y),
+		"viewport_width": int(viewport_size.x),
+		"viewport_height": int(viewport_size.y),
+	})
+
+func _push_mouse_button(position: Vector2, pressed: bool) -> void:
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = pressed
+	event.position = position
+	event.global_position = position
+	event.factor = 1.0
+	get_viewport().push_input(event, true)
 
 func _screenshot(request: Dictionary) -> Dictionary:
 	var image := get_viewport().get_texture().get_image()

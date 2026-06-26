@@ -32,36 +32,6 @@ func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
 	return client.New(fmt.Sprintf("http://127.0.0.1:%d", inst.Port)), nil
 }
 
-// selectEditor picks which live editor to talk to. When targetPID is non-zero
-// (from --instance), it returns that exact editor and ignores the single-editor
-// guard — the user disambiguated explicitly. Otherwise it returns the most
-// recent, but errors if requireSingle and more than one editor is live.
-func selectEditor(instances []discovery.Instance, requireSingle bool, targetPID int) (discovery.Instance, error) {
-	if len(instances) == 0 {
-		return discovery.Instance{}, fmt.Errorf("no live Godot editor found (is the Hera Agent plugin enabled?)")
-	}
-	if targetPID != 0 {
-		for _, inst := range instances {
-			if inst.PID == targetPID {
-				return inst, nil
-			}
-		}
-		return discovery.Instance{}, fmt.Errorf("no live Godot editor with pid %d (live: %s)", targetPID, instancePIDs(instances))
-	}
-	if requireSingle && len(instances) > 1 {
-		return discovery.Instance{}, fmt.Errorf("multiple live Godot editors found (%s); pass --instance <pid> or close the extras before running mutation commands", instancePIDs(instances))
-	}
-	return instances[0], nil // most recent
-}
-
-func instancePIDs(instances []discovery.Instance) string {
-	ids := make([]string, 0, len(instances))
-	for _, inst := range instances {
-		ids = append(ids, fmt.Sprintf("pid %d", inst.PID))
-	}
-	return strings.Join(ids, ", ")
-}
-
 // dialPostPrint dials the editor, sends one tool request, and prints the
 // response Data as compact JSON. label is used in error messages.
 func dialPostPrint(tool string, params map[string]any, label string) int {

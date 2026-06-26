@@ -1,4 +1,6 @@
 # Go build output
+/hera
+/hera.exe
 /hera-agent-godot
 /hera-agent-godot.exe
 *.exe

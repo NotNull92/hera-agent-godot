@@ -44,7 +44,7 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 **Core CLI/addon surface complete.** The implemented and reviewed commands are:
 `status`, `instances`, `run`/`stop`, `scene`, `script`, `project`,
 `classdb`, `node` (read + write), `signal`, `resource`, `game`
-(runtime inspect + set/call + assert + QA + screenshot), `output`, `diagnostics`, `eval`, `screenshot`,
+(runtime inspect + set/call/click + assert + QA + screenshot), `output`, `diagnostics`, `eval`, `screenshot`,
 `batch`, and `smoke`, with
 `--json`/`--ids` output modes. See
 [docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
