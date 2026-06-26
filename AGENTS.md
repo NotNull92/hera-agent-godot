@@ -91,6 +91,12 @@ target a pid shown by `status`). Default output is compact JSON.
   the edited scene root as base, so `get_node("X").something()` works — and can
   have side effects. It is **not** registered with undo. Prefer `node set` for
   property changes.
+- **Before writing or editing GDScript, read [docs/GDSCRIPT_AGENT_GUIDE.md](docs/GDSCRIPT_AGENT_GUIDE.md).**
+  It covers Godot-specific syntax that agents often misremember: ternaries,
+  type inference, `Variant`, typed containers, and owner-qualified engine
+  constants such as `Control.PRESET_FULL_RECT`.
+  After any GDScript edit, run `godot --headless --path . --check-only` on the
+  affected scene or script before calling the work done.
 - **`game node set/call` is runtime-only.** It changes the running game process,
   is not registered with undo, and is lost when the play session stops.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
