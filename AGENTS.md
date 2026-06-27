@@ -92,12 +92,25 @@ target a pid shown by `status`). Default output is compact JSON.
   the edited scene root as base, so `get_node("X").something()` works — and can
   have side effects. It is **not** registered with undo. Prefer `node set` for
   property changes.
-- **Before writing or editing GDScript, read [docs/GDSCRIPT_AGENT_GUIDE.md](docs/GDSCRIPT_AGENT_GUIDE.md).**
-  It covers Godot-specific syntax that agents often misremember: ternaries,
-  type inference, `Variant`, typed containers, and owner-qualified engine
-  constants such as `Control.PRESET_FULL_RECT`.
-  After any GDScript edit, run `godot --headless --path . --check-only` on the
-  affected scene or script before calling the work done.
+- **GDScript guide authority, low-token mode.**
+  [docs/GDSCRIPT_AGENT_GUIDE.md](docs/GDSCRIPT_AGENT_GUIDE.md) is the
+  authoritative source and must be followed, but do not reload the whole guide
+  mechanically for routine edits. Use this quick gate first, then open the full
+  guide only when the change touches syntax/API not covered here, diagnostics
+  fail, the guide changed, or you are uncertain:
+  - Do not invent syntax; check official docs or existing code when uncertain.
+  - Use explicit types for function parameters/returns, dynamic API results,
+    `Variant`, and untyped `Array`/`Dictionary` reads.
+  - Use `:=` only when Godot can infer a concrete non-Variant type.
+  - Use GDScript ternaries (`a if condition else b`), never C-style `? :`.
+  - Qualify engine constants/enums/flags with their owner, e.g.
+    `Control.PRESET_FULL_RECT`.
+  - Prefer `and`/`or`/`not`, typed `@onready` or exported node references,
+    named signal handlers for normal UI, and `@tool` only when editor-time
+    execution is required and guarded.
+  - After any GDScript edit, run `godot --headless --path . --check-only` on the
+    affected scene or script before calling the work done. If `godot` is not
+    available, use Hera diagnostics/run/output as described in the guide.
 - **`game node set/call` and `game click` are runtime-only.** They change the running game process,
   is not registered with undo, and is lost when the play session stops.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
