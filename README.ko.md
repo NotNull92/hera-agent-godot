@@ -42,8 +42,8 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 ## 현재 상태
 
 **핵심 CLI/애드온 표면 완료.** 구현·리뷰된 명령은 다음과 같습니다:
-`status`, `instances`, `run`/`stop`, `scene`, `script`, `project`, `classdb`,
-`node`(읽기+쓰기), `signal`, `resource`, `game`(런타임 검사+set/call+assert+QA+screenshot), `output`,
+`status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
+`node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+assert+QA+screenshot), `output`,
 `diagnostics`, `eval`, `screenshot`, `batch`, `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
 [docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Library 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.

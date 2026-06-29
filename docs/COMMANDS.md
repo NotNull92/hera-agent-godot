@@ -19,14 +19,24 @@ selected editor instance.
 | `scene save` | `scene` | ☑ | Save the edited scene. |
 | `scene create <res://...> [--root <type>] [--force] [--open]` | `scene` | ☑ | Create a new `.tscn` with an instantiable node root; refuses overwrite unless `--force` is passed. |
 | `scene save-as <res://...> [--force]` | `scene` | ☑ | Save the edited scene to a new `.tscn`; refuses overwrite unless `--force` is passed. |
-| `script create <res://script.gd> [--extends <Class>] [--class-name <Name>] [--force]` | `script` | ☑ | Create a GDScript file and refresh the editor filesystem; refuses overwrite unless `--force` is passed. |
+| `editor state` | `editor` | ☑ | Show editor context: current scene, open scenes, main scene, play state, selected nodes, and current script. |
+| `editor selected` | `editor` | ☑ | Return the current editor node selection with scene-relative paths when possible. |
+| `editor select <node> [--add]` | `editor` | ☑ | Select a node in the edited scene; clears the previous selection unless `--add` is passed. Editor-state mutation only. |
+| `editor clear-selection` | `editor` | ☑ | Clear the editor node selection. Editor-state mutation only. |
+| `script current` | `script` | ☑ | Inspect the currently focused script in the Godot script editor when it is a readable `.gd` file; otherwise return compact script metadata. |
+| `script inspect <res://script.gd>` | `script` | ☑ | Read a GDScript file and return low-token metadata: class name, extends, functions, signals, exports, and line count. |
+| `script open <res://script.gd> [--line N] [--column N]` | `script` | ☑ | Open a GDScript resource in the Godot script editor, optionally at a 1-based line/column. Editor-state mutation only. |
+| `script create <res://script.gd> [--extends <Class>] [--class-name <Name>] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal <name> ...] [--export <name:type[=value]> ...]` | `script` | ☑ | Create a GDScript file and refresh the editor filesystem; optional flags add `@tool`, lifecycle stubs, signal declarations, and typed exported variables. |
 | `project info` | `project` | ☑ | Show project name, root path, Godot version, current scene, and file counts by type. |
 | `project list-files [--type all\|scene\|script\|resource\|asset\|shader] [--pattern <p>] [--limit N]` | `project` | ☑ | List project files from `res://`, with compact type tags and optional filtering. |
+| `project scan` | `project` | ☑ | Request a Godot editor resource filesystem scan so newly written files are visible to editor tools. Editor filesystem mutation only. |
+| `project reimport <res://file> ...` | `project` | ☑ | Ask Godot to reimport one or more safe `res://` project files through `EditorFileSystem.reimport_files`. Persistent import metadata/cache change. |
 | `project mkdir <res://dir>` | `project` | ☑ | Create a project directory under `res://` and refresh the editor filesystem. |
 | `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set `application/run/main_scene` in `project.godot` for the targeted live editor project. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
 | `node get <path>` | `node` | ☑ | Dump a node's editor-visible properties. |
 | `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). |
+| `node instance <res://scene.tscn> [--parent <path>] [--name <n>]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path (undoable). |
 | `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
 | `node set-resource <path> --prop <name> --resource <res://...>` | `node` | ☑ | Set an object/resource property from a Resource file, with path and type compatibility checks (undoable). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
@@ -37,6 +47,9 @@ selected editor instance.
 | `signal disconnect <from> <sig> <to> <method>` | `signal` | ☑ | Remove that connection (undoable). |
 | `resource get <res://...>` | `resource` | ☑ | Load a resource (`.tres`/`.res`/`.tscn`/any `res://`) and dump its class, name, and editor-visible properties. Read-only; no scene needs to be open. |
 | `resource uid <res://...>` | `resource` | ☑ | Return Godot's resource UID plus the `.uid` sidecar content when present. |
+| `resource list [res://dir] [--type <Class>] [--pattern <text>] [--limit N]` | `resource` | ☑ | Recursively list project resources from a safe `res://` path, optionally filtering by resource class, path substring, and result limit. |
+| `resource set <res://...> --prop <name=value> ...` | `resource` | ☑ | Load a resource, coerce Godot literal strings to the target property types, set editor-visible properties, and save it back to disk. Persistent filesystem change. |
+| `resource create <Class> <res://out.tres> [--force] [--prop <name=value> ...]` | `resource` | ☑ | Create an instantiable `Resource` class, optionally set editor-visible properties using Godot literal strings, and save it as `.tres`/`.res`. |
 | `resource resave <res://...>` | `resource` | ☑ | Load and save a resource to refresh serialized data and UID metadata. Persistent filesystem change. |
 | `resource update-uids` | `resource` | ☑ | Resave project resources/scripts that Godot can load, useful after migrations that need UID sidecars refreshed. Persistent filesystem change. |
 | `resource export-mesh-library <res://scene.tscn> <res://out.tres> [--item <name> ...]` | `resource` | ☑ | Build a `MeshLibrary` from top-level scene children containing `MeshInstance3D` nodes, optionally filtered by item name. |
@@ -63,14 +76,14 @@ selected editor instance.
 > the main scene from Hera. Newly added scenes can still require a filesystem
 > refresh or project reload before the editor resolves them as PackedScenes.
 
-> **Note (mutations):** `node add/set/set-resource/remove`, `node attach-script/detach-script`,
-> `scene open/save/create/save-as`, `script create`, `project mkdir`,
+> **Note (mutations):** `node add/instance/set/set-resource/remove`, `node attach-script/detach-script`,
+> `scene open/save/create/save-as`, `editor select/clear-selection`, `script open/create`, `resource set/create`, `project mkdir/scan/reimport`,
 > `project set-main-scene`,
 > `resource resave/update-uids/export-mesh-library`, and `signal connect/disconnect`
-> register with the editor's undo history, so agent changes are undoable
-> (Ctrl+Z) where Godot exposes UndoRedo for that operation. File and scene
-> creation create project assets and should be treated as persistent filesystem
-> changes. `signal connect` uses `CONNECT_PERSIST`, so the wiring is saved with
+> are mutation commands and enforce the single-editor guard. Node and signal
+> mutations register with the editor's undo history where Godot exposes UndoRedo;
+> file, import, resource, scene, and project setting changes are persistent
+> filesystem/project changes. `signal connect` uses `CONNECT_PERSIST`, so the wiring is saved with
 > the scene like the editor's "Connect a Signal" dialog. `eval` runs a single
 > expression via the `Expression` class (not full GDScript statements), with the
 > edited scene root as the base instance. Expressions can call methods with side

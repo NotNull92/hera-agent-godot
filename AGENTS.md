@@ -35,12 +35,22 @@ hera scene open res://Path.tscn              # open a scene
 hera scene save                              # save the edited scene
 hera scene create res://Path.tscn [--root Node2D] [--force] [--open]
 hera scene save-as res://Path.tscn [--force]
-hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force]
+hera editor state                            # current scene, selection, play/script state
+hera editor selected                         # selected editor nodes
+hera editor select <node> [--add]            # select a node in the editor
+hera editor clear-selection                  # clear editor node selection
+hera script current                          # inspect focused script
+hera script inspect res://scripts/foo.gd     # script metadata
+hera script open res://scripts/foo.gd [--line N] [--column N] # open in script editor
+hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal name] [--export name:type=value]
 hera project mkdir res://scripts
+hera project scan                            # refresh Godot's resource filesystem
+hera project reimport res://icon.svg         # reimport one or more project files
 hera project set-main-scene res://Path.tscn # set ProjectSettings main scene
 hera node find [query] [--type Class]        # find nodes
 hera node get <path>                         # dump a node's properties
 hera node add <type> [--parent p] [--name n] # add a node (undoable)
+hera node instance <res://scene.tscn> [--parent p] [--name n] # instance a PackedScene (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
 hera node remove <path>                      # remove a node (undoable)
 hera node attach-script <path> <res://script.gd> # attach a script (undoable)
@@ -49,6 +59,9 @@ hera signal list <node>                      # signals a node exposes + connecti
 hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
 hera signal disconnect <from> <sig> <to> <method>  # unwire (undoable)
 hera resource get <res://...>                # dump a resource's properties
+hera resource list [res://dir] [--type Class] [--pattern text] [--limit N] # list resources
+hera resource set <res://...> --prop p=v     # set and save resource properties
+hera resource create <Class> <res://out.tres> [--force] [--prop name=value]
 hera game tree                               # running game node tree
 hera game instances                          # running game process heartbeats
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
@@ -77,13 +90,13 @@ target a pid shown by `status`). Default output is compact JSON.
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
 - **Mutations are undoable where Godot exposes editor undo.**
-  `node add/set/remove`, `node attach-script/detach-script`, and
+  `node add/instance/set/remove`, `node attach-script/detach-script`, and
   `signal connect/disconnect` register with the editor's undo history, so the
   user can Ctrl+Z those changes.
 - **Run one live editor per project.** Hera is designed for a single active
-  Godot editor. Mutation-capable commands (`node add/set/remove`,
+  Godot editor. Mutation-capable commands (`node add/instance/set/remove`,
   `node attach-script/detach-script`, `signal connect/disconnect`,
-  `scene open/save/create/save-as`, `script create`, `project mkdir`,
+  `scene open/save/create/save-as`, `editor select/clear-selection`, `script open/create`, `resource set/create`, `project mkdir/scan/reimport`,
   `project set-main-scene`, `eval`, `game node set/call`, `smoke --run-game`,
   and `batch`) enforce that by
   refusing to run when several editors are live unless `--instance <pid>` is
@@ -119,8 +132,8 @@ target a pid shown by `status`). Default output is compact JSON.
 - **Prefer low-token QA reads.** Use `game node get --prop/--props`,
   `game assert`, `screenshot --runtime --analyze`, and `game qa --file` before
   dumping full node properties during automated QA.
-- **File, scene, and project setting changes are persistent.** `script create`,
-  `project mkdir`, `project set-main-scene`, `scene create`, and
+- **File, scene, resource, and project setting changes are persistent.** `script create`,
+  `resource set/create`, `project mkdir/reimport`, `project set-main-scene`, `scene create`, and
   `scene save-as` write project files; use `--force` only when overwriting is
   intended.
 - **`node set` value** is coerced to the property's type. Pass GDScript-literal
