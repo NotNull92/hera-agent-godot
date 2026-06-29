@@ -77,7 +77,9 @@ The Godot dev project lives at the repo **root** (`project.godot` + `addons/` +
 `scenes/`) so it loads the addon during development *and* so the Asset Library —
 which installs the repo archive preserving paths — drops `addons/hera_agent_godot/`
 straight into a user's project. `.gitattributes` `export-ignore` strips the CLI,
-docs, CI, and dev project from that archive, leaving only the addon and `LICENSE`.
+docs, CI, and dev project from that archive, leaving only the addon content. The
+Asset Library ZIP should include `addons/hera_agent_godot/LICENSE`; it does not
+need a duplicate `LICENSE` at the ZIP download root.
 
 ---
 

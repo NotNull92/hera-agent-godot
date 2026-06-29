@@ -19,6 +19,8 @@
 .idea/
 .vscode/
 .omc/
-.omo/
+.omo/*
+!.omo/rules/
+!.omo/rules/**
 .DS_Store
 Thumbs.db
