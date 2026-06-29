@@ -14,6 +14,7 @@ func TestSmokeRunnerRun_waitsForGameTreeBeforeInspectingRuntime(t *testing.T) {
 	// Given
 	const scene = "res://scenes/Main.tscn"
 	gameTreeCalls := 0
+	screenshotAnalyzed := false
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req protocol.Request
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -40,6 +41,17 @@ func TestSmokeRunnerRun_waitsForGameTreeBeforeInspectingRuntime(t *testing.T) {
 					break
 				}
 				resp.Data = map[string]any{"scene": scene, "nodes": []any{}}
+			case "screenshot":
+				screenshotAnalyzed = req.Params["analyze"] == true
+				resp.Data = map[string]any{
+					"path":   "user://hera_game_screenshots/smoke.png",
+					"width":  800,
+					"height": 600,
+					"analysis": map[string]any{
+						"nonblank":          true,
+						"possible_clipping": false,
+					},
+				}
 			}
 		}
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -59,7 +71,10 @@ func TestSmokeRunnerRun_waitsForGameTreeBeforeInspectingRuntime(t *testing.T) {
 	if gameTreeCalls < 3 {
 		t.Fatalf("gameTreeCalls = %d, want poll plus final tree call", gameTreeCalls)
 	}
-	if len(steps) != 7 {
-		t.Fatalf("len(steps) = %d, want 7", len(steps))
+	if !screenshotAnalyzed {
+		t.Fatalf("runtime screenshot analyze request was not sent")
+	}
+	if len(steps) != 8 {
+		t.Fatalf("len(steps) = %d, want 8", len(steps))
 	}
 }

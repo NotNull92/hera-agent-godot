@@ -59,18 +59,18 @@ selected editor instance.
 | `classdb inherits <Class> <BaseClass>` | `classdb` | ☑ | Check inheritance using Godot ClassDB. |
 | `game tree` | `game` | ☑ | Print the running game's live node tree. Requires a play session and the Hera runtime autoload; requests are isolated to the matching game process. |
 | `game instances` | `game` | ☑ | List Hera runtime game processes seen by the editor, including pid, scene, and heartbeat age. Useful for stale process diagnosis. |
-| `game screenshot [--path <p>] [--analyze]` | `game` | ☑ | Capture the running game viewport to PNG and return the path. `--analyze` adds generic image metrics (`nonblank`, dimensions, sampled color count, brightness, edge content, low-detail hints). |
+| `game screenshot [--path <p>] [--analyze]` | `game` | ☑ | Capture the running game viewport to PNG and return the path. `--analyze` adds generic image/layout metrics (`nonblank`, dimensions, sampled color count, brightness, edge content by side, clipping and low-detail hints). |
 | `game click --x N --y N` | `game` | ☑ | Send a left mouse click to the running game viewport at pixel coordinates. Runtime-only and useful for surface-level QA. |
 | `game node get <path> [--prop <name>\|--props <a,b>]` | `game` | ☑ | Dump a live runtime node's editor-visible properties, or only selected properties for low-token QA. Absolute paths like `/root/Main` are accepted. |
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
 | `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified result. Runtime-only and may have side effects. |
 | `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
-| `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.click`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps; returns a compact step summary. |
+| `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.click`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps; runtime screenshots are analyzed by default and the command returns a compact step summary. |
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
 | `instances` | local | ☑ | List all live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. |
-| `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--analyze` is supported for runtime captures and returns generic image/layout metrics. |
+| `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--analyze` is supported for runtime captures and returns generic image/layout metrics, including per-edge content ratios and possible clipping. |
 | `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially, including async tools such as `game` and `screenshot`. |
-| `smoke [--run-game\|--skip-game]` | local + tools | ☑ | Run a quick live-editor smoke check. `--run-game` also plays the current scene, checks `game tree`, then stops. |
+| `smoke [--run-game\|--skip-game]` | local + tools | ☑ | Run a quick live-editor smoke check. `--run-game` also plays the current scene, checks `game tree`, captures/analyzes a runtime screenshot, then stops. |
 
 > **Note (`run`):** use `project set-main-scene <res://scene.tscn>` when changing
 > the main scene from Hera. Newly added scenes can still require a filesystem

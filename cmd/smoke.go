@@ -111,6 +111,9 @@ func (r *smokeRunner) run(opts smokeOptions) ([]map[string]any, error) {
 	if err := r.post("game", map[string]any{"action": "tree"}); err != nil {
 		return nil, err
 	}
+	if err := r.post("game", map[string]any{"action": "screenshot", "analyze": true}); err != nil {
+		return nil, err
+	}
 	if err := r.post("run", map[string]any{"action": "stop"}); err != nil {
 		return nil, err
 	}

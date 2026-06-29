@@ -601,6 +601,52 @@ explicit conditions.
 await animation_player.animation_finished
 ```
 
+For delayed game actions such as AI moves, keep a generation token and check it
+after every `await`. Increment the token on restart, undo, scene reset, or mode
+toggle so stale delayed work cannot mutate the new state.
+
+```gdscript
+var turn_token: int = 0
+
+
+func restart_game() -> void:
+	turn_token += 1
+	reset_board()
+
+
+func queue_ai_turn() -> void:
+	turn_token += 1
+	var request_id: int = turn_token
+	_ai_turn(request_id)
+
+
+func _ai_turn(request_id: int) -> void:
+	await get_tree().create_timer(0.25).timeout
+	if request_id != turn_token:
+		return
+	play_ai_move()
+```
+
+For board and grid games, prefer localized state changes over whole-state
+rebuilds in hot paths. Full-board scans are fine for tiny boards, but keep the
+rule function pure and isolated, store only the changed cells for undo when that
+is enough, and refresh only derived state that depends on the last move.
+
+```gdscript
+var undo_stack: Array[Dictionary] = []
+
+
+func apply_move(cell: Vector2i, flips: Array[Vector2i]) -> void:
+	undo_stack.append({
+		"cell": cell,
+		"flips": flips.duplicate(),
+		"player": current_player,
+	})
+	board[cell.y][cell.x] = current_player
+	for flip in flips:
+		board[flip.y][flip.x] = current_player
+```
+
 ## Assertions And Errors
 
 Use `assert` for programmer invariants, not player-facing validation.

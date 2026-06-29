@@ -207,12 +207,9 @@ func gameNodeGetParamsFromQAStep(step gameQAStep) map[string]any {
 }
 
 func screenshotParamsFromQAStep(step gameQAStep) map[string]any {
-	params := map[string]any{"action": "screenshot"}
+	params := map[string]any{"action": "screenshot", "analyze": true}
 	if step.Path != "" {
 		params["path"] = step.Path
-	}
-	if step.Analyze {
-		params["analyze"] = true
 	}
 	return params
 }

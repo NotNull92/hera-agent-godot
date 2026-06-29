@@ -3,6 +3,7 @@ extends RefCounted
 const MAX_SAMPLES := 8192
 const EDGE_BAND_RATIO := 0.025
 const EDGE_CONTENT_THRESHOLD := 0.08
+const EDGE_CLIPPING_THRESHOLD := 0.12
 const COLOR_DELTA_THRESHOLD := 0.08
 const DARK_BRIGHTNESS_THRESHOLD := 0.08
 
@@ -21,10 +22,17 @@ static func analyze(image: Image) -> Dictionary:
 	var dark_samples := 0
 	var edge_samples := 0
 	var edge_content_samples := 0
+	var edge_counts := {
+		"left": [0, 0],
+		"right": [0, 0],
+		"top": [0, 0],
+		"bottom": [0, 0],
+	}
 	for y in range(0, height, step):
 		for x in range(0, width, step):
 			var color := image.get_pixel(x, y)
 			var brightness_value := (color.r + color.g + color.b) / 3.0
+			var has_edge_content := _color_delta(color, background_color) >= COLOR_DELTA_THRESHOLD
 			unique[str(color.to_rgba32())] = true
 			brightness_sum += brightness_value
 			alpha_sum += color.a
@@ -32,13 +40,18 @@ static func analyze(image: Image) -> Dictionary:
 				dark_samples += 1
 			if _is_edge_sample(x, y, width, height, edge_band_x, edge_band_y):
 				edge_samples += 1
-				if _color_delta(color, background_color) >= COLOR_DELTA_THRESHOLD:
+				if has_edge_content:
 					edge_content_samples += 1
+				_count_edge_sample(edge_counts, "left", x < edge_band_x, has_edge_content)
+				_count_edge_sample(edge_counts, "right", x >= width - edge_band_x, has_edge_content)
+				_count_edge_sample(edge_counts, "top", y < edge_band_y, has_edge_content)
+				_count_edge_sample(edge_counts, "bottom", y >= height - edge_band_y, has_edge_content)
 			samples += 1
 	var brightness := 0.0 if samples == 0 else brightness_sum / float(samples)
 	var alpha := 0.0 if samples == 0 else alpha_sum / float(samples)
 	var dark_ratio := 0.0 if samples == 0 else float(dark_samples) / float(samples)
 	var edge_content_ratio := 0.0 if edge_samples == 0 else float(edge_content_samples) / float(edge_samples)
+	var edge_ratios := _edge_ratios(edge_counts)
 	return {
 		"width": width,
 		"height": height,
@@ -49,8 +62,9 @@ static func analyze(image: Image) -> Dictionary:
 		"alpha_mean": alpha,
 		"dark_sample_ratio": dark_ratio,
 		"edge_content_ratio": edge_content_ratio,
+		"edge_content_by_side": edge_ratios,
 		"edge_content_detected": edge_content_ratio >= EDGE_CONTENT_THRESHOLD,
-		"possible_clipping": edge_content_ratio >= EDGE_CONTENT_THRESHOLD,
+		"possible_clipping": _has_asymmetric_edge_content(edge_ratios),
 		"low_detail": unique.size() < 4,
 	}
 
@@ -59,3 +73,40 @@ static func _is_edge_sample(x: int, y: int, width: int, height: int, edge_band_x
 
 static func _color_delta(a: Color, b: Color) -> float:
 	return (absf(a.r - b.r) + absf(a.g - b.g) + absf(a.b - b.b) + absf(a.a - b.a)) / 4.0
+
+static func _count_edge_sample(edge_counts: Dictionary, key: String, is_on_edge: bool, has_content: bool) -> void:
+	if not is_on_edge:
+		return
+	var counts: Array = edge_counts[key]
+	counts[0] = int(counts[0]) + 1
+	if has_content:
+		counts[1] = int(counts[1]) + 1
+
+static func _edge_ratios(edge_counts: Dictionary) -> Dictionary:
+	var ratios := {}
+	for key in edge_counts.keys():
+		var counts: Array = edge_counts[key]
+		var samples := int(counts[0])
+		var content_samples := int(counts[1])
+		ratios[key] = 0.0 if samples == 0 else float(content_samples) / float(samples)
+	return ratios
+
+static func _has_asymmetric_edge_content(edge_ratios: Dictionary) -> bool:
+	var left := float(edge_ratios["left"]) >= EDGE_CLIPPING_THRESHOLD
+	var right := float(edge_ratios["right"]) >= EDGE_CLIPPING_THRESHOLD
+	var top := float(edge_ratios["top"]) >= EDGE_CLIPPING_THRESHOLD
+	var bottom := float(edge_ratios["bottom"]) >= EDGE_CLIPPING_THRESHOLD
+	var active_edges := 0
+	if left:
+		active_edges += 1
+	if right:
+		active_edges += 1
+	if top:
+		active_edges += 1
+	if bottom:
+		active_edges += 1
+	if active_edges == 1:
+		return true
+	if active_edges == 2:
+		return not ((left and right) or (top and bottom))
+	return false

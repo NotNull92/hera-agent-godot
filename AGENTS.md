@@ -78,7 +78,7 @@ hera diagnostics [--lines N]                 # summarize project log errors/warn
 hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or runtime viewport
 hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
 hera instances                               # list live Hera-enabled editors
-hera smoke [--run-game|--skip-game]          # quick live editor smoke check
+hera smoke [--run-game|--skip-game]          # quick live editor smoke check; run-game includes runtime screenshot analysis
 ```
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
@@ -131,7 +131,9 @@ target a pid shown by `status`). Default output is compact JSON.
   ambiguous targets instead of accepting an old response.
 - **Prefer low-token QA reads.** Use `game node get --prop/--props`,
   `game assert`, `screenshot --runtime --analyze`, and `game qa --file` before
-  dumping full node properties during automated QA.
+  dumping full node properties during automated QA. Runtime screenshot analysis
+  reports per-edge content ratios and `possible_clipping` so layouts that only
+  fail at the viewport boundary are easier to catch.
 - **File, scene, resource, and project setting changes are persistent.** `script create`,
   `resource set/create`, `project mkdir/reimport`, `project set-main-scene`, `scene create`, and
   `scene save-as` write project files; use `--force` only when overwriting is
