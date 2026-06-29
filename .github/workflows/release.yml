@@ -55,7 +55,7 @@ jobs:
       - name: Package Godot addon
         run: |
           set -euo pipefail
-          zip -qr "dist/hera-agent-godot-addon.zip" addons/hera_agent_godot LICENSE
+          zip -qr "dist/hera-agent-godot-addon.zip" addons/hera_agent_godot
           python3 - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
@@ -63,13 +63,15 @@ jobs:
           archive = Path("dist/hera-agent-godot-addon.zip")
           names = set(ZipFile(archive).namelist())
           required = {
-              "LICENSE",
+              "addons/hera_agent_godot/LICENSE",
               "addons/hera_agent_godot/plugin.cfg",
               "addons/hera_agent_godot/hera_agent_plugin.gd",
           }
           missing = sorted(required - names)
           if missing:
               raise SystemExit(f"addon archive missing entries: {missing}")
+          if "LICENSE" in names:
+              raise SystemExit("addon archive must not include duplicate root LICENSE")
           if any(name.startswith(".claude/") or name == ".claude" for name in names):
               raise SystemExit("addon archive must not include .claude")
           PY

@@ -1,7 +1,7 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented and v0.4.0 release preparation in
+has the core CLI/addon surface implemented and v0.5.0 release preparation in
 progress; remaining work is Asset Store submission.
 
 ## Phase 0 — Skeleton (this commit)
@@ -84,6 +84,9 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] v0.4.0 release prep: main-scene project setting, actionable launch
       diagnostics, expanded GDScript agent guidance, runtime viewport click QA,
       and richer screenshot analysis signals.
+- [x] v0.5.0 release prep: editor selection/script inspection helpers, resource
+      list/set/create workflows, project scan/reimport commands, PackedScene
+      instancing, and Asset Library packaging rules for addon-local licensing.
 - [ ] Asset Store submission for the addon.
 
 ## Open questions to revisit
