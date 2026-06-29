@@ -14,6 +14,8 @@ extends RefCounted
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const NodeValueCodec = preload("res://addons/hera_agent_godot/tools/node_value_codec.gd")
 const NodeSceneInstancer = preload("res://addons/hera_agent_godot/tools/node_scene_instancer.gd")
+const ScriptDependencyDiagnostics = preload("res://addons/hera_agent_godot/tools/script_dependency_diagnostics.gd")
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
 
 const MAX_NODES := 1000
 const MAX_VALUE_LEN := 200
@@ -161,7 +163,7 @@ func _set_resource_property(root: Node, params: Dictionary) -> Dictionary:
 	var resource_path := String(params.get("resource", ""))
 	if not (resource_path.begins_with("res://") or resource_path.begins_with("user://")):
 		return ToolResponse.failure("resource path must start with res:// or user://")
-	if resource_path.begins_with("res://") and not _is_safe_res_path(resource_path):
+	if resource_path.begins_with("res://") and not ProjectPathSafety.is_safe_res_path(resource_path):
 		return ToolResponse.failure("resource path must stay inside res://")
 	if not ResourceLoader.exists(resource_path):
 		return ToolResponse.failure("resource not found: %s" % resource_path)
@@ -217,12 +219,17 @@ func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 	var script_path := String(params.get("script", ""))
 	if script_path == "":
 		return ToolResponse.failure("attach-script requires a script path")
-	if not script_path.begins_with("res://") or not _is_safe_res_path(script_path):
+	if not script_path.begins_with("res://") or not ProjectPathSafety.is_safe_res_path(script_path):
 		return ToolResponse.failure("script path must be a safe res:// path")
 	if not (script_path.ends_with(".gd") or script_path.ends_with(".cs")):
 		return ToolResponse.failure("script path must end with .gd or .cs")
 	if not FileAccess.file_exists(script_path):
 		return ToolResponse.failure("script not found: %s" % script_path)
+	_scan_editor_filesystem()
+	var diagnostics := ScriptDependencyDiagnostics.analyze(script_path)
+	var missing_preloads: Array = diagnostics.get("missing_preloads", [])
+	if not missing_preloads.is_empty():
+		return ToolResponse.failure("script preload dependency missing: %s" % str(missing_preloads))
 	var loaded_res := ResourceLoader.load(script_path)
 	if loaded_res == null or not (loaded_res is Script):
 		return ToolResponse.failure("not a script resource: %s" % script_path)
@@ -241,7 +248,12 @@ func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 	else:
 		node.set_script(loaded)
 
-	return ToolResponse.success({ "path": path, "script": script_path, "base_type": base_type })
+	return ToolResponse.success({
+		"path": path,
+		"script": script_path,
+		"base_type": base_type,
+		"script_diagnostics": diagnostics,
+	})
 
 func _detach_script(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
@@ -271,13 +283,7 @@ func _property_info(node: Node, prop: String) -> Dictionary:
 			return p
 	return {}
 
-func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true
+func _scan_editor_filesystem() -> void:
+	var filesystem := EditorInterface.get_resource_filesystem()
+	if filesystem != null:
+		filesystem.scan()

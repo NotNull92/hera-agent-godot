@@ -121,7 +121,7 @@ need a duplicate `LICENSE` at the ZIP download root.
 | `core/tool_registry.gd` | Explicit tool name to handler mapping. |
 | `core/tool_response.gd` | Compact `{ ok, data/error }` response helpers. |
 | `tools/*_tool.gd` | One handler per capability: status, run, scene, node, signal, resource, eval, output, diagnostics, screenshot, batch, and game bridge. |
-| `runtime/game_inspector.gd` | Runtime autoload used by `game tree`, `game instances`, `game screenshot`, `game click`, `game node get`, `game node set`, `game node call`, and `game assert` while a play session is running. It writes per-process heartbeats and request/response files so stale game processes cannot answer current requests. |
+| `runtime/game_inspector.gd` | Runtime autoload used by `game tree`, `game ui tree`, `game instances`, `game screenshot`, `game click`, `game node get`, `game node set`, `game node call`, and `game assert` while a play session is running. It writes per-process heartbeats and request/response files so stale game processes cannot answer current requests; semantic clicks can target live `Control` nodes by path or text instead of raw viewport coordinates. |
 | `runtime/game_value_codec.gd` | Runtime value serialization and argument/property coercion shared by live `game node get/set/call`. |
 | `runtime/game_image_analyzer.gd` | Generic runtime screenshot metrics for low-token visual QA (`nonblank`, dimensions, sampled color count, brightness, per-edge content ratios, asymmetric clipping, and low-detail hints). |
 | `runtime/game_assertions.gd` | Generic runtime property assertion comparisons for `game assert` and scenario QA. |

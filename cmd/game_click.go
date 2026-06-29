@@ -9,6 +9,8 @@ func parseGameClickArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "click"}
 	hasX := false
 	hasY := false
+	hasNode := false
+	hasText := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--x":
@@ -33,15 +35,45 @@ func parseGameClickArgs(args []string) (map[string]any, error) {
 			}
 			params["y"] = y
 			hasY = true
+		case "--node":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--node requires a value")
+			}
+			i++
+			if args[i] == "" {
+				return nil, fmt.Errorf("--node requires a non-empty value")
+			}
+			params["path"] = normalizeGameNodePath(args[i])
+			hasNode = true
+		case "--text":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--text requires a value")
+			}
+			i++
+			if args[i] == "" {
+				return nil, fmt.Errorf("--text requires a non-empty value")
+			}
+			params["text"] = args[i]
+			hasText = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
-	if !hasX {
-		return nil, fmt.Errorf("game click requires --x")
+	targetModes := 0
+	if hasX || hasY {
+		targetModes++
 	}
-	if !hasY {
-		return nil, fmt.Errorf("game click requires --y")
+	if hasNode {
+		targetModes++
+	}
+	if hasText {
+		targetModes++
+	}
+	if targetModes != 1 {
+		return nil, fmt.Errorf("game click requires exactly one target: --x/--y, --node, or --text")
+	}
+	if hasX != hasY {
+		return nil, fmt.Errorf("game click coordinates require both --x and --y")
 	}
 	return params, nil
 }

@@ -22,18 +22,9 @@ func runGame(args []string) int {
 	return dialPostPrint("game", params, "game")
 }
 
-func gameActionMutates(action any) bool {
-	switch action {
-	case "set", "call", "click":
-		return true
-	default:
-		return false
-	}
-}
-
 func parseGameArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: game <tree|instances|screenshot|click|assert|node get|node set|node call|qa> ...")
+		return nil, fmt.Errorf("usage: game <tree|ui tree|instances|screenshot|click|assert|node get|node set|node call|qa> ...")
 	}
 	switch args[0] {
 	case "tree":
@@ -41,6 +32,8 @@ func parseGameArgs(args []string) (map[string]any, error) {
 			return nil, fmt.Errorf("game tree does not accept arguments")
 		}
 		return map[string]any{"action": "tree"}, nil
+	case "ui":
+		return parseGameUIArgs(args[1:])
 	case "instances":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("game instances does not accept arguments")
@@ -55,7 +48,7 @@ func parseGameArgs(args []string) (map[string]any, error) {
 	case "node":
 		return parseGameNodeArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown game subcommand %q (want tree|instances|screenshot|click|assert|node get|node set|node call|qa)", args[0])
+		return nil, fmt.Errorf("unknown game subcommand %q (want tree|ui tree|instances|screenshot|click|assert|node get|node set|node call|qa)", args[0])
 	}
 }
 

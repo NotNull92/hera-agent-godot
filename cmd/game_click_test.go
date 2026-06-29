@@ -21,6 +21,44 @@ func TestParseGameArgs_returnsClickParams_whenCoordinatesProvided(t *testing.T) 
 	}
 }
 
+func TestParseGameArgs_returnsClickParams_whenNodeProvided(t *testing.T) {
+	// Given
+	args := []string{"click", "--node", "C:/Program Files/Git/root/Main/Restart"}
+
+	// When
+	got, err := parseGameArgs(args)
+
+	// Then
+	if err != nil {
+		t.Fatalf("parseGameArgs error: %v", err)
+	}
+	if got["action"] != "click" {
+		t.Fatalf("action = %v, want click", got["action"])
+	}
+	if got["path"] != "/root/Main/Restart" {
+		t.Fatalf("path = %v, want /root/Main/Restart", got["path"])
+	}
+}
+
+func TestParseGameArgs_returnsClickParams_whenTextProvided(t *testing.T) {
+	// Given
+	args := []string{"click", "--text", "Restart"}
+
+	// When
+	got, err := parseGameArgs(args)
+
+	// Then
+	if err != nil {
+		t.Fatalf("parseGameArgs error: %v", err)
+	}
+	if got["action"] != "click" {
+		t.Fatalf("action = %v, want click", got["action"])
+	}
+	if got["text"] != "Restart" {
+		t.Fatalf("text = %v, want Restart", got["text"])
+	}
+}
+
 func TestParseGameArgs_rejectsClick_whenCoordinatesInvalid(t *testing.T) {
 	tests := []struct {
 		name string
@@ -31,6 +69,10 @@ func TestParseGameArgs_rejectsClick_whenCoordinatesInvalid(t *testing.T) {
 		{name: "non integer", args: []string{"click", "--x", "left", "--y", "240"}},
 		{name: "negative", args: []string{"click", "--x", "-1", "--y", "240"}},
 		{name: "unknown flag", args: []string{"click", "--x", "120", "--y", "240", "--bad"}},
+		{name: "node and x conflict", args: []string{"click", "--node", "/root/Main/Button", "--x", "120", "--y", "240"}},
+		{name: "node and text conflict", args: []string{"click", "--node", "/root/Main/Button", "--text", "Restart"}},
+		{name: "empty node", args: []string{"click", "--node", ""}},
+		{name: "empty text", args: []string{"click", "--text", ""}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

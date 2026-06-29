@@ -53,7 +53,7 @@ hera node add <type> [--parent p] [--name n] # add a node (undoable)
 hera node instance <res://scene.tscn> [--parent p] [--name n] # instance a PackedScene (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
 hera node remove <path>                      # remove a node (undoable)
-hera node attach-script <path> <res://script.gd> # attach a script (undoable)
+hera node attach-script <path> <res://script.gd> # attach a script (undoable; returns dependency diagnostics)
 hera node detach-script <path>               # clear a node script (undoable)
 hera signal list <node>                      # signals a node exposes + connections
 hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
@@ -63,9 +63,12 @@ hera resource list [res://dir] [--type Class] [--pattern text] [--limit N] # lis
 hera resource set <res://...> --prop p=v     # set and save resource properties
 hera resource create <Class> <res://out.tres> [--force] [--prop name=value]
 hera game tree                               # running game node tree
+hera game ui tree                            # running Control nodes with rect/text/button state
 hera game instances                          # running game process heartbeats
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
 hera game click --x N --y N                  # click the running game viewport
+hera game click --node /root/Main/Button     # click the center of a live Control
+hera game click --text Restart               # click the center of a visible Control by text
 hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
@@ -129,7 +132,7 @@ target a pid shown by `status`). Default output is compact JSON.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
   are still alive, `game instances` shows them and mutation/read requests refuse
   ambiguous targets instead of accepting an old response.
-- **Prefer low-token QA reads.** Use `game node get --prop/--props`,
+- **Prefer low-token QA reads.** Use `game ui tree`, `game node get --prop/--props`,
   `game assert`, `screenshot --runtime --analyze`, and `game qa --file` before
   dumping full node properties during automated QA. Runtime screenshot analysis
   reports per-edge content ratios and `possible_clipping` so layouts that only

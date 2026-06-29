@@ -1,8 +1,10 @@
 extends Node
 
 const GameValueCodec = preload("res://addons/hera_agent_godot/runtime/game_value_codec.gd")
-const GameImageAnalyzer = preload("res://addons/hera_agent_godot/runtime/game_image_analyzer.gd")
 const GameAssertions = preload("res://addons/hera_agent_godot/runtime/game_assertions.gd")
+const GameTreeInspector = preload("res://addons/hera_agent_godot/runtime/game_tree_inspector.gd")
+const GameUIInspector = preload("res://addons/hera_agent_godot/runtime/game_ui_inspector.gd")
+const GameViewportActions = preload("res://addons/hera_agent_godot/runtime/game_viewport_actions.gd")
 
 const INSTANCE_DIR := "user://hera_game_instances"
 const REQUEST_ROOT := "user://hera_game_requests"
@@ -65,6 +67,8 @@ func _handle(request: Dictionary) -> Dictionary:
 	match action:
 		"tree":
 			return _tree(request)
+		"ui_tree":
+			return _ui_tree(request)
 		"get":
 			return _get_node(request)
 		"set":
@@ -78,21 +82,26 @@ func _handle(request: Dictionary) -> Dictionary:
 		"screenshot":
 			return _screenshot(request)
 		_:
-			return _response(request, false, { "error": "unknown game action: %s (want tree|get|set|assert|call|click|screenshot)" % action })
+			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|get|set|assert|call|click|screenshot)" % action })
 
 func _tree(request: Dictionary) -> Dictionary:
-	var root := get_tree().root
-	var nodes: Array = []
-	_collect(root, nodes)
-	var truncated := nodes.size() > MAX_NODES
-	if truncated:
-		nodes = nodes.slice(0, MAX_NODES)
+	var result := GameTreeInspector.tree(get_tree().root, MAX_NODES)
 	return _response(request, true, {
-		"count": nodes.size(),
+		"count": result.get("count", 0),
 		"pid": _pid,
 		"scene": _current_scene_path(),
-		"truncated": truncated,
-		"nodes": nodes,
+		"truncated": result.get("truncated", false),
+		"nodes": result.get("nodes", []),
+	})
+
+func _ui_tree(request: Dictionary) -> Dictionary:
+	var result := GameUIInspector.tree(get_tree().root, MAX_NODES)
+	return _response(request, true, {
+		"count": result.get("count", 0),
+		"pid": _pid,
+		"scene": _current_scene_path(),
+		"truncated": result.get("truncated", false),
+		"controls": result.get("controls", []),
 	})
 
 func _get_node(request: Dictionary) -> Dictionary:
@@ -165,49 +174,31 @@ func _call_node(request: Dictionary) -> Dictionary:
 	})
 
 func _click_viewport(request: Dictionary) -> Dictionary:
-	if not request.has("x") or not request.has("y"):
-		return _response(request, false, { "error": "click requires x and y" })
-	var position := Vector2(float(request.get("x", 0)), float(request.get("y", 0)))
+	var target := GameUIInspector.click_target(get_tree().root, get_tree().current_scene, request)
+	if not bool(target.get("ok", false)):
+		return _response(request, false, { "error": String(target.get("error", "invalid click target")) })
+	var position: Vector2 = target.get("position", Vector2.ZERO)
 	var viewport_size := get_viewport().get_visible_rect().size
 	if position.x < 0.0 or position.y < 0.0 or position.x >= viewport_size.x or position.y >= viewport_size.y:
 		return _response(request, false, { "error": "click position outside viewport: %s" % position })
-	_push_mouse_button(position, true)
-	_push_mouse_button(position, false)
-	return _response(request, true, {
+	GameViewportActions.click(get_viewport(), position)
+	var data := {
 		"x": int(position.x),
 		"y": int(position.y),
 		"viewport_width": int(viewport_size.x),
 		"viewport_height": int(viewport_size.y),
-	})
-
-func _push_mouse_button(position: Vector2, pressed: bool) -> void:
-	var event := InputEventMouseButton.new()
-	event.button_index = MOUSE_BUTTON_LEFT
-	event.pressed = pressed
-	event.position = position
-	event.global_position = position
-	event.factor = 1.0
-	get_viewport().push_input(event, true)
+	}
+	if target.has("path"):
+		data["path"] = target.get("path")
+	if target.has("text"):
+		data["text"] = target.get("text")
+	return _response(request, true, data)
 
 func _screenshot(request: Dictionary) -> Dictionary:
-	var image := get_viewport().get_texture().get_image()
-	if image == null or image.is_empty():
-		return _response(request, false, { "error": "runtime screenshot produced an empty image" })
-	var out_path := String(request.get("path", "user://hera_game_screenshots/latest.png"))
-	var abs_path := ProjectSettings.globalize_path(out_path)
-	DirAccess.make_dir_recursive_absolute(abs_path.get_base_dir())
-	var err := image.save_png(out_path)
-	if err != OK:
-		return _response(request, false, { "error": "save failed: %s" % error_string(err) })
-	var data := {
-		"path": abs_path,
-		"width": image.get_width(),
-		"height": image.get_height(),
-		"pid": _pid,
-		"scene": _current_scene_path(),
-	}
-	if bool(request.get("analyze", false)):
-		data["analysis"] = GameImageAnalyzer.analyze(image)
+	var result := GameViewportActions.screenshot(get_viewport(), request, _current_scene_path(), _pid)
+	if not bool(result.get("ok", false)):
+		return _response(request, false, { "error": String(result.get("error", "runtime screenshot failed")) })
+	var data: Dictionary = result.get("data", {})
 	return _response(request, true, data)
 
 func _properties_from_request(node: Node, request: Dictionary) -> Dictionary:
@@ -228,19 +219,6 @@ func _node_from_request(request: Dictionary) -> Node:
 	if path == "":
 		return null
 	return _resolve(path)
-
-func _collect(node: Node, out: Array) -> void:
-	if out.size() > MAX_NODES:
-		return
-	out.append({
-		"path": String(node.get_path()),
-		"type": node.get_class(),
-		"name": String(node.name),
-	})
-	for child in node.get_children():
-		_collect(child, out)
-		if out.size() > MAX_NODES:
-			return
 
 func _resolve(path: String) -> Node:
 	if path.begins_with("/"):
