@@ -78,6 +78,8 @@ func Execute(args []string) int {
 		return runStop(args[1:])
 	case "scene":
 		return runScene(args[1:])
+	case "editor":
+		return runEditor(args[1:])
 	case "node":
 		return runNode(args[1:])
 	case "script":
@@ -129,11 +131,12 @@ commands:
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
   scene      tree | list | open <res://...> | save | create [--open] | save-as
-  node       find|get|add|set|set-resource|remove|attach-script|detach-script
-  script     create <res://script.gd> [--extends Class] [--class-name Name] [--force]
-  project    info | list-files | mkdir <res://dir> | set-main-scene <res://scene.tscn>
+  editor     state | selected | select <node> [--add] | clear-selection
+  node       find|get|add|instance|set|set-resource|remove|attach-script|detach-script
+  script     current | inspect|open <res://script.gd> | create <res://script.gd> [--tool]
+  project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
-  resource   get|uid|resave|update-uids|export-mesh-library
+  resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
   classdb    info|methods|properties|inherits
   game       tree | instances | screenshot | click | assert | qa | node get|set|call
   instances  list live Hera-enabled Godot editors

@@ -15,12 +15,16 @@ func execute(params: Dictionary) -> Dictionary:
 			return _info()
 		"list_files":
 			return _list_files(params)
+		"scan":
+			return _scan()
+		"reimport":
+			return _reimport(params)
 		"mkdir":
 			return _mkdir(params)
 		"set_main_scene":
 			return _set_main_scene(params)
 		_:
-			return ToolResponse.failure("unknown project action: %s (want info|list_files|mkdir|set_main_scene)" % action)
+			return ToolResponse.failure("unknown project action: %s (want info|list_files|scan|reimport|mkdir|set_main_scene)" % action)
 
 func _info() -> Dictionary:
 	var files := _scan_files()
@@ -85,6 +89,35 @@ func _mkdir(params: Dictionary) -> Dictionary:
 	_refresh_filesystem()
 	return ToolResponse.success({ "created": path })
 
+func _scan() -> Dictionary:
+	var fs := EditorInterface.get_resource_filesystem()
+	if fs == null:
+		return ToolResponse.failure("editor resource filesystem is not available")
+	fs.scan()
+	return ToolResponse.success({ "scanned": true, "path": "res://" })
+
+func _reimport(params: Dictionary) -> Dictionary:
+	var raw_paths: Variant = params.get("paths", [])
+	if typeof(raw_paths) != TYPE_ARRAY:
+		return ToolResponse.failure("paths must be an array")
+	var paths := PackedStringArray()
+	for raw_path in raw_paths:
+		var path := String(raw_path)
+		var guard := _guard_project_file(path)
+		if guard != "":
+			return ToolResponse.failure(guard)
+		paths.append(path)
+	var fs := EditorInterface.get_resource_filesystem()
+	if fs == null:
+		return ToolResponse.failure("editor resource filesystem is not available")
+	if not fs.has_method("reimport_files"):
+		return ToolResponse.failure("resource filesystem cannot reimport files in this Godot version")
+	fs.call("reimport_files", paths)
+	var out := []
+	for path in paths:
+		out.append(String(path))
+	return ToolResponse.success({ "reimported": paths.size(), "paths": out })
+
 func _set_main_scene(params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
 	if path == "":
@@ -102,6 +135,17 @@ func _set_main_scene(params: Dictionary) -> Dictionary:
 	if err != OK:
 		return ToolResponse.failure("could not save ProjectSettings: %s" % error_string(err))
 	return ToolResponse.success({ "main_scene": path })
+
+func _guard_project_file(path: String) -> String:
+	if path == "":
+		return "file path is required"
+	if not path.begins_with("res://"):
+		return "file path must start with res://"
+	if not _is_safe_res_path(path):
+		return "file path must stay inside res://"
+	if not FileAccess.file_exists(path):
+		return "file not found: %s" % path
+	return ""
 
 func _scan_files() -> Array:
 	var out := []

@@ -21,6 +21,14 @@ func TestParseNodeArgs_Write(t *testing.T) {
 		{name: "add no type", args: []string{"add"}, wantErr: true},
 		{name: "add dangling parent", args: []string{"add", "Node2D", "--parent"}, wantErr: true},
 		{name: "add unknown flag", args: []string{"add", "Node2D", "--bad"}, wantErr: true},
+		{name: "instance minimal", args: []string{"instance", "res://scenes/Enemy.tscn"},
+			wantAction: "instance", want: map[string]any{"scene": "res://scenes/Enemy.tscn"}},
+		{name: "instance with parent and name", args: []string{"instance", "res://scenes/Enemy.tscn", "--parent", "Root", "--name", "Enemy"},
+			wantAction: "instance", want: map[string]any{"scene": "res://scenes/Enemy.tscn", "parent": "Root", "name": "Enemy"}},
+		{name: "instance no scene", args: []string{"instance"}, wantErr: true},
+		{name: "instance dangling parent", args: []string{"instance", "res://Enemy.tscn", "--parent"}, wantErr: true},
+		{name: "instance dangling name", args: []string{"instance", "res://Enemy.tscn", "--name"}, wantErr: true},
+		{name: "instance unknown flag", args: []string{"instance", "res://Enemy.tscn", "--bad"}, wantErr: true},
 
 		{name: "set", args: []string{"set", "Hero", "--prop", "position", "--value", "Vector2(1, 2)"},
 			wantAction: "set", want: map[string]any{"path": "Hero", "prop": "position", "value": "Vector2(1, 2)"}},
@@ -66,6 +74,12 @@ func TestParseNodeArgs_Write(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestNodeActionMutates_Instance(t *testing.T) {
+	if !nodeActionMutates("instance") {
+		t.Fatalf("node instance should require the mutation path")
 	}
 }
 

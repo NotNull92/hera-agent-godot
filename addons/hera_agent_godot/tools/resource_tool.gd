@@ -1,6 +1,9 @@
 extends RefCounted
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
+const ResourceValueCodec = preload("res://addons/hera_agent_godot/tools/resource_value_codec.gd")
+const MeshLibraryExporter = preload("res://addons/hera_agent_godot/tools/mesh_library_exporter.gd")
+const ResourceLister = preload("res://addons/hera_agent_godot/tools/resource_lister.gd")
 
 const MAX_VALUE_LEN := 200
 const MAX_ERRORS := 20
@@ -15,6 +18,12 @@ func execute(params: Dictionary) -> Dictionary:
 			return _describe(params)
 		"uid":
 			return _uid(params)
+		"list":
+			return _list(params)
+		"set":
+			return _set_resource(params)
+		"create":
+			return _create(params)
 		"resave":
 			return _resave(params)
 		"update_uids":
@@ -22,7 +31,7 @@ func execute(params: Dictionary) -> Dictionary:
 		"export_mesh_library":
 			return _export_mesh_library(params)
 		_:
-			return ToolResponse.failure("unknown resource action: %s (want get|uid|resave|update_uids|export_mesh_library)" % action)
+			return ToolResponse.failure("unknown resource action: %s (want get|uid|list|set|create|resave|update_uids|export_mesh_library)" % action)
 
 func _describe(params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
@@ -58,6 +67,63 @@ func _uid(params: Dictionary) -> Dictionary:
 		"uid_path": uid_path,
 		"sidecar_exists": FileAccess.file_exists(uid_path),
 		"sidecar": sidecar,
+	})
+
+func _list(params: Dictionary) -> Dictionary:
+	var lister := ResourceLister.new()
+	return lister.list_resources(params)
+
+func _set_resource(params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	var guard := _guard_loadable_path(path)
+	if guard != "":
+		return ToolResponse.failure(guard)
+	var res := ResourceLoader.load(path)
+	if res == null:
+		return ToolResponse.failure("failed to load resource: %s" % path)
+	var prop_result := ResourceValueCodec.apply_props(res, params.get("props", {}))
+	if not bool(prop_result.get("ok", false)):
+		return ToolResponse.failure(String(prop_result.get("error", "invalid resource properties")))
+	var err := ResourceSaver.save(res, path)
+	if err != OK:
+		return ToolResponse.failure("save failed: %s" % error_string(err))
+	return ToolResponse.success({
+		"updated": path,
+		"type": res.get_class(),
+		"properties": prop_result.get("properties", {}),
+		"uid": _resource_uid(path),
+	})
+
+func _create(params: Dictionary) -> Dictionary:
+	var type := String(params.get("type", ""))
+	if type == "":
+		return ToolResponse.failure("resource type is required")
+	if not ClassDB.class_exists(type):
+		return ToolResponse.failure("class not found: %s" % type)
+	if not ClassDB.can_instantiate(type) or not (type == "Resource" or ClassDB.is_parent_class(type, "Resource")):
+		return ToolResponse.failure("not an instantiable Resource class: %s" % type)
+	var path := String(params.get("path", ""))
+	var guard := _guard_save_path(path, bool(params.get("force", false)))
+	if guard != "":
+		return ToolResponse.failure(guard)
+	var res := ClassDB.instantiate(type) as Resource
+	if res == null:
+		return ToolResponse.failure("failed to instantiate Resource class: %s" % type)
+	var prop_result := ResourceValueCodec.apply_props(res, params.get("props", {}))
+	if not bool(prop_result.get("ok", false)):
+		return ToolResponse.failure(String(prop_result.get("error", "invalid resource properties")))
+	var dir_err := _ensure_parent_dir(path)
+	if dir_err != "":
+		return ToolResponse.failure(dir_err)
+	var err := ResourceSaver.save(res, path)
+	if err != OK:
+		return ToolResponse.failure("save failed: %s" % error_string(err))
+	_refresh_filesystem()
+	return ToolResponse.success({
+		"created": path,
+		"type": res.get_class(),
+		"properties": prop_result.get("properties", {}),
+		"uid": _resource_uid(path),
 	})
 
 func _resave(params: Dictionary) -> Dictionary:
@@ -105,47 +171,10 @@ func _update_uids() -> Dictionary:
 	})
 
 func _export_mesh_library(params: Dictionary) -> Dictionary:
-	var scene_path := String(params.get("path", ""))
-	if not scene_path.begins_with("res://") or not scene_path.ends_with(".tscn"):
-		return ToolResponse.failure("scene path must be a res:// .tscn file")
-	if not _is_safe_res_path(scene_path) or not ResourceLoader.exists(scene_path, "PackedScene"):
-		return ToolResponse.failure("scene not found or not safe: %s" % scene_path)
-	var output := String(params.get("output", ""))
-	if not output.begins_with("res://") or not (output.ends_with(".tres") or output.ends_with(".res")):
-		return ToolResponse.failure("output must be a res:// .tres or .res path")
-	if not _is_safe_res_path(output):
-		return ToolResponse.failure("output path must stay inside res://")
-	var packed: PackedScene = ResourceLoader.load(scene_path, "PackedScene")
-	if packed == null:
-		return ToolResponse.failure("failed to load scene: %s" % scene_path)
-	var root := packed.instantiate()
-	if root == null:
-		return ToolResponse.failure("failed to instantiate scene: %s" % scene_path)
-	var wanted := _wanted_items(params.get("items", []))
-	var library := MeshLibrary.new()
-	var exported := []
-	var item_id := 0
-	for node in _mesh_item_roots(root):
-		var item_name := String(node.name)
-		if not wanted.is_empty() and not wanted.has(item_name):
-			continue
-		var mesh_node := _first_mesh_instance(node)
-		if mesh_node == null or mesh_node.mesh == null:
-			continue
-		library.create_item(item_id)
-		library.set_item_name(item_id, item_name)
-		library.set_item_mesh(item_id, mesh_node.mesh)
-		library.set_item_mesh_transform(item_id, mesh_node.transform)
-		exported.append({ "id": item_id, "name": item_name, "mesh": String(root.get_path_to(mesh_node)) })
-		item_id += 1
-	root.free()
-	if exported.is_empty():
-		return ToolResponse.failure("no mesh items found in scene")
-	var err := ResourceSaver.save(library, output)
-	if err != OK:
-		return ToolResponse.failure("save failed: %s" % error_string(err))
-	_refresh_filesystem()
-	return ToolResponse.success({ "source": scene_path, "output": output, "count": exported.size(), "items": exported })
+	var response := MeshLibraryExporter.export(params)
+	if bool(response.get("ok", false)):
+		_refresh_filesystem()
+	return response
 
 func _properties(res: Resource) -> Dictionary:
 	var result := {}
@@ -173,6 +202,26 @@ func _guard_loadable_path(path: String) -> String:
 		return "resource not found: %s" % path
 	return ""
 
+func _guard_save_path(path: String, force: bool) -> String:
+	if path == "":
+		return "resource path is required"
+	if not path.begins_with("res://"):
+		return "resource path must start with res://"
+	if not (path.ends_with(".tres") or path.ends_with(".res")):
+		return "resource path must end with .tres or .res"
+	if not _is_safe_res_path(path):
+		return "resource path must stay inside res://"
+	if FileAccess.file_exists(path) and not force:
+		return "resource already exists: %s (pass --force to overwrite)" % path
+	return ""
+
+func _ensure_parent_dir(path: String) -> String:
+	var parent := path.get_base_dir()
+	var err := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(parent))
+	if err != OK:
+		return "could not create parent directory: %s" % parent
+	return ""
+
 func _resource_uid(path: String) -> String:
 	if ResourceLoader.has_method("get_resource_uid"):
 		var uid: int = ResourceLoader.call("get_resource_uid", path)
@@ -198,31 +247,6 @@ func _collect_resavable(dir_path: String, out: Array) -> void:
 
 func _is_resavable_extension(path: String) -> bool:
 	return ["tscn", "scn", "tres", "res", "gdshader", "shader", "gd", "cs"].has(path.get_extension().to_lower())
-
-func _wanted_items(raw: Variant) -> Array:
-	var out := []
-	if typeof(raw) != TYPE_ARRAY:
-		return out
-	for value in raw:
-		var name := String(value)
-		if name != "":
-			out.append(name)
-	return out
-
-func _mesh_item_roots(root: Node) -> Array:
-	var out := []
-	for child in root.get_children():
-		out.append(child)
-	return out
-
-func _first_mesh_instance(node: Node) -> MeshInstance3D:
-	if node is MeshInstance3D:
-		return node
-	for child in node.get_children():
-		var found := _first_mesh_instance(child)
-		if found != null:
-			return found
-	return null
 
 func _refresh_filesystem() -> void:
 	var fs := EditorInterface.get_resource_filesystem()

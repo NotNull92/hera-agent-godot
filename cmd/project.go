@@ -27,12 +27,17 @@ func runProject(args []string) int {
 }
 
 func projectActionMutates(action any) bool {
-	return action == "mkdir" || action == "set_main_scene"
+	switch action {
+	case "mkdir", "set_main_scene", "scan", "reimport":
+		return true
+	default:
+		return false
+	}
 }
 
 func parseProjectArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: project <info|list-files|mkdir|set-main-scene> ...")
+		return nil, fmt.Errorf("usage: project <info|list-files|scan|reimport|mkdir|set-main-scene> ...")
 	}
 	switch args[0] {
 	case "info":
@@ -44,6 +49,13 @@ func parseProjectArgs(args []string) (map[string]any, error) {
 	case "list-files":
 		return parseProjectListFilesArgs(args[1:])
 
+	case "scan":
+		if len(args) != 1 {
+			return nil, fmt.Errorf("usage: project scan")
+		}
+		return map[string]any{"action": "scan"}, nil
+	case "reimport":
+		return parseProjectReimportArgs(args[1:])
 	case "mkdir":
 		if len(args) != 2 {
 			return nil, fmt.Errorf("usage: project mkdir <res://dir>")
@@ -55,8 +67,17 @@ func parseProjectArgs(args []string) (map[string]any, error) {
 		}
 		return map[string]any{"action": "set_main_scene", "path": args[1]}, nil
 	default:
-		return nil, fmt.Errorf("unknown project subcommand %q (want info|list-files|mkdir|set-main-scene)", args[0])
+		return nil, fmt.Errorf("unknown project subcommand %q (want info|list-files|scan|reimport|mkdir|set-main-scene)", args[0])
 	}
+}
+
+func parseProjectReimportArgs(args []string) (map[string]any, error) {
+	if len(args) == 0 {
+		return nil, fmt.Errorf("usage: project reimport <res://file> ...")
+	}
+	paths := make([]string, 0, len(args))
+	paths = append(paths, args...)
+	return map[string]any{"action": "reimport", "paths": paths}, nil
 }
 
 func parseProjectListFilesArgs(args []string) (map[string]any, error) {

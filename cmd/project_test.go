@@ -15,12 +15,20 @@ func TestParseScriptArgs(t *testing.T) {
 		wantPath   any
 		wantErr    bool
 	}{
+		{name: "current", args: []string{"current"}, wantAction: "current"},
+		{name: "inspect", args: []string{"inspect", "res://scripts/player.gd"}, wantAction: "inspect", wantPath: "res://scripts/player.gd"},
 		{name: "create", args: []string{"create", "res://scripts/player.gd"}, wantAction: "create", wantPath: "res://scripts/player.gd"},
 		{name: "create options", args: []string{"create", "res://scripts/player.gd", "--extends", "Node2D", "--class-name", "Player", "--force"}, wantAction: "create", wantPath: "res://scripts/player.gd"},
+		{name: "create template flags", args: []string{"create", "res://scripts/player.gd", "--tool", "--ready", "--process", "--physics-process", "--input", "--unhandled-input", "--signal", "health_changed", "--signal", "died", "--export", "speed:float=240.0", "--export", "target:NodePath"}, wantAction: "create", wantPath: "res://scripts/player.gd"},
 		{name: "missing subcommand", wantErr: true},
+		{name: "current extra", args: []string{"current", "extra"}, wantErr: true},
+		{name: "inspect missing path", args: []string{"inspect"}, wantErr: true},
+		{name: "inspect extra", args: []string{"inspect", "res://a.gd", "extra"}, wantErr: true},
 		{name: "missing path", args: []string{"create"}, wantErr: true},
 		{name: "dangling extends", args: []string{"create", "res://a.gd", "--extends"}, wantErr: true},
 		{name: "dangling class", args: []string{"create", "res://a.gd", "--class-name"}, wantErr: true},
+		{name: "dangling signal", args: []string{"create", "res://a.gd", "--signal"}, wantErr: true},
+		{name: "dangling export", args: []string{"create", "res://a.gd", "--export"}, wantErr: true},
 		{name: "unknown flag", args: []string{"create", "res://a.gd", "--bad"}, wantErr: true},
 	}
 	for _, tt := range tests {
@@ -46,7 +54,39 @@ func TestParseScriptArgs(t *testing.T) {
 					t.Fatalf("params = %v, want extends/class_name/force", p)
 				}
 			}
+			if tt.name == "create template flags" {
+				signals, ok := p["signals"].([]string)
+				if !ok || len(signals) != 2 || signals[0] != "health_changed" || signals[1] != "died" {
+					t.Fatalf("signals = %#v, want health_changed/died", p["signals"])
+				}
+				exports, ok := p["exports"].([]string)
+				if !ok || len(exports) != 2 || exports[0] != "speed:float=240.0" || exports[1] != "target:NodePath" {
+					t.Fatalf("exports = %#v, want speed/target", p["exports"])
+				}
+				for _, key := range []string{"tool", "ready", "process", "physics_process", "input", "unhandled_input"} {
+					if p[key] != true {
+						t.Fatalf("%s = %v, want true in %v", key, p[key], p)
+					}
+				}
+			}
 		})
+	}
+}
+
+func TestScriptActionMutates(t *testing.T) {
+	tests := []struct {
+		action any
+		want   bool
+	}{
+		{action: "current"},
+		{action: "inspect"},
+		{action: "create", want: true},
+		{action: nil},
+	}
+	for _, tt := range tests {
+		if got := scriptActionMutates(tt.action); got != tt.want {
+			t.Fatalf("scriptActionMutates(%v) = %v, want %v", tt.action, got, tt.want)
+		}
 	}
 }
 

@@ -12,6 +12,8 @@ extends RefCounted
 # undo agent changes (Ctrl+Z). The plugin injects it via set_undo_redo().
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
+const NodeValueCodec = preload("res://addons/hera_agent_godot/tools/node_value_codec.gd")
+const NodeSceneInstancer = preload("res://addons/hera_agent_godot/tools/node_scene_instancer.gd")
 
 const MAX_NODES := 1000
 const MAX_VALUE_LEN := 200
@@ -36,6 +38,8 @@ func execute(params: Dictionary) -> Dictionary:
 			return _describe(root, params)
 		"add":
 			return _add_node(root, params)
+		"instance":
+			return NodeSceneInstancer.execute(root, params, _undo_redo)
 		"set":
 			return _set_property(root, params)
 		"set_resource":
@@ -47,7 +51,7 @@ func execute(params: Dictionary) -> Dictionary:
 		"detach_script":
 			return _detach_script(root, params)
 		_:
-			return ToolResponse.failure("unknown node action: %s (want find|get|add|set|set_resource|remove|attach_script|detach_script)" % action)
+			return ToolResponse.failure("unknown node action: %s (want find|get|add|instance|set|set_resource|remove|attach_script|detach_script)" % action)
 
 func _find(root: Node, params: Dictionary) -> Dictionary:
 	var query := String(params.get("query", "")).to_lower()
@@ -83,7 +87,7 @@ func _describe(root: Node, params: Dictionary) -> Dictionary:
 		"path": String(params.get("path", ".")),
 		"type": node.get_class(),
 		"name": String(node.name),
-		"properties": _properties(node),
+		"properties": NodeValueCodec.properties(node, MAX_VALUE_LEN),
 	})
 
 func _add_node(root: Node, params: Dictionary) -> Dictionary:
@@ -128,7 +132,7 @@ func _set_property(root: Node, params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("node has no property: %s" % prop)
 
 	var old_value: Variant = node.get(prop)
-	var coerced := _coerce(params.get("value"), prop_info)
+	var coerced := NodeValueCodec.coerce(params.get("value"), prop_info)
 	if not bool(coerced.get("ok", false)):
 		return ToolResponse.failure(String(coerced.get("error", "invalid property value")))
 	var new_value: Variant = coerced.get("value")
@@ -277,61 +281,3 @@ func _is_safe_res_path(path: String) -> bool:
 		if part == "" or part == "." or part == "..":
 			return false
 	return true
-
-func _coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
-	var target_type := int(prop_info.get("type", TYPE_NIL))
-	if typeof(raw) != TYPE_STRING:
-		return { "ok": true, "value": raw }
-	var s := String(raw)
-	match target_type:
-		TYPE_STRING:
-			return { "ok": true, "value": s }
-		TYPE_STRING_NAME:
-			return { "ok": true, "value": StringName(s) }
-		TYPE_BOOL:
-			var lower := s.to_lower()
-			if lower == "true" or lower == "1":
-				return { "ok": true, "value": true }
-			if lower == "false" or lower == "0":
-				return { "ok": true, "value": false }
-			return { "ok": false, "error": "invalid bool value for property: %s" % s }
-		TYPE_INT:
-			if not s.is_valid_int():
-				return { "ok": false, "error": "invalid int value for property: %s" % s }
-			return { "ok": true, "value": int(s) }
-		TYPE_FLOAT:
-			if not s.is_valid_float():
-				return { "ok": false, "error": "invalid float value for property: %s" % s }
-			return { "ok": true, "value": float(s) }
-		TYPE_NODE_PATH:
-			return { "ok": true, "value": NodePath(s) }
-		TYPE_NIL:
-			if s == "null":
-				return { "ok": true, "value": null }
-			return { "ok": false, "error": "cannot infer type for null property: %s" % String(prop_info.get("name", "")) }
-		TYPE_OBJECT:
-			return { "ok": false, "error": "unsupported object/resource property: %s" % String(prop_info.get("name", "")) }
-		_:
-			var parsed: Variant = str_to_var(s) # e.g. "Vector2(1, 2)", "[1, 2]"
-			if parsed == null and s != "null":
-				return { "ok": false, "error": "invalid %s value for property: %s" % [type_string(target_type), s] }
-			if typeof(parsed) != target_type:
-				return { "ok": false, "error": "property expects %s, got %s" % [type_string(target_type), type_string(typeof(parsed))] }
-			return { "ok": true, "value": parsed }
-
-func _properties(node: Node) -> Dictionary:
-	var result := {}
-	for prop in node.get_property_list():
-		var usage := int(prop.get("usage", 0))
-		if not (usage & PROPERTY_USAGE_EDITOR):
-			continue
-		if usage & (PROPERTY_USAGE_CATEGORY | PROPERTY_USAGE_GROUP | PROPERTY_USAGE_SUBGROUP):
-			continue
-		var pname := String(prop.get("name", ""))
-		if pname == "":
-			continue
-		var text := str(node.get(pname))
-		if text.length() > MAX_VALUE_LEN:
-			text = text.substr(0, MAX_VALUE_LEN) + "…"
-		result[pname] = text
-	return result

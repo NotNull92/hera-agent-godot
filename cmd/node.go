@@ -27,7 +27,7 @@ func runNode(args []string) int {
 
 func nodeActionMutates(action any) bool {
 	switch action {
-	case "add", "set", "set_resource", "remove", "attach_script", "detach_script":
+	case "add", "instance", "set", "set_resource", "remove", "attach_script", "detach_script":
 		return true
 	default:
 		return false
@@ -36,7 +36,7 @@ func nodeActionMutates(action any) bool {
 
 func parseNodeArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: node <find|get|add|set|remove> ...")
+		return nil, fmt.Errorf("usage: node <find|get|add|instance|set|remove> ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -72,6 +72,31 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 			return nil, fmt.Errorf("usage: node add <type> [--parent <path>] [--name <name>]")
 		}
 		params := map[string]any{"action": "add", "type": rest[0]}
+		for i := 1; i < len(rest); i++ {
+			switch rest[i] {
+			case "--parent":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--parent requires a value")
+				}
+				i++
+				params["parent"] = rest[i]
+			case "--name":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--name requires a value")
+				}
+				i++
+				params["name"] = rest[i]
+			default:
+				return nil, fmt.Errorf("unknown flag %q", rest[i])
+			}
+		}
+		return params, nil
+
+	case "instance":
+		if len(rest) == 0 {
+			return nil, fmt.Errorf("usage: node instance <res://scene.tscn> [--parent <path>] [--name <name>]")
+		}
+		params := map[string]any{"action": "instance", "scene": rest[0]}
 		for i := 1; i < len(rest); i++ {
 			switch rest[i] {
 			case "--parent":
@@ -173,6 +198,6 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		return map[string]any{"action": "detach_script", "path": rest[0]}, nil
 
 	default:
-		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|set|set-resource|remove|attach-script|detach-script)", sub)
+		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|instance|set|set-resource|remove|attach-script|detach-script)", sub)
 	}
 }
