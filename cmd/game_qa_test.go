@@ -55,3 +55,29 @@ func TestGameClickParamsFromQAStep_targetsText_whenTextProvided(t *testing.T) {
 		t.Fatalf("text = %v, want Restart", params["text"])
 	}
 }
+
+func TestGameNodeGetParamsFromQAStep_passesSelectedProps_whenProvided(t *testing.T) {
+	// Given
+	step := gameQAStep{Tool: "game.node.get", Path: "/root/Main", Props: []string{"score", "player.position"}}
+
+	// When
+	params := gameNodeGetParamsFromQAStep(step)
+
+	// Then
+	if params["action"] != "get" {
+		t.Fatalf("action = %v, want get", params["action"])
+	}
+	if params["path"] != "/root/Main" {
+		t.Fatalf("path = %v, want /root/Main", params["path"])
+	}
+	props, ok := params["props"].([]string)
+	if !ok {
+		t.Fatalf("props = %T, want []string", params["props"])
+	}
+	if len(props) != 2 || props[0] != "score" || props[1] != "player.position" {
+		t.Fatalf("props = %v, want [score player.position]", props)
+	}
+	if _, ok := params["prop"]; ok {
+		t.Fatalf("prop should be omitted when props is provided: %v", params)
+	}
+}

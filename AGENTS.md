@@ -32,6 +32,7 @@ hera status                                  # project / version / active scene
 hera scene tree                              # node tree of the edited scene
 hera scene list                              # open scenes + current
 hera scene open res://Path.tscn              # open a scene
+hera scene reload [res://Path.tscn]          # reload current/open scene from disk
 hera scene save                              # save the edited scene
 hera scene create res://Path.tscn [--root Node2D] [--force] [--open]
 hera scene save-as res://Path.tscn [--force]
@@ -99,7 +100,7 @@ target a pid shown by `status`). Default output is compact JSON.
 - **Run one live editor per project.** Hera is designed for a single active
   Godot editor. Mutation-capable commands (`node add/instance/set/remove`,
   `node attach-script/detach-script`, `signal connect/disconnect`,
-  `scene open/save/create/save-as`, `editor select/clear-selection`, `script open/create`, `resource set/create`, `project mkdir/scan/reimport`,
+  `scene open/reload/save/create/save-as`, `editor select/clear-selection`, `script open/create`, `resource set/create`, `project mkdir/scan/reimport`,
   `project set-main-scene`, `eval`, `game node set/call`, `smoke --run-game`,
   and `batch`) enforce that by
   refusing to run when several editors are live unless `--instance <pid>` is
@@ -141,6 +142,9 @@ target a pid shown by `status`). Default output is compact JSON.
   `resource set/create`, `project mkdir/reimport`, `project set-main-scene`, `scene create`, and
   `scene save-as` write project files; use `--force` only when overwriting is
   intended.
+- **Use a single writer for scene files.** Before external `.tscn` edits, stop the
+  running game with `hera stop --wait`; after external edits, run
+  `hera scene reload [res://Path.tscn]` before saving through the editor.
 - **`node set` value** is coerced to the property's type. Pass GDScript-literal
   syntax for complex types, e.g. `--value "Vector2(10, 20)"`.
 

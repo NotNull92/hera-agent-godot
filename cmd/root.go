@@ -130,7 +130,7 @@ commands:
   status     show the connected editor (project, version, active scene)
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
-  scene      tree | list | open <res://...> | save | create [--open] | save-as
+  scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
   editor     state | selected | select <node> [--add] | clear-selection
   node       find|get|add|instance|set|set-resource|remove|attach-script|detach-script
   script     current | inspect|open <res://script.gd> | create <res://script.gd> [--tool]

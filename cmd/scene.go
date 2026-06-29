@@ -19,7 +19,7 @@ func runScene(args []string) int {
 
 func sceneActionMutates(action any) bool {
 	switch action {
-	case "open", "save", "create", "save_as":
+	case "open", "reload", "save", "create", "save_as":
 		return true
 	default:
 		return false
@@ -46,6 +46,15 @@ func parseSceneArgs(args []string) (map[string]any, error) {
 			return nil, fmt.Errorf("usage: scene open <res://...>")
 		}
 		return map[string]any{"action": "open", "path": args[1]}, nil
+	case "reload":
+		if len(args) > 2 {
+			return nil, fmt.Errorf("usage: scene reload [res://...]")
+		}
+		params := map[string]any{"action": "reload"}
+		if len(args) == 2 {
+			params["path"] = args[1]
+		}
+		return params, nil
 	case "save":
 		if len(args) > 1 {
 			return nil, fmt.Errorf("scene save does not accept arguments")
@@ -56,7 +65,7 @@ func parseSceneArgs(args []string) (map[string]any, error) {
 	case "save-as":
 		return parseSceneSaveAsArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown scene subcommand %q (want tree|list|open|save|create|save-as)", args[0])
+		return nil, fmt.Errorf("unknown scene subcommand %q (want tree|list|open|reload|save|create|save-as)", args[0])
 	}
 }
 

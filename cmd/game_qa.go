@@ -14,6 +14,7 @@ type gameQAStep struct {
 	Tool        string         `json:"tool"`
 	Path        string         `json:"path"`
 	Prop        string         `json:"prop"`
+	Props       []string       `json:"props"`
 	Op          string         `json:"op"`
 	Value       any            `json:"value"`
 	X           int            `json:"x"`
@@ -203,7 +204,9 @@ func runParamsFromQAStep(step gameQAStep) map[string]any {
 
 func gameNodeGetParamsFromQAStep(step gameQAStep) map[string]any {
 	params := map[string]any{"action": "get", "path": normalizeGameNodePath(step.Path)}
-	if step.Prop != "" {
+	if len(step.Props) > 0 {
+		params["props"] = step.Props
+	} else if step.Prop != "" {
 		params["prop"] = step.Prop
 	}
 	return params

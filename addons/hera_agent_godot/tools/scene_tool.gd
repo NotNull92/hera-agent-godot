@@ -4,6 +4,7 @@ extends RefCounted
 #   tree         -> flat node list of the edited scene { path, type, name }
 #   open_scenes  -> open scene paths + the current one
 #   open         -> open a scene by path
+#   reload       -> reload the current or given open scene from disk
 #   save         -> save the edited scene
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
@@ -25,6 +26,8 @@ func execute(params: Dictionary) -> Dictionary:
 			})
 		"open":
 			return _open(params)
+		"reload":
+			return _reload(params)
 		"save":
 			return _save()
 		"create":
@@ -32,7 +35,7 @@ func execute(params: Dictionary) -> Dictionary:
 		"save_as":
 			return _save_as(params)
 		_:
-			return ToolResponse.failure("unknown scene action: %s (want tree|open_scenes|open|save|create|save_as)" % action)
+			return ToolResponse.failure("unknown scene action: %s (want tree|open_scenes|open|reload|save|create|save_as)" % action)
 
 func _tree() -> Dictionary:
 	var root := EditorInterface.get_edited_scene_root()
@@ -58,6 +61,23 @@ func _open(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("scene not found or not a PackedScene: %s" % path)
 	EditorInterface.open_scene_from_path(path)
 	return ToolResponse.success({ "requested_open": path, "current": _current_scene() })
+
+func _reload(params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	if path == "":
+		path = _current_scene()
+	if path == "":
+		return ToolResponse.failure("no scene to reload")
+	var guard := _guard_existing_scene_path(path)
+	if not guard.is_empty():
+		return guard
+	if not ResourceLoader.exists(path, "PackedScene"):
+		return ToolResponse.failure("scene not found or not a PackedScene: %s" % path)
+	var open_scenes := _to_unique_strings(EditorInterface.get_open_scenes())
+	if not open_scenes.has(path):
+		return ToolResponse.failure("scene is not open: %s" % path)
+	EditorInterface.reload_scene_from_path(path)
+	return ToolResponse.success({ "reloaded": path, "current": _current_scene() })
 
 func _save() -> Dictionary:
 	var root := EditorInterface.get_edited_scene_root()
@@ -124,14 +144,22 @@ func _save_as(params: Dictionary) -> Dictionary:
 func _guard_scene_path(path: String, force: bool) -> Dictionary:
 	if path == "":
 		return ToolResponse.failure("scene path is required")
+	var guard := _guard_existing_scene_path(path)
+	if not guard.is_empty():
+		return guard
+	if FileAccess.file_exists(path) and not force:
+		return ToolResponse.failure("scene already exists: %s (pass --force to overwrite)" % path)
+	return {}
+
+func _guard_existing_scene_path(path: String) -> Dictionary:
+	if path == "":
+		return ToolResponse.failure("scene path is required")
 	if not path.begins_with("res://"):
 		return ToolResponse.failure("scene path must start with res://")
 	if not path.ends_with(".tscn"):
 		return ToolResponse.failure("scene path must end with .tscn")
 	if not _is_safe_res_path(path):
 		return ToolResponse.failure("scene path must stay inside res://")
-	if FileAccess.file_exists(path) and not force:
-		return ToolResponse.failure("scene already exists: %s (pass --force to overwrite)" % path)
 	return {}
 
 func _is_safe_res_path(path: String) -> bool:

@@ -29,6 +29,12 @@ hera run --current
 hera output --type error --lines 80
 ```
 
+For timer-driven prompt games, include a deterministic QA path before runtime
+verification. Add script methods that pause or stop gameplay timers during QA,
+set up relevant state, and advance exactly one simulation step per explicit QA
+call. Do not mix real timer ticks with scripted assertions for movement,
+spawning, collision, or scoring rules.
+
 ## File Shape
 
 Typical script order:
