@@ -18,6 +18,7 @@
 .vs/
 .idea/
 .vscode/
+.agents/
 .omc/
 .omo/*
 !.omo/rules/
