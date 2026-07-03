@@ -28,7 +28,7 @@ The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 ## Commands
 
 ```
-hera status                                  # project / version / active scene
+hera status                                  # project / version / active scene / UI mode
 hera scene tree                              # node tree of the edited scene
 hera scene list                              # open scenes + current
 hera scene open res://Path.tscn              # open a scene
@@ -77,6 +77,7 @@ hera game assert <path> <prop> <op> [value]  # assert runtime property for QA
 hera game qa --file scenario.json            # run generic QA scenario
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
+hera guidance ui                             # UI guidance; reads Game Feel UI Mode
 hera output [--type log|error|warning|all] [--lines N]
 hera diagnostics [--lines N]                 # summarize project log errors/warnings
 hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or runtime viewport
@@ -93,6 +94,10 @@ target a pid shown by `status`). Default output is compact JSON.
 
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
+- **UI work reads the live guidance mode first.** Before agent-driven UI work,
+  run `hera guidance ui`. If it reports `game_feel_ui_mode: true`, implement
+  UI around Game Feel: immediate input feedback, expressive state changes,
+  satisfying bounded motion, and runtime visual QA for those effects.
 - **Mutations are undoable where Godot exposes editor undo.**
   `node add/instance/set/remove`, `node attach-script/detach-script`, and
   `signal connect/disconnect` register with the editor's undo history, so the

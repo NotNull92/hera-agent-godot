@@ -8,7 +8,7 @@ selected editor instance.
 
 | Command | Tool | Status | Description |
 |---------|------|--------|-------------|
-| `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene. |
+| `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, and Game Feel UI Mode state. |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the project log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Needs `debug/file_logging` enabled. |
@@ -71,6 +71,7 @@ selected editor instance.
 | `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified result. Runtime-only and may have side effects. |
 | `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
 | `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.ui.tree`, `game.click`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps; `game.node.get` accepts `prop` or `props`, runtime screenshots are analyzed by default, and the command returns a compact step summary. |
+| `guidance ui` | `guidance` | ☑ | Read the live editor's Game Feel UI Mode setting and return agent-facing UI implementation guidance. When enabled, UI work should favor snappy feedback, expressive state changes, satisfying motion, and runtime visual QA. |
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
 | `instances` | local | ☑ | List all live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. |
 | `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--analyze` is supported for runtime captures and returns generic image/layout metrics, including per-edge content ratios and possible clipping. |

@@ -98,6 +98,8 @@ func Execute(args []string) int {
 		return runInstances(args[1:])
 	case "eval":
 		return runEval(args[1:])
+	case "guidance":
+		return runGuidance(args[1:])
 	case "output":
 		return runOutput(args[1:])
 	case "diagnostics":
@@ -127,7 +129,7 @@ func usage() {
 usage: hera-agent-godot [--json|--ids] [--instance <pid>] <command> [flags]
 
 commands:
-  status     show the connected editor (project, version, active scene)
+  status     show the connected editor (project, version, active scene, UI mode)
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
   scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
@@ -141,6 +143,7 @@ commands:
   game       tree | ui tree | instances | screenshot | click | assert | qa | node get|set|call
   instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor
+  guidance   ui
   output     tail project log (--type log|error|warning|all, --lines N)
   diagnostics summarize project log errors and warnings (--lines N)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent, --runtime, --analyze)

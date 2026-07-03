@@ -46,6 +46,12 @@ interaction boundaries the player sees. If the AI can act after a human move,
 capture the state before the human half-move and before the automated half-move
 as separate undo boundaries.
 
+Before agent-driven UI work, run `hera guidance ui` when a live editor is
+available. If it reports `game_feel_ui_mode: true`, treat Game Feel as a hard UI
+requirement: add immediate input feedback, expressive state changes, satisfying
+motion where it clarifies state, and runtime visual QA that proves the feedback
+does not clip or shift the layout unexpectedly.
+
 ## File Shape
 
 Typical script order:
@@ -765,6 +771,9 @@ Before finishing GDScript work:
 - Runtime QA starts from a clean process when possible: stop the current game,
   check `hera game instances`, run with `hera run --current --wait`, then inspect
   `hera game ui tree` or `hera game tree`.
+- UI work checks `hera guidance ui`; when Game Feel UI Mode is enabled, the
+  implementation includes snappy feedback and satisfying state-change cues, then
+  verifies them through the runtime viewport.
 - Timer-driven, wave-based, physics-driven, or autonomous game loops expose
   deterministic QA helpers for restart, pause, state inspection, and one-step
   advancement.
