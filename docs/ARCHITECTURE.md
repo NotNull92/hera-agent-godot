@@ -169,5 +169,7 @@ opportunistically.
 - No C#/.NET addon requirement.
 - No reflection-based tool auto-discovery.
 
-See [ROADMAP.md](./ROADMAP.md) for the phased plan and [COMMANDS.md](./COMMANDS.md)
-for the command surface as it lands.
+See [ROADMAP.md](./ROADMAP.md) for the phased plan, [COMMANDS.md](./COMMANDS.md)
+for the command surface as it lands, and
+[GODOT_EDITOR_ANALYSIS.md](./GODOT_EDITOR_ANALYSIS.md) for the source/API/debug
+analysis workflow used instead of Unity-style binary-first inspection.

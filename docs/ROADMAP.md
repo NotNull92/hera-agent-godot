@@ -71,8 +71,8 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `resource get`, `uid`, `resave`, `update-uids`, and
       `export-mesh-library`: inspect and refresh resource metadata or build a
       `MeshLibrary` from scene meshes.
-- [x] `classdb info|methods|properties|inherits`: inspect Godot ClassDB without
-      loading tool schemas into the agent context.
+- [x] `classdb info|methods|properties|signals|constants|enums|inherits`:
+      inspect Godot ClassDB without loading tool schemas into the agent context.
 - [x] Release pipeline (`.github/workflows/release.yml`): on a `v*` tag,
       cross-compile the CLI (linux/darwin/windows × amd64/arm64), package the
       addon zip + checksums, and publish a GitHub release.

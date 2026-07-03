@@ -57,6 +57,9 @@ selected editor instance.
 | `classdb info <Class>` | `classdb` | ☑ | Show ClassDB metadata: parent, instantiability, Node/Resource ancestry. |
 | `classdb methods <Class>` | `classdb` | ☑ | List ClassDB methods with compact argument and return type summaries. |
 | `classdb properties <Class>` | `classdb` | ☑ | List ClassDB properties with type, class, hint, and hint string. |
+| `classdb signals <Class> [--own]` | `classdb` | ☑ | List ClassDB signals with compact argument summaries. Includes inherited signals by default; `--own` limits output to the class itself. |
+| `classdb constants <Class> [--own]` | `classdb` | ☑ | List ClassDB integer constants with values and enum membership when available. Includes inherited constants by default; `--own` limits output to the class itself. |
+| `classdb enums <Class> [--own]` | `classdb` | ☑ | List ClassDB enums and their integer constants. Includes inherited enums by default; `--own` limits output to the class itself. |
 | `classdb inherits <Class> <BaseClass>` | `classdb` | ☑ | Check inheritance using Godot ClassDB. |
 | `game tree` | `game` | ☑ | Print the running game's live node tree. Requires a play session and the Hera runtime autoload; requests are isolated to the matching game process. |
 | `game ui tree` | `game` | ☑ | Print only live `Control` nodes with paths, visibility, rects, text when present, and button disabled/pressed state. Useful before semantic clicks and UI QA. |

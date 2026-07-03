@@ -137,7 +137,7 @@ commands:
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
-  classdb    info|methods|properties|inherits
+  classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
   game       tree | ui tree | instances | screenshot | click | assert | qa | node get|set|call
   instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor

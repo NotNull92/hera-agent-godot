@@ -16,7 +16,7 @@ func runClassDB(args []string) int {
 
 func parseClassDBArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: classdb <info|methods|properties|inherits> <Class> ...")
+		return nil, fmt.Errorf("usage: classdb <info|methods|properties|signals|constants|enums|inherits> <Class> ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -25,12 +25,28 @@ func parseClassDBArgs(args []string) (map[string]any, error) {
 			return nil, fmt.Errorf("usage: classdb %s <Class>", sub)
 		}
 		return map[string]any{"action": sub, "class": rest[0]}, nil
+	case "signals", "constants", "enums":
+		return parseClassDBMetadataArgs(sub, rest)
 	case "inherits":
 		if len(rest) != 2 {
 			return nil, fmt.Errorf("usage: classdb inherits <Class> <BaseClass>")
 		}
 		return map[string]any{"action": "inherits", "class": rest[0], "base": rest[1]}, nil
 	default:
-		return nil, fmt.Errorf("unknown classdb subcommand %q (want info|methods|properties|inherits)", sub)
+		return nil, fmt.Errorf("unknown classdb subcommand %q (want info|methods|properties|signals|constants|enums|inherits)", sub)
 	}
+}
+
+func parseClassDBMetadataArgs(sub string, args []string) (map[string]any, error) {
+	if len(args) < 1 || len(args) > 2 || args[0] == "--own" {
+		return nil, fmt.Errorf("usage: classdb %s <Class> [--own]", sub)
+	}
+	params := map[string]any{"action": sub, "class": args[0]}
+	if len(args) == 2 {
+		if args[1] != "--own" {
+			return nil, fmt.Errorf("usage: classdb %s <Class> [--own]", sub)
+		}
+		params["own"] = true
+	}
+	return params, nil
 }

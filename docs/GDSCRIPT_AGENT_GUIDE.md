@@ -35,6 +35,17 @@ set up relevant state, and advance exactly one simulation step per explicit QA
 call. Do not mix real timer ticks with scripted assertions for movement,
 spawning, collision, or scoring rules.
 
+For `Control` UI built under a `Node2D` root, explicitly size the root
+`Control` to the viewport or set full-rect anchors before relying on container
+layout. Board, grid, lane, arena, and sidebar-heavy layouts should use bounded
+wrappers or fixed playfield dimensions first, then be verified in the live
+runtime viewport for clipping.
+
+For undoable games with automated turns or AI replies, snapshot state at the
+interaction boundaries the player sees. If the AI can act after a human move,
+capture the state before the human half-move and before the automated half-move
+as separate undo boundaries.
+
 ## File Shape
 
 Typical script order:
@@ -751,3 +762,11 @@ Before finishing GDScript work:
   changed.
 - UI or visual changes have a Hera screenshot, preferably runtime when a game
   viewport is available.
+- Runtime QA starts from a clean process when possible: stop the current game,
+  check `hera game instances`, run with `hera run --current --wait`, then inspect
+  `hera game ui tree` or `hera game tree`.
+- Timer-driven, wave-based, physics-driven, or autonomous game loops expose
+  deterministic QA helpers for restart, pause, state inspection, and one-step
+  advancement.
+- `Node2D`-hosted `Control` UI has a root viewport sizing strategy, and
+  screenshot analysis does not report likely clipping.
