@@ -6,7 +6,7 @@
 
 **English** · [한국어](README.ko.md)
 
-> Let's go Hera, now in Godot.
+> Hera gives agents eyes, hands, and proof in the live Godot editor.
 
 A **low-token CLI** that lets AI coding agents inspect and control a **live
 Godot 4.7+ editor** in real time — read the output/errors, run a scene, walk and
@@ -20,6 +20,10 @@ every turn. Hera delivers **MCP-grade reach over the live editor as a
 compact-JSON-by-default CLI** — one command per action, minimal tokens, and it
 works with anything that can run a shell command (pipes, `batch`, CI, any
 agent), not just MCP clients.
+
+The product identity is intentionally simple: **live editor truth, low-token
+control, proof-first QA**. See [docs/IDENTITY.md](docs/IDENTITY.md) for the
+language and design principles that keep new features aligned.
 
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
@@ -49,7 +53,7 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 `batch`, and `smoke`, with
 `--json`/`--ids` output modes. See
 [docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
-[docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Library
+[docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Store
 packaging status.
 
 ## Install

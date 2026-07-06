@@ -1,6 +1,9 @@
 package cmd
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestParseOutputArgs(t *testing.T) {
 	tests := []struct {
@@ -136,6 +139,7 @@ func TestParseNodeArgs(t *testing.T) {
 		wantQuery  any
 		wantType   any
 		wantPath   any
+		wantProp   any
 		wantErr    bool
 	}{
 		{name: "find all", args: []string{"find"}, wantAction: "find"},
@@ -143,8 +147,15 @@ func TestParseNodeArgs(t *testing.T) {
 		{name: "find type", args: []string{"find", "--type", "Camera2D"}, wantAction: "find", wantType: "Camera2D"},
 		{name: "find query and type", args: []string{"find", "Cam", "--type", "Camera2D"}, wantAction: "find", wantQuery: "Cam", wantType: "Camera2D"},
 		{name: "get path", args: []string{"get", "Player/Sprite"}, wantAction: "get", wantPath: "Player/Sprite"},
+		{name: "get prop", args: []string{"get", "Player/Sprite", "--prop", "visible"}, wantAction: "get", wantPath: "Player/Sprite", wantProp: "visible"},
+		{name: "get props", args: []string{"get", "Player/Sprite", "--props", "visible,position"}, wantAction: "get", wantPath: "Player/Sprite"},
 		{name: "no subcommand", wantErr: true},
 		{name: "get without path", args: []string{"get"}, wantErr: true},
+		{name: "get dangling prop", args: []string{"get", "Player", "--prop"}, wantErr: true},
+		{name: "get dangling props", args: []string{"get", "Player", "--props"}, wantErr: true},
+		{name: "get prop and props conflict", args: []string{"get", "Player", "--prop", "visible", "--props", "position"}, wantErr: true},
+		{name: "get empty props entry", args: []string{"get", "Player", "--props", "visible,,position"}, wantErr: true},
+		{name: "get unknown flag", args: []string{"get", "Player", "--bad"}, wantErr: true},
 		{name: "unknown subcommand", args: []string{"nope"}, wantErr: true},
 		{name: "find two queries", args: []string{"find", "a", "b"}, wantErr: true},
 		{name: "find dangling type", args: []string{"find", "--type"}, wantErr: true},
@@ -172,6 +183,18 @@ func TestParseNodeArgs(t *testing.T) {
 			}
 			if tt.wantPath != nil && p["path"] != tt.wantPath {
 				t.Errorf("path = %v, want %v", p["path"], tt.wantPath)
+			}
+			if tt.wantProp != nil && p["prop"] != tt.wantProp {
+				t.Errorf("prop = %v, want %v", p["prop"], tt.wantProp)
+			}
+			if tt.name == "get props" {
+				props, ok := p["props"].([]string)
+				if !ok {
+					t.Fatalf("props = %T, want []string", p["props"])
+				}
+				if fmt.Sprint(props) != "[visible position]" {
+					t.Fatalf("props = %v, want [visible position]", props)
+				}
 			}
 		})
 	}

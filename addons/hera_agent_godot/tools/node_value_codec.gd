@@ -57,3 +57,24 @@ static func properties(node: Node, max_value_len: int) -> Dictionary:
 			text = text.substr(0, max_value_len) + "…"
 		result[pname] = text
 	return result
+
+static func selected_properties(node: Node, names: Array, max_value_len: int) -> Dictionary:
+	var result: Dictionary = {}
+	for raw_name in names:
+		var name := String(raw_name)
+		var value := property_value(node, name, max_value_len)
+		if not bool(value.get("ok", false)):
+			return value
+		result[name] = String(value.get("value", ""))
+	return { "ok": true, "properties": result }
+
+static func property_value(node: Node, name: String, max_value_len: int) -> Dictionary:
+	if name == "":
+		return { "ok": false, "error": "property name is empty" }
+	for prop in node.get_property_list():
+		if String(prop.get("name", "")) == name:
+			var text := str(node.get(name))
+			if text.length() > max_value_len:
+				text = text.substr(0, max_value_len) + "…"
+			return { "ok": true, "value": text }
+	return { "ok": false, "error": "node has no property: %s" % name }

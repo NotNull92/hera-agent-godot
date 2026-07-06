@@ -35,7 +35,7 @@ selected editor instance.
 | `project mkdir <res://dir>` | `project` | ☑ | Create a project directory under `res://` and refresh the editor filesystem. |
 | `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set `application/run/main_scene` in `project.godot` for the targeted live editor project. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
-| `node get <path>` | `node` | ☑ | Dump a node's editor-visible properties. |
+| `node get <path> [--prop <name>\|--props <a,b>]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. |
 | `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). |
 | `node instance <res://scene.tscn> [--parent <path>] [--name <n>]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path (undoable). |
 | `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
@@ -62,7 +62,7 @@ selected editor instance.
 | `classdb enums <Class> [--own]` | `classdb` | ☑ | List ClassDB enums and their integer constants. Includes inherited enums by default; `--own` limits output to the class itself. |
 | `classdb inherits <Class> <BaseClass>` | `classdb` | ☑ | Check inheritance using Godot ClassDB. |
 | `game tree` | `game` | ☑ | Print the running game's live node tree. Requires a play session and the Hera runtime autoload; requests are isolated to the matching game process. |
-| `game ui tree` | `game` | ☑ | Print only live `Control` nodes with paths, visibility, rects, text when present, and button disabled/pressed state. Useful before semantic clicks and UI QA. |
+| `game ui tree [--path <node>] [--depth N] [--fields <a,b>] [--type <Class>] [--text <label>]` | `game` | ☑ | Print live `Control` nodes. Scope by subtree, depth, class, exact text, and returned fields (`name,path,type,visible,rect,text,disabled,pressed`) for low-token UI QA before semantic clicks. |
 | `game instances` | `game` | ☑ | List Hera runtime game processes seen by the editor, including pid, scene, and heartbeat age. Useful for stale process diagnosis. |
 | `game screenshot [--path <p>] [--analyze]` | `game` | ☑ | Capture the running game viewport to PNG and return the path. `--analyze` adds generic image/layout metrics (`nonblank`, dimensions, sampled color count, brightness, edge content by side, clipping and low-detail hints). |
 | `game click --x N --y N` / `game click --node <path>` / `game click --text <label>` | `game` | ☑ | Send a left mouse click to the running game viewport. `--node` and `--text` target the center of a live `Control`, avoiding brittle pixel coordinates. Runtime-only and useful for surface-level QA. |
@@ -70,7 +70,8 @@ selected editor instance.
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
 | `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified result. Runtime-only and may have side effects. |
 | `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
-| `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.ui.tree`, `game.click`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps; `game.node.get` accepts `prop` or `props`, runtime screenshots are analyzed by default, and the command returns a compact step summary. |
+| `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helper methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
+| `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.qa.discover`, `game.ui.tree`, `game.click`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps. The file may be a legacy step array or an object with `requirements` plus `steps`; each step may declare `covers`, and missing or failed requirement coverage makes the scenario fail. |
 | `guidance ui` | `guidance` | ☑ | Read the live editor's Game Feel UI Mode setting and return agent-facing UI implementation guidance. When enabled, UI work should favor snappy feedback, expressive state changes, satisfying motion, and runtime visual QA. |
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
 | `instances` | local | ☑ | List all live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. |

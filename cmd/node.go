@@ -9,7 +9,7 @@ import (
 // runNode implements the `node` command (read + write).
 //
 //	find [query] [--type Class]              match nodes by name and/or class
-//	get <path>                               dump a node's properties
+//	get <path> [--prop name|--props a,b]     dump all or selected properties
 //	add <type> [--parent <path>] [--name n]  add a node under a parent
 //	set <path> --prop <name> --value <v>     set a node property
 //	remove <path>                            remove a node
@@ -62,10 +62,39 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		return params, nil
 
 	case "get":
-		if len(rest) != 1 {
-			return nil, fmt.Errorf("usage: node get <path>")
+		if len(rest) == 0 {
+			return nil, fmt.Errorf("usage: node get <path> [--prop <name>|--props <a,b>]")
 		}
-		return map[string]any{"action": "get", "path": rest[0]}, nil
+		params := map[string]any{"action": "get", "path": rest[0]}
+		for i := 1; i < len(rest); i++ {
+			switch rest[i] {
+			case "--prop":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--prop requires a value")
+				}
+				i++
+				if _, ok := params["props"]; ok {
+					return nil, fmt.Errorf("use either --prop or --props, not both")
+				}
+				params["prop"] = rest[i]
+			case "--props":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--props requires a value")
+				}
+				i++
+				if _, ok := params["prop"]; ok {
+					return nil, fmt.Errorf("use either --prop or --props, not both")
+				}
+				props, err := parseCommaList(rest[i])
+				if err != nil {
+					return nil, err
+				}
+				params["props"] = props
+			default:
+				return nil, fmt.Errorf("unknown flag %q", rest[i])
+			}
+		}
+		return params, nil
 
 	case "add":
 		if len(rest) == 0 {

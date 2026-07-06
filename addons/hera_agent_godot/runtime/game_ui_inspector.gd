@@ -1,12 +1,36 @@
 extends RefCounted
 
-static func tree(root: Node, max_nodes: int) -> Dictionary:
+const DEFAULT_FIELDS: Array[String] = ["path", "type", "name", "visible", "rect", "text", "disabled", "pressed"]
+const ALLOWED_FIELDS: Dictionary = {
+	"path": true,
+	"type": true,
+	"name": true,
+	"visible": true,
+	"rect": true,
+	"text": true,
+	"disabled": true,
+	"pressed": true,
+}
+
+static func tree(root: Node, current_scene: Node, max_nodes: int, request: Dictionary) -> Dictionary:
+	var start := _tree_start(root, current_scene, request)
+	if start == null:
+		return { "ok": false, "error": "node not found: %s" % String(request.get("path", "")) }
+	var fields := _fields_from_request(request)
+	if not bool(fields.get("ok", false)):
+		return fields
+	var max_depth := -1
+	if request.has("depth"):
+		max_depth = int(request.get("depth", -1))
+		if max_depth < 0:
+			return { "ok": false, "error": "depth must be non-negative" }
 	var controls: Array = []
-	_collect_ui(root, controls, max_nodes)
+	_collect_ui(start, controls, max_nodes, request, fields.get("fields", DEFAULT_FIELDS), max_depth, 0)
 	var truncated := controls.size() > max_nodes
 	if truncated:
 		controls = controls.slice(0, max_nodes)
 	return {
+		"ok": true,
 		"count": controls.size(),
 		"truncated": truncated,
 		"controls": controls,
@@ -71,39 +95,77 @@ static func _click_position_for_control(control: Control) -> Dictionary:
 		return { "ok": false, "error": "click target has an empty rect: %s" % String(control.get_path()) }
 	return { "ok": true, "position": rect.position + rect.size * 0.5 }
 
-static func _collect_ui(node: Node, out: Array, max_nodes: int) -> void:
+static func _collect_ui(node: Node, out: Array, max_nodes: int, request: Dictionary, fields: Array, max_depth: int, depth: int) -> void:
 	if out.size() > max_nodes:
 		return
 	if node is Control:
 		var control: Control = node as Control
-		out.append(_control_summary(control))
+		if _control_matches(control, request):
+			out.append(_control_summary(control, fields))
+	if max_depth >= 0 and depth >= max_depth:
+		return
 	for child in node.get_children():
-		_collect_ui(child, out, max_nodes)
+		_collect_ui(child, out, max_nodes, request, fields, max_depth, depth + 1)
 		if out.size() > max_nodes:
 			return
 
-static func _control_summary(control: Control) -> Dictionary:
+static func _control_summary(control: Control, fields: Array) -> Dictionary:
 	var rect := control.get_global_rect()
-	var item := {
-		"path": String(control.get_path()),
-		"type": control.get_class(),
-		"name": String(control.name),
-		"visible": control.is_visible_in_tree(),
-		"rect": {
+	var item := {}
+	if fields.has("path"):
+		item["path"] = String(control.get_path())
+	if fields.has("type"):
+		item["type"] = control.get_class()
+	if fields.has("name"):
+		item["name"] = String(control.name)
+	if fields.has("visible"):
+		item["visible"] = control.is_visible_in_tree()
+	if fields.has("rect"):
+		item["rect"] = {
 			"x": int(rect.position.x),
 			"y": int(rect.position.y),
 			"width": int(rect.size.x),
 			"height": int(rect.size.y),
-		},
-	}
+		}
 	var text := _control_text(control)
-	if text != "":
+	if fields.has("text") and text != "":
 		item["text"] = text
 	if control is BaseButton:
 		var button: BaseButton = control as BaseButton
-		item["disabled"] = button.disabled
-		item["pressed"] = button.button_pressed
+		if fields.has("disabled"):
+			item["disabled"] = button.disabled
+		if fields.has("pressed"):
+			item["pressed"] = button.button_pressed
 	return item
+
+static func _control_matches(control: Control, request: Dictionary) -> bool:
+	var type_filter := String(request.get("type", ""))
+	if type_filter != "" and not control.is_class(type_filter):
+		return false
+	var text_filter := String(request.get("text", ""))
+	if text_filter != "" and _control_text(control) != text_filter:
+		return false
+	return true
+
+static func _tree_start(root: Node, current_scene: Node, request: Dictionary) -> Node:
+	var path := String(request.get("path", ""))
+	if path == "":
+		return root
+	return _resolve(root, current_scene, path)
+
+static func _fields_from_request(request: Dictionary) -> Dictionary:
+	if not request.has("fields"):
+		return { "ok": true, "fields": DEFAULT_FIELDS }
+	var raw_fields: Variant = request.get("fields", [])
+	if typeof(raw_fields) != TYPE_ARRAY:
+		return { "ok": false, "error": "fields must be an array" }
+	var fields: Array[String] = []
+	for raw_field in raw_fields:
+		var field := String(raw_field)
+		if not ALLOWED_FIELDS.has(field):
+			return { "ok": false, "error": "unknown ui field: %s" % field }
+		fields.append(field)
+	return { "ok": true, "fields": fields }
 
 static func _find_control_by_text(node: Node, text: String) -> Control:
 	if node is Control:

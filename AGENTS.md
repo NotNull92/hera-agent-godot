@@ -49,7 +49,7 @@ hera project scan                            # refresh Godot's resource filesyst
 hera project reimport res://icon.svg         # reimport one or more project files
 hera project set-main-scene res://Path.tscn # set ProjectSettings main scene
 hera node find [query] [--type Class]        # find nodes
-hera node get <path>                         # dump a node's properties
+hera node get <path> [--prop p|--props a,b]  # dump all or selected node properties
 hera node add <type> [--parent p] [--name n] # add a node (undoable)
 hera node instance <res://scene.tscn> [--parent p] [--name n] # instance a PackedScene (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
@@ -64,7 +64,7 @@ hera resource list [res://dir] [--type Class] [--pattern text] [--limit N] # lis
 hera resource set <res://...> --prop p=v     # set and save resource properties
 hera resource create <Class> <res://out.tres> [--force] [--prop name=value]
 hera game tree                               # running game node tree
-hera game ui tree                            # running Control nodes with rect/text/button state
+hera game ui tree [--path p] [--depth N] [--fields a,b] [--type Class] [--text t] # running Control nodes, optionally scoped
 hera game instances                          # running game process heartbeats
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
 hera game click --x N --y N                  # click the running game viewport
@@ -74,7 +74,8 @@ hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
 hera game assert <path> <prop> <op> [value]  # assert runtime property for QA
-hera game qa --file scenario.json            # run generic QA scenario
+hera game qa discover [path]                 # list callable runtime qa_* helpers
+hera game qa --file scenario.json            # run generic QA scenario, optionally with requirements/covers
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
 hera guidance ui                             # UI guidance; reads Game Feel UI Mode
@@ -139,10 +140,15 @@ target a pid shown by `status`). Default output is compact JSON.
   are still alive, `game instances` shows them and mutation/read requests refuse
   ambiguous targets instead of accepting an old response.
 - **Prefer low-token QA reads.** Use `game ui tree`, `game node get --prop/--props`,
-  `game assert`, `screenshot --runtime --analyze`, and `game qa --file` before
-  dumping full node properties during automated QA. Runtime screenshot analysis
+  `game assert`, `game qa discover`, `screenshot --runtime --analyze`, and
+  `game qa --file` before dumping full node properties during automated QA.
+  Runtime screenshot analysis
   reports per-edge content ratios and `possible_clipping` so layouts that only
   fail at the viewport boundary are easier to catch.
+- **Tie QA to the user's requirements.** For prompt implementation QA, prefer a
+  `game qa --file` object with top-level `requirements` and per-step `covers`
+  entries so missing requested behavior fails the scenario instead of being
+  buried in prose notes.
 - **File, scene, resource, and project setting changes are persistent.** `script create`,
   `resource set/create`, `project mkdir/reimport`, `project set-main-scene`, `scene create`, and
   `scene save-as` write project files; use `--force` only when overwriting is
@@ -167,3 +173,5 @@ Batch a change and its check together when it helps, e.g. pipe a JSON array of
 `[{set...}, {get...}]` into `hera batch`.
 
 See [docs/COMMANDS.md](docs/COMMANDS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+For prompt-driven game implementation cycles, follow
+[docs/GAME_PROMPT_WORKFLOW.md](docs/GAME_PROMPT_WORKFLOW.md).

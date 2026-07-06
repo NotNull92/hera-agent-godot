@@ -6,7 +6,7 @@
 
 [English](README.md) · **한국어**
 
-> Let's go Hera, now in Godot.
+> Hera gives agents eyes, hands, and proof in the live Godot editor.
 
 AI 코딩 에이전트가 **실행 중인 Godot 4.7+ 에디터**를 실시간으로 검사·제어하게 해주는
 **저토큰(low-token) CLI**입니다 — 출력/에러 읽기, 씬 실행, 노드 트리 탐색·편집,
@@ -19,6 +19,10 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 **MCP급의 에디터 제어 범위를 compact-JSON 기본의 CLI로** 제공합니다 — 액션당 한 명령,
 최소 토큰, 그리고 MCP 클라이언트만이 아니라 **셸 명령을 실행할 수 있는 무엇과도**
 동작합니다(파이프, `batch`, CI, 어떤 에이전트든).
+
+헤라의 제품 아이덴티티는 간단합니다: **라이브 에디터 진실, 저토큰 제어,
+증거 우선 QA**. 새 기능의 언어와 설계 원칙은
+[docs/IDENTITY.md](docs/IDENTITY.md)에 정리되어 있습니다.
 
 [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity)의 자매
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
@@ -45,7 +49,7 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
 `node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+assert+QA+screenshot), `guidance`,
 `output`, `diagnostics`, `eval`, `screenshot`, `batch`, `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
-[docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Library 패키징 상태는
+[docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Store 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.
 
 ## 설치

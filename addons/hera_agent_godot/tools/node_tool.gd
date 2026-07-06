@@ -85,11 +85,14 @@ func _describe(root: Node, params: Dictionary) -> Dictionary:
 	var node := _resolve(root, String(params.get("path", ".")))
 	if node == null:
 		return ToolResponse.failure("node not found: %s" % String(params.get("path", ".")))
+	var properties := _properties_from_request(node, params)
+	if not bool(properties.get("ok", false)):
+		return ToolResponse.failure(String(properties.get("error", "property not found")))
 	return ToolResponse.success({
 		"path": String(params.get("path", ".")),
 		"type": node.get_class(),
 		"name": String(node.name),
-		"properties": NodeValueCodec.properties(node, MAX_VALUE_LEN),
+		"properties": properties.get("properties", {}),
 	})
 
 func _add_node(root: Node, params: Dictionary) -> Dictionary:
@@ -282,6 +285,13 @@ func _property_info(node: Node, prop: String) -> Dictionary:
 		if String(p.get("name", "")) == prop:
 			return p
 	return {}
+
+func _properties_from_request(node: Node, params: Dictionary) -> Dictionary:
+	if params.has("prop"):
+		return NodeValueCodec.selected_properties(node, [String(params.get("prop", ""))], MAX_VALUE_LEN)
+	if params.has("props"):
+		return NodeValueCodec.selected_properties(node, params.get("props", []), MAX_VALUE_LEN)
+	return { "ok": true, "properties": NodeValueCodec.properties(node, MAX_VALUE_LEN) }
 
 func _scan_editor_filesystem() -> void:
 	var filesystem := EditorInterface.get_resource_filesystem()

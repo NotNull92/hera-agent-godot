@@ -9,6 +9,9 @@ import (
 
 func runGame(args []string) int {
 	if len(args) > 0 && args[0] == "qa" {
+		if len(args) > 1 && args[1] == "discover" {
+			return runGameQADiscover(args[2:])
+		}
 		return runGameQA(args[1:])
 	}
 	params, err := parseGameArgs(args)

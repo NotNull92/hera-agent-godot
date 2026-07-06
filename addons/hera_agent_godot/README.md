@@ -1,5 +1,7 @@
 # Hera Agent Godot — editor addon
 
+Hera gives agents eyes, hands, and proof in the live Godot editor.
+
 This folder is the **distributable addon**. To use it in your own project:
 
 1. Use a **Godot 4.7+** build.

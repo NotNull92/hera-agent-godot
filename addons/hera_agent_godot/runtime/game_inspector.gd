@@ -77,12 +77,14 @@ func _handle(request: Dictionary) -> Dictionary:
 			return _assert_node(request)
 		"call":
 			return _call_node(request)
+		"qa_discover":
+			return _qa_discover(request)
 		"click":
 			return _click_viewport(request)
 		"screenshot":
 			return _screenshot(request)
 		_:
-			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|get|set|assert|call|click|screenshot)" % action })
+			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|get|set|assert|call|qa_discover|click|screenshot)" % action })
 
 func _tree(request: Dictionary) -> Dictionary:
 	var result := GameTreeInspector.tree(get_tree().root, MAX_NODES)
@@ -95,7 +97,9 @@ func _tree(request: Dictionary) -> Dictionary:
 	})
 
 func _ui_tree(request: Dictionary) -> Dictionary:
-	var result := GameUIInspector.tree(get_tree().root, MAX_NODES)
+	var result := GameUIInspector.tree(get_tree().root, get_tree().current_scene, MAX_NODES, request)
+	if not bool(result.get("ok", false)):
+		return _response(request, false, { "error": String(result.get("error", "ui tree failed")) })
 	return _response(request, true, {
 		"count": result.get("count", 0),
 		"pid": _pid,
@@ -173,6 +177,20 @@ func _call_node(request: Dictionary) -> Dictionary:
 		"type": type_string(typeof(result)),
 	})
 
+func _qa_discover(request: Dictionary) -> Dictionary:
+	var path := String(request.get("path", ""))
+	var node: Node = get_tree().current_scene if path == "" else _resolve(path)
+	if node == null:
+		var target := "current scene" if path == "" else path
+		return _response(request, false, { "error": "node not found: %s" % target })
+	var methods := _qa_methods(node)
+	return _response(request, true, {
+		"path": String(node.get_path()),
+		"type": node.get_class(),
+		"count": methods.size(),
+		"methods": methods,
+	})
+
 func _click_viewport(request: Dictionary) -> Dictionary:
 	var target := GameUIInspector.click_target(get_tree().root, get_tree().current_scene, request)
 	if not bool(target.get("ok", false)):
@@ -231,6 +249,54 @@ func _property_info(node: Node, prop: String) -> Dictionary:
 		if String(p.get("name", "")) == prop:
 			return p
 	return {}
+
+func _qa_methods(node: Node) -> Array[Dictionary]:
+	var methods: Array[Dictionary] = []
+	for method_info in node.get_method_list():
+		var method := method_info as Dictionary
+		var method_name := String(method.get("name", ""))
+		if not method_name.begins_with("qa_") or not node.has_method(method_name):
+			continue
+		var entry := {
+			"name": method_name,
+		}
+		var args := _method_arg_names(method)
+		if not args.is_empty():
+			entry["args"] = args
+		var default_count := _method_default_count(method)
+		if default_count > 0:
+			entry["defaults"] = default_count
+		var return_type := _method_return_type(method)
+		if return_type != "":
+			entry["return"] = return_type
+		methods.append(entry)
+	return methods
+
+func _method_arg_names(method: Dictionary) -> Array[String]:
+	var names: Array[String] = []
+	var raw_args: Array = method.get("args", [])
+	for raw_arg in raw_args:
+		var arg := raw_arg as Dictionary
+		var arg_name := String(arg.get("name", ""))
+		if arg_name == "":
+			arg_name = "arg%d" % names.size()
+		names.append(arg_name)
+	return names
+
+func _method_default_count(method: Dictionary) -> int:
+	var default_args: Array = method.get("default_args", [])
+	return default_args.size()
+
+func _method_return_type(method: Dictionary) -> String:
+	var return_info: Dictionary = method.get("return", {})
+	var type_id := int(return_info.get("type", TYPE_NIL))
+	if type_id == TYPE_NIL:
+		return ""
+	if type_id == TYPE_OBJECT:
+		var object_class_name := String(return_info.get("class_name", ""))
+		if object_class_name != "":
+			return object_class_name
+	return type_string(type_id)
 
 func _response(request: Dictionary, ok: bool, payload: Dictionary) -> Dictionary:
 	payload["id"] = String(request.get("id", ""))

@@ -110,3 +110,105 @@ func TestGameActionMutates(t *testing.T) {
 		})
 	}
 }
+
+func TestParseGameQADiscoverArgs_returnsRuntimeQAHelperDiscoveryParams(t *testing.T) {
+	// Given
+	args := []string{"/root/Main"}
+
+	// When
+	got, err := parseGameQADiscoverArgs(args)
+
+	// Then
+	if err != nil {
+		t.Fatalf("parseGameQADiscoverArgs error: %v", err)
+	}
+	if got["action"] != "qa_discover" {
+		t.Fatalf("action = %v, want qa_discover", got["action"])
+	}
+	if got["path"] != "/root/Main" {
+		t.Fatalf("path = %v, want /root/Main", got["path"])
+	}
+}
+
+func TestParseGameQADiscoverArgs_rejectsExtraArguments(t *testing.T) {
+	// Given
+	args := []string{"/root/Main", "extra"}
+
+	// When
+	_, err := parseGameQADiscoverArgs(args)
+
+	// Then
+	if err == nil {
+		t.Fatal("expected qa discover parse error")
+	}
+}
+
+func TestParseGameArgs_returnsScopedUITreeParams(t *testing.T) {
+	// Given
+	args := []string{
+		"ui", "tree",
+		"--path", "/root/Main/HUD",
+		"--depth", "2",
+		"--fields", "name,path,text,rect,disabled",
+		"--type", "Button",
+		"--text", "Restart",
+	}
+
+	// When
+	got, err := parseGameArgs(args)
+
+	// Then
+	if err != nil {
+		t.Fatalf("parseGameArgs error: %v", err)
+	}
+	if got["action"] != "ui_tree" {
+		t.Fatalf("action = %v, want ui_tree", got["action"])
+	}
+	if got["path"] != "/root/Main/HUD" {
+		t.Fatalf("path = %v, want /root/Main/HUD", got["path"])
+	}
+	if got["depth"] != 2 {
+		t.Fatalf("depth = %v, want 2", got["depth"])
+	}
+	fields, ok := got["fields"].([]string)
+	if !ok {
+		t.Fatalf("fields = %T, want []string", got["fields"])
+	}
+	if fmt.Sprint(fields) != "[name path text rect disabled]" {
+		t.Fatalf("fields = %v, want [name path text rect disabled]", fields)
+	}
+	if got["type"] != "Button" {
+		t.Fatalf("type = %v, want Button", got["type"])
+	}
+	if got["text"] != "Restart" {
+		t.Fatalf("text = %v, want Restart", got["text"])
+	}
+}
+
+func TestParseGameArgs_rejectsScopedUITreeInvalidFlags(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{name: "dangling path", args: []string{"ui", "tree", "--path"}},
+		{name: "dangling depth", args: []string{"ui", "tree", "--depth"}},
+		{name: "negative depth", args: []string{"ui", "tree", "--depth", "-1"}},
+		{name: "non integer depth", args: []string{"ui", "tree", "--depth", "deep"}},
+		{name: "empty field", args: []string{"ui", "tree", "--fields", "name,,text"}},
+		{name: "unknown field", args: []string{"ui", "tree", "--fields", "name,color"}},
+		{name: "dangling type", args: []string{"ui", "tree", "--type"}},
+		{name: "dangling text", args: []string{"ui", "tree", "--text"}},
+		{name: "unknown flag", args: []string{"ui", "tree", "--bad"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When
+			_, err := parseGameArgs(tt.args)
+
+			// Then
+			if err == nil {
+				t.Fatal("expected scoped ui tree parse error")
+			}
+		})
+	}
+}

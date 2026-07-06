@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -10,44 +9,13 @@ import (
 	"github.com/NotNull92/hera-agent-godot/internal/protocol"
 )
 
-type gameQAStep struct {
-	Tool        string         `json:"tool"`
-	Path        string         `json:"path"`
-	Prop        string         `json:"prop"`
-	Props       []string       `json:"props"`
-	Op          string         `json:"op"`
-	Value       any            `json:"value"`
-	X           int            `json:"x"`
-	Y           int            `json:"y"`
-	Text        string         `json:"text"`
-	Action      string         `json:"action"`
-	Scene       string         `json:"scene"`
-	Current     bool           `json:"current"`
-	Wait        bool           `json:"wait"`
-	Method      string         `json:"method"`
-	Args        []any          `json:"args"`
-	Analyze     bool           `json:"analyze"`
-	Lines       int            `json:"lines"`
-	MaxErrors   int            `json:"max_errors"`
-	MaxWarnings int            `json:"max_warnings"`
-	DurationMS  int            `json:"duration_ms"`
-	Params      map[string]any `json:"params"`
-}
-
-type gameQAResult struct {
-	Step  int    `json:"step"`
-	Tool  string `json:"tool"`
-	OK    bool   `json:"ok"`
-	Error string `json:"error,omitempty"`
-}
-
 func runGameQA(args []string) int {
 	file, keepGoing, err := parseGameQAFlags(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa: %v\n", err)
 		return 2
 	}
-	steps, err := readGameQASteps(file)
+	scenario, err := readGameQAScenario(file)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa: %v\n", err)
 		return 2
@@ -57,8 +25,9 @@ func runGameQA(args []string) int {
 		fmt.Fprintf(os.Stderr, "game qa: %v\n", err)
 		return 1
 	}
-	results, ok := executeGameQASteps(c, steps, keepGoing)
-	resp := &protocol.Response{OK: true, Data: map[string]any{"ok": ok, "steps": len(steps), "results": results}}
+	results, stepsOK := executeGameQASteps(c, scenario.Steps, keepGoing)
+	data, ok := gameQASummary(scenario, results, stepsOK)
+	resp := &protocol.Response{OK: true, Data: data}
 	printData(resp)
 	if !ok {
 		return 1
@@ -87,26 +56,6 @@ func parseGameQAFlags(args []string) (file string, keepGoing bool, err error) {
 	return file, keepGoing, nil
 }
 
-func readGameQASteps(file string) ([]gameQAStep, error) {
-	raw, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-	var steps []gameQAStep
-	if err := json.Unmarshal(raw, &steps); err != nil {
-		return nil, fmt.Errorf("invalid scenario JSON: %w", err)
-	}
-	if len(steps) == 0 {
-		return nil, fmt.Errorf("scenario must contain at least one step")
-	}
-	for index, step := range steps {
-		if step.Tool == "" {
-			return nil, fmt.Errorf("step %d: tool is required", index+1)
-		}
-	}
-	return steps, nil
-}
-
 func executeGameQASteps(c *client.Client, steps []gameQAStep, keepGoing bool) ([]gameQAResult, bool) {
 	results := make([]gameQAResult, 0, len(steps))
 	ok := true
@@ -124,14 +73,18 @@ func executeGameQASteps(c *client.Client, steps []gameQAStep, keepGoing bool) ([
 }
 
 func executeGameQAStep(c *client.Client, index int, step gameQAStep) gameQAResult {
+	result := gameQAResult{Step: index, Tool: step.Tool, Covers: step.Covers}
 	resp, err := postGameQAStep(c, step)
 	if err != nil {
-		return gameQAResult{Step: index, Tool: step.Tool, OK: false, Error: err.Error()}
+		result.Error = err.Error()
+		return result
 	}
 	if !resp.OK {
-		return gameQAResult{Step: index, Tool: step.Tool, OK: false, Error: resp.Error}
+		result.Error = resp.Error
+		return result
 	}
-	return gameQAResult{Step: index, Tool: step.Tool, OK: true}
+	result.OK = true
+	return result
 }
 
 func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, error) {
@@ -168,6 +121,8 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		return c.Post("game", map[string]any{"action": "set", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "value": step.Value})
 	case "game.node.call":
 		return c.Post("game", map[string]any{"action": "call", "path": normalizeGameNodePath(step.Path), "method": step.Method, "args": step.Args})
+	case "game.qa.discover":
+		return c.Post("game", qaDiscoverParamsFromQAStep(step))
 	case "game.click":
 		return c.Post("game", gameClickParamsFromQAStep(step))
 	case "game.ui.tree":
