@@ -125,8 +125,12 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		return c.Post("game", qaDiscoverParamsFromQAStep(step))
 	case "game.click":
 		return c.Post("game", gameClickParamsFromQAStep(step))
+	case "game.input":
+		return c.Post("game", gameInputParamsFromQAStep(step))
+	case "game.input_log":
+		return c.Post("game", gameInputLogParamsFromQAStep(step))
 	case "game.ui.tree":
-		return c.Post("game", map[string]any{"action": "ui_tree"})
+		return c.Post("game", gameUITreeParamsFromQAStep(step))
 	case "game.assert":
 		return c.Post("game", map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value})
 	case "screenshot.runtime":
@@ -163,6 +167,18 @@ func gameNodeGetParamsFromQAStep(step gameQAStep) map[string]any {
 		params["props"] = step.Props
 	} else if step.Prop != "" {
 		params["prop"] = step.Prop
+	}
+	return params
+}
+
+func gameUITreeParamsFromQAStep(step gameQAStep) map[string]any {
+	params := cloneJSONMap(step.Params)
+	params["action"] = "ui_tree"
+	if step.Path != "" {
+		params["path"] = normalizeGameNodePath(step.Path)
+	}
+	if step.Text != "" {
+		params["text"] = step.Text
 	}
 	return params
 }

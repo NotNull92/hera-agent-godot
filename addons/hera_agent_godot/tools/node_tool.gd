@@ -12,6 +12,7 @@ extends RefCounted
 # undo agent changes (Ctrl+Z). The plugin injects it via set_undo_redo().
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
+const GameFeelGuide = preload("res://addons/hera_agent_godot/core/game_feel_guide.gd")
 const NodeValueCodec = preload("res://addons/hera_agent_godot/tools/node_value_codec.gd")
 const NodeSceneInstancer = preload("res://addons/hera_agent_godot/tools/node_scene_instancer.gd")
 const ScriptDependencyDiagnostics = preload("res://addons/hera_agent_godot/tools/script_dependency_diagnostics.gd")
@@ -120,11 +121,15 @@ func _add_node(root: Node, params: Dictionary) -> Dictionary:
 		parent.add_child(node)
 		node.set_owner(root)
 
-	return ToolResponse.success({
+	var data := {
 		"added": String(root.get_path_to(node)),
 		"type": node.get_class(),
 		"name": String(node.name),
-	})
+	}
+	var hint := GameFeelGuide.hint_for_node_type(node.get_class())
+	if hint != "":
+		data["agent_hint"] = hint
+	return ToolResponse.success(data)
 
 func _set_property(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", "."))

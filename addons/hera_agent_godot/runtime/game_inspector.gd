@@ -11,9 +11,15 @@ const REQUEST_ROOT := "user://hera_game_requests"
 const RESPONSE_ROOT := "user://hera_game_responses"
 const MAX_NODES := 1000
 const HEARTBEAT_INTERVAL_SEC := 0.5
+const MAX_INPUT_LOG := 200
+const LONG_CLICK_MS := 500
 
 var _pid := 0
 var _heartbeat_accum := 0.0
+var _input_log: Array[Dictionary] = []
+var _mouse_presses := {}
+var _active_keys := {}
+var _active_mouse_buttons := {}
 
 func _ready() -> void:
 	_pid = OS.get_process_id()
@@ -43,6 +49,11 @@ func _process(delta: float) -> void:
 			_handle_file(request_path, response_path)
 		file_name = dir.get_next()
 	dir.list_dir_end()
+
+func _input(event: InputEvent) -> void:
+	if event.device == GameViewportActions.HERA_INPUT_DEVICE_ID:
+		return
+	_record_input_event(event, "external")
 
 func _handle_file(path: String, response_path: String) -> void:
 	var file := FileAccess.open(path, FileAccess.READ)
@@ -81,10 +92,14 @@ func _handle(request: Dictionary) -> Dictionary:
 			return _qa_discover(request)
 		"click":
 			return _click_viewport(request)
+		"input":
+			return _input_viewport(request)
+		"input_log":
+			return _input_log_response(request)
 		"screenshot":
 			return _screenshot(request)
 		_:
-			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|get|set|assert|call|qa_discover|click|screenshot)" % action })
+			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|get|set|assert|call|qa_discover|click|input|input_log|screenshot)" % action })
 
 func _tree(request: Dictionary) -> Dictionary:
 	var result := GameTreeInspector.tree(get_tree().root, MAX_NODES)
@@ -212,6 +227,35 @@ func _click_viewport(request: Dictionary) -> Dictionary:
 		data["text"] = target.get("text")
 	return _response(request, true, data)
 
+func _input_viewport(request: Dictionary) -> Dictionary:
+	var result := GameViewportActions.input(get_viewport(), request)
+	if not bool(result.get("ok", false)):
+		return _response(request, false, { "error": String(result.get("error", "runtime input failed")) })
+	var events: Array = result.get("events", [])
+	for event in events:
+		_record_input_event(event as InputEvent, "hera")
+	if result.has("text"):
+		_record_text_input(String(result.get("text", "")), "hera")
+	var data: Dictionary = result.get("data", {})
+	data["pid"] = _pid
+	data["log_count"] = _input_log.size()
+	return _response(request, true, data)
+
+func _input_log_response(request: Dictionary) -> Dictionary:
+	var limit := int(request.get("limit", 20))
+	if limit < 0:
+		return _response(request, false, { "error": "limit must be non-negative" })
+	var events := _recent_input_log(limit)
+	var cleared := bool(request.get("clear", false))
+	if cleared:
+		_input_log.clear()
+	return _response(request, true, {
+		"count": events.size(),
+		"total": _input_log.size(),
+		"cleared": cleared,
+		"events": events,
+	})
+
 func _screenshot(request: Dictionary) -> Dictionary:
 	var result := GameViewportActions.screenshot(get_viewport(), request, _current_scene_path(), _pid)
 	if not bool(result.get("ok", false)):
@@ -271,6 +315,199 @@ func _qa_methods(node: Node) -> Array[Dictionary]:
 			entry["return"] = return_type
 		methods.append(entry)
 	return methods
+
+func _record_input_event(event: InputEvent, source: String) -> void:
+	if event == null:
+		return
+	if event is InputEventMouseButton:
+		_record_mouse_button(event as InputEventMouseButton, source)
+	elif event is InputEventMouseMotion:
+		_record_mouse_motion(event as InputEventMouseMotion, source)
+	elif event is InputEventKey:
+		_record_key(event as InputEventKey, source)
+	elif event is InputEventAction:
+		_record_action(event as InputEventAction, source)
+
+func _record_mouse_button(event: InputEventMouseButton, source: String) -> void:
+	var now := Time.get_ticks_msec()
+	var button_name := _mouse_button_name(event.button_index)
+	var duration_ms := 0
+	if event.pressed:
+		_mouse_presses[event.button_index] = {
+			"ts": now,
+			"x": int(event.position.x),
+			"y": int(event.position.y),
+		}
+		_active_mouse_buttons[event.button_index] = true
+	else:
+		var press: Dictionary = _mouse_presses.get(event.button_index, {})
+		if not press.is_empty():
+			duration_ms = now - int(press.get("ts", now))
+		_mouse_presses.erase(event.button_index)
+		_active_mouse_buttons.erase(event.button_index)
+	var entry := _base_input_entry("mouse_button", source)
+	entry["button"] = button_name
+	entry["button_index"] = int(event.button_index)
+	entry["pressed"] = event.pressed
+	entry["x"] = int(event.position.x)
+	entry["y"] = int(event.position.y)
+	entry["double_click"] = event.double_click
+	entry["duration_ms"] = duration_ms
+	entry["click_kind"] = _click_kind(event.pressed, duration_ms)
+	entry["modifiers"] = _modifiers(event)
+	entry["active_keys"] = _active_key_names()
+	entry["active_mouse_buttons"] = _active_mouse_button_names()
+	_append_input_log(entry)
+
+func _record_mouse_motion(event: InputEventMouseMotion, source: String) -> void:
+	var entry := _base_input_entry("mouse_motion", source)
+	entry["x"] = int(event.position.x)
+	entry["y"] = int(event.position.y)
+	entry["dx"] = int(event.relative.x)
+	entry["dy"] = int(event.relative.y)
+	entry["modifiers"] = _modifiers(event)
+	entry["active_keys"] = _active_key_names()
+	entry["active_mouse_buttons"] = _active_mouse_button_names()
+	_append_input_log(entry)
+
+func _record_key(event: InputEventKey, source: String) -> void:
+	var key_name := _key_name(event.keycode if event.keycode != 0 else event.physical_keycode)
+	if event.pressed:
+		_active_keys[key_name] = true
+	else:
+		_active_keys.erase(key_name)
+	var entry := _base_input_entry("key", source)
+	entry["key"] = key_name
+	entry["keycode"] = int(event.keycode)
+	entry["physical_keycode"] = int(event.physical_keycode)
+	entry["unicode"] = int(event.unicode)
+	entry["pressed"] = event.pressed
+	entry["echo"] = event.echo
+	entry["modifiers"] = _modifiers(event)
+	entry["active_keys"] = _active_key_names()
+	entry["active_mouse_buttons"] = _active_mouse_button_names()
+	_append_input_log(entry)
+
+func _record_action(event: InputEventAction, source: String) -> void:
+	var entry := _base_input_entry("action", source)
+	entry["name"] = String(event.action)
+	entry["pressed"] = event.pressed
+	entry["strength"] = event.strength
+	entry["active_keys"] = _active_key_names()
+	entry["active_mouse_buttons"] = _active_mouse_button_names()
+	_append_input_log(entry)
+
+func _record_text_input(text: String, source: String) -> void:
+	var entry := _base_input_entry("text", source)
+	entry["text"] = text
+	entry["length"] = text.length()
+	entry["active_keys"] = _active_key_names()
+	entry["active_mouse_buttons"] = _active_mouse_button_names()
+	_append_input_log(entry)
+
+func _base_input_entry(kind: String, source: String) -> Dictionary:
+	return {
+		"kind": kind,
+		"source": source,
+		"ts_ms": Time.get_ticks_msec(),
+	}
+
+func _append_input_log(entry: Dictionary) -> void:
+	_input_log.append(entry)
+	while _input_log.size() > MAX_INPUT_LOG:
+		_input_log.pop_front()
+
+func _recent_input_log(limit: int) -> Array[Dictionary]:
+	var events: Array[Dictionary] = []
+	var start := 0 if limit == 0 or limit >= _input_log.size() else _input_log.size() - limit
+	for index in range(start, _input_log.size()):
+		events.append(_input_log[index])
+	return events
+
+func _click_kind(pressed: bool, duration_ms: int) -> String:
+	if pressed:
+		return "press"
+	if duration_ms >= LONG_CLICK_MS:
+		return "long"
+	return "short"
+
+func _modifiers(event: InputEventWithModifiers) -> Array[String]:
+	var values: Array[String] = []
+	if event.shift_pressed:
+		values.append("shift")
+	if event.ctrl_pressed:
+		values.append("ctrl")
+	if event.alt_pressed:
+		values.append("alt")
+	if event.meta_pressed:
+		values.append("meta")
+	return values
+
+func _active_key_names() -> Array[String]:
+	var values: Array[String] = []
+	for key in _active_keys.keys():
+		values.append(String(key))
+	values.sort()
+	return values
+
+func _active_mouse_button_names() -> Array[String]:
+	var values: Array[String] = []
+	for button in _active_mouse_buttons.keys():
+		values.append(_mouse_button_name(int(button)))
+	values.sort()
+	return values
+
+func _mouse_button_name(index: int) -> String:
+	match index:
+		MOUSE_BUTTON_LEFT:
+			return "left"
+		MOUSE_BUTTON_RIGHT:
+			return "right"
+		MOUSE_BUTTON_MIDDLE:
+			return "middle"
+		MOUSE_BUTTON_WHEEL_UP:
+			return "wheel_up"
+		MOUSE_BUTTON_WHEEL_DOWN:
+			return "wheel_down"
+		_:
+			return str(index)
+
+func _key_name(keycode: int) -> String:
+	if keycode >= KEY_A and keycode <= KEY_Z:
+		return "KEY_%s" % String.chr(65 + keycode - KEY_A)
+	if keycode >= KEY_0 and keycode <= KEY_9:
+		return "KEY_%s" % String.chr(48 + keycode - KEY_0)
+	match keycode:
+		KEY_SPACE:
+			return "KEY_SPACE"
+		KEY_ENTER:
+			return "KEY_ENTER"
+		KEY_ESCAPE:
+			return "KEY_ESCAPE"
+		KEY_TAB:
+			return "KEY_TAB"
+		KEY_BACKSPACE:
+			return "KEY_BACKSPACE"
+		KEY_LEFT:
+			return "KEY_LEFT"
+		KEY_RIGHT:
+			return "KEY_RIGHT"
+		KEY_UP:
+			return "KEY_UP"
+		KEY_DOWN:
+			return "KEY_DOWN"
+		KEY_SHIFT:
+			return "KEY_SHIFT"
+		KEY_CTRL:
+			return "KEY_CTRL"
+		KEY_ALT:
+			return "KEY_ALT"
+		KEY_META:
+			return "KEY_META"
+		_:
+			if keycode >= KEY_F1 and keycode <= KEY_F12:
+				return "KEY_F%d" % (keycode - KEY_F1 + 1)
+	return str(keycode)
 
 func _method_arg_names(method: Dictionary) -> Array[String]:
 	var names: Array[String] = []

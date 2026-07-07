@@ -100,6 +100,8 @@ func Execute(args []string) int {
 		return runEval(args[1:])
 	case "guidance":
 		return runGuidance(args[1:])
+	case "game_feel", "game-feel":
+		return runGameFeel(args[1:])
 	case "output":
 		return runOutput(args[1:])
 	case "diagnostics":
@@ -143,7 +145,8 @@ commands:
   game       tree | ui tree | instances | screenshot | click | assert | qa | node get|set|call
   instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor
-  guidance   ui
+  guidance   ui | game-feel
+  game_feel  list bundled Game Feel topics, or query one topic
   output     tail project log (--type log|error|warning|all, --lines N)
   diagnostics summarize project log errors and warnings (--lines N)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent, --runtime, --analyze)

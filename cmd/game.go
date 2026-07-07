@@ -27,7 +27,7 @@ func runGame(args []string) int {
 
 func parseGameArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: game <tree|ui tree|instances|screenshot|click|assert|node get|node set|node call|qa> ...")
+		return nil, fmt.Errorf("usage: game <tree|ui tree|instances|screenshot|click|input|input-log|assert|node get|node set|node call|qa> ...")
 	}
 	switch args[0] {
 	case "tree":
@@ -46,12 +46,16 @@ func parseGameArgs(args []string) (map[string]any, error) {
 		return parseGameScreenshotArgs(args[1:])
 	case "click":
 		return parseGameClickArgs(args[1:])
+	case "input":
+		return parseGameInputArgs(args[1:])
+	case "input-log":
+		return parseGameInputLogArgs(args[1:])
 	case "assert":
 		return parseGameAssertArgs(args[1:])
 	case "node":
 		return parseGameNodeArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown game subcommand %q (want tree|ui tree|instances|screenshot|click|assert|node get|node set|node call|qa)", args[0])
+		return nil, fmt.Errorf("unknown game subcommand %q (want tree|ui tree|instances|screenshot|click|input|input-log|assert|node get|node set|node call|qa)", args[0])
 	}
 }
 

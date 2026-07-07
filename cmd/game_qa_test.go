@@ -56,6 +56,51 @@ func TestGameClickParamsFromQAStep_targetsText_whenTextProvided(t *testing.T) {
 	}
 }
 
+func TestGameInputParamsFromQAStep_passesParamsThrough(t *testing.T) {
+	// Given
+	step := gameQAStep{
+		Tool: "game.input",
+		X:    320,
+		Y:    240,
+		Params: map[string]any{
+			"kind":      "mouse",
+			"mode":      "release",
+			"button":    "right",
+			"modifiers": []any{"shift", "ctrl"},
+		},
+	}
+
+	// When
+	params := gameInputParamsFromQAStep(step)
+
+	// Then
+	if params["action"] != "input" {
+		t.Fatalf("action = %v, want input", params["action"])
+	}
+	if params["kind"] != "mouse" || params["mode"] != "release" || params["button"] != "right" {
+		t.Fatalf("input params = %v", params)
+	}
+	if params["x"] != 320 || params["y"] != 240 {
+		t.Fatalf("coordinate params = %v", params)
+	}
+}
+
+func TestGameInputLogParamsFromQAStep_usesLinesAsLimit(t *testing.T) {
+	// Given
+	step := gameQAStep{Tool: "game.input_log", Lines: 5, Params: map[string]any{"clear": true}}
+
+	// When
+	params := gameInputLogParamsFromQAStep(step)
+
+	// Then
+	if params["action"] != "input_log" {
+		t.Fatalf("action = %v, want input_log", params["action"])
+	}
+	if params["limit"] != 5 || params["clear"] != true {
+		t.Fatalf("input log params = %v", params)
+	}
+}
+
 func TestGameNodeGetParamsFromQAStep_passesSelectedProps_whenProvided(t *testing.T) {
 	// Given
 	step := gameQAStep{Tool: "game.node.get", Path: "/root/Main", Props: []string{"score", "player.position"}}
@@ -79,5 +124,40 @@ func TestGameNodeGetParamsFromQAStep_passesSelectedProps_whenProvided(t *testing
 	}
 	if _, ok := params["prop"]; ok {
 		t.Fatalf("prop should be omitted when props is provided: %v", params)
+	}
+}
+
+func TestGameUITreeParamsFromQAStep_passesScopedFilters(t *testing.T) {
+	// Given
+	step := gameQAStep{
+		Tool: "game.ui.tree",
+		Path: "C:/Program Files/Git/root/Main/HUD",
+		Text: "Restart",
+		Params: map[string]any{
+			"depth":  2,
+			"type":   "Button",
+			"fields": []any{"name", "path", "text", "rect", "disabled"},
+		},
+	}
+
+	// When
+	params := gameUITreeParamsFromQAStep(step)
+
+	// Then
+	if params["action"] != "ui_tree" {
+		t.Fatalf("action = %v, want ui_tree", params["action"])
+	}
+	if params["path"] != "/root/Main/HUD" {
+		t.Fatalf("path = %v, want /root/Main/HUD", params["path"])
+	}
+	if params["text"] != "Restart" || params["type"] != "Button" || params["depth"] != 2 {
+		t.Fatalf("ui tree filters = %v", params)
+	}
+	fields, ok := params["fields"].([]any)
+	if !ok {
+		t.Fatalf("fields = %T, want []any", params["fields"])
+	}
+	if len(fields) != 5 || fields[0] != "name" || fields[4] != "disabled" {
+		t.Fatalf("fields = %v", fields)
 	}
 }

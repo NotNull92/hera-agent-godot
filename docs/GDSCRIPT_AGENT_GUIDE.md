@@ -41,6 +41,52 @@ layout. Board, grid, lane, arena, and sidebar-heavy layouts should use bounded
 wrappers or fixed playfield dimensions first, then be verified in the live
 runtime viewport for clipping.
 
+For `Node2D` games with a `CanvasLayer` HUD, do not let a full-screen decorative
+or root `Control` consume map clicks. Set that root to
+`Control.MOUSE_FILTER_IGNORE`, then leave only real buttons, selectors, and
+sidebars interactive.
+
+For framed gameplay UIs, automated clipping checks are not enough. Keep parent
+frame padding explicit, keep child controls bounded inside their frames, and set
+readable text colors for normal, hover, pressed, and disabled states.
+
+For play-surface plus HUD/sidebar UIs, give sibling panels a shared geometry
+budget. Matching top edges with very different heights, unbounded helper text,
+or one panel growing because of dense controls should be treated as a visual QA
+failure.
+
+Runtime scripts should not force a stale viewport size. Derive drawn
+backgrounds from `get_viewport_rect()` or `get_viewport().get_visible_rect()`,
+then keep playfield, map, and HUD rectangles inside explicit padded bounds.
+Only set `get_viewport().size` when fixed-resolution output is an explicit
+requirement.
+
+Prompt-game QA helpers should match the source of flake:
+
+- Realtime or physics loops: restart/start helpers, deterministic step helpers,
+  and targeted event helpers for scoring, removal, damage, or life changes.
+- Delayed or locked states: trigger helpers, step-forward helpers, lock flags,
+  visible state assertions, and disabled control counts.
+- Hidden-state rules: after flag, mark, or setup flows, avoid preconditions
+  created by earlier QA steps or reset them explicitly.
+- AI or automated turns: priority setup helpers and a documented undo boundary.
+- Autonomous loops: restart-paused helpers, pause controls, and one-step
+  advancement before inspection.
+- Primary input: after helper-based checks, drive the prompt's primary keyboard,
+  mouse, touch, or controller path through live runtime input before reporting
+  success.
+- Collision and impact: forced-overlap helpers for feedback, end-state, and
+  Game Feel evidence when Game Feel Mode matters.
+- Wave and economy loops: isolate placement, spawn, reward, spend, leak, and
+  loss assertions instead of relying only on a full natural run.
+- High-volume UI: filtered `game ui tree --type ... --fields ...` reads scoped
+  by path, text, depth, or class.
+- Stateful controls: if a toggle or mode button changes label, read the current
+  UI tree or target a stable node path before semantic clicks.
+- Terminal states: controls available during pause, win, loss, draw, or
+  game-over should preserve or append the terminal-state instruction instead of
+  replacing it outright.
+
 For undoable games with automated turns or AI replies, snapshot state at the
 interaction boundaries the player sees. If the AI can act after a human move,
 capture the state before the human half-move and before the automated half-move
@@ -771,11 +817,24 @@ Before finishing GDScript work:
 - Runtime QA starts from a clean process when possible: stop the current game,
   check `hera game instances`, run with `hera run --current --wait`, then inspect
   `hera game ui tree` or `hera game tree`.
+- State-changing runtime QA is ordered: do not run semantic clicks, `game input`,
+  or `game node call qa_*` in parallel against the same live game process.
 - UI work checks `hera guidance ui`; when Game Feel UI Mode is enabled, the
   implementation includes snappy feedback and satisfying state-change cues, then
   verifies them through the runtime viewport.
-- Timer-driven, wave-based, physics-driven, or autonomous game loops expose
+- Gameplay-feel work checks `hera guidance game-feel`; when Game Feel Mode is
+  enabled, query concrete topics with `hera game_feel <topic>` before tuning
+  controls, camera, hit stop, screen shake, sound, particles, rewards, or
+  presentation.
+- Timer-driven, spawned, physics-driven, or autonomous game loops expose
   deterministic QA helpers for restart, pause, state inspection, and one-step
   advancement.
+- Resource, progression, survival, and failure loops expose focused helpers for
+  player actions, entity creation, rewards, costs, damage, recovery, completion,
+  and loss instead of relying only on a full natural run.
 - `Node2D`-hosted `Control` UI has a root viewport sizing strategy, and
   screenshot analysis does not report likely clipping.
+- Framed UI padding, child bounds, sibling panel geometry, text contrast, and
+  disabled-state contrast were checked after at least one interaction.
+- The primary player input path was driven through Hera live input, not only
+  through deterministic helper methods.
