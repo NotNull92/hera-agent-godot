@@ -28,6 +28,27 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
+## 최신 릴리스: v0.6.0
+
+`v0.6.0`은 현재 태그된 최신 릴리스이며 Godot Asset Store 제출용으로 준비된
+버전입니다. 애드온 업로드는 **2026-07-06**에 완료되었습니다.
+
+주요 변경 사항:
+
+- Godot `EditorSettings`에 저장되는 에디터 내 **Game Feel UI Mode(Beta)**와,
+  UI 작업 전에 라이브 모드를 읽을 수 있는 `hera guidance ui`를 추가했습니다.
+- `status`가 `game_feel_ui_mode`를 반환해 UI 모드 확인을 일반 저토큰 상태 확인
+  경로에 포함했습니다.
+- `game ui tree --path`, `--depth`, `--fields`, `--type`, `--text`로 런타임 UI
+  검사를 더 좁고 저렴하게 수행할 수 있습니다.
+- `game qa discover`로 런타임 `qa_*` 헬퍼를 찾고, object-format QA 시나리오에서
+  선언된 요구사항이 실행 가능한 체크로 커버되지 않으면 실패하도록 했습니다.
+- `node get --prop`, `node get --props`로 에디터 노드 읽기를 더 집중적으로
+  수행할 수 있습니다.
+
+릴리스 노트와 Asset Store 패키징 세부 사항:
+[docs/releases/v0.6.0-asset-store-upload.md](docs/releases/v0.6.0-asset-store-upload.md).
+
 ## 저토큰, 실측
 
 "MCP급 범위, 더 적은 토큰" 주장을 수치로:
@@ -43,11 +64,11 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 **추정**입니다. 방법론·한계·재현법:
 **[docs/LOW_TOKEN.md](docs/LOW_TOKEN.md)**.
 
-## 현재 상태
+## 명령 표면
 
-**핵심 CLI/애드온 표면 완료.** 구현·리뷰된 명령은 다음과 같습니다:
+`v0.6.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
-`node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+assert+QA+screenshot), `guidance`,
+`node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+click+assert+QA+screenshot), `guidance`,
 `output`, `diagnostics`, `eval`, `screenshot`, `batch`, `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
 [docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Store 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.
@@ -87,22 +108,8 @@ Go CLI  ──HTTP /rpc──▶  Godot 에디터 애드온 (@tool EditorPlugin,
   에디터 메인 스레드에서 실행합니다.
 
 전체 설계는 **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**, 명령 목록은
-**[docs/COMMANDS.md](docs/COMMANDS.md)**, 구현 계획은
+**[docs/COMMANDS.md](docs/COMMANDS.md)**, 릴리스 이력은
 **[docs/ROADMAP.md](docs/ROADMAP.md)**를 참고하세요.
-
-## Unity판과 의도적으로 다른 점 (Godot 최적화)
-
-Godot은 에디터 확장 모델 자체가 달라 그대로 옮기지 않았습니다. (자세한 내용은
-[ARCHITECTURE.md §2](docs/ARCHITECTURE.md))
-
-1. **표준 애드온 배포** — GDScript 애드온은 `res://addons/hera_agent_godot/` 폴더만
-   복사하면 되고, .NET SDK나 C# 프로젝트 생성이 필요 없습니다.
-2. **도메인 리로드 머신 없음** — `EditorPlugin._EnterTree/_ExitTree` 생명주기만 사용.
-3. **메인 스레드 펌프** — HTTP 리스너는 워커 스레드, 실제 에디터 조작은 `_Process`에서
-   큐를 비우며 실행 (Godot는 오프스레드 에디터 접근 시 크래시).
-4. **Godot 어휘** — GameObject/Component/Prefab 대신 **Node/Scene/Resource/Signal**.
-5. **eval은 GDScript 기반** — Godot의 `Expression`과 `@tool` 스크립트 흐름을 사용.
-6. **명시적 툴 레지스트리** — 리플렉션 스캔 대신 명시 등록.
 
 ## 디렉토리 구조
 
@@ -111,10 +118,10 @@ addons/hera_agent_godot/  배포용 Godot 4.7+ 애드온 (GDScript)
 project.godot, scenes/    개발용 호스트 프로젝트 — CLI의 run/save/screenshot 대상
 cmd/                      Go CLI 명령 (status, instances, run/stop, scene, script, project, classdb, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
-docs/                     ARCHITECTURE, COMMANDS, ROADMAP
+docs/                     ARCHITECTURE, COMMANDS, ROADMAP, 릴리스 노트
 ```
 
-## 요구 사항 (목표)
+## 요구 사항
 
 - Go 1.25+ (CLI)
 - Godot **4.7+** 표준 빌드 (애드온)

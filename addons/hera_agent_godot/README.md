@@ -2,7 +2,8 @@
 
 Hera gives agents eyes, hands, and proof in the live Godot editor.
 
-This folder is the **distributable addon**. To use it in your own project:
+This folder is the **distributable addon** for the current `v0.6.0` release. To
+use it in your own project:
 
 1. Use a **Godot 4.7+** build.
 2. Copy this entire `hera_agent_godot/` folder into your project's `res://addons/`.
@@ -11,16 +12,20 @@ This folder is the **distributable addon**. To use it in your own project:
 The plugin starts a localhost HTTP server and advertises the editor to the
 `hera-agent-godot` CLI via `~/.hera-agent-godot/instances/`.
 
+`v0.6.0` includes the Hera main-screen panel with Game Feel UI Mode (Beta),
+`guidance ui`, scoped runtime UI reads, deterministic QA helper discovery, and
+requirement-covered QA scenarios.
+
 ## Layout
 
 | Path | Role |
 |------|------|
 | `plugin.cfg` | Addon manifest, points at `hera_agent_plugin.gd`. |
 | `hera_agent_plugin.gd` | `@tool` `EditorPlugin`; owns server, queue, heartbeat, registry. |
-| `core/` | response helpers and `ToolRegistry`. |
+| `core/` | response helpers, settings, `ToolRegistry`, and the Hera main-screen panel. |
 | `server/` | `http_server`, `work_queue`, `heartbeat`. |
-| `tools/` | Handlers for status, run, scene, node, signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
-| `runtime/` | Runtime autoload for live game inspection/control during play sessions. |
+| `tools/` | Handlers for status, guidance, run, scene, editor, script, project, classdb, node, signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
+| `runtime/` | Runtime autoload for live game inspection/control, UI tree reads, semantic clicks, assertions, and screenshot analysis during play sessions. |
 
 The entry script uses `@tool`, so it runs inside the editor. Full design and CLI
 docs: <https://github.com/NotNull92/hera-agent-godot>.

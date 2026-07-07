@@ -28,6 +28,28 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
+## Latest release: v0.6.0
+
+`v0.6.0` is the current tagged release and the version prepared for the Godot
+Asset Store. The addon upload was completed on **2026-07-06**.
+
+Highlights:
+
+- **Game Feel UI Mode (Beta)** in the editor, persisted in Godot
+  `EditorSettings`, plus `hera guidance ui` so agents can read the live mode
+  before UI work.
+- `status` now reports `game_feel_ui_mode`, making UI-mode checks part of the
+  normal low-token status path.
+- Runtime UI inspection is narrower and cheaper with
+  `game ui tree --path`, `--depth`, `--fields`, `--type`, and `--text`.
+- QA workflows can discover runtime `qa_*` helpers with `game qa discover` and
+  can fail object-format QA scenarios when declared requirements are not covered
+  by executable checks.
+- Editor reads are more focused with `node get --prop` and `node get --props`.
+
+Release notes and Asset Store packaging details:
+[docs/releases/v0.6.0-asset-store-upload.md](docs/releases/v0.6.0-asset-store-upload.md).
+
 ## Low-token, measured
 
 The "MCP-grade reach, fewer tokens" claim — with numbers:
@@ -43,9 +65,9 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 ~100–200 tok per tool schema. Method, caveats, and a reproducer:
 **[docs/LOW_TOKEN.md](docs/LOW_TOKEN.md)**.
 
-## Status
+## Command surface
 
-**Core CLI/addon surface complete.** The implemented and reviewed commands are:
+The `v0.6.0` CLI/addon surface includes:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
 `classdb`, `node` (read + write), `signal`, `resource` (get/list/set/create), `game`
 (runtime inspect + set/call/click + assert + QA + screenshot), `guidance`,
@@ -93,7 +115,7 @@ Go CLI  ──HTTP /rpc──▶  Godot editor addon (@tool EditorPlugin, GDScri
 
 See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 **[docs/COMMANDS.md](docs/COMMANDS.md)** for the command surface, and
-**[docs/ROADMAP.md](docs/ROADMAP.md)** for the build plan.
+**[docs/ROADMAP.md](docs/ROADMAP.md)** for release history.
 
 ## Repository layout
 
@@ -102,10 +124,10 @@ addons/hera_agent_godot/  the distributable Godot 4.7+ addon (GDScript)
 project.godot, scenes/    dev host project — the CLI's run/save/screenshot target
 cmd/                      Go CLI commands (status, instances, run/stop, scene, script, project, classdb, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
-docs/                     ARCHITECTURE, COMMANDS, ROADMAP
+docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes
 ```
 
-## Requirements (target)
+## Requirements
 
 - Go 1.25+ (CLI)
 - Godot **4.7+** standard build (addon)
