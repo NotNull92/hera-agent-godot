@@ -71,6 +71,9 @@ func TestGuidanceDataFromStatus_whenGameFeelEnabledIncludesLayoutQA(t *testing.T
 		"contrast",
 		"sibling panel",
 		"viewport",
+		"bounded child visuals",
+		"grid insets",
+		"inspection handoff",
 	} {
 		if !containsSubstring(checklist, want) {
 			t.Fatalf("checklist = %v, want substring %q", checklist, want)
@@ -162,10 +165,16 @@ func TestGameFeelGuidanceDataFromStatus_whenEnabledIncludesV07GenericRules(t *te
 	// Then
 	for _, want := range []string{
 		"state-changing runtime QA",
+		"affected-scene load",
 		"primary input scheme",
 		"stateful controls",
 		"terminal-state instruction",
 		"live viewport",
+		"current project",
+		"visible selectors",
+		"smoothed path",
+		"style resources",
+		"typed-copy",
 	} {
 		if !containsSubstring(patterns, want) {
 			t.Fatalf("game_qa_patterns = %v, want substring %q", patterns, want)

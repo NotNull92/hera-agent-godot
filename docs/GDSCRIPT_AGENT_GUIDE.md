@@ -50,16 +50,39 @@ For framed gameplay UIs, automated clipping checks are not enough. Keep parent
 frame padding explicit, keep child controls bounded inside their frames, and set
 readable text colors for normal, hover, pressed, and disabled states.
 
+For game tokens, markers, cards, units, hazards, rewards, and board marks, do not
+use raw letters inside generic controls as the final visual. Use semantic shapes,
+sprites, icons, or dedicated bounded child nodes with explicit size, centered
+offsets, and mouse filtering that preserves the parent interaction.
+
+For interactive cells, keep the hit target frame stable. Animate the child
+content, pulse overlay, draw layer, offset, or opacity; do not scale or rebuild
+the whole interactive control on every frame.
+
 For play-surface plus HUD/sidebar UIs, give sibling panels a shared geometry
 budget. Matching top edges with very different heights, unbounded helper text,
 or one panel growing because of dense controls should be treated as a visual QA
 failure.
+
+For grid, board, inventory, card, lane, and tile layouts, derive internal insets
+from the frame size, cell count, and gap sizes. Avoid hand-tuned offsets that
+leave asymmetric padding or misplace overlays.
 
 Runtime scripts should not force a stale viewport size. Derive drawn
 backgrounds from `get_viewport_rect()` or `get_viewport().get_visible_rect()`,
 then keep playfield, map, and HUD rectangles inside explicit padded bounds.
 Only set `get_viewport().size` when fixed-resolution output is an explicit
 requirement.
+
+For visible paths, lanes, rails, patrol lines, projectiles, and guided movement,
+build one authoritative geometry and use it for both rendering and movement.
+Smooth raw corner points before drawing thick paths, and place decorative flow
+markers by total path distance so entities do not appear offset from the route.
+
+Create a deterministic inspection handoff helper for autonomous or stateful
+prompt games. It should restore default settings, pause or freeze simulation when
+appropriate, clear stale transient feedback, and leave a representative visual
+state for screenshot review.
 
 Prompt-game QA helpers should match the source of flake:
 
@@ -86,6 +109,17 @@ Prompt-game QA helpers should match the source of flake:
 - Terminal states: controls available during pause, win, loss, draw, or
   game-over should preserve or append the terminal-state instruction instead of
   replacing it outright.
+- Selectors and labels: when helper code changes a difficulty, mode, tool,
+  level, ruleset, or score state, update the user-visible selector, label, or
+  counter in the same transaction.
+- Runtime helper paths: discover Hera add-on helper paths from the current
+  project or autoload configuration before preloading helper scripts.
+- Game Feel evidence: expose the target, active channels, duration,
+  intensity/scope, and visible values. A boolean or feature list alone is not
+  enough.
+- Animated UI: create or update style/theme resources on state changes, not in
+  `_process`; per-frame work should update transforms, offsets, opacity, or draw
+  values.
 
 For undoable games with automated turns or AI replies, snapshot state at the
 interaction boundaries the player sees. If the AI can act after a human move,
@@ -204,6 +238,17 @@ from them:
 
 ```gdscript
 var score: int = int(scores["black"])
+```
+
+Do not assign raw arrays pulled from `Dictionary` or `Variant` data directly into
+typed fields such as `Array[int]`. Convert through a typed-copy helper first:
+
+```gdscript
+func int_array_from_variant(value: Variant) -> Array[int]:
+	var result: Array[int] = []
+	for item in value:
+		result.append(int(item))
+	return result
 ```
 
 ## Variables And Type Inference

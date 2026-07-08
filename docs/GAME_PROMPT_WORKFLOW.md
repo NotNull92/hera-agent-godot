@@ -61,6 +61,9 @@ Report-derived patterns from the v0.7.0 prompt cycles:
 - Treat state-changing runtime QA as an ordered transaction. Do not parallelize
   semantic clicks, `game input`, `game node call qa_*`, or other state-mutating
   runtime commands against the same live game process.
+- If live runtime registration is empty while editor diagnostics are clean, run
+  a direct affected-scene load before changing autoloads or adding runtime
+  workarounds. Warning-as-error parse failures are the first branch to rule out.
 - Keep `guidance game-feel` separate from `guidance ui`. Use gameplay feel
   guidance for combat, reward, camera, control, audio, particles, accessibility,
   and runtime feel QA; use UI guidance for `Control` layout and input feedback.
@@ -71,6 +74,15 @@ Report-derived patterns from the v0.7.0 prompt cycles:
 - For framed board, grid, lane, arena, or sidebar UIs, verify parent padding,
   child rect bounds, readable text contrast, and disabled-state contrast from
   the live UI state, not only screenshot clipping.
+- For tokens, markers, cards, units, hazards, rewards, and grid marks, use
+  semantic bounded child visuals instead of letter-only control text. Keep the
+  interactive frame stable and animate the child visual, overlay, or draw layer.
+- For grid, board, card, inventory, lane, or tile layouts, derive internal
+  insets from `frame_size - (cell_count * cell_size + gaps)` instead of hand
+  guessing offsets. Verify first/last cell rects and overlay origin.
+- For inspection handoff states, leave a stable representative scene: default
+  settings restored, stale transient feedback cleared, and at least two
+  state-linked Game Feel channels visible when Game Feel is part of the prompt.
 - For primary play-surface plus HUD/sidebar layouts, compare sibling panel
   geometry in the runtime UI tree. Mismatched outer heights, unbounded helper
   copy, and uneven density are visual QA failures even without clipping.
@@ -109,9 +121,26 @@ Report-derived patterns from the v0.7.0 prompt cycles:
 - For settings controls available during pause, win, loss, draw, or game-over,
   append to or preserve the terminal-state instruction instead of replacing it
   with only the setting change.
+- Programmatic state or configuration changes must update visible selectors,
+  labels, and counters in the same transaction. QA should compare internal state
+  against the current UI tree when helpers change difficulty, mode, tool, or
+  ruleset values.
 - For resource, progression, survival, or failure loops, isolate state changes
   such as spend, reward, damage, recovery, spawn, completion, and loss with
   focused helpers instead of relying only on a full natural run.
+- If generated code needs Hera runtime helper entrypoints, discover the current
+  add-on path or autoload from this checkout before hardcoding helper script
+  paths, then run a direct affected-scene load.
+- For visible traversal paths, lanes, rails, patrols, projectiles, or routes,
+  derive drawing and movement from one authoritative geometry. Smooth corners
+  before rendering thick paths and verify with a screenshot plus one live
+  movement step.
+- For Game Feel QA, expose the active target, channel list, duration,
+  intensity/scope, and visible values. Do not treat a boolean or feature-list
+  string as proof that the rendered target changed.
+- For animated UI feedback, regenerate style/theme resources only on state
+  changes. Frame loops should update bounded transforms, offsets, opacity, or
+  draw values.
 
 After running the game, use:
 
