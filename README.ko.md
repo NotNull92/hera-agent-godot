@@ -28,26 +28,30 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 최신 릴리스: v0.6.0
+## 최신 릴리스: v0.7.0
 
-`v0.6.0`은 현재 태그된 최신 릴리스이며 Godot Asset Store 제출용으로 준비된
-버전입니다. 애드온 업로드는 **2026-07-06**에 완료되었습니다.
+`v0.7.0`은 현재 태그된 최신 릴리스이며 Godot Asset Store 제출용으로 준비된
+최신 버전입니다. v0.7.0 애드온 패키지는 GitHub Release에서 받을 수 있습니다.
 
 주요 변경 사항:
 
-- Godot `EditorSettings`에 저장되는 에디터 내 **Game Feel UI Mode(Beta)**와,
-  UI 작업 전에 라이브 모드를 읽을 수 있는 `hera guidance ui`를 추가했습니다.
-- `status`가 `game_feel_ui_mode`를 반환해 UI 모드 확인을 일반 저토큰 상태 확인
-  경로에 포함했습니다.
-- `game ui tree --path`, `--depth`, `--fields`, `--type`, `--text`로 런타임 UI
-  검사를 더 좁고 저렴하게 수행할 수 있습니다.
-- `game qa discover`로 런타임 `qa_*` 헬퍼를 찾고, object-format QA 시나리오에서
-  선언된 요구사항이 실행 가능한 체크로 커버되지 않으면 실패하도록 했습니다.
-- `node get --prop`, `node get --props`로 에디터 노드 읽기를 더 집중적으로
+- 라이브 브리지 상태, Hera 브랜딩, 지속 저장되는 Game Feel Mode 컨트롤을 담은
+  전용 **HeraAgent** 에디터 메인 화면 패널을 추가했습니다.
+- `game_feel` 지식 베이스와 `hera guidance game-feel`을 추가해 에이전트가
+  조작감, 히트스톱, 카메라, 사운드, 파티클, 보상 피드백, UI 바, 접근성,
+  윤리적 피드백 같은 구체 주제를 조회할 수 있습니다.
+- `game input`으로 마우스, 키보드, InputMap 액션, 텍스트 입력, modifier,
+  viewport-routed Control 입력을 런타임에 주입할 수 있습니다.
+- `game input-log` 진단으로 전달된 클릭, 키, modifier, 활성 입력,
+  short/long press 분류를 증거로 남길 수 있습니다.
+- `game qa --file` 시나리오에 `game.input`, `game.input_log` 단계를 추가해
+  키보드, 마우스, 터치형 입력, 컨트롤러/액션 경로까지 요구사항 커버 QA를
   수행할 수 있습니다.
+- v0.7.0 실전 테스트 사이클에서 나온 Game Feel, 레이아웃, route/path,
+  prompt-game QA 규칙을 재사용 가능한 가이드로 승격했습니다.
 
 릴리스 노트와 Asset Store 패키징 세부 사항:
-[docs/releases/v0.6.0-asset-store-upload.md](docs/releases/v0.6.0-asset-store-upload.md).
+[docs/releases/v0.7.0-asset-store-upload.md](docs/releases/v0.7.0-asset-store-upload.md).
 
 ## 저토큰, 실측
 
@@ -66,9 +70,9 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 
 ## 명령 표면
 
-`v0.6.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
+`v0.7.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
-`node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+click+assert+QA+screenshot), `guidance`,
+`node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+click/input/input-log+assert+QA+screenshot), `guidance`,
 `output`, `diagnostics`, `eval`, `screenshot`, `batch`, `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
 [docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Store 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.

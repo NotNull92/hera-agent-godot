@@ -28,27 +28,30 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Latest release: v0.6.0
+## Latest release: v0.7.0
 
-`v0.6.0` is the current tagged release and the version prepared for the Godot
-Asset Store. The addon upload was completed on **2026-07-06**.
+`v0.7.0` is the current tagged release and the latest version prepared for the
+Godot Asset Store. The v0.7.0 addon package is available from the GitHub Release.
 
 Highlights:
 
-- **Game Feel UI Mode (Beta)** in the editor, persisted in Godot
-  `EditorSettings`, plus `hera guidance ui` so agents can read the live mode
-  before UI work.
-- `status` now reports `game_feel_ui_mode`, making UI-mode checks part of the
-  normal low-token status path.
-- Runtime UI inspection is narrower and cheaper with
-  `game ui tree --path`, `--depth`, `--fields`, `--type`, and `--text`.
-- QA workflows can discover runtime `qa_*` helpers with `game qa discover` and
-  can fail object-format QA scenarios when declared requirements are not covered
-  by executable checks.
-- Editor reads are more focused with `node get --prop` and `node get --props`.
+- Dedicated **HeraAgent** editor main-screen panel with live bridge status,
+  Hera branding, and persistent Game Feel Mode controls.
+- Bundled `game_feel` knowledge base plus `hera guidance game-feel` so agents
+  can query concrete topics such as control feel, hit stop, camera, sound,
+  particles, reward feedback, UI bars, accessibility, and ethical feedback.
+- Runtime input injection with `game input` for mouse, keyboard, InputMap
+  actions, text input, modifiers, and viewport-routed Control input.
+- `game input-log` diagnostics for proof of delivered clicks, keys, modifiers,
+  active inputs, and short/long press classification.
+- Expanded `game qa --file` scenarios with `game.input` and `game.input_log`
+  steps, enabling requirement-covered QA for keyboard, mouse, touch-style, and
+  controller/action paths.
+- Reusable Game Feel, layout, route/path, and prompt-game QA guidance promoted
+  from hands-on v0.7.0 testing cycles.
 
 Release notes and Asset Store packaging details:
-[docs/releases/v0.6.0-asset-store-upload.md](docs/releases/v0.6.0-asset-store-upload.md).
+[docs/releases/v0.7.0-asset-store-upload.md](docs/releases/v0.7.0-asset-store-upload.md).
 
 ## Low-token, measured
 
@@ -67,10 +70,10 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 ## Command surface
 
-The `v0.6.0` CLI/addon surface includes:
+The `v0.7.0` CLI/addon surface includes:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
 `classdb`, `node` (read + write), `signal`, `resource` (get/list/set/create), `game`
-(runtime inspect + set/call/click + assert + QA + screenshot), `guidance`,
+(runtime inspect + set/call/click/input/input-log + assert + QA + screenshot), `guidance`,
 `output`, `diagnostics`, `eval`, `screenshot`,
 `batch`, and `smoke`, with
 `--json`/`--ids` output modes. See
