@@ -19,6 +19,9 @@
 .idea/
 .vscode/
 .agents/
+# Local Codex state belongs to each machine, not the repository.
+.codex/
+.debug-journal.md
 docs/tests/
 .omc/
 .omo/*
