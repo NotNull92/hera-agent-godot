@@ -119,7 +119,7 @@ Global flags go **before** the command (e.g. `hera-agent-godot --ids node find`,
 | `--ids` | ☑ | Print only node paths (for `scene tree` / `node find`); compact JSON otherwise. |
 | (default) | ☑ | Compact JSON — minimal tokens. |
 | `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
-| `--timeout <ms>` | ☐ | Request timeout. |
+| `--timeout <ms>` | ☑ | Per-request HTTP timeout in milliseconds (default 5000). Bounds each request, not a whole command (`--wait` polls send many requests). Accepts `--timeout N` or `--timeout=N`. |
 
 See [CONTRACT.md](./CONTRACT.md) for the output contract (exit codes, error
 shapes, stability tiers), [ARCHITECTURE.md](./ARCHITECTURE.md) for the request

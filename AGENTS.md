@@ -89,7 +89,8 @@ hera smoke [--run-game|--skip-game]          # quick live editor smoke check; ru
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
 only node paths, for `scene tree` / `node find`), `--instance <pid>` (explicitly
-target a pid shown by `status`). Default output is compact JSON.
+target a pid shown by `status`), `--timeout <ms>` (per-request HTTP timeout,
+default 5000). Default output is compact JSON.
 
 ## Conventions & safety
 

@@ -25,6 +25,15 @@ func New(baseURL string) *Client {
 	return &Client{BaseURL: baseURL, HTTP: newDefaultHTTPClient()}
 }
 
+// NewWithTimeout builds a Client with an explicit per-request timeout.
+// A non-positive timeout falls back to the default.
+func NewWithTimeout(baseURL string, timeout time.Duration) *Client {
+	if timeout <= 0 {
+		return New(baseURL)
+	}
+	return &Client{BaseURL: baseURL, HTTP: &http.Client{Timeout: timeout}}
+}
+
 // Post sends a single tool request and returns the decoded response.
 func (c *Client) Post(tool string, params map[string]any) (*protocol.Response, error) {
 	body, err := json.Marshal(protocol.Request{Tool: tool, Params: params})

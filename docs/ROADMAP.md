@@ -108,8 +108,10 @@ standardize on it.
 - [x] `docs/CONTRACT.md`: per-command output contract — JSON fields, exit
       codes, error shapes — with each command marked **stable** or
       **experimental**.
-- [ ] Contract tests in CI: golden compact-JSON outputs for stable commands so
-      an accidental breaking change fails the build.
+- [x] Contract tests in CI: golden compact-JSON outputs for stable commands so
+      an accidental breaking change fails the build
+      (`cmd/contract_golden_test.go`; also implemented the previously
+      documented-only `--timeout <ms>` global flag).
 - [ ] Godot support matrix: verify the true minimum editor version
       (spot-check 4.2–4.6), publish the matrix, and run the CI GDScript gate
       on the oldest supported version as well as the newest.

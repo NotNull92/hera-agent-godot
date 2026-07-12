@@ -32,13 +32,14 @@ change and (post-1.0) requires a major version bump plus a deprecation cycle
 ## Invocation
 
 ```
-hera-agent-godot [--json|--ids] [--instance <pid>] <command> [args]
+hera-agent-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 ```
 
-- Global flags come **before** the command. `--instance` accepts
-  `--instance N` and `--instance=N`.
-- `--timeout` is documented in COMMANDS.md as planned but is **not
-  implemented**; the client uses a fixed 5 s HTTP timeout.
+- Global flags come **before** the command. `--instance` and `--timeout`
+  accept both `--flag N` and `--flag=N`.
+- `--timeout <ms>` bounds **each HTTP request** (default 5000 ms); it does not
+  bound a whole command — `--wait` polls send many requests. A timed-out
+  request is a runtime failure (exit `1`).
 - Unknown commands and malformed flags/arguments never reach the editor; they
   fail fast with exit code `2`.
 
@@ -81,7 +82,7 @@ hera-agent-godot [--json|--ids] [--instance <pid>] <command> [args]
 |------|---------|---------------------|
 | `0` | Success. | `status`, `scene tree`, passing `game assert` |
 | `1` | Runtime failure or failed check: no live editor, tool returned an error, mutation guard refused, or a verdict command reported not-OK. | `node get /nonexistent`, `game tree` with no game running, `game qa diagnose` with issues |
-| `2` | Usage error: unknown command, missing/invalid flag argument, invalid `--instance` pid, malformed scenario file arguments. | `hera bogus`, `run --scene` (missing value), `--instance abc` |
+| `2` | Usage error: unknown command, missing/invalid flag argument, invalid `--instance` pid or `--timeout` value, malformed scenario file arguments. | `hera bogus`, `run --scene` (missing value), `--instance abc`, `--timeout abc` |
 
 ### Verdict commands
 
@@ -104,8 +105,9 @@ differ in where the detail goes:
 ## Per-command contract
 
 Tier markings are the Phase 7 proposal. "Key fields" lists top-level `data`
-fields; entries marked ✓ were captured live from a Godot 4.7 editor. Detailed
-per-field schemas will be pinned by golden-output tests (Phase 7).
+fields; entries marked ✓ were captured live from a Godot 4.7 editor.
+Stable-command stdout is additionally pinned byte-for-byte by the golden
+contract tests (see [Contract tests](#contract-tests)).
 
 ### Core & discovery
 
@@ -184,11 +186,18 @@ Requires a play session plus the `HeraGameInspector` autoload; not undoable.
 
 ## Known gaps (tracked in ROADMAP Phase 7)
 
-- Golden-output tests in CI do not exist yet; until they do, this document is
-  verified by hand against a live editor.
-- `--timeout` is documented but unimplemented.
 - Detailed field-level schemas (types, optionality) for every subcommand are
   still to be pinned; this draft freezes names of the fields listed above.
+
+## Contract tests
+
+`cmd/contract_golden_test.go` pins this contract in CI: it runs the real CLI
+end-to-end (argv → discovery → HTTP → stdout/exit code) against a mock editor
+serving fixture responses, and byte-compares stdout with golden files under
+`cmd/testdata/contract/`. Stable read commands use responses captured from a
+live Godot 4.7 editor; exit-code and stderr-shape semantics above are asserted
+directly. After an **intentional** contract change, regenerate with
+`go test ./cmd -run TestContract -update` and list the change in release notes.
 
 See [COMMANDS.md](./COMMANDS.md) for flags and semantics,
 [ARCHITECTURE.md](./ARCHITECTURE.md) for the request lifecycle, and

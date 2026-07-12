@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // outputMode is set from leading global flags (--json / --ids) and consumed by
@@ -17,12 +19,19 @@ var outputMode string
 // satisfied (the user picked one explicitly). Consumed by selectEditor.
 var targetPID int
 
+// requestTimeout is set from the leading global flag --timeout <ms>. 0 = unset,
+// in which case the client's 5 s default applies. It bounds each HTTP request,
+// not a whole command (--wait polls send many requests). Consumed by
+// dialEditorWithMode.
+var requestTimeout time.Duration
+
 // Execute is the CLI entry point. Leading --json/--ids/--instance set global
 // options; the first non-flag argument is the command. Commands map 1:1 to
 // addon tools (see docs/COMMANDS.md).
 func Execute(args []string) int {
 	outputMode = ""
 	targetPID = 0
+	requestTimeout = 0
 	start := 0
 	for start < len(args) {
 		arg := args[start]
@@ -57,6 +66,30 @@ func Execute(args []string) int {
 				return 2
 			}
 			targetPID = pid
+			start++
+			continue
+		}
+		if arg == "--timeout" {
+			if start+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "--timeout requires a milliseconds argument")
+				return 2
+			}
+			timeout, ok := parseTimeoutMS(args[start+1])
+			if !ok {
+				fmt.Fprintf(os.Stderr, "--timeout: invalid milliseconds %q\n", args[start+1])
+				return 2
+			}
+			requestTimeout = timeout
+			start += 2
+			continue
+		}
+		if v, ok := strings.CutPrefix(arg, "--timeout="); ok {
+			timeout, ok := parseTimeoutMS(v)
+			if !ok {
+				fmt.Fprintf(os.Stderr, "--timeout: invalid milliseconds %q\n", v)
+				return 2
+			}
+			requestTimeout = timeout
 			start++
 			continue
 		}
@@ -119,16 +152,20 @@ func Execute(args []string) int {
 		usage()
 		return 0
 	default:
-		fmt.Printf("unknown command: %q\n\n", args[0])
-		usage()
+		fmt.Fprintf(os.Stderr, "unknown command: %q\n\n", args[0])
+		usageTo(os.Stderr)
 		return 2
 	}
 }
 
 func usage() {
-	fmt.Print(`hera-agent-godot — drive a live Godot 4.x editor from the shell
+	usageTo(os.Stdout)
+}
 
-usage: hera-agent-godot [--json|--ids] [--instance <pid>] <command> [flags]
+func usageTo(w io.Writer) {
+	fmt.Fprint(w, `hera-agent-godot — drive a live Godot 4.x editor from the shell
+
+usage: hera-agent-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
 
 commands:
   status     show the connected editor (project, version, active scene, UI mode)
@@ -159,6 +196,7 @@ global flags (before the command):
   --ids          print only node paths (for scene tree / node find)
   --instance N   target the editor with pid N (required for mutations when
                  more than one editor is live; status output includes the pid)
+  --timeout MS   per-request HTTP timeout in milliseconds (default 5000)
 
 See docs/COMMANDS.md for details.
 `)
@@ -172,4 +210,14 @@ func parsePID(s string) (int, bool) {
 		return 0, false
 	}
 	return pid, true
+}
+
+// parseTimeoutMS parses a positive millisecond count. Returns ok=false for
+// non-numeric or non-positive input.
+func parseTimeoutMS(s string) (time.Duration, bool) {
+	ms, err := strconv.Atoi(s)
+	if err != nil || ms <= 0 {
+		return 0, false
+	}
+	return time.Duration(ms) * time.Millisecond, true
 }
