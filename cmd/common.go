@@ -29,7 +29,9 @@ func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return client.NewWithTimeout(fmt.Sprintf("http://127.0.0.1:%d", inst.Port), requestTimeout), nil
+	c := client.NewWithTimeout(fmt.Sprintf("http://127.0.0.1:%d", inst.Port), requestTimeout)
+	c.Token = client.LoadSharedToken()
+	return c, nil
 }
 
 // dialPostPrint dials the editor, sends one tool request, and prints the

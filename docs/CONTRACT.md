@@ -42,6 +42,10 @@ hera-agent-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [a
   request is a runtime failure (exit `1`).
 - Unknown commands and malformed flags/arguments never reach the editor; they
   fail fast with exit code `2`.
+- With opt-in shared-token auth enabled ([SECURITY.md](./SECURITY.md)), a
+  token mismatch is a runtime failure: `unauthorized: ...` on stderr, exit
+  `1`. The CLI picks the token up automatically from
+  `HERA_AGENT_GODOT_TOKEN` or `~/.hera-agent-godot/token`.
 
 ## Output streams
 

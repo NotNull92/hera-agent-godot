@@ -136,6 +136,13 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes, prompt
   **4.2**: the addon loads and answers the CLI on 4.2–4.6 (spot-checked) —
   see [docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md).
 
+## Security
+
+The bridge binds `127.0.0.1` only and rejects browser-origin requests.
+Optional shared-token auth locks it to clients that know a secret
+(`~/.hera-agent-godot/token` or `HERA_AGENT_GODOT_TOKEN`). Threat model and
+setup: [docs/SECURITY.md](docs/SECURITY.md).
+
 ## Sibling: hera-agent-unity
 
 Working in Unity too? [**hera-agent-unity**](https://github.com/NotNull92/hera-agent-unity)

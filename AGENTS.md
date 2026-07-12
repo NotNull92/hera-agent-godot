@@ -116,6 +116,10 @@ default 5000). Default output is compact JSON.
   the edited scene root as base, so `get_node("X").something()` works — and can
   have side effects. It is **not** registered with undo. Prefer `node set` for
   property changes.
+- **Opt-in token auth.** If commands fail with `unauthorized: ...`, the editor
+  requires the shared token; the CLI reads it automatically from
+  `HERA_AGENT_GODOT_TOKEN` or `~/.hera-agent-godot/token`
+  (see [docs/SECURITY.md](docs/SECURITY.md)).
 - **GDScript guide authority, low-token mode.**
   [docs/GDSCRIPT_AGENT_GUIDE.md](docs/GDSCRIPT_AGENT_GUIDE.md) is the
   authoritative source and must be followed, but do not reload the whole guide

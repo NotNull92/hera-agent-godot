@@ -133,6 +133,13 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP, 릴리스 노트, 프
   4.2–4.6에서 애드온 로드와 CLI 응답을 스팟체크로 확인했습니다 —
   [docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md) 참고.
 
+## 보안
+
+브리지는 `127.0.0.1`에만 바인딩되고 브라우저 오리진 요청을 거부합니다.
+옵트인 공유 토큰 인증(`~/.hera-agent-godot/token` 또는
+`HERA_AGENT_GODOT_TOKEN`)으로 비밀을 아는 클라이언트만 허용할 수 있습니다.
+위협 모델과 설정: [docs/SECURITY.md](docs/SECURITY.md).
+
 ## 자매 프로젝트: hera-agent-unity
 
 Unity도 쓰신다면 — [**hera-agent-unity**](https://github.com/NotNull92/hera-agent-unity)는

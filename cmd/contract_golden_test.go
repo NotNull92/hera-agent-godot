@@ -238,6 +238,7 @@ func installContractHome(t *testing.T, port int, heartbeat bool) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
+	t.Setenv("HERA_AGENT_GODOT_TOKEN", "") // keep opt-in auth out of golden runs
 	if !heartbeat {
 		return
 	}

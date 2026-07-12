@@ -80,6 +80,7 @@ func _enter_tree() -> void:
 
 	_queue = WorkQueue.new()
 	_server = HttpServer.new()
+	_server.auth_token = HttpServer.load_shared_token()
 	var bound: int = _server.start(8770)
 	if bound == 0:
 		_server = null
@@ -87,10 +88,11 @@ func _enter_tree() -> void:
 		push_error("[hera] failed to bind HTTP server on 127.0.0.1 (8770-8785)")
 		return
 
+	var auth_note := " (token auth on)" if _server.auth_token != "" else ""
 	_heartbeat = Heartbeat.new()
 	_heartbeat.start(bound)
-	_set_main_status("Listening on 127.0.0.1:%d" % bound, true)
-	print("[hera] Hera Agent Godot listening on 127.0.0.1:%d" % bound)
+	_set_main_status("Listening on 127.0.0.1:%d%s" % [bound, auth_note], true)
+	print("[hera] Hera Agent Godot listening on 127.0.0.1:%d%s" % [bound, auth_note])
 
 func _process(delta: float) -> void:
 	if _server != null:

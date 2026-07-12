@@ -155,7 +155,11 @@ opportunistically.
 
 - Listener binds only to `127.0.0.1`.
 - Browser-origin requests are rejected.
-- Instance files live under the user's home directory.
+- Opt-in shared-token auth: when `~/.hera-agent-godot/token` (or
+  `HERA_AGENT_GODOT_TOKEN`) is set, `/rpc` requires a matching `X-Hera-Token`
+  header (401 otherwise). See [SECURITY.md](./SECURITY.md) for the full
+  threat model.
+- Instance files live under the user's home directory and contain no secrets.
 - Dangerous operations are out of scope for v0 and must become explicit named
   tools if ever added.
 
@@ -165,7 +169,8 @@ opportunistically.
 
 - No MCP server — a deliberate bet on a low-token, shell-native CLI (see §1), not
   an MCP gap: comparable editor reach at a fraction of the per-turn tokens.
-- No Godot 3.x or pre-4.7 support.
+- No Godot 3.x support. 4.7 is the fully-QA'd baseline; 4.2 is the verified
+  4.x floor (see [SUPPORT_MATRIX.md](./SUPPORT_MATRIX.md)).
 - No C#/.NET addon requirement.
 - No reflection-based tool auto-discovery.
 

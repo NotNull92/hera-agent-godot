@@ -120,8 +120,10 @@ standardize on it.
       gate now runs 4.2-stable and 4.7-stable).
 - [ ] One name: unify the invocation name on `hera` across release binaries,
       installers, and docs (keep `hera-agent-godot` as a transitional alias).
-- [ ] Trust: document the localhost HTTP threat model; add opt-in shared-token
-      auth between CLI and addon (still `127.0.0.1`-only).
+- [x] Trust: document the localhost HTTP threat model; add opt-in shared-token
+      auth between CLI and addon (still `127.0.0.1`-only)
+      ([SECURITY.md](./SECURITY.md); `X-Hera-Token` via
+      `~/.hera-agent-godot/token` or `HERA_AGENT_GODOT_TOKEN`, 401 → exit 1).
 - [ ] Asset Store upload `v0.8.0`.
 
 ## Phase 8 — Reach & agent-side distribution (v0.9)

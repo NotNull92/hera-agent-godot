@@ -14,8 +14,14 @@ const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.g
 
 const CLIENT_TIMEOUT_MSEC := 5000
 const MAX_REQUEST_BYTES := 1048576
+const TOKEN_ENV_VAR := "HERA_AGENT_GODOT_TOKEN"
 
 var port := 0
+
+# Opt-in shared-token auth (docs/SECURITY.md): when non-empty, every request
+# must carry a matching X-Hera-Token header or it is rejected with 401. Set by
+# the plugin from load_shared_token() before start().
+var auth_token := ""
 
 var _server: TCPServer
 var _clients: Array = [] # each entry: { "conn": StreamPeerTCP, "buf": PackedByteArray, "accepted_msec": int }
@@ -85,6 +91,8 @@ func poll(queue) -> void:
 			_write_http(conn, 413, "Payload Too Large", ToolResponse.failure("request too large"))
 		elif String(parsed["origin"]) != "":
 			_write_http(conn, 403, "Forbidden", ToolResponse.failure("forbidden: browser origin not allowed"))
+		elif auth_token != "" and String(parsed["token"]) != auth_token:
+			_write_http(conn, 401, "Unauthorized", ToolResponse.failure("unauthorized: missing or wrong X-Hera-Token (this editor requires the shared token from ~/.hera-agent-godot/token or HERA_AGENT_GODOT_TOKEN)"))
 		elif String(parsed["method"]) != "POST" or String(parsed["path"]) != "/rpc":
 			_write_http(conn, 404, "Not Found", ToolResponse.failure("not found"))
 		elif parsed["body"] == null:
@@ -107,10 +115,10 @@ func _write_http(conn: StreamPeerTCP, code: int, reason: String, body: Dictionar
 	conn.put_data(body_bytes)
 	conn.disconnect_from_host()
 
-# Parse an accumulated buffer into { complete, method, path, origin, body }.
+# Parse an accumulated buffer into { complete, method, path, origin, token, body }.
 # body is the decoded JSON Dictionary (or null on parse failure / empty).
 func _parse_request(buf: PackedByteArray) -> Dictionary:
-	var result := { "complete": false, "too_large": false, "method": "", "path": "", "origin": "", "body": null }
+	var result := { "complete": false, "too_large": false, "method": "", "path": "", "origin": "", "token": "", "body": null }
 	var header_end := _find_header_end(buf)
 	if header_end == -1:
 		return result # headers not fully received yet
@@ -135,6 +143,8 @@ func _parse_request(buf: PackedByteArray) -> Dictionary:
 			content_length = value.to_int()
 		elif key == "origin":
 			result["origin"] = value
+		elif key == "x-hera-token":
+			result["token"] = value
 
 	if content_length > MAX_REQUEST_BYTES:
 		result["complete"] = true
@@ -155,6 +165,31 @@ func _parse_request(buf: PackedByteArray) -> Dictionary:
 	if typeof(decoded) == TYPE_DICTIONARY:
 		result["body"] = decoded
 	return result
+
+# Resolve the opt-in shared auth token the same way the Go CLI does: the
+# HERA_AGENT_GODOT_TOKEN environment variable wins, then
+# ~/.hera-agent-godot/token (whitespace-trimmed). Empty string = auth off.
+# Read once at plugin start; changing the token needs a plugin reload.
+static func load_shared_token() -> String:
+	if OS.has_environment(TOKEN_ENV_VAR):
+		var env_token := OS.get_environment(TOKEN_ENV_VAR).strip_edges()
+		if env_token != "":
+			return env_token
+	var path := _token_home_dir().path_join(".hera-agent-godot").path_join("token")
+	if not FileAccess.file_exists(path):
+		return ""
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return ""
+	return file.get_as_text().strip_edges()
+
+# Match Go's os.UserHomeDir(): USERPROFILE on Windows, HOME elsewhere.
+static func _token_home_dir() -> String:
+	if OS.has_environment("USERPROFILE"):
+		return OS.get_environment("USERPROFILE")
+	if OS.has_environment("HOME"):
+		return OS.get_environment("HOME")
+	return OS.get_user_data_dir()
 
 func _find_header_end(buf: PackedByteArray) -> int:
 	for i in range(buf.size() - 3):

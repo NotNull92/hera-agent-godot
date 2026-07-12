@@ -11,7 +11,10 @@ use it in your own project:
 3. Enable **Project → Project Settings → Plugins → Hera Agent Godot**.
 
 The plugin starts a localhost HTTP server and advertises the editor to the
-`hera-agent-godot` CLI via `~/.hera-agent-godot/instances/`.
+`hera-agent-godot` CLI via `~/.hera-agent-godot/instances/`. Optional
+shared-token auth: put a random string in `~/.hera-agent-godot/token` (or set
+`HERA_AGENT_GODOT_TOKEN`) and reload the plugin — see the repo's
+`docs/SECURITY.md`.
 
 `v0.7.0` includes the Hera main-screen panel with Game Feel Mode controls,
 `guidance ui`, `guidance game-feel`, bundled `game_feel` topics, scoped runtime
