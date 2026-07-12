@@ -223,6 +223,10 @@ static func _make_card() -> PanelContainer:
 
 
 static func _make_logo_texture() -> TextureRect:
+	# The logo lives in the dev repo, not the distributed addon: skip silently
+	# instead of letting Image.load() error-spam every editor start.
+	if not FileAccess.file_exists(HERA_LOGO_PATH):
+		return null
 	var image := Image.new()
 	var load_error := image.load(ProjectSettings.globalize_path(HERA_LOGO_PATH))
 	if load_error != OK:
@@ -242,6 +246,10 @@ static func _make_logo_texture() -> TextureRect:
 
 
 static func _load_display_font(path: String) -> Font:
+	# Not yet imported (fresh checkout / headless) or missing: fall back to the
+	# default font without error spam.
+	if not ResourceLoader.exists(path, "Font"):
+		return null
 	var base_font := ResourceLoader.load(path, "Font") as Font
 	if base_font == null:
 		return null

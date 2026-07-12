@@ -112,9 +112,12 @@ standardize on it.
       an accidental breaking change fails the build
       (`cmd/contract_golden_test.go`; also implemented the previously
       documented-only `--timeout <ms>` global flag).
-- [ ] Godot support matrix: verify the true minimum editor version
+- [x] Godot support matrix: verify the true minimum editor version
       (spot-check 4.2–4.6), publish the matrix, and run the CI GDScript gate
-      on the oldest supported version as well as the newest.
+      on the oldest supported version as well as the newest
+      ([SUPPORT_MATRIX.md](./SUPPORT_MATRIX.md): verified minimum 4.2 —
+      check-only + plugin load + live `status` on every 4.2–4.6 stable; CI
+      gate now runs 4.2-stable and 4.7-stable).
 - [ ] One name: unify the invocation name on `hera` across release binaries,
       installers, and docs (keep `hera-agent-godot` as a transitional alias).
 - [ ] Trust: document the localhost HTTP threat model; add opt-in shared-token

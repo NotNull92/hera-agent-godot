@@ -44,12 +44,17 @@ jobs:
           fi
 
   gdscript:
-    name: GDScript (--check-only)
+    name: GDScript (--check-only, Godot ${{ matrix.godot-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both ends of the support matrix (docs/SUPPORT_MATRIX.md): the oldest
+        # verified version and the development baseline. Must be real
+        # github.com/godotengine/godot release tags.
+        godot-version: [4.2-stable, 4.7-stable]
     env:
-      # Bump this to re-validate against a newer Godot. Must be a real
-      # github.com/godotengine/godot release tag (e.g. 4.7-stable).
-      GODOT_VERSION: 4.7-stable
+      GODOT_VERSION: ${{ matrix.godot-version }}
     steps:
       - uses: actions/checkout@v5
 

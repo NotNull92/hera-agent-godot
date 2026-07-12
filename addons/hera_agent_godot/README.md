@@ -5,7 +5,8 @@ Hera gives agents eyes, hands, and proof in the live Godot editor.
 This folder is the **distributable addon** for the current `v0.7.0` baseline. To
 use it in your own project:
 
-1. Use a **Godot 4.7+** build.
+1. Use a **Godot 4.7+** build (recommended; verified to load and answer the
+   CLI down to **4.2** — see the repo's `docs/SUPPORT_MATRIX.md`).
 2. Copy this entire `hera_agent_godot/` folder into your project's `res://addons/`.
 3. Enable **Project → Project Settings → Plugins → Hera Agent Godot**.
 

@@ -132,7 +132,9 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes, prompt
 ## Requirements
 
 - Go 1.25+ (CLI)
-- Godot **4.7+** standard build (addon)
+- Godot **4.7+** standard build recommended (addon). Verified minimum is
+  **4.2**: the addon loads and answers the CLI on 4.2–4.6 (spot-checked) —
+  see [docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md).
 
 ## Sibling: hera-agent-unity
 

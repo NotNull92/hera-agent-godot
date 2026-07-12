@@ -129,7 +129,9 @@ docs/                     ARCHITECTURE, COMMANDS, ROADMAP, 릴리스 노트, 프
 ## 요구 사항
 
 - Go 1.25+ (CLI)
-- Godot **4.7+** 표준 빌드 (애드온)
+- Godot **4.7+** 표준 빌드 권장 (애드온). 검증된 최소 버전은 **4.2**입니다:
+  4.2–4.6에서 애드온 로드와 CLI 응답을 스팟체크로 확인했습니다 —
+  [docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md) 참고.
 
 ## 자매 프로젝트: hera-agent-unity
 
