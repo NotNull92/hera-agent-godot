@@ -28,27 +28,25 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 최신 릴리스: v0.7.0
+## 현재 릴리스 기준: v0.7.0
 
-`v0.7.0`은 현재 태그된 최신 릴리스이며 Godot Asset Store 제출용으로 준비된
-최신 버전입니다. v0.7.0 애드온 패키지는 GitHub Release에서 받을 수 있습니다.
+`v0.7.0`은 현재 저장소 태그와 애드온 매니페스트 기준 버전입니다. Godot
+Asset Store 업로드 준비가 완료되었고, 이전 스토어 업로드는 **2026-07-06**의
+`v0.6.0`입니다.
 
 주요 변경 사항:
 
-- 라이브 브리지 상태, Hera 브랜딩, 지속 저장되는 Game Feel Mode 컨트롤을 담은
-  전용 **HeraAgent** 에디터 메인 화면 패널을 추가했습니다.
-- `game_feel` 지식 베이스와 `hera guidance game-feel`을 추가해 에이전트가
-  조작감, 히트스톱, 카메라, 사운드, 파티클, 보상 피드백, UI 바, 접근성,
-  윤리적 피드백 같은 구체 주제를 조회할 수 있습니다.
-- `game input`으로 마우스, 키보드, InputMap 액션, 텍스트 입력, modifier,
-  viewport-routed Control 입력을 런타임에 주입할 수 있습니다.
-- `game input-log` 진단으로 전달된 클릭, 키, modifier, 활성 입력,
-  short/long press 분류를 증거로 남길 수 있습니다.
-- `game qa --file` 시나리오에 `game.input`, `game.input_log` 단계를 추가해
-  키보드, 마우스, 터치형 입력, 컨트롤러/액션 경로까지 요구사항 커버 QA를
-  수행할 수 있습니다.
-- v0.7.0 실전 테스트 사이클에서 나온 Game Feel, 레이아웃, route/path,
-  prompt-game QA 규칙을 재사용 가능한 가이드로 승격했습니다.
+- **Game Feel Mode**가 Hera 에디터 패널, 영구 설정, 번들 `game_feel` 토픽,
+  그리고 게임플레이 피드백 작업용 `hera guidance game-feel`을 제공합니다.
+- `game input`으로 마우스, 키보드, InputMap 액션, 텍스트 입력을 런타임에 주입하고
+  `game input-log`로 실제 전달된 이벤트를 증명할 수 있습니다.
+- `game qa --file` 시나리오가 `game.input`, `game.input_log` 단계를 지원해,
+  요구사항 커버 QA가 실제 플레이어 입력 경로를 검증할 수 있습니다.
+- Game Feel Mode가 켜져 있으면 관련 `node add` 응답이 짧은 `agent_hint`
+  토픽을 반환할 수 있습니다.
+- v0.7 프롬프트 게임 사이클에서 얻은 교훈을 guidance와 문서에 반영했습니다:
+  순서가 중요한 상태 변경 QA, 주요 입력 검증, 뷰포트/레이아웃 규칙,
+  결정적 헬퍼, 플레이어에게 보이는 피드백 증거.
 
 릴리스 노트와 Asset Store 패키징 세부 사항:
 [docs/releases/v0.7.0-asset-store-upload.md](docs/releases/v0.7.0-asset-store-upload.md).
@@ -72,8 +70,11 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 
 `v0.7.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
-`node`(읽기+쓰기), `signal`, `resource`(get/list/set/create), `game`(런타임 검사+set/call+click/input/input-log+assert+QA+screenshot), `guidance`,
-`output`, `diagnostics`, `eval`, `screenshot`, `batch`, `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
+`node`(읽기+쓰기+리소스/스크립트 연결), `signal`,
+`resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),
+`game`(런타임 검사+input+input-log+set/call/click+assert+QA+screenshot),
+`guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`, `batch`,
+`smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
 [docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Store 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.
 
@@ -120,9 +121,9 @@ Go CLI  ──HTTP /rpc──▶  Godot 에디터 애드온 (@tool EditorPlugin,
 ```
 addons/hera_agent_godot/  배포용 Godot 4.7+ 애드온 (GDScript)
 project.godot, scenes/    개발용 호스트 프로젝트 — CLI의 run/save/screenshot 대상
-cmd/                      Go CLI 명령 (status, instances, run/stop, scene, script, project, classdb, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
+cmd/                      Go CLI 명령 (status, instances, run/stop, scene, editor, script, project, classdb, node, signal, resource, game, guidance, game_feel, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
-docs/                     ARCHITECTURE, COMMANDS, ROADMAP, 릴리스 노트
+docs/                     ARCHITECTURE, COMMANDS, ROADMAP, 릴리스 노트, 프롬프트 게임 가이드
 ```
 
 ## 요구 사항

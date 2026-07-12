@@ -28,27 +28,25 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Latest release: v0.7.0
+## Current release baseline: v0.7.0
 
-`v0.7.0` is the current tagged release and the latest version prepared for the
-Godot Asset Store. The v0.7.0 addon package is available from the GitHub Release.
+`v0.7.0` is the current repository tag and addon manifest baseline. The Godot
+Asset Store upload prep is complete; the previous store upload was `v0.6.0` on
+**2026-07-06**.
 
 Highlights:
 
-- Dedicated **HeraAgent** editor main-screen panel with live bridge status,
-  Hera branding, and persistent Game Feel Mode controls.
-- Bundled `game_feel` knowledge base plus `hera guidance game-feel` so agents
-  can query concrete topics such as control feel, hit stop, camera, sound,
-  particles, reward feedback, UI bars, accessibility, and ethical feedback.
-- Runtime input injection with `game input` for mouse, keyboard, InputMap
-  actions, text input, modifiers, and viewport-routed Control input.
-- `game input-log` diagnostics for proof of delivered clicks, keys, modifiers,
-  active inputs, and short/long press classification.
-- Expanded `game qa --file` scenarios with `game.input` and `game.input_log`
-  steps, enabling requirement-covered QA for keyboard, mouse, touch-style, and
-  controller/action paths.
-- Reusable Game Feel, layout, route/path, and prompt-game QA guidance promoted
-  from hands-on v0.7.0 testing cycles.
+- **Game Feel Mode** adds a Hera editor panel, persistent settings, bundled
+  `game_feel` topics, and `hera guidance game-feel` for gameplay feedback work.
+- Runtime input QA can now drive mouse, keyboard, InputMap actions, and text via
+  `game input`, then prove delivered events with `game input-log`.
+- `game qa --file` scenarios can include `game.input` and `game.input_log`
+  steps, so requirement-covered QA can exercise real player input paths.
+- Game Feel-aware `node add` responses can return compact `agent_hint` topics
+  when the live editor mode is enabled.
+- Prompt-game findings from v0.7 cycles are folded into guidance and docs:
+  ordered state-changing QA, primary input checks, viewport/layout rules,
+  deterministic helpers, and visible feedback evidence.
 
 Release notes and Asset Store packaging details:
 [docs/releases/v0.7.0-asset-store-upload.md](docs/releases/v0.7.0-asset-store-upload.md).
@@ -72,9 +70,10 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 The `v0.7.0` CLI/addon surface includes:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
-`classdb`, `node` (read + write), `signal`, `resource` (get/list/set/create), `game`
-(runtime inspect + set/call/click/input/input-log + assert + QA + screenshot), `guidance`,
-`output`, `diagnostics`, `eval`, `screenshot`,
+`classdb`, `node` (read + write + resource/script wiring), `signal`, `resource`
+(get/uid/list/set/create/resave/update-uids/export-mesh-library), `game`
+(runtime inspect + input + input-log + set/call/click + assert + QA +
+screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`,
 `batch`, and `smoke`, with
 `--json`/`--ids` output modes. See
 [docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
@@ -125,9 +124,9 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 ```
 addons/hera_agent_godot/  the distributable Godot 4.7+ addon (GDScript)
 project.godot, scenes/    dev host project — the CLI's run/save/screenshot target
-cmd/                      Go CLI commands (status, instances, run/stop, scene, script, project, classdb, node, signal, resource, game, output, diagnostics, eval, screenshot, batch, smoke)
+cmd/                      Go CLI commands (status, instances, run/stop, scene, editor, script, project, classdb, node, signal, resource, game, guidance, game_feel, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
-docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes
+docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes, prompt-game guidance
 ```
 
 ## Requirements
