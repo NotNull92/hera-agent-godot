@@ -42,7 +42,9 @@ try {
 }
 
 $exe = Join-Path $BinDir 'hera.exe'
-Write-Host "hera: installed to $exe"
+# Transitional alias for scripts that still call the long name.
+Set-Content -Path (Join-Path $BinDir 'hera-agent-godot.cmd') -Value "@`"%~dp0hera.exe`" %*"
+Write-Host "hera: installed to $exe (alias: hera-agent-godot)"
 try { Write-Host "hera: version $(& $exe version)" } catch {}
 
 # Add BinDir to the user PATH if it is not already there.

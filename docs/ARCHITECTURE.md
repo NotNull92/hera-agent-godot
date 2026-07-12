@@ -1,7 +1,7 @@
 # Architecture
 
-> `hera-agent-godot` is a low-token CLI that lets an AI coding agent inspect and
-> control a **live Godot 4.7+ editor** in real time.
+> `hera` (repo: hera-agent-godot) is a low-token CLI that lets an AI coding
+> agent inspect and control a **live Godot 4.7+ editor** in real time.
 
 This is a sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity),
 but it is not a port. Godot's scene tree, editor plugin model, and scripting
@@ -86,7 +86,7 @@ need a duplicate `LICENSE` at the ZIP download root.
 ## 4. Request lifecycle
 
 ```text
-1. CLI: hera-agent-godot run --scene res://Main.tscn --wait
+1. CLI: hera run --scene res://Main.tscn --wait
 2. CLI parses args and builds Request{ tool:"run", params:{...} }
 3. discovery scans ~/.hera-agent-godot/instances/ and picks a live editor
 4. client posts JSON to http://127.0.0.1:<port>/rpc

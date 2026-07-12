@@ -5,9 +5,10 @@
 > are a *proposal*: they become binding commitments at `v1.0.0`. Until then,
 > contract changes are allowed but must be listed in release notes.
 
-This document defines what consumers of `hera-agent-godot` — agents, scripts,
+This document defines what consumers of the `hera` CLI — agents, scripts,
 CI pipelines, wrappers — may rely on: invocation shape, output streams, exit
-codes, error shapes, and per-command response fields.
+codes, error shapes, and per-command response fields. (`hera-agent-godot` is
+the transitional alias for the same binary; the contract is identical.)
 
 ## What is public, what is internal
 
@@ -32,7 +33,7 @@ change and (post-1.0) requires a major version bump plus a deprecation cycle
 ## Invocation
 
 ```
-hera-agent-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
+hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 ```
 
 - Global flags come **before** the command. `--instance` and `--timeout`

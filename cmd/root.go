@@ -163,9 +163,9 @@ func usage() {
 }
 
 func usageTo(w io.Writer) {
-	fmt.Fprint(w, `hera-agent-godot — drive a live Godot 4.x editor from the shell
+	fmt.Fprint(w, `hera — drive a live Godot 4.x editor from the shell
 
-usage: hera-agent-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
+usage: hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
 
 commands:
   status     show the connected editor (project, version, active scene, UI mode)

@@ -118,8 +118,10 @@ standardize on it.
       ([SUPPORT_MATRIX.md](./SUPPORT_MATRIX.md): verified minimum 4.2 —
       check-only + plugin load + live `status` on every 4.2–4.6 stable; CI
       gate now runs 4.2-stable and 4.7-stable).
-- [ ] One name: unify the invocation name on `hera` across release binaries,
+- [x] One name: unify the invocation name on `hera` across release binaries,
       installers, and docs (keep `hera-agent-godot` as a transitional alias).
+      Release assets already shipped a `hera` binary; installers now also
+      create the alias, and help/docs invoke `hera` everywhere.
 - [x] Trust: document the localhost HTTP threat model; add opt-in shared-token
       auth between CLI and addon (still `127.0.0.1`-only)
       ([SECURITY.md](./SECURITY.md); `X-Hera-Token` via

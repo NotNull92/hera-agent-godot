@@ -51,8 +51,10 @@ fi
 tar -C "$tmp" -xzf "$tmp/hera.tar.gz"
 mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/hera" "$BIN_DIR/hera"
+# Transitional alias for scripts that still call the long name.
+ln -sf hera "$BIN_DIR/hera-agent-godot"
 
-echo "hera: installed to $BIN_DIR/hera"
+echo "hera: installed to $BIN_DIR/hera (alias: hera-agent-godot)"
 "$BIN_DIR/hera" version >/dev/null 2>&1 && echo "hera: version $("$BIN_DIR/hera" version)"
 
 case ":$PATH:" in

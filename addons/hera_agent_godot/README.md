@@ -11,7 +11,7 @@ use it in your own project:
 3. Enable **Project → Project Settings → Plugins → Hera Agent Godot**.
 
 The plugin starts a localhost HTTP server and advertises the editor to the
-`hera-agent-godot` CLI via `~/.hera-agent-godot/instances/`. Optional
+`hera` CLI via `~/.hera-agent-godot/instances/`. Optional
 shared-token auth: put a random string in `~/.hera-agent-godot/token` (or set
 `HERA_AGENT_GODOT_TOKEN`) and reload the plugin — see the repo's
 `docs/SECURITY.md`.

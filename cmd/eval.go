@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// runEval implements `hera-agent-godot eval <expression>`.
+// runEval implements `hera eval <expression>`.
 //
 // Joins its args into one GDScript expression and evaluates it in the editor via
 // the addon's Expression-based `eval` tool.

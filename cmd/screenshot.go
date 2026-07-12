@@ -9,7 +9,7 @@ import (
 const maxScreenshotSize = 4096
 
 // runScreenshot implements
-// `hera-agent-godot screenshot [--path <p>] [--width N] [--height N] [--transparent]`.
+// `hera screenshot [--path <p>] [--width N] [--height N] [--transparent]`.
 //
 // Renders the edited scene off-screen and saves a PNG; returns the absolute path.
 func runScreenshot(args []string) int {

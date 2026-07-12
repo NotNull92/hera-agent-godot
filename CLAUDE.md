@@ -1,7 +1,7 @@
 # CLAUDE.md
 
-This project ships a CLI (`hera-agent-godot`) that drives a live Godot 4.x
-editor. Full guidance for using it — setup, commands, conventions, and the
+This project ships a CLI (`hera`; `hera-agent-godot` is a transitional alias)
+that drives a live Godot 4.x editor. Full guidance for using it — setup, commands, conventions, and the
 "verify your work" workflow — is in **[AGENTS.md](AGENTS.md)**. Read that first.
 
 Quick reminders:

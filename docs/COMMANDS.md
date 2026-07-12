@@ -110,8 +110,8 @@ selected editor instance.
 
 ## Global flags
 
-Global flags go **before** the command (e.g. `hera-agent-godot --ids node find`,
-`hera-agent-godot --instance 2840 node add Node2D`).
+Global flags go **before** the command (e.g. `hera --ids node find`,
+`hera --instance 2840 node add Node2D`).
 
 | Flag | Status | Meaning |
 |------|--------|---------|

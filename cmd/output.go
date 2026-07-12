@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-// runOutput implements `hera-agent-godot output [--type log|error|warning|all] [--lines N]`.
+// runOutput implements `hera output [--type log|error|warning|all] [--lines N]`.
 func runOutput(args []string) int {
 	params, err := parseOutputArgs(args)
 	if err != nil {

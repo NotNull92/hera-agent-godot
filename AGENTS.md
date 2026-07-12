@@ -1,8 +1,10 @@
 # Working with hera-agent-godot (for AI agents)
 
-`hera-agent-godot` is a low-token CLI that lets you inspect and control a **live
-Godot 4.x editor**. Use it to act on the *real* editor and check the result —
-don't guess scene structure or whether a change worked from memory.
+`hera` (repo: hera-agent-godot) is a low-token CLI that lets you inspect and
+control a **live Godot 4.x editor**. Use it to act on the *real* editor and
+check the result — don't guess scene structure or whether a change worked from
+memory. The binary installs as `hera`; `hera-agent-godot` is a transitional
+alias for the same CLI.
 
 ## When to use it
 
