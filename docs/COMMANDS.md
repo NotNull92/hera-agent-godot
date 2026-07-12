@@ -120,5 +120,6 @@ Global flags go **before** the command (e.g. `hera-agent-godot --ids node find`,
 | `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
 | `--timeout <ms>` | ☐ | Request timeout. |
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for the request lifecycle and
-[ROADMAP.md](./ROADMAP.md) for delivery order.
+See [CONTRACT.md](./CONTRACT.md) for the output contract (exit codes, error
+shapes, stability tiers), [ARCHITECTURE.md](./ARCHITECTURE.md) for the request
+lifecycle, and [ROADMAP.md](./ROADMAP.md) for delivery order.

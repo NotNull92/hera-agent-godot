@@ -1,8 +1,11 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented and the v0.7.0 GitHub Release and
-Godot Asset Store upload package prepared.
+has the core CLI/addon surface implemented, the v0.7.0 tag prepared, and the
+v0.6.0 Godot Asset Store upload completed. Phases 7–9 chart the
+standardization arc from v0.8 to v1.0: contract, distribution, then a
+stability declaration — the goal is that agents treat Hera as the default way
+to drive Godot from a shell.
 
 ## Phase 0 — Skeleton (this commit)
 
@@ -91,11 +94,66 @@ Goal: `hera-agent-godot status` prints info from a live editor.
       discovery, requirement-covered `game qa` scenarios, prompt-game workflow
       guidance, and Hera identity documentation.
 - [x] Godot Asset Store submission for the addon (`v0.6.0`).
-- [x] v0.7.0 release prep: HeraAgent editor panel, bundled Game Feel guidance,
-      runtime `game input` / `game input-log`, expanded requirement-covered QA
-      input steps, and reusable prompt-game/Game Feel/layout/path QA rules.
-- [x] GitHub Release and Asset Store upload package prepared for the addon
-      (`v0.7.0`).
+- [x] v0.7.0 release prep: Hera Game Feel panel/settings, bundled `game_feel`
+      topics, gameplay-wide guidance, runtime input injection/logging, input
+      steps in `game qa`, and prompt-game QA findings promoted into reusable
+      guidance.
+
+## Phase 7 — Contract & trust groundwork (v0.8)
+
+Goal: make Hera something other tools can safely build on — a documented,
+tested output contract plus an explicit trust story — before asking anyone to
+standardize on it.
+
+- [x] `docs/CONTRACT.md`: per-command output contract — JSON fields, exit
+      codes, error shapes — with each command marked **stable** or
+      **experimental**.
+- [ ] Contract tests in CI: golden compact-JSON outputs for stable commands so
+      an accidental breaking change fails the build.
+- [ ] Godot support matrix: verify the true minimum editor version
+      (spot-check 4.2–4.6), publish the matrix, and run the CI GDScript gate
+      on the oldest supported version as well as the newest.
+- [ ] One name: unify the invocation name on `hera` across release binaries,
+      installers, and docs (keep `hera-agent-godot` as a transitional alias).
+- [ ] Trust: document the localhost HTTP threat model; add opt-in shared-token
+      auth between CLI and addon (still `127.0.0.1`-only).
+- [ ] Asset Store upload `v0.8.0`.
+
+## Phase 8 — Reach & agent-side distribution (v0.9)
+
+Goal: put Hera where agents (not just humans) pick their tools, and remove
+"does it run in my setup?" friction.
+
+- [ ] Package managers: Homebrew tap, Scoop bucket, and winget manifest for
+      the CLI, alongside the existing one-line installers.
+- [ ] Agent harness kits: an official Claude Code plugin/skill, a Cursor rules
+      template, and a copy-paste `AGENTS.md` snippet — each staying within the
+      ~1k-token single-doc surface.
+- [ ] Thin MCP bridge (`hera mcp`): a minimal stdio server that shells out to
+      the CLI with a few coarse tools, so MCP-only clients can adopt Hera
+      without Hera abandoning the low-token position.
+- [ ] Headless/CI recipe: a documented GitHub Actions workflow that boots a
+      headless editor with the addon and runs `smoke` + `game qa` scenarios;
+      define which commands earn a supported headless tier.
+- [ ] Social proof: demo GIF/video in the README, awesome-godot listing,
+      showcase projects, and write-ups with real agent transcripts.
+- [ ] Asset Store upload `v0.9.0`.
+
+## Phase 9 — Standard declaration (v1.0)
+
+Goal: declare the contract stable and make depending on Hera boring.
+
+- [ ] Freeze the stable command surface and adopt semver with a written
+      deprecation policy (deprecate in a minor, remove no earlier than the
+      next major).
+- [ ] `v1.0.0` release: 0.x migration notes and the compatibility promise
+      stated in the README.
+- [ ] Contributor on-ramp: `CONTRIBUTING.md`, issue/PR templates, and a
+      labeled starter-issue set.
+- [ ] Browsable docs site (GitHub Pages) with the contract and support matrix
+      front and center.
+- [ ] Asset Store upload `v1.0.0` + announcement posts (Godot forums,
+      Discord, sibling Unity repo cross-link).
 
 ## Open questions to revisit
 
