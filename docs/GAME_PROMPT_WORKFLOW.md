@@ -150,7 +150,27 @@ After running the game, use:
 
 Then call only discovered helpers with `game node call`.
 
-## 3. Prefer Narrow Runtime Reads
+## 3. Run Generic Runtime Diagnosis
+
+After starting a game, establish the runtime baseline before writing any
+project-specific assertions:
+
+```sh
+./hera game qa diagnose
+```
+
+This is deliberately genre-agnostic. It checks the editor diagnostics, whether
+exactly one game process is live, whether runtime node or UI reads were
+truncated, and whether the runtime capture is blank, low-detail, or likely
+clipped. It does not require a HUD, button, scene-root name, `qa_*` helper, or
+any particular game rule.
+
+Use `--max-warnings N` only when warnings are part of the project's acceptance
+criteria. Use `--path user://qa-baseline.png` when the capture must be retained.
+Follow this baseline with a requirement-covered scenario for the prompt's own
+rules; generic diagnosis cannot prove genre-specific behavior.
+
+## 4. Prefer Narrow Runtime Reads
 
 Start broad once, then narrow every repeated read.
 
@@ -163,7 +183,7 @@ Start broad once, then narrow every repeated read.
 
 Use full `game ui tree` only when the layout is still unknown.
 
-## 4. Prove Requirements With `game qa`
+## 5. Prove Requirements With `game qa`
 
 Use object-format QA scenarios for implementation checks. Every requirement
 from step 1 should appear in at least one step's `covers`.
@@ -246,7 +266,7 @@ If any requirement has no covering step, Hera fails before running the scenario.
 If a covering step fails at runtime, that requirement stays missing in the final
 summary.
 
-## 5. Lint Findings Before Reporting
+## 6. Lint Findings Before Reporting
 
 Prompt-game reports should capture reusable implementation lessons, not
 one-game design notes. Before adding a finding to the user-confirmed
@@ -278,7 +298,7 @@ Examples:
 - Fail: Breakout's opening serve angle is too sharp.
 - Fail: A tower-defense cost, enemy count, or color palette should be tuned.
 
-## 6. Report Evidence, Not Intent
+## 7. Report Evidence, Not Intent
 
 Record only observable evidence in the user-confirmed
 `docs/reports/vX.Y.Z.md` report:

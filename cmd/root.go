@@ -142,7 +142,7 @@ commands:
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
-  game       tree | ui tree | instances | screenshot | click | assert | qa | node get|set|call
+  game       tree | ui tree | instances | screenshot | click | assert | qa discover|diagnose|--file | node get|set|call
   instances  list live Hera-enabled Godot editors
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel
