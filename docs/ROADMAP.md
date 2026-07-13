@@ -142,9 +142,10 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       (`packaging/winget/`, validates locally; winget-pkgs submission
       pending), alongside the existing one-line installers. Per-release
       bump steps: [packaging/README.md](../packaging/README.md).
-- [ ] Agent harness kits: an official Claude Code plugin/skill, a Cursor rules
-      template, and a copy-paste `AGENTS.md` snippet — each staying within the
-      ~1k-token single-doc surface.
+- [x] Agent harness kits: a Claude Code marketplace/plugin with an auto-invoked
+      skill, a Cursor rule template, and a copy-paste `AGENTS.md` snippet
+      ([`integrations/`](../integrations/)) — each stays within the ~1k-token
+      single-document surface.
 - [ ] Thin MCP bridge (`hera mcp`): a minimal stdio server that shells out to
       the CLI with a few coarse tools, so MCP-only clients can adopt Hera
       without Hera abandoning the low-token position.

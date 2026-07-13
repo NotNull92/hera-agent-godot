@@ -118,6 +118,35 @@ pending acceptance into winget-pkgs.
 unzip it into your Godot project root (creating `addons/hera_agent_godot/`), and
 enable it under **Project → Project Settings → Plugins**.
 
+## Agent integrations
+
+Each kit gives an agent one compact Hera workflow instead of a large tool
+schema. Install the CLI and enable the addon first.
+
+- **Claude Code:** inside Claude Code, add this repository as a marketplace and
+  install the plugin:
+
+  ```text
+  /plugin marketplace add NotNull92/hera-agent-godot
+  /plugin install hera-godot@hera-agent-godot
+  /reload-plugins
+  ```
+
+  The `live-editor` skill auto-invokes for Godot editor work; invoke it directly
+  as `/hera-godot:live-editor` when desired. To test a local checkout without
+  adding a marketplace, run
+  `claude --plugin-dir ./integrations/claude-code/hera-godot`.
+- **Cursor:** copy
+  [`integrations/cursor/hera-godot.mdc`](integrations/cursor/hera-godot.mdc)
+  to `<your-project>/.cursor/rules/hera-godot.mdc`. It is an Agent Requested
+  project rule, so Cursor loads it when live Godot work is relevant.
+- **Other coding agents:** append
+  [`integrations/AGENTS.md`](integrations/AGENTS.md) to the target project's
+  `AGENTS.md`.
+
+All three agent-facing documents stay below the ~1k-token surface budget that
+supports Hera's low-token design.
+
 ## How it works
 
 ```
@@ -143,6 +172,7 @@ project.godot, scenes/    dev host project — the CLI's run/save/screenshot tar
 cmd/                      Go CLI commands (status, instances, run/stop, scene, editor, script, project, classdb, node, signal, resource, game, guidance, game_feel, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
 docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes, prompt-game guidance
+integrations/             compact Claude Code, Cursor, and AGENTS.md harness kits
 ```
 
 ## Requirements

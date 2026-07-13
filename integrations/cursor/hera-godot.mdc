@@ -1,0 +1,28 @@
+---
+description: Use Hera whenever a Godot task needs live editor or running-game inspection, scene or node changes, play control, debugging, or runtime QA. Prefer verified `hera` CLI results over inferring state from project files.
+alwaysApply: false
+---
+
+# Hera live Godot workflow
+
+Use Hera only with a running Godot editor where the Hera Agent Godot addon is
+enabled (verified on Godot 4.2–4.7; 4.7 recommended). Treat CLI output as the
+source of truth for live editor and runtime state.
+
+1. Start with `hera status`. If it finds no editor, ask the user to enable the
+   addon under **Project Settings → Plugins**. If several editors are present,
+   run `hera instances` and use `hera --instance <pid>` for mutations.
+2. Before UI work, run `hera guidance ui`. Keep reads compact: prefer
+   `hera --ids scene tree`, `node get --prop/--props`, scoped `game ui tree`,
+   and `game qa discover` before full dumps.
+3. Use undoable editor commands (`node add/set/remove`, `signal
+   connect/disconnect`) for normal changes. Do not use `eval` as a shortcut for
+   a normal write. Scene/resource/script/project changes persist; `game node
+   set/call`, `game click`, and `game input` are runtime-only.
+4. Prove each change: re-read the node/property or tree, check
+   `hera output --type error` or `hera diagnostics` after runs, and use
+   `hera screenshot --runtime --analyze` plus `game ui tree`/semantic clicks
+   for visual QA. Use requirement-covered `game qa --file` scenarios when
+   validating a prompt implementation.
+5. After editing GDScript, run the project's headless `--check-only` gate when
+   available. Never print or commit `HERA_AGENT_GODOT_TOKEN`.

@@ -1,0 +1,16 @@
+{
+  "name": "hera-godot",
+  "description": "Low-token live Godot editor workflow through the Hera CLI.",
+  "author": {
+    "name": "NotNull92"
+  },
+  "homepage": "https://github.com/NotNull92/hera-agent-godot#agent-integrations",
+  "repository": "https://github.com/NotNull92/hera-agent-godot",
+  "license": "MIT",
+  "keywords": [
+    "godot",
+    "game-development",
+    "cli",
+    "qa"
+  ]
+}

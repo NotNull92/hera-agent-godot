@@ -1,0 +1,14 @@
+{
+  "name": "hera-agent-godot",
+  "owner": {
+    "name": "NotNull92"
+  },
+  "description": "Low-token live Godot editor workflows for Claude Code.",
+  "plugins": [
+    {
+      "name": "hera-godot",
+      "source": "./integrations/claude-code/hera-godot",
+      "description": "Inspect, change, run, and verify a live Godot editor through the Hera CLI."
+    }
+  ]
+}

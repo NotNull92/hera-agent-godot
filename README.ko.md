@@ -115,6 +115,35 @@ winget-pkgs 승인 대기 중입니다.
 `hera-agent-godot-addon.zip`을 받아 Godot 프로젝트 루트에 풀면(`addons/hera_agent_godot/` 생성)
 **프로젝트 → 프로젝트 설정 → 플러그인**에서 활성화할 수 있습니다.
 
+## 에이전트 통합
+
+각 킷은 큰 도구 스키마 대신 에이전트에 작은 Hera 워크플로 하나를 제공합니다. 먼저
+CLI를 설치하고 애드온을 활성화하세요.
+
+- **Claude Code:** Claude Code 안에서 이 저장소를 마켓플레이스로 추가한 뒤
+  플러그인을 설치합니다.
+
+  ```text
+  /plugin marketplace add NotNull92/hera-agent-godot
+  /plugin install hera-godot@hera-agent-godot
+  /reload-plugins
+  ```
+
+  `live-editor` 스킬은 Godot 에디터 작업에서 자동 호출되며, 필요하면
+  `/hera-godot:live-editor`로 직접 호출할 수 있습니다. 마켓플레이스를 추가하지
+  않고 로컬 체크아웃을 시험하려면
+  `claude --plugin-dir ./integrations/claude-code/hera-godot`를 실행하세요.
+- **Cursor:**
+  [`integrations/cursor/hera-godot.mdc`](integrations/cursor/hera-godot.mdc)를
+  `<your-project>/.cursor/rules/hera-godot.mdc`로 복사하세요. 라이브 Godot 작업에
+  관련될 때 Cursor가 로드하는 Agent Requested 프로젝트 규칙입니다.
+- **기타 코딩 에이전트:**
+  [`integrations/AGENTS.md`](integrations/AGENTS.md)의 내용을 대상 프로젝트
+  `AGENTS.md`에 추가하세요.
+
+세 에이전트용 문서는 모두 Hera의 저토큰 설계를 뒷받침하는 약 1k-token 이하
+표면 예산을 지킵니다.
+
 ## 동작 방식
 
 ```
@@ -140,6 +169,7 @@ project.godot, scenes/    개발용 호스트 프로젝트 — CLI의 run/save/s
 cmd/                      Go CLI 명령 (status, instances, run/stop, scene, editor, script, project, classdb, node, signal, resource, game, guidance, game_feel, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
 docs/                     ARCHITECTURE, COMMANDS, ROADMAP, 릴리스 노트, 프롬프트 게임 가이드
+integrations/             간결한 Claude Code, Cursor, AGENTS.md 하네스 킷
 ```
 
 ## 요구 사항
