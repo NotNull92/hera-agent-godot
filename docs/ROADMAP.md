@@ -2,7 +2,8 @@
 
 Phased build plan. Each phase is independently testable. The current repository
 has the core CLI/addon surface implemented, the v0.8.0 GitHub Release
-published, and the v0.7.0 Godot Asset Store upload completed. Phases 7–9 chart the
+published, and the v0.8.0 Godot Asset Store upload submitted
+(pending store approval as of 2026-07-13). Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
@@ -127,7 +128,8 @@ standardize on it.
       auth between CLI and addon (still `127.0.0.1`-only)
       ([SECURITY.md](./SECURITY.md); `X-Hera-Token` via
       `~/.hera-agent-godot/token` or `HERA_AGENT_GODOT_TOKEN`, 401 → exit 1).
-- [ ] Asset Store upload `v0.8.0`.
+- [x] Asset Store upload `v0.8.0` (submitted 2026-07-13, pending store
+      approval; marked Min `Godot 4.2` / Max `Godot 4.7`, Stable).
 
 ## Phase 8 — Reach & agent-side distribution (v0.9)
 
