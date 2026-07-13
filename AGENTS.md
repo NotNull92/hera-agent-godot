@@ -32,6 +32,19 @@ agents:
 - When passing work over, leave a handoff note at
   `docs/handoff/<date>-<target-agent>.md`.
 
+## Canonical Godot sources for documentation and review
+
+When verifying or reviewing Godot engine behavior, APIs, CLI flags, version
+compatibility, or official documentation, consult the maintained upstream
+repositories first:
+
+- Godot engine: [github.com/godotengine/godot](https://github.com/godotengine/godot)
+- Official Godot documentation: [github.com/godotengine/godot-docs](https://github.com/godotengine/godot-docs)
+
+Local repository documentation remains authoritative for Hera-specific
+contracts and policies. Use the upstream sources above to settle Godot facts;
+do not substitute stale recollection or unofficial summaries when they apply.
+
 ## When to use it
 
 - You need the actual state of the open scene (node tree, a node's properties).
@@ -154,7 +167,8 @@ default 5000). Default output is compact JSON.
   mechanically for routine edits. Use this quick gate first, then open the full
   guide only when the change touches syntax/API not covered here, diagnostics
   fail, the guide changed, or you are uncertain:
-  - Do not invent syntax; check official docs or existing code when uncertain.
+  - Do not invent syntax; when uncertain, check the canonical Godot sources
+    above or existing code.
   - Use explicit types for function parameters/returns, dynamic API results,
     `Variant`, and untyped `Array`/`Dictionary` reads.
   - Use `:=` only when Godot can infer a concrete non-Variant type.

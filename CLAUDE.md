@@ -31,3 +31,16 @@ For GDScript, follow the low-token quick gate in `AGENTS.md`. The full
 `docs/GDSCRIPT_AGENT_GUIDE.md` remains authoritative, but do not reload it
 mechanically for routine edits; open it when the quick gate does not cover the
 change, diagnostics fail, the guide changed, or syntax/API is uncertain.
+
+## Canonical Godot sources
+
+When documentation or a review needs to verify Godot engine behavior, APIs,
+CLI flags, version compatibility, or official guidance, consult these upstream
+repositories first:
+
+- Godot engine: [github.com/godotengine/godot](https://github.com/godotengine/godot)
+- Official Godot documentation: [github.com/godotengine/godot-docs](https://github.com/godotengine/godot-docs)
+
+This repository's docs remain authoritative for Hera-specific contracts and
+policies. Use the upstream repositories to settle Godot facts rather than stale
+recollection or unofficial summaries.
