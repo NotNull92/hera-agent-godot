@@ -122,17 +122,6 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       GODOT_VERSION: 4.7-stable
-      GODOT_BIN: ${{ runner.temp }}/godot-4.7-stable
-      HERA_BIN: ${{ runner.temp }}/hera
-      HERA_CI_HOME: ${{ runner.temp }}/hera-agent-godot-home
-      HERA_CI_LOG_DIR: ${{ runner.temp }}/hera-headless-runtime-logs
-      HERA_HEARTBEAT_DIR: ${{ runner.temp }}/hera-agent-godot-home/.hera-agent-godot/instances
-      HOME: ${{ runner.temp }}/hera-agent-godot-home
-      USERPROFILE: ${{ runner.temp }}/hera-agent-godot-home
-      XDG_CONFIG_HOME: ${{ runner.temp }}/hera-xdg/config
-      XDG_CACHE_HOME: ${{ runner.temp }}/hera-xdg/cache
-      XDG_DATA_HOME: ${{ runner.temp }}/hera-xdg/data
-      XDG_STATE_HOME: ${{ runner.temp }}/hera-xdg/state
       HERA_AGENT_GODOT_TOKEN: hera-headless-ci-token-not-a-secret
     steps:
       - uses: actions/checkout@v5
@@ -159,6 +148,30 @@ jobs:
       - name: Prepare isolated state
         run: |
           set -euo pipefail
+          export GODOT_BIN="$RUNNER_TEMP/godot-4.7-stable"
+          export HERA_BIN="$RUNNER_TEMP/hera"
+          export HERA_CI_HOME="$RUNNER_TEMP/hera-agent-godot-home"
+          export HERA_CI_LOG_DIR="$RUNNER_TEMP/hera-headless-runtime-logs"
+          export HERA_HEARTBEAT_DIR="$HERA_CI_HOME/.hera-agent-godot/instances"
+          export HOME="$HERA_CI_HOME"
+          export USERPROFILE="$HERA_CI_HOME"
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/hera-xdg/config"
+          export XDG_CACHE_HOME="$RUNNER_TEMP/hera-xdg/cache"
+          export XDG_DATA_HOME="$RUNNER_TEMP/hera-xdg/data"
+          export XDG_STATE_HOME="$RUNNER_TEMP/hera-xdg/state"
+          {
+            printf 'GODOT_BIN=%s\n' "$GODOT_BIN"
+            printf 'HERA_BIN=%s\n' "$HERA_BIN"
+            printf 'HERA_CI_HOME=%s\n' "$HERA_CI_HOME"
+            printf 'HERA_CI_LOG_DIR=%s\n' "$HERA_CI_LOG_DIR"
+            printf 'HERA_HEARTBEAT_DIR=%s\n' "$HERA_HEARTBEAT_DIR"
+            printf 'HOME=%s\n' "$HOME"
+            printf 'USERPROFILE=%s\n' "$USERPROFILE"
+            printf 'XDG_CONFIG_HOME=%s\n' "$XDG_CONFIG_HOME"
+            printf 'XDG_CACHE_HOME=%s\n' "$XDG_CACHE_HOME"
+            printf 'XDG_DATA_HOME=%s\n' "$XDG_DATA_HOME"
+            printf 'XDG_STATE_HOME=%s\n' "$XDG_STATE_HOME"
+          } >> "$GITHUB_ENV"
           mkdir -p \
             "$HERA_CI_HOME" \
             "$HERA_CI_LOG_DIR" \
