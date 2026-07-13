@@ -1,6 +1,10 @@
 package cmd
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+	"time"
+)
 
 func TestParseScreenshotArgs(t *testing.T) {
 	tests := []struct {
@@ -200,5 +204,15 @@ func TestExecute_resetsTargetPID_whenNoInstanceFlag(t *testing.T) {
 	}
 	if targetPID != 0 {
 		t.Fatalf("targetPID = %d, want 0", targetPID)
+	}
+}
+
+func TestParseTimeoutMS_rejectsDurationOverflow(t *testing.T) {
+	timeout, ok := parseTimeoutMS(strconv.FormatInt(maxDurationMilliseconds, 10))
+	if !ok || timeout != time.Duration(maxDurationMilliseconds)*time.Millisecond {
+		t.Fatalf("maximum timeout = %v, %v; want largest millisecond duration, true", timeout, ok)
+	}
+	if _, ok := parseTimeoutMS(strconv.FormatInt(maxDurationMilliseconds+1, 10)); ok {
+		t.Fatal("overflowing timeout was accepted")
 	}
 }

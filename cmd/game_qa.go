@@ -90,15 +90,15 @@ func executeGameQAStep(c *client.Client, index int, step gameQAStep) gameQAResul
 func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, error) {
 	switch step.Tool {
 	case "wait":
-		if step.DurationMS < 0 {
-			return nil, fmt.Errorf("wait duration_ms must be non-negative")
+		if step.DurationMS < 0 || int64(step.DurationMS) > maxDurationMilliseconds {
+			return nil, fmt.Errorf("wait duration_ms must be between 0 and %d", maxDurationMilliseconds)
 		}
 		time.Sleep(time.Duration(step.DurationMS) * time.Millisecond)
 		return &protocol.Response{OK: true, Data: map[string]any{"waited_ms": step.DurationMS}}, nil
 	case "run":
 		params := runParamsFromQAStep(step)
 		resp, err := c.Post("run", params)
-		if err != nil || !step.Wait {
+		if err != nil || !step.Wait || !resp.OK {
 			return resp, err
 		}
 		_, waitErr := pollPlaying(c, true, waitTimeout)
@@ -110,11 +110,14 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 	case "stop":
 		params := map[string]any{"action": "stop"}
 		resp, err := c.Post("run", params)
-		if err != nil || !step.Wait {
+		if err != nil || !step.Wait || !resp.OK {
 			return resp, err
 		}
 		_, waitErr := pollPlaying(c, false, waitTimeout)
-		return resp, waitErr
+		if waitErr != nil {
+			return resp, waitErr
+		}
+		return resp, pollGameInstancesStopped(c, waitTimeout)
 	case "game.node.get":
 		return c.Post("game", gameNodeGetParamsFromQAStep(step))
 	case "game.node.set":

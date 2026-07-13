@@ -37,36 +37,32 @@ func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
 // dialPostPrint dials the editor, sends one tool request, and prints the
 // response Data as compact JSON. label is used in error messages.
 func dialPostPrint(tool string, params map[string]any, label string) int {
-	c, err := dialEditor()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", label, err)
-		return 1
-	}
-	resp, err := c.Post(tool, params)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", label, err)
-		return 1
-	}
-	if !resp.OK {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", label, resp.Error)
-		return 1
-	}
-	return printData(resp)
+	return dialAndPostPrint(dialEditor, postPrintRequest{tool: tool, params: params, label: label})
 }
 
 func dialMutationPostPrint(tool string, params map[string]any, label string) int {
-	c, err := dialMutationEditor()
+	return dialAndPostPrint(dialMutationEditor, postPrintRequest{tool: tool, params: params, label: label})
+}
+
+type postPrintRequest struct {
+	tool   string
+	params map[string]any
+	label  string
+}
+
+func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequest) int {
+	c, err := dial()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", label, err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
-	resp, err := c.Post(tool, params)
+	resp, err := c.Post(request.tool, request.params)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s: %v\n", label, err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
 	if !resp.OK {
-		fmt.Fprintf(os.Stderr, "%s: %s\n", label, resp.Error)
+		fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, resp.Error)
 		return 1
 	}
 	return printData(resp)

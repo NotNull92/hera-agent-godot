@@ -25,6 +25,8 @@ var targetPID int
 // dialEditorWithMode.
 var requestTimeout time.Duration
 
+const maxDurationMilliseconds = int64(time.Duration(1<<63-1) / time.Millisecond)
+
 // Execute is the CLI entry point. Leading --json/--ids/--instance set global
 // options; the first non-flag argument is the command. Commands map 1:1 to
 // addon tools (see docs/COMMANDS.md).
@@ -215,8 +217,8 @@ func parsePID(s string) (int, bool) {
 // parseTimeoutMS parses a positive millisecond count. Returns ok=false for
 // non-numeric or non-positive input.
 func parseTimeoutMS(s string) (time.Duration, bool) {
-	ms, err := strconv.Atoi(s)
-	if err != nil || ms <= 0 {
+	ms, err := strconv.ParseInt(s, 10, 64)
+	if err != nil || ms <= 0 || ms > maxDurationMilliseconds {
 		return 0, false
 	}
 	return time.Duration(ms) * time.Millisecond, true
