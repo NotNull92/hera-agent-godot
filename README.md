@@ -28,28 +28,29 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current release baseline: v0.7.0
+## Current release baseline: v0.8.0
 
-`v0.7.0` is the current repository tag and addon manifest baseline. The Godot
+`v0.8.0` is the current repository tag and addon manifest baseline. The Godot
 Asset Store upload prep is complete; the previous store upload was `v0.6.0` on
 **2026-07-06**.
 
 Highlights:
 
-- **Game Feel Mode** adds a Hera editor panel, persistent settings, bundled
-  `game_feel` topics, and `hera guidance game-feel` for gameplay feedback work.
-- Runtime input QA can now drive mouse, keyboard, InputMap actions, and text via
-  `game input`, then prove delivered events with `game input-log`.
-- `game qa --file` scenarios can include `game.input` and `game.input_log`
-  steps, so requirement-covered QA can exercise real player input paths.
-- Game Feel-aware `node add` responses can return compact `agent_hint` topics
-  when the live editor mode is enabled.
-- Prompt-game findings from v0.7 cycles are folded into guidance and docs:
-  ordered state-changing QA, primary input checks, viewport/layout rules,
-  deterministic helpers, and visible feedback evidence.
+- **Supported Godot versions widen from 4.7-only to 4.2–4.7**: every stable in
+  the range is verified to load the addon and answer the CLI, and CI gates
+  GDScript on both ends ([docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md)).
+- **Output contract**: [docs/CONTRACT.md](docs/CONTRACT.md) documents
+  per-command fields, stability tiers, and exit codes, pinned byte-for-byte by
+  golden contract tests in CI.
+- **Opt-in shared-token auth** for the localhost bridge, plus a documented
+  threat model ([docs/SECURITY.md](docs/SECURITY.md)).
+- One invocation name: the CLI is **`hera`** everywhere, with
+  `hera-agent-godot` kept as a transitional alias.
+- `game qa diagnose` returns a generic runtime health verdict, and the
+  `--timeout <ms>` global flag bounds each request.
 
 Release notes and Asset Store packaging details:
-[docs/releases/v0.7.0-asset-store-upload.md](docs/releases/v0.7.0-asset-store-upload.md).
+[docs/releases/v0.8.0-asset-store-upload.md](docs/releases/v0.8.0-asset-store-upload.md).
 
 ## Low-token, measured
 
@@ -68,7 +69,7 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 ## Command surface
 
-The `v0.7.0` CLI/addon surface includes:
+The `v0.8.0` CLI/addon surface includes:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
 `classdb`, `node` (read + write + resource/script wiring), `signal`, `resource`
 (get/uid/list/set/create/resave/update-uids/export-mesh-library), `game`
