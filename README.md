@@ -52,13 +52,13 @@ Highlights:
 Release notes and Asset Store packaging details:
 [docs/releases/v0.8.0-asset-store-upload.md](docs/releases/v0.8.0-asset-store-upload.md).
 
-## Headless CI (configured tier)
+## Nonvisual CI (configured tier)
 
-The [headless CI recipe](docs/HEADLESS_CI.md) defines a pinned, **Godot 4.7-only**
-nonvisual lifecycle: start a headless editor with the addon, verify its fresh
-heartbeat and `smoke --skip-game`, then run the deterministic runtime-logic
-scenario. It excludes screenshots, visual UI, renderer output, and window/input
-claims, and does not extend live runtime coverage to Godot 4.2–4.6.
+The [nonvisual CI recipe](docs/HEADLESS_CI.md) defines a pinned, **Godot 4.7-only**
+nonvisual lifecycle: static script checks stay headless; the live editor and
+game run inside an isolated virtual display so the deterministic runtime-logic
+scenario can execute. It excludes screenshots, visual UI, renderer output, and
+window/input claims, and does not extend live runtime coverage to Godot 4.2–4.6.
 
 This tier is configured, but **remote GitHub Actions verification is pending**.
 Until a real authorized GitHub Actions run succeeds, the recipe is not evidence

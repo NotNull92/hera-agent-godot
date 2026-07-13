@@ -1,7 +1,9 @@
-# Headless CI recipe
+# Nonvisual CI recipe
 
 This recipe exercises a real Hera-enabled Godot editor without claiming that a
-headless process can render or operate a GUI. It is the repeatable lifecycle
+headless process can render or operate a GUI. The static script tier is
+headless; the live runtime tier uses a private virtual display so that the
+editor can launch the game process it controls. It is the repeatable lifecycle
 for the pinned runtime check and for equivalent local diagnosis.
 
 ## Support boundary
@@ -13,8 +15,8 @@ runtime, or GUI-editor behavior works headlessly.
 | Tier | Godot versions | Evidence and scope | Not implied |
 | --- | --- | --- | --- |
 | Static addon scripts | 4.2 and 4.7 | The existing CI matrix runs `--headless --check-only --script` over every addon script. | A live editor, addon protocol, game runtime, or visual behavior. |
-| Headless editor, addon process/protocol, and runtime logic | 4.7 only | The pinned 4.7 lifecycle starts the enabled addon, publishes a fresh heartbeat, answers CLI requests, passes `smoke --skip-game`, and runs [`tests/headless/runtime-logic.json`](../tests/headless/runtime-logic.json). | Support for this live path on 4.2–4.6, all Hera commands, screenshots, or GUI-editor behavior. |
-| Excluded from headless support | All versions | **Screenshots, visual UI, renderer output, window/input behavior, and GUI-editor claims are excluded.** | A blank or absent image is not a visual test result. |
+| Nonvisual editor, addon process/protocol, and runtime logic | 4.7 only | The pinned 4.7 lifecycle starts the enabled addon inside an isolated Xvfb display, publishes a fresh heartbeat, answers CLI requests, passes `smoke --skip-game`, and runs [`tests/headless/runtime-logic.json`](../tests/headless/runtime-logic.json). | Support for this live path on 4.2–4.6, all Hera commands, screenshots, visual UI, renderer output, window/input behavior, or GUI-editor behavior. |
+| Excluded from this runtime tier | All versions | **Screenshots, visual UI, renderer output, window/input behavior, and GUI-editor claims are excluded.** The virtual display only lets the editor launch a controlled game; no visual result is asserted. | A blank or absent image is not a visual test result. |
 
 The distinction is required by Godot itself: `--headless` selects the headless
 display driver and dummy audio driver, while the rendering and display-server
@@ -23,9 +25,12 @@ the canonical [Godot CLI documentation source](https://github.com/godotengine/go
 [RenderingServer source documentation](https://github.com/godotengine/godot-docs/blob/master/classes/class_renderingserver.rst),
 and [engine command-line implementation](https://github.com/godotengine/godot/blob/master/main/main.cpp).
 
-GitHub's standard hosted-runner specification does not promise a GPU; GPU
-machines are documented as a larger-runner feature. This recipe therefore does
-not rely on a display server, Xvfb, a renderer fallback, or image capture. See
+Godot does not forward `--headless` from an editor to the game process it
+launches, so the runtime scenario cannot run under a headless editor on a
+display-less hosted runner. The recipe instead uses a private Xvfb server and
+the compatibility renderer with software OpenGL; it does not capture or judge
+images. GitHub's standard hosted-runner specification does not promise a GPU,
+so this remains a nonvisual, software-rendered lifecycle check. See
 [GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
 ## Checksum decision: do not add a one-sided check
@@ -68,9 +73,10 @@ tested.
 
 ## Lifecycle
 
-Set `GODOT_BIN` before running this block. In GitHub Actions, `RUNNER_TEMP` and
-`GITHUB_WORKSPACE` already exist; locally, the fallbacks keep all state under
-the checkout.
+Set `GODOT_BIN` before running this block. The live runtime path also requires
+`xvfb-run` (on Ubuntu: install `xvfb` and `xauth`). In GitHub Actions,
+`RUNNER_TEMP` and `GITHUB_WORKSPACE` already exist; locally, the fallbacks keep
+all state under the checkout.
 
 ```bash
 set -euo pipefail
@@ -167,7 +173,9 @@ fresh="$artifact_dir/heartbeats-fresh.txt"
 find "$heartbeat_dir" -maxdepth 1 -type f -name '*.json' -printf '%f\n' \
   | LC_ALL=C sort >"$before"
 
-"$GODOT_BIN" --headless --editor --path "$repo_dir" \
+xvfb-run --auto-servernum \
+  --server-args="-screen 0 1280x720x24 -nolisten tcp" \
+  "$GODOT_BIN" --editor --rendering-method gl_compatibility --path "$repo_dir" \
   >"$artifact_dir/editor.stdout.log" \
   2>"$artifact_dir/editor.stderr.log" &
 launcher_pid=$!
@@ -322,9 +330,10 @@ for this tier. Command exit codes are the verdict; logs are diagnostic evidence.
 
 ## CI and remote status
 
-Use a pinned `ubuntu-24.04` runtime job for this lifecycle, not an implicit
-graphics environment. GitHub-hosted jobs are fresh virtual machines, so keep
-the runtime logs in the job workspace and make the runtime job self-contained. See
+Use a pinned `ubuntu-24.04` runtime job with its own Xvfb server for this
+lifecycle, not an implicit graphics environment. GitHub-hosted jobs are fresh
+virtual machines, so keep the runtime logs in the job workspace and make the
+runtime job self-contained. See
 [GitHub's runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
 **Remote runtime status: pending.** This guide does not claim a GitHub Actions

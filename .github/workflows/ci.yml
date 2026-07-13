@@ -118,11 +118,12 @@ jobs:
           exit "$status"
 
   headless-runtime:
-    name: Headless runtime (Godot 4.7-stable)
+    name: Nonvisual runtime (Godot 4.7-stable)
     runs-on: ubuntu-24.04
     env:
       GODOT_VERSION: 4.7-stable
       HERA_AGENT_GODOT_TOKEN: hera-headless-ci-token-not-a-secret
+      LIBGL_ALWAYS_SOFTWARE: "1"
     steps:
       - uses: actions/checkout@v5
 
@@ -131,7 +132,7 @@ jobs:
           go-version-file: go.mod
           cache: false
 
-      - name: Install Godot runtime libraries
+      - name: Install Godot runtime and virtual-display libraries
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -143,7 +144,9 @@ jobs:
             libxi6 \
             libxinerama1 \
             libxrandr2 \
-            libxrender1
+            libxrender1 \
+            xauth \
+            xvfb
 
       - name: Prepare isolated state
         run: |
@@ -181,7 +184,7 @@ jobs:
             "$XDG_DATA_HOME" \
             "$XDG_STATE_HOME"
 
-      - name: Download Godot 4.7-stable (headless)
+      - name: Download Godot 4.7-stable
         run: |
           set -euo pipefail
           name="Godot_v${GODOT_VERSION}_linux.x86_64"
@@ -208,7 +211,7 @@ jobs:
             >"$HERA_CI_LOG_DIR/import.stdout.log" \
             2>"$HERA_CI_LOG_DIR/import.stderr.log"
 
-      - name: Exercise isolated headless editor lifecycle
+      - name: Exercise isolated nonvisual editor lifecycle
         shell: bash
         run: |
           set -euo pipefail
@@ -313,7 +316,9 @@ jobs:
           find "$HERA_HEARTBEAT_DIR" -maxdepth 1 -type f -name '*.json' -printf '%f\n' \
             | LC_ALL=C sort > "$before"
 
-          "$GODOT_BIN" --headless --editor --path . \
+          xvfb-run --auto-servernum \
+            --server-args="-screen 0 1280x720x24 -nolisten tcp" \
+            "$GODOT_BIN" --editor --rendering-method gl_compatibility --path . \
             >"$HERA_CI_LOG_DIR/editor.stdout.log" \
             2>"$HERA_CI_LOG_DIR/editor.stderr.log" &
           launcher_pid=$!
