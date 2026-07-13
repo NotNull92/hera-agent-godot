@@ -60,9 +60,11 @@ game run inside an isolated virtual display so the deterministic runtime-logic
 scenario can execute. It excludes screenshots, visual UI, renderer output, and
 window/input claims, and does not extend live runtime coverage to Godot 4.2–4.6.
 
-This tier is configured, but **remote GitHub Actions verification is pending**.
-Until a real authorized GitHub Actions run succeeds, the recipe is not evidence
-of remote runtime support.
+Remote GitHub Actions verification passed on 2026-07-13 at commit
+[`5c0ba65`](https://github.com/NotNull92/hera-agent-godot/commit/5c0ba6562961a6a11ab581d0f4eab440d34ce008).
+The [successful run](https://github.com/NotNull92/hera-agent-godot/actions/runs/29256396824)
+includes the nonvisual editor→game lifecycle and its requirement-covered
+runtime-logic scenario.
 
 ## Low-token, measured
 

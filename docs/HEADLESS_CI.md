@@ -350,11 +350,14 @@ virtual machines, so keep the runtime logs in the job workspace and make the
 runtime job self-contained. See
 [GitHub's runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
-**Remote runtime status: pending.** This guide does not claim a GitHub Actions
-run merely because the commands are documented or pass locally. Record a remote
-run URL, commit SHA, and result only after an authorized push or dispatch runs
-the pinned job. Until then, the recipe is a repeatable local/CI procedure, not
-evidence that remote visual or GUI behavior passed.
+**Remote runtime status: passed.** The authorized [2026-07-13 GitHub Actions
+run](https://github.com/NotNull92/hera-agent-godot/actions/runs/29256396824)
+passed at commit
+[`5c0ba6562961a6a11ab581d0f4eab440d34ce008`](https://github.com/NotNull92/hera-agent-godot/commit/5c0ba6562961a6a11ab581d0f4eab440d34ce008): Go build/vet/test/race/gofmt,
+GDScript `--check-only` on Godot 4.2 and 4.7, and the pinned nonvisual
+editor→game lifecycle with all runtime-logic requirements covered. It remains
+evidence for this documented nonvisual boundary only, not visual, GUI, or
+4.2–4.6 live-runtime behavior.
 
 ## Source authority
 
