@@ -146,17 +146,25 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       skill, a Cursor rule template, and a copy-paste `AGENTS.md` snippet
       ([`integrations/`](../integrations/)) — each stays within the ~1k-token
       single-document surface.
-- [ ] Thin MCP bridge (`hera mcp`): a minimal stdio server that shells out to
-      the CLI with a few coarse tools, so MCP-only clients can adopt Hera
-      without Hera abandoning the low-token position.
-- [ ] Headless/CI recipe: a documented GitHub Actions workflow that boots a
-      headless editor with the addon and runs `smoke` + `game qa` scenarios;
-      the [4.7-only nonvisual tier](./HEADLESS_CI.md) is configured, but remote
-      GitHub Actions verification is pending. Keep this unchecked until a real
-      authorized GitHub run succeeds.
-- [ ] Social proof: demo GIF/video in the README, awesome-godot listing,
-      showcase projects, and write-ups with real agent transcripts.
-- [ ] Asset Store upload `v0.9.0`.
+- [ ] **Priority 1 — Headless/CI remote verification:** the documented GitHub
+      Actions workflow boots a headless editor with the addon and runs `smoke`
+      + `game qa` scenarios. The [4.7-only nonvisual tier](./HEADLESS_CI.md)
+      is configured, but remote GitHub Actions verification is pending. Keep
+      this unchecked until a real authorized GitHub run succeeds.
+- [ ] **Priority 2 — winget-pkgs publication:** submit the already validated
+      `packaging/winget/` manifest as a public `microsoft/winget-pkgs` PR,
+      then update install documentation after acceptance. This requires the
+      user's explicit approval for the external public PR.
+- [ ] **Priority 3 — Social proof:** demo GIF/video in the README,
+      awesome-godot listing, showcase projects, and write-ups with real agent
+      transcripts. Third-party submissions still require explicit approval.
+- [ ] **Priority 4 — Asset Store upload `v0.9.0`:** prepare and submit it only
+      after the v0.9 scope and release are explicitly approved.
+- [ ] **Deferred — Thin MCP bridge (`hera mcp`):** MCP is not required for any
+      Godot capability and is not a Phase 8 prerequisite. Reconsider only when
+      there is concrete demand from MCP-only clients; if resumed, keep it an
+      optional, coarse adapter over the existing CLI rather than a parallel
+      product surface.
 
 ## Phase 9 — Standard declaration (v1.0)
 
