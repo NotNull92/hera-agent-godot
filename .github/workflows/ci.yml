@@ -279,6 +279,19 @@ jobs:
             [ -z "$heartbeat_file" ] || [ ! -e "$heartbeat_file" ]
           }
 
+          discard_stale_captured_heartbeat() {
+            if [ -z "$heartbeat_file" ] || [ ! -e "$heartbeat_file" ]; then
+              return 0
+            fi
+            if pid_is_live "$heartbeat_pid"; then
+              return 1
+            fi
+            printf 'removing stale task-owned heartbeat %s\n' "$heartbeat_file" \
+              >>"$HERA_CI_LOG_DIR/cleanup.stdout.log"
+            rm -f -- "$heartbeat_file"
+            [ ! -e "$heartbeat_file" ]
+          }
+
           cleanup() {
             original_status=$?
             trap - EXIT
@@ -297,7 +310,7 @@ jobs:
             if [ "$launcher_pid" != "$heartbeat_pid" ] && ! stop_task_pid "$launcher_pid" "editor launcher"; then
               cleanup_failed=1
             fi
-            if ! wait_for_heartbeat_removal; then
+            if ! wait_for_heartbeat_removal && ! discard_stale_captured_heartbeat; then
               echo "::error::captured heartbeat survived cleanup: $heartbeat_file" \
                 >>"$HERA_CI_LOG_DIR/cleanup.stderr.log"
               cleanup_failed=1
@@ -394,7 +407,7 @@ jobs:
             echo "::error::launched editor wrapper survived shutdown" >&2
             exit 1
           fi
-          if ! wait_for_heartbeat_removal; then
+          if ! wait_for_heartbeat_removal && ! discard_stale_captured_heartbeat; then
             echo "::error::captured heartbeat survived editor shutdown: $heartbeat_file" >&2
             exit 1
           fi

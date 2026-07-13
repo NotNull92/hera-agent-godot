@@ -155,8 +155,19 @@ cleanup() {
       sleep 0.2
     done
     if [ -e "$heartbeat_file" ]; then
-      echo "captured heartbeat survived cleanup: $heartbeat_file" >&2
-      cleanup_failed=1
+      if kill -0 "$heartbeat_pid" 2>/dev/null; then
+        echo "captured heartbeat survived cleanup: $heartbeat_file" >&2
+        cleanup_failed=1
+      else
+        # The file was selected from this run's private HOME and its filename
+        # was verified against its embedded PID. Remove it only after that PID
+        # is gone, so a forced editor shutdown cannot leak stale discovery.
+        rm -f -- "$heartbeat_file"
+        if [ -e "$heartbeat_file" ]; then
+          echo "could not remove stale captured heartbeat: $heartbeat_file" >&2
+          cleanup_failed=1
+        fi
+      fi
     fi
   fi
   if [ "$original_status" -eq 0 ] && [ "$cleanup_failed" -ne 0 ]; then
@@ -274,6 +285,9 @@ This avoids two distinct hazards:
 - A machine can contain another editor. The fresh heartbeat selection keeps
   `--instance "$heartbeat_pid"` tied to the editor this recipe created, even
   when its launcher PID differs.
+- A forced shutdown can leave its final heartbeat file behind. After the
+  selected PID is confirmed gone, cleanup removes only that already-validated
+  file from the private per-run home; it never deletes a heartbeat by glob.
 
 For a slow machine, extend the **bounded lifecycle deadline** first. If one RPC
 needs more than the default five seconds, use the documented global flag before
