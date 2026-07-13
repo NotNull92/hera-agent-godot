@@ -6,6 +6,32 @@ check the result — don't guess scene structure or whether a change worked from
 memory. The binary installs as `hera`; `hera-agent-godot` is a transitional
 alias for the same CLI.
 
+## Co-developing this repo (Claude Code × Codex)
+
+Claude Code and Codex collaborate on **developing hera-agent-godot itself**
+(the Go CLI, the GDScript addon, docs, and distribution) — this section is
+about building the tool, not driving the editor with it. Rules for both
+agents:
+
+- The other agent reconstructs context **only from the repo**: git history,
+  docs, and handoff notes under `docs/handoff/`. Make small commits with
+  descriptive English messages; never leave meaningful state only in chat.
+- State that lives **outside this repo** — Godot Asset Store submissions,
+  the Homebrew tap repo ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
+  winget-pkgs PRs — must be recorded under `docs/` (release notes in
+  `docs/releases/`, the ROADMAP, or a handoff note) whenever it changes.
+- `main` is shared: never force-push or rewrite pushed history; rebase
+  local-only work.
+- The same gates apply regardless of agent: `go build/vet/test` + `gofmt`
+  for Go; Godot `--check-only` for GDScript; sync README (EN/KO),
+  `docs/COMMANDS.md`, and `docs/ROADMAP.md` when the surface changes, and
+  regenerate the contract goldens when `docs/CONTRACT.md` behavior changes.
+- Outward-facing actions (store uploads, PRs to third-party repos, version
+  bumps/releases) need the user's explicit go-ahead; Asset Store form
+  submission is done by the user personally.
+- When passing work over, leave a handoff note at
+  `docs/handoff/<date>-<target-agent>.md`.
+
 ## When to use it
 
 - You need the actual state of the open scene (node tree, a node's properties).
