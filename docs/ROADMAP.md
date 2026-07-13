@@ -2,7 +2,7 @@
 
 Phased build plan. Each phase is independently testable. The current repository
 has the core CLI/addon surface implemented, the v0.8.0 GitHub Release
-published, and the v0.6.0 Godot Asset Store upload completed. Phases 7–9 chart the
+published, and the v0.7.0 Godot Asset Store upload completed. Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
@@ -98,6 +98,7 @@ Goal: `hera-agent-godot status` prints info from a live editor.
       topics, gameplay-wide guidance, runtime input injection/logging, input
       steps in `game qa`, and prompt-game QA findings promoted into reusable
       guidance.
+- [x] Godot Asset Store upload `v0.7.0` (2026-07-08).
 
 ## Phase 7 — Contract & trust groundwork (v0.8)
 
