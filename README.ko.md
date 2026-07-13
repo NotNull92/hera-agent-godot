@@ -81,7 +81,20 @@ Asset Store 업로드 준비가 완료되었고, 이전 스토어 업로드는 *
 
 ## 설치
 
-**CLI** — 최신 릴리스 바이너리를 받아 설치하는 원라인:
+**CLI** — 패키지 매니저로 설치:
+
+```powershell
+# Windows (Scoop)
+scoop bucket add hera-agent-godot https://github.com/NotNull92/hera-agent-godot
+scoop install hera
+```
+
+```sh
+# macOS / Linux (Homebrew)
+brew install NotNull92/hera/hera
+```
+
+또는 최신 릴리스 바이너리를 받아 설치하는 원라인:
 
 ```sh
 # macOS / Linux
@@ -95,6 +108,8 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 
 특정 태그는 `HERA_VERSION`, 설치 경로는 `HERA_BIN_DIR`로 지정할 수 있습니다.
 소스 빌드는 `go build -o hera .` (Go 1.25+). `hera version`으로 확인하세요.
+winget 매니페스트는 [`packaging/`](packaging/README.md)에 준비되어 있으며
+winget-pkgs 승인 대기 중입니다.
 
 **애드온** — [최신 릴리스](https://github.com/NotNull92/hera-agent-godot/releases/latest)에서
 `hera-agent-godot-addon.zip`을 받아 Godot 프로젝트 루트에 풀면(`addons/hera_agent_godot/` 생성)

@@ -83,7 +83,20 @@ packaging status.
 
 ## Install
 
-**CLI** — one-liner that fetches the latest release binary:
+**CLI** — via a package manager:
+
+```powershell
+# Windows (Scoop)
+scoop bucket add hera-agent-godot https://github.com/NotNull92/hera-agent-godot
+scoop install hera
+```
+
+```sh
+# macOS / Linux (Homebrew)
+brew install NotNull92/hera/hera
+```
+
+Or a one-liner that fetches the latest release binary:
 
 ```sh
 # macOS / Linux
@@ -97,6 +110,8 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 
 Set `HERA_VERSION` to pin a tag and `HERA_BIN_DIR` to change the target dir. Or
 build from source: `go build -o hera .` (Go 1.25+). Check it with `hera version`.
+A winget manifest is prepared under [`packaging/`](packaging/README.md) and
+pending acceptance into winget-pkgs.
 
 **Addon** — download `hera-agent-godot-addon.zip` from the
 [latest release](https://github.com/NotNull92/hera-agent-godot/releases/latest),

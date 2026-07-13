@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+PackageIdentifier: NotNull92.Hera
+PackageVersion: 0.8.0
+PackageLocale: en-US
+Publisher: NotNull92
+PublisherUrl: https://github.com/NotNull92
+PublisherSupportUrl: https://github.com/NotNull92/hera-agent-godot/issues
+PackageName: Hera
+PackageUrl: https://github.com/NotNull92/hera-agent-godot
+License: MIT
+LicenseUrl: https://github.com/NotNull92/hera-agent-godot/blob/main/LICENSE
+ShortDescription: Low-token CLI that lets AI coding agents inspect and control a live Godot editor.
+Description: |-
+  Hera is a compact-JSON-by-default CLI that lets AI coding agents (and humans)
+  inspect and control a live Godot 4.x editor over localhost HTTP: read the
+  scene tree and editor output, run scenes, edit nodes with undoable steps,
+  wire signals, drive a running game, and QA it with proof. It pairs with the
+  Hera Agent Godot editor addon (installed from the Godot Asset Store or the
+  GitHub release assets).
+Moniker: hera
+Tags:
+- ai-agent
+- automation
+- cli
+- gamedev
+- godot
+ReleaseNotesUrl: https://github.com/NotNull92/hera-agent-godot/releases/tag/v0.8.0
+Documentations:
+- DocumentLabel: Command reference
+  DocumentUrl: https://github.com/NotNull92/hera-agent-godot/blob/main/docs/COMMANDS.md
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0

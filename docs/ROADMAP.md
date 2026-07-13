@@ -136,8 +136,12 @@ standardize on it.
 Goal: put Hera where agents (not just humans) pick their tools, and remove
 "does it run in my setup?" friction.
 
-- [ ] Package managers: Homebrew tap, Scoop bucket, and winget manifest for
-      the CLI, alongside the existing one-line installers.
+- [x] Package managers: Homebrew tap
+      ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
+      Scoop bucket (in-repo `bucket/hera.json`), and winget manifest
+      (`packaging/winget/`, validates locally; winget-pkgs submission
+      pending), alongside the existing one-line installers. Per-release
+      bump steps: [packaging/README.md](../packaging/README.md).
 - [ ] Agent harness kits: an official Claude Code plugin/skill, a Cursor rules
       template, and a copy-paste `AGENTS.md` snippet — each staying within the
       ~1k-token single-doc surface.
