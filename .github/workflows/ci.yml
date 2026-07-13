@@ -116,3 +116,275 @@ jobs:
             echo "::error::GDScript --check-only reported problems"
           fi
           exit "$status"
+
+  headless-runtime:
+    name: Headless runtime (Godot 4.7-stable)
+    runs-on: ubuntu-24.04
+    env:
+      GODOT_VERSION: 4.7-stable
+      GODOT_BIN: ${{ runner.temp }}/godot-4.7-stable
+      HERA_BIN: ${{ runner.temp }}/hera
+      HERA_CI_HOME: ${{ runner.temp }}/hera-agent-godot-home
+      HERA_CI_LOG_DIR: ${{ runner.temp }}/hera-headless-runtime-logs
+      HERA_HEARTBEAT_DIR: ${{ runner.temp }}/hera-agent-godot-home/.hera-agent-godot/instances
+      HOME: ${{ runner.temp }}/hera-agent-godot-home
+      USERPROFILE: ${{ runner.temp }}/hera-agent-godot-home
+      XDG_CONFIG_HOME: ${{ runner.temp }}/hera-xdg/config
+      XDG_CACHE_HOME: ${{ runner.temp }}/hera-xdg/cache
+      XDG_DATA_HOME: ${{ runner.temp }}/hera-xdg/data
+      XDG_STATE_HOME: ${{ runner.temp }}/hera-xdg/state
+      HERA_AGENT_GODOT_TOKEN: hera-headless-ci-token-not-a-secret
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Install Godot runtime libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libfontconfig1 \
+            libgl1 \
+            libx11-6 \
+            libxcursor1 \
+            libxext6 \
+            libxi6 \
+            libxinerama1 \
+            libxrandr2 \
+            libxrender1
+
+      - name: Prepare isolated state
+        run: |
+          set -euo pipefail
+          mkdir -p \
+            "$HERA_CI_HOME" \
+            "$HERA_CI_LOG_DIR" \
+            "$HERA_HEARTBEAT_DIR" \
+            "$XDG_CONFIG_HOME" \
+            "$XDG_CACHE_HOME" \
+            "$XDG_DATA_HOME" \
+            "$XDG_STATE_HOME"
+
+      - name: Download Godot 4.7-stable (headless)
+        run: |
+          set -euo pipefail
+          name="Godot_v${GODOT_VERSION}_linux.x86_64"
+          url="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/${name}.zip"
+          archive="$RUNNER_TEMP/${name}.zip"
+          echo "Downloading $url"
+          curl -fL -o "$archive" "$url"
+          unzip -p "$archive" "$name" > "$GODOT_BIN"
+          chmod +x "$GODOT_BIN"
+
+      - name: Godot version
+        run: |
+          "$GODOT_BIN" --headless --version
+
+      - name: Build Hera CLI
+        run: |
+          set -euo pipefail
+          go build -o "$HERA_BIN" .
+
+      - name: Import project headlessly
+        run: |
+          set -euo pipefail
+          "$GODOT_BIN" --headless --path . --import \
+            >"$HERA_CI_LOG_DIR/import.stdout.log" \
+            2>"$HERA_CI_LOG_DIR/import.stderr.log"
+
+      - name: Exercise isolated headless editor lifecycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          launcher_pid=""
+          heartbeat_pid=""
+          heartbeat_file=""
+
+          pid_is_live() {
+            local candidate_pid="$1"
+            local process_state=""
+            case "$candidate_pid" in
+              ""|*[!0-9]*) return 1 ;;
+            esac
+            if ! kill -0 "$candidate_pid" 2>/dev/null; then
+              return 1
+            fi
+            process_state="$(ps -o stat= -p "$candidate_pid" 2>/dev/null | tr -d '[:space:]')"
+            [ -n "$process_state" ] && [ "${process_state#Z}" = "$process_state" ]
+          }
+
+          stop_task_pid() {
+            local target_pid="$1"
+            local label="$2"
+            local attempts=0
+            case "$target_pid" in
+              ""|*[!0-9]*) return 0 ;;
+            esac
+            if ! pid_is_live "$target_pid"; then
+              return 0
+            fi
+
+            printf 'stopping task-owned %s pid %s\n' "$label" "$target_pid" \
+              >>"$HERA_CI_LOG_DIR/cleanup.stdout.log"
+            kill -TERM "$target_pid" \
+              >>"$HERA_CI_LOG_DIR/cleanup-kill.stderr.log" 2>&1 || true
+            while pid_is_live "$target_pid" && [ "$attempts" -lt 50 ]; do
+              sleep 0.2
+              attempts=$((attempts + 1))
+            done
+            if pid_is_live "$target_pid"; then
+              printf '::warning::task-owned %s pid %s ignored TERM; sending KILL\n' \
+                "$label" "$target_pid" >>"$HERA_CI_LOG_DIR/cleanup.stderr.log"
+              kill -KILL "$target_pid" \
+                >>"$HERA_CI_LOG_DIR/cleanup-kill.stderr.log" 2>&1 || true
+              attempts=0
+              while pid_is_live "$target_pid" && [ "$attempts" -lt 50 ]; do
+                sleep 0.2
+                attempts=$((attempts + 1))
+              done
+            fi
+            if pid_is_live "$target_pid"; then
+              printf '::error::task-owned %s pid %s survived bounded cleanup\n' \
+                "$label" "$target_pid" >>"$HERA_CI_LOG_DIR/cleanup.stderr.log"
+              return 1
+            fi
+            return 0
+          }
+
+          wait_for_heartbeat_removal() {
+            local attempts=0
+            while [ -n "$heartbeat_file" ] && [ -e "$heartbeat_file" ] && [ "$attempts" -lt 50 ]; do
+              sleep 0.2
+              attempts=$((attempts + 1))
+            done
+            [ -z "$heartbeat_file" ] || [ ! -e "$heartbeat_file" ]
+          }
+
+          cleanup() {
+            original_status=$?
+            trap - EXIT
+            set +e
+            cleanup_failed=0
+
+            if [ -n "$heartbeat_pid" ]; then
+              timeout 15s "$HERA_BIN" --instance "$heartbeat_pid" stop --wait \
+                >>"$HERA_CI_LOG_DIR/cleanup-stop.stdout.log" \
+                2>>"$HERA_CI_LOG_DIR/cleanup-stop.stderr.log"
+            fi
+
+            if ! stop_task_pid "$heartbeat_pid" "heartbeat editor"; then
+              cleanup_failed=1
+            fi
+            if [ "$launcher_pid" != "$heartbeat_pid" ] && ! stop_task_pid "$launcher_pid" "editor launcher"; then
+              cleanup_failed=1
+            fi
+            if ! wait_for_heartbeat_removal; then
+              echo "::error::captured heartbeat survived cleanup: $heartbeat_file" \
+                >>"$HERA_CI_LOG_DIR/cleanup.stderr.log"
+              cleanup_failed=1
+            fi
+
+            if [ "$original_status" -eq 0 ] && [ "$cleanup_failed" -ne 0 ]; then
+              exit 1
+            fi
+            exit "$original_status"
+          }
+          trap cleanup EXIT
+
+          before="$HERA_CI_LOG_DIR/heartbeats-before.txt"
+          current="$HERA_CI_LOG_DIR/heartbeats-current.txt"
+          fresh="$HERA_CI_LOG_DIR/heartbeats-fresh.txt"
+          find "$HERA_HEARTBEAT_DIR" -maxdepth 1 -type f -name '*.json' -printf '%f\n' \
+            | LC_ALL=C sort > "$before"
+
+          "$GODOT_BIN" --headless --editor --path . \
+            >"$HERA_CI_LOG_DIR/editor.stdout.log" \
+            2>"$HERA_CI_LOG_DIR/editor.stderr.log" &
+          launcher_pid=$!
+          printf '%s\n' "$launcher_pid" > "$HERA_CI_LOG_DIR/launcher.pid"
+
+          attempts=0
+          while [ "$attempts" -lt 150 ] && [ -z "$heartbeat_pid" ]; do
+            find "$HERA_HEARTBEAT_DIR" -maxdepth 1 -type f -name '*.json' -printf '%f\n' \
+              | LC_ALL=C sort > "$current"
+            comm -13 "$before" "$current" > "$fresh"
+            while IFS= read -r heartbeat_name; do
+              candidate_pid=${heartbeat_name%.json}
+              case "$candidate_pid" in
+                ""|*[!0-9]*) continue ;;
+              esac
+              candidate_file="$HERA_HEARTBEAT_DIR/$heartbeat_name"
+              if grep -Eq "\"pid\"[[:space:]]*:[[:space:]]*$candidate_pid([[:space:]]*[,}])" "$candidate_file"; then
+                heartbeat_pid="$candidate_pid"
+                heartbeat_file="$candidate_file"
+                break
+              fi
+            done < "$fresh"
+            if [ -z "$heartbeat_pid" ]; then
+              sleep 0.2
+              attempts=$((attempts + 1))
+            fi
+          done
+
+          if [ -z "$heartbeat_pid" ]; then
+            echo "::error::timed out waiting for a fresh isolated heartbeat" >&2
+            exit 1
+          fi
+          printf '%s\n' "$heartbeat_pid" > "$HERA_CI_LOG_DIR/heartbeat.pid"
+
+          status_ok=0
+          attempts=0
+          while [ "$attempts" -lt 30 ]; do
+            if "$HERA_BIN" --instance "$heartbeat_pid" status \
+              >"$HERA_CI_LOG_DIR/status.stdout.log" \
+              2>"$HERA_CI_LOG_DIR/status.stderr.log"; then
+              status_ok=1
+              break
+            fi
+            sleep 0.2
+            attempts=$((attempts + 1))
+          done
+          if [ "$status_ok" -ne 1 ]; then
+            echo "::error::hera status did not reach the captured editor" >&2
+            exit 1
+          fi
+          if ! grep -Eq "\"pid\"[[:space:]]*:[[:space:]]*$heartbeat_pid([[:space:]]*[,}])" \
+            "$HERA_CI_LOG_DIR/status.stdout.log"; then
+            echo "::error::hera status pid did not match the fresh heartbeat" >&2
+            exit 1
+          fi
+
+          "$HERA_BIN" --instance "$heartbeat_pid" smoke --skip-game \
+            >"$HERA_CI_LOG_DIR/smoke.stdout.log" \
+            2>"$HERA_CI_LOG_DIR/smoke.stderr.log"
+          "$HERA_BIN" --instance "$heartbeat_pid" game qa --file tests/headless/runtime-logic.json \
+            >"$HERA_CI_LOG_DIR/scenario.stdout.log" \
+            2>"$HERA_CI_LOG_DIR/scenario.stderr.log"
+          "$HERA_BIN" --instance "$heartbeat_pid" stop --wait \
+            >"$HERA_CI_LOG_DIR/stop.stdout.log" \
+            2>"$HERA_CI_LOG_DIR/stop.stderr.log"
+
+          if ! stop_task_pid "$heartbeat_pid" "heartbeat editor"; then
+            echo "::error::captured heartbeat editor survived shutdown" >&2
+            exit 1
+          fi
+          if [ "$launcher_pid" != "$heartbeat_pid" ] \
+            && ! stop_task_pid "$launcher_pid" "editor launcher"; then
+            echo "::error::launched editor wrapper survived shutdown" >&2
+            exit 1
+          fi
+          if ! wait_for_heartbeat_removal; then
+            echo "::error::captured heartbeat survived editor shutdown: $heartbeat_file" >&2
+            exit 1
+          fi
+
+      - name: Upload headless runtime logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: headless-runtime-logs
+          path: ${{ runner.temp }}/hera-headless-runtime-logs
+          if-no-files-found: warn

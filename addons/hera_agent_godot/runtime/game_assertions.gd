@@ -9,8 +9,13 @@ static func check(node: Node, request: Dictionary) -> Dictionary:
 	if not bool(actual.get("ok", false)):
 		return { "ok": false, "error": String(actual.get("error", "property not found")) }
 	var actual_value := String(actual.get("value", ""))
-	var expected_value := String(request.get("value", ""))
-	if not _matches(op, actual_value, expected_value):
+	var expected_raw: Variant = request.get("value", "")
+	var expected_value: String = str(expected_raw)
+	var matches: bool = _matches(op, actual_value, expected_value)
+	if (op == "eq" or op == "ne") and (typeof(expected_raw) == TYPE_INT or typeof(expected_raw) == TYPE_FLOAT) and actual_value.is_valid_float():
+		var numeric_match: bool = float(actual_value) == float(expected_raw)
+		matches = numeric_match if op == "eq" else not numeric_match
+	if not matches:
 		return {
 			"ok": false,
 			"error": "assert failed: %s %s %s (actual %s)" % [prop, op, expected_value, actual_value],

@@ -17,6 +17,20 @@ answers `status` end-to-end over the live HTTP bridge.
 | 4.6 | ✅ | ✅ | — |
 | 4.7 | ✅ (CI, every commit) | ✅ (development baseline) | ✅ |
 
+## Configured headless runtime tier
+
+The [headless CI recipe](HEADLESS_CI.md) configures a pinned, **Godot 4.7-only**
+nonvisual lifecycle: the enabled addon starts in a headless editor, publishes a
+fresh heartbeat, answers CLI requests, passes `smoke --skip-game`, and runs the
+deterministic runtime-logic scenario. It does not claim live headless runtime
+support for 4.2–4.6, all Hera commands, screenshots, visual UI, renderer output,
+or window/input behavior.
+
+**Remote GitHub Actions verification is pending.** No real authorized GitHub
+Actions run has succeeded yet, so this is a configured tier rather than new
+remote support evidence. See [HEADLESS_CI.md](HEADLESS_CI.md) for the exact
+lifecycle, artifacts, and exclusions.
+
 **What this means**
 
 - **Verified minimum: 4.2.** The addon parses, loads, serves the HTTP bridge,

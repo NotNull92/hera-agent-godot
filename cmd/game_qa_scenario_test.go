@@ -3,9 +3,57 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestHeadlessRuntimeScenario(t *testing.T) {
+	// Given
+	wantRequirements := []string{"fixture-launches", "counter-mutates"}
+	wantSteps := []gameQAStep{
+		{
+			Tool:  "run",
+			Scene: "res://scenes/HeadlessRuntimeFixture.tscn",
+			Wait:  true,
+		},
+		{
+			Tool:   "game.assert",
+			Path:   "/root/HeadlessRuntimeFixture",
+			Prop:   "counter",
+			Op:     "eq",
+			Value:  float64(0),
+			Covers: []string{"fixture-launches"},
+		},
+		{
+			Tool:   "game.node.call",
+			Path:   "/root/HeadlessRuntimeFixture",
+			Method: "qa_increment",
+		},
+		{
+			Tool:   "game.assert",
+			Path:   "/root/HeadlessRuntimeFixture",
+			Prop:   "counter",
+			Op:     "eq",
+			Value:  float64(1),
+			Covers: []string{"counter-mutates"},
+		},
+	}
+
+	// When
+	got, err := readGameQAScenario("../tests/headless/runtime-logic.json")
+
+	// Then
+	if err != nil {
+		t.Fatalf("readGameQAScenario error: %v", err)
+	}
+	if !reflect.DeepEqual(got.Requirements, wantRequirements) {
+		t.Fatalf("requirements = %#v, want %#v", got.Requirements, wantRequirements)
+	}
+	if !reflect.DeepEqual(got.Steps, wantSteps) {
+		t.Fatalf("steps = %#v, want %#v", got.Steps, wantSteps)
+	}
+}
 
 func TestReadGameQAScenario_acceptsRequirementCoverage(t *testing.T) {
 	// Given

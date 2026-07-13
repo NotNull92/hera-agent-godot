@@ -151,7 +151,9 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       without Hera abandoning the low-token position.
 - [ ] Headless/CI recipe: a documented GitHub Actions workflow that boots a
       headless editor with the addon and runs `smoke` + `game qa` scenarios;
-      define which commands earn a supported headless tier.
+      the [4.7-only nonvisual tier](./HEADLESS_CI.md) is configured, but remote
+      GitHub Actions verification is pending. Keep this unchecked until a real
+      authorized GitHub run succeeds.
 - [ ] Social proof: demo GIF/video in the README, awesome-godot listing,
       showcase projects, and write-ups with real agent transcripts.
 - [ ] Asset Store upload `v0.9.0`.

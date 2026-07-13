@@ -52,6 +52,18 @@ Highlights:
 Release notes and Asset Store packaging details:
 [docs/releases/v0.8.0-asset-store-upload.md](docs/releases/v0.8.0-asset-store-upload.md).
 
+## Headless CI (configured tier)
+
+The [headless CI recipe](docs/HEADLESS_CI.md) defines a pinned, **Godot 4.7-only**
+nonvisual lifecycle: start a headless editor with the addon, verify its fresh
+heartbeat and `smoke --skip-game`, then run the deterministic runtime-logic
+scenario. It excludes screenshots, visual UI, renderer output, and window/input
+claims, and does not extend live runtime coverage to Godot 4.2–4.6.
+
+This tier is configured, but **remote GitHub Actions verification is pending**.
+Until a real authorized GitHub Actions run succeeds, the recipe is not evidence
+of remote runtime support.
+
 ## Low-token, measured
 
 The "MCP-grade reach, fewer tokens" claim — with numbers:

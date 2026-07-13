@@ -52,6 +52,18 @@ Asset Store 업로드 준비가 완료되었고, 이전 스토어 업로드는 *
 릴리스 노트와 Asset Store 패키징 세부 사항:
 [docs/releases/v0.8.0-asset-store-upload.md](docs/releases/v0.8.0-asset-store-upload.md).
 
+## 헤드리스 CI(구성된 티어)
+
+[헤드리스 CI 레시피](docs/HEADLESS_CI.md)는 **Godot 4.7 전용** 비시각 런타임
+수명주기를 정의합니다. 애드온을 켠 헤드리스 에디터를 시작하고, 새 heartbeat와
+`smoke --skip-game`을 확인한 뒤 결정적인 런타임 로직 시나리오를 실행합니다.
+스크린샷, 시각 UI, 렌더러 출력, 창/입력 동작은 이 티어의 범위 밖이며 Godot
+4.2–4.6까지 라이브 런타임 지원을 넓히지 않습니다.
+
+이 티어는 구성되었지만 **GitHub Actions 원격 검증은 아직 대기 중**입니다. 실제로
+권한을 받아 실행한 GitHub Actions가 성공하기 전까지 이 레시피는 원격 런타임 지원의
+증거가 아닙니다.
+
 ## 저토큰, 실측
 
 "MCP급 범위, 더 적은 토큰" 주장을 수치로:
