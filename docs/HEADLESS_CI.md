@@ -28,6 +28,30 @@ machines are documented as a larger-runner feature. This recipe therefore does
 not rely on a display server, Xvfb, a renderer fallback, or image capture. See
 [GitHub-hosted runners](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
 
+## Checksum decision: do not add a one-sided check
+
+**Decision (2026-07-13):** do not add SHA-256 verification to the CI Godot
+download by itself. The intended requirement was to verify both that editor
+archive and add-on archives downloaded from the Godot Asset Store. GitHub
+release metadata provides a SHA-256 digest for the pinned Godot editor asset,
+so the editor half is technically possible. The Asset Store half is not.
+
+The public Asset Store download page provides a URL and file size, but not a
+SHA-256 value for the exact hosted archive. The store also repackages uploaded
+ZIPs: the public `Hera Agent Godot` v0.7.0 download is not byte-identical to
+the v0.7.0 GitHub Release ZIP. Its GitHub Release checksum therefore cannot
+validate the Store download. The legacy official Asset Library API confirms
+the same limitation: its `download_hash` field is always empty for the
+official library, so the editor skips the hash check. See the
+[Asset Library API contract](https://github.com/godotengine/godot-asset-library/blob/master/API.md#api-get-asset-id)
+and the [current Store download page](https://store.godotengine.org/asset/notnull92/hera-agent-godot/).
+
+Do not reopen a combined SHA-256 implementation unless the Store publishes a
+trusted hash tied to each exact hosted archive, or the release process adds a
+separate, versioned, trusted manifest for the Store-repackaged ZIP. Revisit
+the editor-only GitHub-release check only if its separate security benefit is
+explicitly requested; it does not satisfy the two-download requirement.
+
 ## Preconditions
 
 - Use an official **Godot 4.7 editor binary**, not an export template, and set
