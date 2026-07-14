@@ -207,8 +207,13 @@ default 5000). Default output is compact JSON.
 - **Use a single writer for scene files.** Before external `.tscn` edits, stop the
   running game with `hera stop --wait`; after external edits, run
   `hera scene reload [res://Path.tscn]` before saving through the editor.
-- **`node set` value** is coerced to the property's type. Pass GDScript-literal
-  syntax for complex types, e.g. `--value "Vector2(10, 20)"`.
+- **`node set` value** is coerced to the property's type via the engine's own
+  `str_to_var`, so pass Godot variant text (the form a `.tscn` stores) for
+  complex types: `--value "Vector2(10, 20)"`, `--value "Color(0.3, 0.8, 1, 1)"`,
+  and packed arrays as a flat list, e.g.
+  `--value "PackedVector2Array(0, 0, 48, 0, 48, 48)"`. A wrong form now fails
+  with an example in the error. Object/resource properties are not set this
+  way — use `node set-resource <path> --prop <name> --resource res://...`.
 
 ## Verify your work (Hera)
 
