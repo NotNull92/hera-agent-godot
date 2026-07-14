@@ -43,18 +43,31 @@ refresh every `sha256` in `manifest.json` from the release's `checksums.txt`,
 then `npm publish` from `packaging/npm/` (test first with `npm pack` + a
 scratch `npm install <tarball>`).
 
+## Godot Asset Library (addon ZIP)
+
+The addon itself ships through the Godot Asset Store / Asset Library as a ZIP,
+separate from the CLI package managers above. When preparing that download ZIP:
+
+- Keep the license **inside the add-on folder** at
+  `addons/hera_agent_godot/LICENSE`; do not add a duplicate `LICENSE` at the ZIP
+  root when the in-addon copy is present.
+- Keep the repository-root `LICENSE` for GitHub/source distribution.
+- The ZIP root should contain `addons/hera_agent_godot/...` as the installed
+  content; avoid repo-only files unless a release step explicitly requires them.
+- Before uploading, verify the archive contains
+  `addons/hera_agent_godot/plugin.cfg` and `addons/hera_agent_godot/LICENSE`.
+
+Per-release Store upload steps live in `docs/releases/v<ver>-asset-store-upload.md`.
+
 ## Retired: winget (Windows)
 
 **Decision recorded 2026-07-14: do not submit Hera to
-`microsoft/winget-pkgs`.** No public winget PR was opened.
+`microsoft/winget-pkgs`.** No public winget PR was opened, and the local
+`packaging/winget/` manifests were removed on 2026-07-14.
 
 Hera is a Godot addon plus a companion CLI, not a standalone Windows app. A
 general Windows catalog distributes only the CLI and creates a misleading,
 separate distribution focus for an addon whose supported installation path is
 the Godot Asset Store or the addon release ZIP. Keep the CLI installation
-paths above; do not use `winget` as an installation option.
-
-[`packaging/winget/manifests/`](winget/manifests/) is retained only as a
-historical, locally validated artifact. Do **not** bump, revalidate, submit, or
-advertise it. Reopen this decision only after a new explicit user product
-decision, not merely because the files still exist.
+paths above; do not use `winget` as an installation option. Reopen this
+decision only after a new explicit user product decision.

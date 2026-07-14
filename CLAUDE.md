@@ -16,12 +16,11 @@ Quick reminders:
 - After editing, verify with `node get` / `scene tree` / `output --type error`.
 
 Collaboration: Claude Code and Codex **co-develop this repo** (the CLI,
-addon, docs, and distribution). The other agent sees only git history, repo
-docs, and `docs/handoff/` notes — not your chat context. Follow the
-"Co-developing this repo" rules in [AGENTS.md](AGENTS.md): small descriptive
-commits, record out-of-repo state (Asset Store, the homebrew-hera tap,
-winget-pkgs) in `docs/`, never rewrite pushed history, and leave a
-`docs/handoff/<date>-<target-agent>.md` note when handing work over.
+addon, docs, and distribution). The other agent sees only git history and repo
+docs — not your chat context. Follow the "Co-developing this repo" rules in
+[AGENTS.md](AGENTS.md): small descriptive commits, record out-of-repo state
+(Asset Store, the homebrew-hera tap) in `docs/`, and never rewrite pushed
+history.
 
 Repo conventions: Go CLI in `cmd/` + `internal/`; the Godot addon (GDScript) in
 `addons/hera_agent_godot/`, with the dev host project (`project.godot`,

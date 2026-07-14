@@ -269,8 +269,8 @@ summary.
 ## 6. Lint Findings Before Reporting
 
 Prompt-game reports should capture reusable implementation lessons, not
-one-game design notes. Before adding a finding to the user-confirmed
-`docs/reports/vX.Y.Z.md` report, run this lint gate:
+one-game design notes. Before adding a finding to the user-confirmed release
+QA report, run this lint gate:
 
 - Pass findings about generic Hera or Godot workflow risks: live editor/runtime
   ambiguity, input routing conflicts, viewport clipping patterns, deterministic
@@ -300,8 +300,7 @@ Examples:
 
 ## 7. Report Evidence, Not Intent
 
-Record only observable evidence in the user-confirmed
-`docs/reports/vX.Y.Z.md` report:
+Record only observable evidence in the user-confirmed release QA report:
 
 - Which requirement IDs were covered.
 - Which Hera command produced the evidence.

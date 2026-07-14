@@ -190,12 +190,12 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       tier checked addon scripts on Godot 4.2 and 4.7. This remains nonvisual
       evidence only, not GUI or 4.2–4.6 live-runtime coverage.
 - [x] **Decision — winget distribution retired (2026-07-14):** do not submit
-      the local `packaging/winget/` manifest to `microsoft/winget-pkgs`. Hera's
-      supported addon delivery is the Godot Asset Store or the addon release
-      ZIP; a general Windows catalog would distribute only its companion CLI
-      and create a misleading separate distribution focus. No public PR was
-      opened. The manifests are historical only and must not be bumped,
-      submitted, or advertised without a new explicit user product decision.
+      Hera to `microsoft/winget-pkgs`. Hera's supported addon delivery is the
+      Godot Asset Store or the addon release ZIP; a general Windows catalog
+      would distribute only its companion CLI and create a misleading separate
+      distribution focus. No public PR was opened, and the local
+      `packaging/winget/` manifests were removed on 2026-07-14. Do not reopen
+      without a new explicit user product decision.
 - [ ] **Priority 3 — Social proof:** demo GIF/video in the README,
       awesome-godot listing, showcase projects, and write-ups with real agent
       transcripts. Third-party submissions still require explicit approval.

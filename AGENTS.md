@@ -13,13 +13,13 @@ Claude Code and Codex collaborate on **developing hera-agent-godot itself**
 about building the tool, not driving the editor with it. Rules for both
 agents:
 
-- The other agent reconstructs context **only from the repo**: git history,
-  docs, and handoff notes under `docs/handoff/`. Make small commits with
-  descriptive English messages; never leave meaningful state only in chat.
-- State that lives **outside this repo** — Godot Asset Store submissions,
-  the Homebrew tap repo ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
-  winget-pkgs PRs — must be recorded under `docs/` (release notes in
-  `docs/releases/`, the ROADMAP, or a handoff note) whenever it changes.
+- The other agent reconstructs context **only from the repo**: git history and
+  docs. Make small commits with descriptive English messages; never leave
+  meaningful state only in chat.
+- State that lives **outside this repo** — Godot Asset Store submissions and
+  the Homebrew tap repo ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera))
+  — must be recorded under `docs/` (release notes in `docs/releases/` or the
+  ROADMAP) whenever it changes.
 - `main` is shared: never force-push or rewrite pushed history; rebase
   local-only work.
 - The same gates apply regardless of agent: `go build/vet/test` + `gofmt`
@@ -29,8 +29,6 @@ agents:
 - Outward-facing actions (store uploads, PRs to third-party repos, version
   bumps/releases) need the user's explicit go-ahead; Asset Store form
   submission is done by the user personally.
-- When passing work over, leave a handoff note at
-  `docs/handoff/<date>-<target-agent>.md`.
 - Machine-specific facts (Godot binary path, isolated-smoke pattern, toolchain
   limits, external-form gotchas) live in [docs/DEV_MACHINE.md](docs/DEV_MACHINE.md)
   — read it before local Godot smokes, third-party PRs, or publishes, and

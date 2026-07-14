@@ -33,8 +33,8 @@
 .debug-journal.md
 docs/tests/
 .omc/
-.omo/*
-!.omo/rules/
-!.omo/rules/**
+.omo/
+# Claude Code workspace (skills/settings) stays per-machine, not in the repo.
+.claude/
 .DS_Store
 Thumbs.db
