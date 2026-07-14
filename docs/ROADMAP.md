@@ -151,6 +151,14 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
 - [ ] **Priority 2 — Agent-marketplace discoverability (approved
       2026-07-14):** list the Claude Code plugin on community catalogs and the
       Codex plugin on a community registry. Status:
+      - claude-community (Anthropic's official community marketplace,
+        `anthropics/claude-plugins-community`): submitted 2026-07-14 via the
+        Console form (platform.claude.com/plugins/submit) with plugin path
+        `integrations/claude-code/hera-godot`, platform Claude Code, license
+        MIT — confirmation screen "플러그인 검토 제출됨". If approved, the
+        catalog pins the commit SHA and auto-bumps on new pushes; check
+        installability by searching the community catalog's
+        `marketplace.json`.
       - awesome-claude-code: submitted 2026-07-14 via its required web-UI
         issue form as
         [issue #2243](https://github.com/hesreallyhim/awesome-claude-code/issues/2243);
