@@ -159,9 +159,13 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         requires root `.codex-plugin/plugin.json` — present). Blocked on the
         user signing in to that site with GitHub OAuth; scanner checks and
         human review follow.
-      - awesome-codex-plugins: not submitted — requires running their HOL
-        scanner in this repo's GitHub Actions with score ≥ 80, which is a
-        third-party CI dependency awaiting an explicit user decision.
+      - awesome-codex-plugins: submitted 2026-07-14 as
+        [PR #300](https://github.com/hashgraph-online/awesome-codex-plugins/pull/300)
+        after the user approved their required HOL scanner CI. The scanner
+        workflow (`.github/workflows/hol-scanner.yml`, gate: score ≥ 80, no
+        critical/high findings) passed on
+        [run 29298946262](https://github.com/NotNull92/hera-agent-godot/actions/runs/29298946262).
+        Maintainer review pending.
 - [x] **Priority 1 — Nonvisual/CI remote verification:** the documented
       GitHub Actions workflow passed its authorized remote run on 2026-07-13.
       The [4.7-only nonvisual tier](./HEADLESS_CI.md) proved the enabled
