@@ -1,0 +1,30 @@
+{
+  "version": "0.8.0",
+  "repo": "NotNull92/hera-agent-godot",
+  "assets": {
+    "darwin-x64": {
+      "name": "hera-darwin-amd64.tar.gz",
+      "sha256": "e9fe768bce5a636e2232a88a4f8584b6fe5eb74cba11e5dd8ea7d4c461092e1c"
+    },
+    "darwin-arm64": {
+      "name": "hera-darwin-arm64.tar.gz",
+      "sha256": "a8d7fb0c941defe0030dbd2169bab714c43cb2fc0e7c11dc77ae92c8212e64ea"
+    },
+    "linux-x64": {
+      "name": "hera-linux-amd64.tar.gz",
+      "sha256": "5f857d872049964fe66305fe167cdf7aaa955451867cfd682ad18f7d21d87d4a"
+    },
+    "linux-arm64": {
+      "name": "hera-linux-arm64.tar.gz",
+      "sha256": "5db7e99838e4fcc6bb68c54db090517ab0dd8098ccbaf6b1f7558046d9068bde"
+    },
+    "win32-x64": {
+      "name": "hera-windows-amd64.zip",
+      "sha256": "f759a0306ef04afd5d449c704672376093586d3f4de874b5bbcda8fb99dabd4f"
+    },
+    "win32-arm64": {
+      "name": "hera-windows-arm64.zip",
+      "sha256": "3e470c99aee19ef26d61dac4554f77cae56ae3c77d32263eda4c52b463fc831a"
+    }
+  }
+}

@@ -107,6 +107,12 @@ scoop install hera
 brew install NotNull92/hera/hera
 ```
 
+```sh
+# Node.js 18+ 이 있는 모든 플랫폼 (npm)
+npm install -g hera-godot
+# 또는 설치 없이 실행: npx hera-godot status
+```
+
 또는 최신 릴리스 바이너리를 받아 설치하는 원라인:
 
 ```sh

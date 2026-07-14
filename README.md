@@ -110,6 +110,12 @@ scoop install hera
 brew install NotNull92/hera/hera
 ```
 
+```sh
+# Any platform with Node.js 18+ (npm)
+npm install -g hera-godot
+# or zero-install: npx hera-godot status
+```
+
 Or a one-liner that fetches the latest release binary:
 
 ```sh

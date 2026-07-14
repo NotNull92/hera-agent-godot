@@ -1,0 +1,46 @@
+{
+  "name": "hera-godot",
+  "version": "0.8.0",
+  "description": "Low-token CLI that lets AI coding agents inspect and control a live Godot editor over localhost HTTP.",
+  "keywords": [
+    "godot",
+    "cli",
+    "ai",
+    "agent",
+    "game-development",
+    "qa"
+  ],
+  "homepage": "https://github.com/NotNull92/hera-agent-godot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NotNull92/hera-agent-godot.git",
+    "directory": "packaging/npm"
+  },
+  "bugs": "https://github.com/NotNull92/hera-agent-godot/issues",
+  "license": "MIT",
+  "author": "NotNull92",
+  "bin": {
+    "hera": "bin/hera.js",
+    "hera-agent-godot": "bin/hera.js"
+  },
+  "files": [
+    "bin/",
+    "scripts/",
+    "manifest.json"
+  ],
+  "scripts": {
+    "postinstall": "node scripts/install.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}
