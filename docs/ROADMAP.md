@@ -139,9 +139,11 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
 - [x] CLI installation: Homebrew tap
       ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
       Scoop bucket (in-repo `bucket/hera.json`), npm wrapper package
-      `hera-godot` (`packaging/npm/`; approved 2026-07-14 — postinstall
-      downloads the pinned, SHA256-verified release binary and points users
-      to the Asset Store addon), and the existing one-line installers.
+      [`hera-godot`](https://www.npmjs.com/package/hera-godot)
+      (`packaging/npm/`; approved and published 2026-07-14 at 0.8.0 —
+      postinstall downloads the pinned, SHA256-verified release binary and
+      points users to the Asset Store addon; verified from the registry via
+      `npx hera-godot@0.8.0 version`), and the existing one-line installers.
       Per-release bump steps: [packaging/README.md](../packaging/README.md).
 - [x] Agent harness kits: Claude Code and Codex repo marketplaces/plugins
       sharing an auto-invoked `live-editor` skill (`.claude-plugin/` +
