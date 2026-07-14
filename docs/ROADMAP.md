@@ -146,11 +146,12 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       skill, a Cursor rule template, and a copy-paste `AGENTS.md` snippet
       ([`integrations/`](../integrations/)) — each stays within the ~1k-token
       single-document surface.
-- [ ] **Priority 1 — Headless/CI remote verification:** the documented GitHub
-      Actions workflow boots a headless editor with the addon and runs `smoke`
-      + `game qa` scenarios. The [4.7-only nonvisual tier](./HEADLESS_CI.md)
-      is configured, but remote GitHub Actions verification is pending. Keep
-      this unchecked until a real authorized GitHub run succeeds.
+- [x] **Priority 1 — Nonvisual/CI remote verification:** the documented
+      GitHub Actions workflow passed its authorized remote run on 2026-07-13.
+      The [4.7-only nonvisual tier](./HEADLESS_CI.md) proved the enabled
+      editor → `smoke` → `game qa` runtime-logic lifecycle, while the static
+      tier checked addon scripts on Godot 4.2 and 4.7. This remains nonvisual
+      evidence only, not GUI or 4.2–4.6 live-runtime coverage.
 - [ ] **Priority 2 — winget-pkgs publication:** submit the already validated
       `packaging/winget/` manifest as a public `microsoft/winget-pkgs` PR,
       then update install documentation after acceptance. This requires the
