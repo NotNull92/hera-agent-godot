@@ -136,12 +136,10 @@ standardize on it.
 Goal: put Hera where agents (not just humans) pick their tools, and remove
 "does it run in my setup?" friction.
 
-- [x] Package managers: Homebrew tap
+- [x] CLI installation: Homebrew tap
       ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
-      Scoop bucket (in-repo `bucket/hera.json`), and winget manifest
-      (`packaging/winget/`, validates locally; winget-pkgs submission
-      pending), alongside the existing one-line installers. Per-release
-      bump steps: [packaging/README.md](../packaging/README.md).
+      Scoop bucket (in-repo `bucket/hera.json`), and the existing one-line
+      installers. Per-release bump steps: [packaging/README.md](../packaging/README.md).
 - [x] Agent harness kits: a Claude Code marketplace/plugin with an auto-invoked
       skill, a Cursor rule template, and a copy-paste `AGENTS.md` snippet
       ([`integrations/`](../integrations/)) — each stays within the ~1k-token
@@ -152,10 +150,13 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       editor → `smoke` → `game qa` runtime-logic lifecycle, while the static
       tier checked addon scripts on Godot 4.2 and 4.7. This remains nonvisual
       evidence only, not GUI or 4.2–4.6 live-runtime coverage.
-- [ ] **Priority 2 — winget-pkgs publication:** submit the already validated
-      `packaging/winget/` manifest as a public `microsoft/winget-pkgs` PR,
-      then update install documentation after acceptance. This requires the
-      user's explicit approval for the external public PR.
+- [x] **Decision — winget distribution retired (2026-07-14):** do not submit
+      the local `packaging/winget/` manifest to `microsoft/winget-pkgs`. Hera's
+      supported addon delivery is the Godot Asset Store or the addon release
+      ZIP; a general Windows catalog would distribute only its companion CLI
+      and create a misleading separate distribution focus. No public PR was
+      opened. The manifests are historical only and must not be bumped,
+      submitted, or advertised without a new explicit user product decision.
 - [ ] **Priority 3 — Social proof:** demo GIF/video in the README,
       awesome-godot listing, showcase projects, and write-ups with real agent
       transcripts. Third-party submissions still require explicit approval.

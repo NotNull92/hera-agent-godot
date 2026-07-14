@@ -124,8 +124,9 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 
 Set `HERA_VERSION` to pin a tag and `HERA_BIN_DIR` to change the target dir. Or
 build from source: `go build -o hera .` (Go 1.25+). Check it with `hera version`.
-A winget manifest is prepared under [`packaging/`](packaging/README.md) and
-pending acceptance into winget-pkgs.
+Windows winget distribution is intentionally retired: no winget-pkgs submission
+exists or is planned. See the recorded decision in
+[`packaging/README.md`](packaging/README.md).
 
 **Addon** — download `hera-agent-godot-addon.zip` from the
 [latest release](https://github.com/NotNull92/hera-agent-godot/releases/latest),

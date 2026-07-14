@@ -120,8 +120,9 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 
 특정 태그는 `HERA_VERSION`, 설치 경로는 `HERA_BIN_DIR`로 지정할 수 있습니다.
 소스 빌드는 `go build -o hera .` (Go 1.25+). `hera version`으로 확인하세요.
-winget 매니페스트는 [`packaging/`](packaging/README.md)에 준비되어 있으며
-winget-pkgs 승인 대기 중입니다.
+Windows winget 배포는 의도적으로 폐기했습니다. winget-pkgs 제출은 한 번도 하지
+않았으며 앞으로도 계획하지 않습니다. 결정 기록은
+[`packaging/README.md`](packaging/README.md)를 확인하세요.
 
 **애드온** — [최신 릴리스](https://github.com/NotNull92/hera-agent-godot/releases/latest)에서
 `hera-agent-godot-addon.zip`을 받아 Godot 프로젝트 루트에 풀면(`addons/hera_agent_godot/` 생성)
