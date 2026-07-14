@@ -155,12 +155,14 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         issue form as
         [issue #2243](https://github.com/hesreallyhim/awesome-claude-code/issues/2243);
         automated validation passed, maintainer review pending.
-      - codex-marketplace.com: submission form identified (artifact type
-        `PLUGIN`, target `NotNull92/hera-agent-godot/plugins/hera-godot` —
-        their form only accepts a repository-root plugin or a
+      - codex-marketplace.com: submitted 2026-07-14 (submission ID
+        `2542CC79-ED42-4923-BD83-53A709486B53`, status "queued for automated
+        review", auth result "personal owner match") as artifact type
+        `PLUGIN` targeting `NotNull92/hera-agent-godot/plugins/hera-godot`.
+        Their form only accepts a repository-root plugin or a
         `plugins/<name>` path, which is why the Codex plugin lives under
-        `plugins/` instead of `integrations/`). The user signed in with
-        GitHub OAuth on 2026-07-14; scanner checks and human review follow.
+        `plugins/` instead of `integrations/`. Scanner checks and human
+        review follow.
       - awesome-codex-plugins: submitted 2026-07-14 as
         [PR #300](https://github.com/hashgraph-online/awesome-codex-plugins/pull/300)
         after the user approved their required HOL scanner CI. The scanner
