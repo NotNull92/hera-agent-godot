@@ -199,6 +199,14 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
 - [ ] **Priority 3 — Social proof:** demo GIF/video in the README,
       awesome-godot listing, showcase projects, and write-ups with real agent
       transcripts. Third-party submissions still require explicit approval.
+      Status:
+      - awesome-godot (`godotengine/awesome-godot`): submitted 2026-07-14 as
+        [PR #497](https://github.com/godotengine/awesome-godot/pull/497)
+        (user-approved) — one-line entry under *Plugins and scripts → Godot 4*,
+        alphabetical position, diff verified as exactly +1 line via the
+        contents-API workflow in
+        [DEV_MACHINE.md](./DEV_MACHINE.md). Maintainer review pending.
+      - Demo GIF/video, showcase projects, and write-ups: not started.
 - [ ] **Priority 4 — Asset Store upload `v0.9.0`:** prepare and submit it only
       after the v0.9 scope and release are explicitly approved.
 - [ ] **Deferred — Thin MCP bridge (`hera mcp`):** MCP is not required for any
