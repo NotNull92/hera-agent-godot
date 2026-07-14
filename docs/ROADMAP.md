@@ -200,13 +200,23 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       awesome-godot listing, showcase projects, and write-ups with real agent
       transcripts. Third-party submissions still require explicit approval.
       Status:
+      - Demo GIF/video: **done 2026-07-14.** A live playtest GIF
+        (`docs/assets/hera-agent-godot-playtest_v0.9.0.gif`) is embedded near
+        the top of `README.md` and `README.ko.md` with a token-cost caption. It
+        was recorded from the live editor following the walkthrough in
+        [scenes/demo/README.md](../scenes/demo/README.md): build an arena +
+        player from an empty scene, run it, read the moving player, run QA
+        (health check, inject `ui_left` and verify the velocity reverses,
+        input log), and recolor a running node — the whole session is ~1,170
+        tokens of tool output.
       - awesome-godot (`godotengine/awesome-godot`): submitted 2026-07-14 as
         [PR #497](https://github.com/godotengine/awesome-godot/pull/497)
         (user-approved) — one-line entry under *Plugins and scripts → Godot 4*,
         alphabetical position, diff verified as exactly +1 line via the
         contents-API workflow in
         [DEV_MACHINE.md](./DEV_MACHINE.md). Maintainer review pending.
-      - Demo GIF/video, showcase projects, and write-ups: not started.
+      - Showcase projects and write-ups with real agent transcripts: not
+        started.
 - [ ] **Priority 4 — Asset Store upload `v0.9.0`:** prepare and submit it only
       after the v0.9 scope and release are explicitly approved.
 - [ ] **Deferred — Thin MCP bridge (`hera mcp`):** MCP is not required for any
