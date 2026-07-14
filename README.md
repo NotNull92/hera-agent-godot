@@ -8,6 +8,13 @@
 
 > Hera gives agents eyes, hands, and proof in the live Godot editor.
 
+<p align="center">
+  <img src="docs/assets/hera-agent-godot-playtest_v0.9.0.gif" alt="Hera driving a live Godot editor from the shell: build a scene, run it, and QA the running game" width="820">
+</p>
+<p align="center">
+  <em>Assembled, ran, and QA-tested a live Godot game entirely from the shell — build the scene, run it, read the moving player, inject input and verify the game reacts, recolor a running node. The whole session is <strong>~1,170 tokens</strong> of tool output: compact JSON by default, no tool-schema preload.</em>
+</p>
+
 A **low-token CLI** that lets AI coding agents inspect and control a **live
 Godot 4.7+ editor** in real time — read the output/errors, run a scene, walk and
 edit the node tree, evaluate GDScript, and more. The agent acts on the *real*

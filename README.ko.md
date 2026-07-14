@@ -8,6 +8,13 @@
 
 > Hera gives agents eyes, hands, and proof in the live Godot editor.
 
+<p align="center">
+  <img src="docs/assets/hera-agent-godot-playtest_v0.9.0.gif" alt="셸만으로 실행 중인 Godot 에디터를 조작하는 Hera: 씬 조립, 실행, 라이브 게임 QA" width="820">
+</p>
+<p align="center">
+  <em>셸만으로 라이브 Godot 게임을 조립·실행·QA했습니다 — 씬 조립 → 실행 → 움직이는 플레이어 읽기 → 입력 주입 후 반응 검증 → 실행 중 노드 색 변경. 전체 세션의 도구 출력이 <strong>약 1,170토큰</strong>입니다: 기본이 컴팩트 JSON, 스키마 프리로드 없음.</em>
+</p>
+
 AI 코딩 에이전트가 **실행 중인 Godot 4.7+ 에디터**를 실시간으로 검사·제어하게 해주는
 **저토큰(low-token) CLI**입니다 — 출력/에러 읽기, 씬 실행, 노드 트리 탐색·편집,
 GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대신 *실제* 에디터에
