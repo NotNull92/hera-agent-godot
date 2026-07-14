@@ -35,29 +35,35 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current release baseline: v0.8.0
+## Current release baseline: v0.9.0
 
-`v0.8.0` is the current repository tag and addon manifest baseline. Its Godot
-Asset Store version was approved on **2026-07-14** and is live at
-[store.godotengine.org/asset/notnull92/hera-agent-godot](https://store.godotengine.org/asset/notnull92/hera-agent-godot/).
+`v0.9.0` is the current repository tag and addon manifest baseline. It builds on
+the v0.8.0 foundation (Godot 4.2–4.7 support, output contract, opt-in
+shared-token auth) and focuses on **reach**: putting Hera where agents pick their
+tools, and making a live session easy to prove.
 
 Highlights:
 
-- **Supported Godot versions widen from 4.7-only to 4.2–4.7**: every stable in
-  the range is verified to load the addon and answer the CLI, and CI gates
-  GDScript on both ends ([docs/SUPPORT_MATRIX.md](docs/SUPPORT_MATRIX.md)).
-- **Output contract**: [docs/CONTRACT.md](docs/CONTRACT.md) documents
-  per-command fields, stability tiers, and exit codes, pinned byte-for-byte by
-  golden contract tests in CI.
-- **Opt-in shared-token auth** for the localhost bridge, plus a documented
-  threat model ([docs/SECURITY.md](docs/SECURITY.md)).
-- One invocation name: the CLI is **`hera`** everywhere, with
-  `hera-agent-godot` kept as a transitional alias.
-- `game qa diagnose` returns a generic runtime health verdict, and the
-  `--timeout <ms>` global flag bounds each request.
+- **Agent-side distribution**: install the CLI via the
+  [`hera-godot` npm wrapper](https://www.npmjs.com/package/hera-godot), the
+  Homebrew tap, or the in-repo Scoop bucket; drop Hera into an agent with the
+  Claude Code and Codex plugins and a Cursor rule that all share one
+  auto-invoked, ~1k-token `live-editor` skill
+  ([integrations/](integrations/), [plugins/](plugins/)).
+- **Value-syntax hints in error messages**: when a `node set`, `game node set`,
+  or `resource set` value can't be parsed, Hera now names the expected Godot
+  variant text (e.g. `Vector2(x, y)`, a flat `PackedVector2Array(...)`, or
+  `node set-resource` for object properties) instead of failing silently.
+- **Steadier runtime QA**: the `game qa` lifecycle waits and timeouts were
+  stabilized so the run → inspect → QA → stop flow is reliable under CI.
+- **Nonvisual CI tier** you can copy: a pinned Godot 4.7 headless lifecycle
+  (enabled editor → `smoke` → `game qa` runtime logic) plus a static 4.2/4.7
+  script gate ([docs/HEADLESS_CI.md](docs/HEADLESS_CI.md)).
+- **Live demo** near the top of this README: a full build → run → QA session
+  recorded from the real editor for ~1,170 tokens of tool output.
 
 Release notes and Asset Store packaging details:
-[docs/releases/v0.8.0-asset-store-upload.md](docs/releases/v0.8.0-asset-store-upload.md).
+[docs/releases/v0.9.0-asset-store-upload.md](docs/releases/v0.9.0-asset-store-upload.md).
 
 ## Nonvisual CI (configured tier)
 
@@ -90,7 +96,7 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 ## Command surface
 
-The `v0.8.0` CLI/addon surface includes:
+The `v0.9.0` CLI/addon surface includes:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
 `classdb`, `node` (read + write + resource/script wiring), `signal`, `resource`
 (get/uid/list/set/create/resave/update-uids/export-mesh-library), `game`

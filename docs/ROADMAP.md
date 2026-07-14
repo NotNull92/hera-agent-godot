@@ -217,8 +217,17 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         [DEV_MACHINE.md](./DEV_MACHINE.md). Maintainer review pending.
       - Showcase projects and write-ups with real agent transcripts: not
         started.
-- [ ] **Priority 4 — Asset Store upload `v0.9.0`:** prepare and submit it only
-      after the v0.9 scope and release are explicitly approved.
+- [ ] **Priority 4 — Asset Store upload `v0.9.0`:** release prep done
+      2026-07-14 — manifest bumped to `0.9.0`, README/addon baselines refreshed,
+      and the upload note written
+      ([docs/releases/v0.9.0-asset-store-upload.md](./releases/v0.9.0-asset-store-upload.md))
+      with the store Summary/Description/Changelog and Min `Godot 4.2` / Max
+      `Godot 4.7`. The v0.9 scope is Phase 8 itself: agent-side distribution
+      (npm/Homebrew/Scoop + Claude Code/Codex plugins + Cursor rule), plus
+      value-syntax hints in set errors and a steadier `game qa` lifecycle.
+      Remaining: tag `v0.9.0` + push (triggers the release workflow), then the
+      owner uploads the addon ZIP on the Versions tab and replaces the Settings
+      Summary/Description.
 - [ ] **Deferred — Thin MCP bridge (`hera mcp`):** MCP is not required for any
       Godot capability and is not a Phase 8 prerequisite. Reconsider only when
       there is concrete demand from MCP-only clients; if resumed, keep it an

@@ -2,7 +2,7 @@
 
 Hera gives agents eyes, hands, and proof in the live Godot editor.
 
-This folder is the **distributable addon** for the current `v0.8.0` baseline. To
+This folder is the **distributable addon** for the current `v0.9.0` baseline. To
 use it in your own project:
 
 1. Use any **Godot 4.2–4.7** stable build (4.7 recommended — it gets the full
@@ -16,9 +16,12 @@ shared-token auth: put a random string in `~/.hera-agent-godot/token` (or set
 `HERA_AGENT_GODOT_TOKEN`) and reload the plugin — see the repo's
 `docs/SECURITY.md`.
 
-`v0.8.0` widens verified Godot support to **4.2–4.7** and adds opt-in
-shared-token auth, a documented CLI output contract backed by golden tests,
-and quieter startup in user projects — on top of the v0.7.0 surface: the Hera
+`v0.9.0` adds **value-syntax hints** — when a node/game/resource value can't be
+parsed, the error names the expected Godot variant text (e.g. `Vector2(x, y)` or
+a flat `PackedVector2Array(...)`) — and a steadier `game qa` runtime lifecycle,
+on top of the v0.8.0 baseline: verified Godot **4.2–4.7** support, opt-in
+shared-token auth, a documented CLI output contract backed by golden tests, and
+quieter startup in user projects. The v0.7.0 surface remains: the Hera
 main-screen panel with Game Feel Mode controls, `guidance ui`,
 `guidance game-feel`, bundled `game_feel` topics, scoped runtime UI reads,
 runtime input injection, input diagnostics, deterministic QA helper discovery,
