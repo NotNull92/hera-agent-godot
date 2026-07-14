@@ -31,6 +31,10 @@ agents:
   submission is done by the user personally.
 - When passing work over, leave a handoff note at
   `docs/handoff/<date>-<target-agent>.md`.
+- Machine-specific facts (Godot binary path, isolated-smoke pattern, toolchain
+  limits, external-form gotchas) live in [docs/DEV_MACHINE.md](docs/DEV_MACHINE.md)
+  — read it before local Godot smokes, third-party PRs, or publishes, and
+  update it there instead of re-discovering.
 
 ## Canonical Godot sources for documentation and review
 
