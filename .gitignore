@@ -8,6 +8,9 @@
 *.out
 /dist/
 
+# npm pack / publish tarball artifact
+/packaging/npm/*.tgz
+
 # Godot generated files
 **/.godot/
 **/bin/
