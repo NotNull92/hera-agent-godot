@@ -1,0 +1,17 @@
+{
+  "name": "hera-agent-godot",
+  "plugins": [
+    {
+      "name": "hera-godot",
+      "description": "Inspect, change, run, and verify a live Godot editor through the Hera CLI.",
+      "source": {
+        "source": "local",
+        "path": "./integrations/codex/hera-godot"
+      },
+      "category": "Game Development",
+      "policy": {
+        "installation": "AVAILABLE"
+      }
+    }
+  ]
+}

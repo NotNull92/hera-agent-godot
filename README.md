@@ -150,6 +150,17 @@ schema. Install the CLI and enable the addon first.
   as `/hera-godot:live-editor` when desired. To test a local checkout without
   adding a marketplace, run
   `claude --plugin-dir ./integrations/claude-code/hera-godot`.
+- **Codex:** inside a terminal, add this repository as a Codex plugin
+  marketplace and install the plugin:
+
+  ```text
+  codex plugin marketplace add NotNull92/hera-agent-godot
+  codex plugin add hera-godot@hera-agent-godot
+  ```
+
+  The bundled `live-editor` skill auto-invokes for Godot editor work. To test a
+  local checkout, run `codex plugin marketplace add <checkout-dir>` and remove
+  it afterwards with `codex plugin marketplace remove hera-agent-godot`.
 - **Cursor:** copy
   [`integrations/cursor/hera-godot.mdc`](integrations/cursor/hera-godot.mdc)
   to `<your-project>/.cursor/rules/hera-godot.mdc`. It is an Agent Requested
@@ -158,8 +169,9 @@ schema. Install the CLI and enable the addon first.
   [`integrations/AGENTS.md`](integrations/AGENTS.md) to the target project's
   `AGENTS.md`.
 
-All three agent-facing documents stay below the ~1k-token surface budget that
-supports Hera's low-token design.
+Each agent-facing document stays below the ~1k-token surface budget that
+supports Hera's low-token design; Claude Code and Codex share the same
+`live-editor` skill.
 
 ## How it works
 

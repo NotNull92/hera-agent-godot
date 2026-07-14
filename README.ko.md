@@ -145,6 +145,17 @@ CLI를 설치하고 애드온을 활성화하세요.
   `/hera-godot:live-editor`로 직접 호출할 수 있습니다. 마켓플레이스를 추가하지
   않고 로컬 체크아웃을 시험하려면
   `claude --plugin-dir ./integrations/claude-code/hera-godot`를 실행하세요.
+- **Codex:** 터미널에서 이 저장소를 Codex 플러그인 마켓플레이스로 추가한 뒤
+  플러그인을 설치합니다.
+
+  ```text
+  codex plugin marketplace add NotNull92/hera-agent-godot
+  codex plugin add hera-godot@hera-agent-godot
+  ```
+
+  번들된 `live-editor` 스킬은 Godot 에디터 작업에서 자동 호출됩니다. 로컬
+  체크아웃을 시험하려면 `codex plugin marketplace add <체크아웃-경로>`를 실행하고,
+  끝나면 `codex plugin marketplace remove hera-agent-godot`으로 제거하세요.
 - **Cursor:**
   [`integrations/cursor/hera-godot.mdc`](integrations/cursor/hera-godot.mdc)를
   `<your-project>/.cursor/rules/hera-godot.mdc`로 복사하세요. 라이브 Godot 작업에
@@ -153,8 +164,8 @@ CLI를 설치하고 애드온을 활성화하세요.
   [`integrations/AGENTS.md`](integrations/AGENTS.md)의 내용을 대상 프로젝트
   `AGENTS.md`에 추가하세요.
 
-세 에이전트용 문서는 모두 Hera의 저토큰 설계를 뒷받침하는 약 1k-token 이하
-표면 예산을 지킵니다.
+각 에이전트용 문서는 Hera의 저토큰 설계를 뒷받침하는 약 1k-token 이하
+표면 예산을 지키며, Claude Code와 Codex는 같은 `live-editor` 스킬을 공유합니다.
 
 ## 동작 방식
 

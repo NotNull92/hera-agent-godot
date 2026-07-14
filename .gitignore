@@ -18,7 +18,11 @@
 .vs/
 .idea/
 .vscode/
-.agents/
+# Local agent workspace state stays per-machine, but the committed Codex
+# repo marketplace lives at .agents/plugins/.
+.agents/*
+!.agents/plugins/
+!.agents/plugins/**
 # Local Codex state belongs to each machine, not the repository.
 .codex/
 .debug-journal.md

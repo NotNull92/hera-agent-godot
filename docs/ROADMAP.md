@@ -140,10 +140,28 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
       Scoop bucket (in-repo `bucket/hera.json`), and the existing one-line
       installers. Per-release bump steps: [packaging/README.md](../packaging/README.md).
-- [x] Agent harness kits: a Claude Code marketplace/plugin with an auto-invoked
-      skill, a Cursor rule template, and a copy-paste `AGENTS.md` snippet
-      ([`integrations/`](../integrations/)) — each stays within the ~1k-token
-      single-document surface.
+- [x] Agent harness kits: Claude Code and Codex repo marketplaces/plugins
+      sharing an auto-invoked `live-editor` skill (`.claude-plugin/`,
+      `.agents/plugins/`, [`integrations/`](../integrations/)), a Cursor rule
+      template, and a copy-paste `AGENTS.md` snippet — each stays within the
+      ~1k-token single-document surface. The Codex plugin was validated
+      end-to-end with codex-cli 0.144.3 (marketplace add → plugin add →
+      installed, enabled → removed).
+- [ ] **Priority 2 — Agent-marketplace discoverability (approved
+      2026-07-14):** list the Claude Code plugin on community catalogs and the
+      Codex plugin on a community registry. Status:
+      - awesome-claude-code: submitted 2026-07-14 via its required web-UI
+        issue form as
+        [issue #2243](https://github.com/hesreallyhim/awesome-claude-code/issues/2243);
+        automated validation passed, maintainer review pending.
+      - codex-marketplace.com: submission form identified (artifact type
+        `PLUGIN`, target `NotNull92/hera-agent-godot/integrations/codex/hera-godot`,
+        requires root `.codex-plugin/plugin.json` — present). Blocked on the
+        user signing in to that site with GitHub OAuth; scanner checks and
+        human review follow.
+      - awesome-codex-plugins: not submitted — requires running their HOL
+        scanner in this repo's GitHub Actions with score ≥ 80, which is a
+        third-party CI dependency awaiting an explicit user decision.
 - [x] **Priority 1 — Nonvisual/CI remote verification:** the documented
       GitHub Actions workflow passed its authorized remote run on 2026-07-13.
       The [4.7-only nonvisual tier](./HEADLESS_CI.md) proved the enabled
