@@ -36,5 +36,11 @@ docs/tests/
 .omo/
 # Claude Code workspace (skills/settings) stays per-machine, not in the repo.
 .claude/
+# Kept local-only, removed from the remote (2026-07-14): internal co-dev
+# handoff notes, QA reports, dev scripts, and the retired winget manifests.
+/docs/handoff/
+/docs/reports/
+/tools/
+/packaging/winget/
 .DS_Store
 Thumbs.db
