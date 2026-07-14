@@ -14,6 +14,11 @@
 **/obj/
 *.user
 
+# The README-walkthrough scene is assembled live during recording (see
+# scenes/demo/README.md); only the committed player.gd is version-controlled.
+/scenes/demo/Playground.tscn
+/scenes/demo/Playground.tscn.uid
+
 # IDE / OS
 .vs/
 .idea/
