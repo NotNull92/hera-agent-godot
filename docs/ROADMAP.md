@@ -1,8 +1,9 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented, the v0.8.0 GitHub Release
-published, and the v0.8.0 Godot Asset Store version approved on 2026-07-14.
+has the core CLI/addon surface implemented and the v0.9.0 GitHub Release
+published, with the v0.9.0 Godot Asset Store version uploaded 2026-07-14
+(approval pending; the v0.8.0 version was approved 2026-07-14).
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
@@ -217,17 +218,18 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         [DEV_MACHINE.md](./DEV_MACHINE.md). Maintainer review pending.
       - Showcase projects and write-ups with real agent transcripts: not
         started.
-- [ ] **Priority 4 — Asset Store upload `v0.9.0`:** release prep done
-      2026-07-14 — manifest bumped to `0.9.0`, README/addon baselines refreshed,
-      and the upload note written
-      ([docs/releases/v0.9.0-asset-store-upload.md](./releases/v0.9.0-asset-store-upload.md))
-      with the store Summary/Description/Changelog and Min `Godot 4.2` / Max
-      `Godot 4.7`. The v0.9 scope is Phase 8 itself: agent-side distribution
-      (npm/Homebrew/Scoop + Claude Code/Codex plugins + Cursor rule), plus
+- [x] **Priority 4 — Asset Store upload `v0.9.0`:** uploaded 2026-07-14
+      (store approval pending, as with v0.8.0's next-day approval).
+      The `v0.9.0` GitHub Release is published (addon ZIP SHA
+      `a025f918…f501aa`, 100 entries, embedded manifest `0.9.0`; release
+      workflow run 29310410241 with `go test -race`), the store version was
+      uploaded on the Versions tab (Min `Godot 4.2` / Max `Godot 4.7`, Stable)
+      and the Settings Summary/Description replaced per
+      [docs/releases/v0.9.0-asset-store-upload.md](./releases/v0.9.0-asset-store-upload.md).
+      The v0.9 scope is Phase 8 itself: agent-side distribution
+      (npm `hera-godot@0.9.0`, Homebrew tap, Scoop bucket — all pinned to the
+      release — plus Claude Code/Codex plugins and a Cursor rule), plus
       value-syntax hints in set errors and a steadier `game qa` lifecycle.
-      Remaining: tag `v0.9.0` + push (triggers the release workflow), then the
-      owner uploads the addon ZIP on the Versions tab and replaces the Settings
-      Summary/Description.
 - [ ] **Deferred — Thin MCP bridge (`hera mcp`):** MCP is not required for any
       Godot capability and is not a Phase 8 prerequisite. Reconsider only when
       there is concrete demand from MCP-only clients; if resumed, keep it an
