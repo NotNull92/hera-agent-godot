@@ -19,6 +19,9 @@ context.
 2. **Restart the editor** first so stale scene tabs are gone and `player.gd`
    is freshly imported — the walkthrough's `attach-script` step then needs no
    filesystem scan.
+2b. **Game Feel Mode off** (Hera panel → *Game Feel Mode(Beta)* toggle) so
+   `node add` responses stay lean — with it on, step 2 also carries a
+   game-feel `agent_hint` (~303 B instead of 59 B).
 3. Put a terminal and the Godot window **side by side** (split screen). The
    left/terminal side shows the commands and compact JSON; the right/editor
    side shows the Scene dock filling in, then the running game window.
@@ -33,7 +36,7 @@ is the response's output token cost (bytes ÷ 4), for the low-token overlay.
 | # | Command | Response (compact JSON) | bytes | ≈tok |
 |---|---------|--------------------------|------|-----|
 | 1 | `hera scene create res://scenes/demo/Playground.tscn --root Node2D --open` | `{"created":"…/Playground.tscn","opened":true,"root":"Node2D"}` | 70 | 18 |
-| 2 | `hera node add CharacterBody2D --name Player` | `{"added":"Player","agent_hint":"…","name":"Player","type":"CharacterBody2D"}` | 303 | 76 |
+| 2 | `hera node add CharacterBody2D --name Player` | `{"added":"Player","name":"Player","type":"CharacterBody2D"}` | 59 | 15 |
 | 3 | `hera node set Player --prop position --value "Vector2(120, 200)"` | `{"path":"Player","prop":"position","value":"(120.0, 200.0)"}` | 60 | 15 |
 | 4 | `hera node add ColorRect --parent Player --name Body` | `{"added":"Player/Body","name":"Body","type":"ColorRect"}` | 56 | 14 |
 | 5 | `hera node set Player/Body --prop size --value "Vector2(48, 48)"` | `{"path":"Player/Body","prop":"size","value":"(48.0, 48.0)"}` | 59 | 15 |
@@ -48,16 +51,16 @@ is the response's output token cost (bytes ÷ 4), for the low-token overlay.
 | 14 | `hera game node set Player/Body --prop color --value "Color(1, 0.4, 0.2, 1)"` | `{"path":"…/Body","prop":"color","value":"(1.0, 0.4, 0.2, 1.0)"}` | 85 | 21 |
 | 15 | `hera stop --wait` | `{"playing":false,"scene":""}` | 28 | 7 |
 
-**Whole round-trip ≈ 490 output tokens** — build a scene, wire a script, run
-the game, read live state, and recolor a running node, all in ~490 tokens of
-tool output. Compact JSON is the default (one line per command) and the agent
-needs no tool-schema preload because it already speaks shell.
+**Whole round-trip ≈ 427 output tokens** (~1,709 bytes) — build a scene, wire
+a script, run the game, read live state, and recolor a running node, all in
+~427 tokens of tool output. Compact JSON is the default (one line per command)
+and the agent needs no tool-schema preload because it already speaks shell.
 
 ## Overlay beats (B story — low token)
 
 Numbers measured on Godot 4.7; response sizes are exact bytes from a live run.
 
-- **~490 tokens for the entire session.** Sum the `≈tok` column on screen as
+- **~427 tokens for the entire session.** Sum the `≈tok` column on screen as
   it runs, or show the total at the end.
 - **Compact by default.** The same `scene tree` is **248 B compact vs 370 B**
   with `--json` (pretty) — ~33% smaller, and compact is the default.
