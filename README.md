@@ -30,9 +30,8 @@ same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
 ## Current release baseline: v0.8.0
 
-`v0.8.0` is the current repository tag and addon manifest baseline. The Godot
-Asset Store upload prep is complete; the previous store upload was `v0.6.0` on
-**2026-07-06**.
+`v0.8.0` is the current repository tag and addon manifest baseline. Its Godot
+Asset Store version was approved on **2026-07-14**.
 
 Highlights:
 
