@@ -6,13 +6,13 @@ on:
   push:
     branches: [main]
     paths:
-      - "integrations/codex/**"
+      - "plugins/**"
       - ".agents/plugins/**"
       - ".github/workflows/hol-scanner.yml"
   pull_request:
     branches: [main]
     paths:
-      - "integrations/codex/**"
+      - "plugins/**"
       - ".agents/plugins/**"
       - ".github/workflows/hol-scanner.yml"
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
       - name: HOL Plugin Scanner
         uses: hashgraph-online/ai-plugin-scanner-action@v1
         with:
-          plugin_dir: "./integrations/codex/hera-godot"
+          plugin_dir: "./plugins/hera-godot"
           mode: scan
           min_score: 80
           fail_on_severity: high

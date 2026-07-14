@@ -6,7 +6,7 @@
       "description": "Inspect, change, run, and verify a live Godot editor through the Hera CLI.",
       "source": {
         "source": "local",
-        "path": "./integrations/codex/hera-godot"
+        "path": "./plugins/hera-godot"
       },
       "category": "Game Development",
       "policy": {

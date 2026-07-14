@@ -141,10 +141,11 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       Scoop bucket (in-repo `bucket/hera.json`), and the existing one-line
       installers. Per-release bump steps: [packaging/README.md](../packaging/README.md).
 - [x] Agent harness kits: Claude Code and Codex repo marketplaces/plugins
-      sharing an auto-invoked `live-editor` skill (`.claude-plugin/`,
-      `.agents/plugins/`, [`integrations/`](../integrations/)), a Cursor rule
-      template, and a copy-paste `AGENTS.md` snippet — each stays within the
-      ~1k-token single-document surface. The Codex plugin was validated
+      sharing an auto-invoked `live-editor` skill (`.claude-plugin/` +
+      [`integrations/`](../integrations/) for Claude Code; `.agents/plugins/`
+      + `plugins/hera-godot/` for Codex), a Cursor rule template, and a
+      copy-paste `AGENTS.md` snippet — each stays within the ~1k-token
+      single-document surface. The Codex plugin was validated
       end-to-end with codex-cli 0.144.3 (marketplace add → plugin add →
       installed, enabled → removed).
 - [ ] **Priority 2 — Agent-marketplace discoverability (approved
@@ -155,10 +156,11 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         [issue #2243](https://github.com/hesreallyhim/awesome-claude-code/issues/2243);
         automated validation passed, maintainer review pending.
       - codex-marketplace.com: submission form identified (artifact type
-        `PLUGIN`, target `NotNull92/hera-agent-godot/integrations/codex/hera-godot`,
-        requires root `.codex-plugin/plugin.json` — present). Blocked on the
-        user signing in to that site with GitHub OAuth; scanner checks and
-        human review follow.
+        `PLUGIN`, target `NotNull92/hera-agent-godot/plugins/hera-godot` —
+        their form only accepts a repository-root plugin or a
+        `plugins/<name>` path, which is why the Codex plugin lives under
+        `plugins/` instead of `integrations/`). The user signed in with
+        GitHub OAuth on 2026-07-14; scanner checks and human review follow.
       - awesome-codex-plugins: submitted 2026-07-14 as
         [PR #300](https://github.com/hashgraph-online/awesome-codex-plugins/pull/300)
         after the user approved their required HOL scanner CI. The scanner
