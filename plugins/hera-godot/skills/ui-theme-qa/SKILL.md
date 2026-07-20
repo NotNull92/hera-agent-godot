@@ -83,8 +83,9 @@ came from steps 1/3. Update the report in place.
 - **A check is a predicate, not a status.** A finding is a `check` recomputed
   from the live editor every time — never a stored "done". Enforcers fix only
   false predicates; fresh re-inspectors recompute them.
-- **Snap, don't invent.** Replacement values come from the corpus (real Tailwind
-  spacing/type, Radix ramps, WCAG). A project's own theme/tokens win if present.
+- **Snap, don't invent.** Replacement values come from the corpus, which is
+  rooted in Godot's own default theme plus WCAG. A project's own theme/tokens
+  win over the corpus if present.
 - **Undoable + reductive.** Only per-node theme overrides change, via
   `node set` (Ctrl+Z survives). Copy, order, and layout are inviolable.
 - **Static inspect, render once.** Measurement is `node get` / `eval` /

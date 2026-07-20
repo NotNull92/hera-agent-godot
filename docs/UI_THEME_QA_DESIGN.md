@@ -46,8 +46,8 @@ are not stylistic preferences.
 2. **Snap, don't invent.** Replacement values (spacing rungs, type scale,
    palette, contrast target) come from a fixed reference corpus. A model asked
    to "pick a better number" reintroduces exactly the arbitrariness being
-   removed. Spacing px, ramp hex, and WCAG ratios are domain-neutral numbers
-   and apply to Godot `Control` theme tokens unchanged.
+   removed. The corpus is rooted in Godot's own default theme, so the values it
+   snaps to are the engine's, extended only by rules stated on its page.
 3. **Inspect is static and parallel; enforce is sequential and undoable.**
    Reading geometry and theme tokens is side-effect-free, so ordering does not
    matter and areas can run concurrently. Mutations register with
@@ -154,7 +154,8 @@ taste — plus a reference source.
 - **off-ladder** — `theme_override_constants/separation` and `margin_*` values
   that do not snap to a declared ladder. Trigger: the count of distinct spacing
   values exceeds the number of ladder rungs they map to.
-- Reference: Tailwind spacing scale (px). Snap to the nearest rung, ties down.
+- Reference: the corpus spacing ladder — multiples of the engine's 4px base
+  unit. Snap to the nearest rung, ties down.
   Snapping is lateral — it never inflates macro whitespace.
 
 ### Area `type-scale`
@@ -162,7 +163,9 @@ taste — plus a reference source.
   the rungs of a declared type scale → collapse to the scale, preserving order
   so no two hierarchy levels merge into one rung.
 - **role-confusion** — mixed `theme_override_fonts/font` with no role bijection.
-- Reference: Tailwind fontSize scale (px). Hierarchy is size/weight/spacing,
+- Reference: the corpus type ladder — the engine's `default_font_size` and
+  heading sizes, continued above them at the engine's own 1.25 ratio.
+  Hierarchy is size/weight/spacing,
   never a font swap.
 
 ### Area `color`
@@ -173,7 +176,8 @@ taste — plus a reference source.
     — one color ↔ one semantic role (title / body / accent / success / error) —
     are a *decided* palette. The trigger is *literal scatter with no single
     source*, never "uses overrides." See §5.1: the dock is exactly this case.
-- Reference: Radix color ramps (hex), accent + neutral.
+- Reference: none vendored. Convergence targets the project's *own* declared
+  palette or `Theme`, never an imported one.
 
 ### Area `contrast`
 - **below-wcag** — the effective `font_color` against its background `StyleBox`
@@ -200,7 +204,7 @@ Values measured directly from source; contrast via WCAG relative-luminance math.
 
 | Tell | Result | Measurement |
 |---|---|---|
-| `spacing/off-ladder` | 🔴 fires (true positive) | 10 distinct values `{3,4,6,10,12,14,16,22,24,28}`; 5/10 off a Tailwind ladder (`3,6,10,14,22`). No declared scale → magic numbers. |
+| `spacing/off-ladder` | 🔴 fires (true positive) | 10 distinct values `{3,4,6,10,12,14,16,22,24,28}`; 5/10 off the engine's 4px ladder (`3,6,10,14,22`). No declared scale → magic numbers. |
 | `type-scale/unscaled` | 🔴 fires (true positive) | 4 `font_size` overrides `{12,17,20,32}`; ratios `1.42 / 1.18 / 1.60` (non-modular); `17,32` off-rung. |
 | `contrast/below-wcag` | ✅ silent (true negative) | All text pairs pass: ICE/DEEP 15.0:1, MUTED/NIGHT 7.2:1, RED/NIGHT 4.9:1, GOLD 9.4:1, GREEN/NIGHT 11.3:1. A well-made dark UI — the objective check correctly does not fire. |
 | `color/scattered-literals` | ✅ silent (correct — *refined the tell*) | 8 colors, but all are **named constants** (`HERA_ICE`, `HERA_WARM_GOLD`, …) with a role bijection (ice=title, muted=body, gold=accent, green=ok, red=error). The escape case above; a naive "uses overrides" trigger would false-positive here. |
@@ -281,17 +285,25 @@ Per area, `findings-<area>.md`, one entry each. The `check` is a Hera command
 
 ## 9. Reference corpus
 
-Values come from real, published design systems rather than hand-typed
-constants, and ship vendored (offline) with provenance so the skill needs no
-toolchain at run time:
+Every value is either read from Godot's own default theme, derived from those
+roots by a rule stated on the corpus page, or taken from a published
+accessibility standard. Nothing is vendored from another project's design
+system, so the corpus is self-contained and needs no toolchain:
 
-- **Spacing / type:** Tailwind `defaultTheme` spacing + fontSize (px). MIT.
-- **Palette:** Radix color ramps (hex), accent + neutral. MIT.
-- **Contrast:** WCAG 2.1 SC 1.4.3 thresholds (4.5:1 body, 3:1 large/UI). W3C.
+- **Spacing:** multiples of the engine's 4px container base unit
+  (`separation` on BoxContainer/Grid/Flow; SplitContainer contributes 12).
+- **Type:** the engine's `default_font_size` (16) plus the heading sizes it
+  defines (20/24/28), continued above 28 at the engine's own 1.25 step ratio so
+  large sizes stay perceptually distinct.
+- **Colour:** no palette is vendored. The engine defines no ramp to derive one
+  from, and importing a foreign ramp would overwrite the project's design.
+  Contrast repair keeps the project's hue and solves for the required
+  lightness instead.
+- **Contrast:** WCAG 2.1 SC 1.4.3 thresholds (4.5:1 body, 3:1 large/UI) and the
+  relative-luminance formula. W3C — a human-vision standard, toolkit-independent.
 
-These are numeric/hex and apply to Godot unchanged. A project's own theme or
-declared tokens win over the corpus when present. Deletion-type tells
-(`decoration`, `containers`) borrow no value.
+A project's own theme or declared tokens win over the corpus when present.
+Deletion-type tells (`decoration`, `containers`) borrow no value.
 
 ---
 

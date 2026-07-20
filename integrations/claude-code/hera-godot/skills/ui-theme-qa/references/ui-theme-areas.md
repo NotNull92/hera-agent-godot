@@ -89,10 +89,11 @@ corpus threshold for that text's size (body 4.5:1; large ≥24px or ≥18.66px b
   `hera eval "get_node('<panel>').get_theme_stylebox('panel').bg_color"`, else
   the effective panel/root background.
 
-**Fix:** raise foreground lightness first (same hue → a higher Radix step) until
-the pair passes. Do not recolor the background. Enforce with `node set --value
-"Color(r, g, b, a)"` (float 0..1) — the CLI rejects bare `#hex` and
-`Color("#hex")`; convert the corpus hex first (each channel `= int(hh,16)/255`).
+**Fix:** keep the text colour's hue and saturation and **solve** for the
+lightness that meets the threshold — the corpus gives the exact bound
+(`L_text >= T*(L_bg+0.05)-0.05` to lighten). Do not guess a colour and do not
+recolour the background. Enforce with `node set --value "Color(r, g, b, a)"`
+(float 0..1) — the CLI rejects bare `#hex` and `Color("#hex")`.
 
 **Escape:** pair already ≥ threshold. This check is objective — no taste escape.
 
