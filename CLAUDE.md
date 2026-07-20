@@ -22,6 +22,15 @@ docs — not your chat context. Follow the "Co-developing this repo" rules in
 (Asset Store, the homebrew-hera tap) in `docs/`, and never rewrite pushed
 history.
 
+Porting: when an idea or architecture is adapted from an outside tool,
+**fully naturalize it**. Ship a Hera-native capability — named for the
+Godot/Hera construct it operates on, justified from engine behaviour, with no
+external tool name, "ported from X" framing, comparison tables, or borrowed
+taxonomy labels left in the repo. Material that is genuinely *copied* (vendored
+data, licensed source) keeps its upstream provenance instead; never strip a
+credit while keeping copied expression. See "Ported capabilities must be fully
+naturalized" in [AGENTS.md](AGENTS.md).
+
 Repo conventions: Go CLI in `cmd/` + `internal/`; the Godot addon (GDScript) in
 `addons/hera_agent_godot/`, with the dev host project (`project.godot`,
 `scenes/`) at the repo root. Run `go build/vet/test` and `gofmt` for Go;

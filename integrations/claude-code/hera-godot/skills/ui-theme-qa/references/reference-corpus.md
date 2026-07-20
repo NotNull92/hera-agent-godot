@@ -1,4 +1,4 @@
-# UI Slop QA — reference corpus (vendored snapshot)
+# UI Theme QA — reference corpus (vendored snapshot)
 
 Replacement values are **snapped to real design-system constants**, not
 invented. This file is a vendored, offline snapshot of published values with
@@ -27,7 +27,7 @@ re-vendor from them.
 
 ---
 
-## C — spacing ladder (px)
+## `spacing` — ladder (px)
 
 `tailwindcss@3.4.19` spacing scale (rem→px, ≤256). Snap each spacing token
 (`theme_override_constants/separation`, `.../margin_*`) to the nearest rung
@@ -38,7 +38,7 @@ re-vendor from them.
 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256
 ```
 
-## D — type scale (px)
+## `type-scale` — scale (px)
 
 `tailwindcss@3.4.19` fontSize scale (rem→px). Snap each
 `theme_override_font_sizes/font_size` to the nearest rung; preserve ordering
@@ -60,7 +60,7 @@ re-vendor from them.
 | 8xl | 96 |
 | 9xl | 128 |
 
-## E — palette (hex) + contrast
+## `color` — palette (hex)
 
 `@radix-ui/colors@3.0.0`, 12-step ramps. Converge a scattered palette to **one
 accent + the neutral ramp**.
@@ -68,7 +68,7 @@ accent + the neutral ramp**.
 **Applying a hex to a Godot token.** In GDScript / `hera eval`, `Color("#0090ff")`
 parses hex directly. The CLI `node set --value` coercion does **not**: it rejects
 both `#0090ff` and `Color("#0090ff")` and accepts only float variant text
-`Color(r, g, b, a)` (0..1). So when enforcing E2 via `node set`, convert the
+`Color(r, g, b, a)` (0..1). So when enforcing via `node set`, convert the
 corpus hex to floats first — each channel `= int(hh, 16) / 255` — e.g.
 `#0090ff` → `Color(0, 0.565, 1, 1)`.
 
@@ -94,7 +94,7 @@ background ≥ 4.5:1.
 Reserve accent hues for real semantic roles only (brand/CTA, and existing
 error/warning/success states). Everything else → the neutral ramp.
 
-## WCAG thresholds (contrast)
+## `contrast` — WCAG thresholds
 
 WCAG 2.1 SC 1.4.3. Contrast ratio `(L1+0.05)/(L2+0.05)`, L = relative luminance.
 

@@ -1,4 +1,4 @@
-# UI Slop QA — area rules (SSOT, MVP: C · D · E2)
+# UI Theme QA — area rules (SSOT, MVP: spacing · type-scale · contrast)
 
 Per-area detection + enforcement contract for Godot `Control` UI. Each inspector
 / enforcer reads **only its own area section** (context isolation — no single
@@ -6,9 +6,9 @@ context holds every rule). What counts as a replacement value comes from
 [reference-corpus.md](reference-corpus.md); this file is the judgement layer on
 top.
 
-Common principle — **"agents statistically default like this → force it
-mechanically like that."** A single measurement triggers each tell, never taste.
-Values are snapped to the corpus, never invented.
+Common principle — **an undecided value is a defect; a decided one is not.**
+Every tell fires on a single measurement, never on taste, and every replacement
+is snapped to the corpus rather than invented.
 
 All measurement uses existing `hera` commands (no custom tooling):
 - Enumerate: `hera --ids scene tree` / `hera node find --type <Class>`
@@ -23,15 +23,16 @@ Godot theme-token property paths used below:
 (`margin_top|right|bottom`), `theme_override_font_sizes/font_size`,
 `theme_override_colors/font_color`.
 
-> **Enforcement order** (dependency order): C → D → E. Spacing commits before
-> type before color so downstream reads the already-changed state. (Areas A/B
-> from the design doc are out of MVP scope.)
+> **Enforcement order** (dependency order): `spacing` → `type-scale` →
+> `contrast`. Spacing commits before type-scale, and contrast runs last because
+> it depends on the final colors. (Areas `decoration`, `containers`, and
+> `color` from the design doc are out of MVP scope.)
 
 ---
 
-## Area C · spacing (enforcement order 1)
+## Area `spacing` (enforcement order 1)
 
-**Agent statistic:** spacing constants are magic numbers with no declared
+**Statistical default:** spacing constants are magic numbers with no declared
 ladder — a spread of near-but-unequal values (`3, 6, 10, 14, 22 …`) instead of
 a scale.
 
@@ -43,7 +44,7 @@ same rung, or values sit off-ladder — the ladder is undisciplined.
 **Fix:** snap each spacing value to the nearest corpus rung (ties → smaller).
 Do not scale macro whitespace up; snapping is lateral, not inflation.
 
-**Escape (not slop):** values that are already all on the corpus ladder and
+**Escape (not a defect):** values that are already all on the corpus ladder and
 self-consistent. A single off-ladder value that is a deliberate optical tweak on
 one focal element is a proposal, not an automatic fix.
 
@@ -52,11 +53,11 @@ one focal element is a proposal, not an automatic fix.
 in the corpus spacing ladder. Predicate = *every distinct spacing token ∈
 ladder*.
 
-## Area D · type scale (enforcement order 2)
+## Area `type-scale` (enforcement order 2)
 
-**Agent statistic:** `font_size` overrides are a random spread with no modular
-relationship (ratios like `1.42 / 1.18 / 1.60`) and off-rung values (`17`, odd
-sizes).
+**Statistical default:** `font_size` overrides are a random spread with no
+modular relationship (ratios like `1.42 / 1.18 / 1.60`) and off-rung values
+(`17`, odd sizes).
 
 **Mechanical trigger:** collect every `theme_override_font_sizes/font_size`.
 If distinct sizes are not all on the corpus type scale, or two hierarchy levels
@@ -72,10 +73,10 @@ hierarchy survives. Hierarchy is size/weight/spacing, never font swaps.
 "theme_override_font_sizes/font_size"` returns a value in the corpus type scale;
 distinct sizes remain strictly ordered by their prior hierarchy.
 
-## Area E2 · contrast (enforcement order 3)
+## Area `contrast` (enforcement order 3)
 
-**Agent statistic:** text color chosen for looks, contrast against its surface
-ignored.
+**Statistical default:** text color chosen for looks, contrast against its
+surface never checked.
 
 **Mechanical trigger:** for each text Control, read the **effective** font color
 and its background surface color, compute WCAG contrast. Fail if below the
@@ -107,18 +108,18 @@ is a **re-measurable predicate** (a `hera` command + comparison), never a status
 word — enforcers and re-inspectors recompute it from the live editor every time.
 
 ```
-- id: <area>-<slug>            # e.g. C-unscaled-separation
+- id: <area>-<slug>            # e.g. spacing-off-ladder
   problem: <one line>
   evidence: <live measurement — node path + value(s) read via hera>
   fix: <mechanical change — which theme_override token, snapped to which rung/hex>
   check: <hera command + predicate that returns true/false from source>
-  order: C|D|E
+  order: spacing|type-scale|contrast
 ```
 
-**Checklist = eval function.** Never record "done" as text. An enforcer applies
-the fix only where `check` is currently false; a fresh re-inspector recomputes
-the same `check`. This is what blocks the "trust the earlier note and silently
-skip" failure.
+**A check is a predicate, not a status.** Never record "done" as text. An
+enforcer applies the fix only where `check` is currently false; a fresh
+re-inspector recomputes the same `check`. This is what blocks the "trust the
+earlier note and silently skip" failure.
 
 ## Inviolable
 
