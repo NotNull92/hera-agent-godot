@@ -7,9 +7,15 @@ extends RefCounted
 
 const DIR_NAME := ".hera-agent-godot"
 
+# The plugin republishes every 0.5s and the CLI treats an instance as live for
+# 5s, so it takes ~10 consecutive failures before a missed publish can actually
+# hide this editor. Warn just under that, once, instead of on every miss.
+const PUBLISH_WARN_AFTER := 8
+
 var port := 0
 
 var _path := ""
+var _publish_failures := 0
 
 func start(listen_port: int) -> void:
 	port = listen_port
@@ -36,9 +42,18 @@ func write() -> void:
 		file.flush()
 		file.close()
 		var err := DirAccess.rename_absolute(tmp_path, _path)
-		if err != OK:
-			DirAccess.remove_absolute(tmp_path)
-			push_warning("[hera] failed to publish heartbeat: %s" % error_string(err))
+		if err == OK:
+			_publish_failures = 0
+			return
+		DirAccess.remove_absolute(tmp_path)
+		# On Windows DirAccess.rename removes the destination before MoveFileW,
+		# and that remove fails while another process has <pid>.json open — i.e.
+		# whenever the CLI happens to be reading it. The previous file is still
+		# on disk and still fresh, and the next tick republishes, so a lone miss
+		# is expected rather than a fault. Only a run of them can hide us.
+		_publish_failures += 1
+		if _publish_failures == PUBLISH_WARN_AFTER:
+			push_warning("[hera] heartbeat has failed to publish %d times in a row: %s" % [_publish_failures, error_string(err)])
 
 func stop() -> void:
 	if _path != "" and FileAccess.file_exists(_path):

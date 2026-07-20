@@ -81,7 +81,12 @@ func _read_response(game_pid: int, request_id: String) -> Dictionary:
 		return {}
 	var text := file.get_as_text()
 	file.close()
-	var decoded: Variant = JSON.parse_string(text)
+	# The response may still be being written; a failed parse just means poll
+	# again, so use the quiet parser rather than the printing one.
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return {}
+	var decoded: Variant = json.data
 	if typeof(decoded) != TYPE_DICTIONARY:
 		return {}
 	if String(decoded.get("id", "")) != request_id:
@@ -146,7 +151,11 @@ func _read_instance(path: String) -> Dictionary:
 		return {}
 	var text := file.get_as_text()
 	file.close()
-	var decoded: Variant = JSON.parse_string(text)
+	# Same race as the response file: a heartbeat being rewritten reads short.
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return {}
+	var decoded: Variant = json.data
 	if typeof(decoded) != TYPE_DICTIONARY:
 		return {}
 	return decoded

@@ -59,7 +59,10 @@ func _ensure_loaded() -> void:
 		var line := file.get_line().strip_edges()
 		if line == "":
 			continue
-		var parsed: Variant = JSON.parse_string(line)
+		var line_json := JSON.new()
+		if line_json.parse(line) != OK:
+			continue
+		var parsed: Variant = line_json.data
 		if typeof(parsed) != TYPE_DICTIONARY:
 			continue
 		var entry := parsed as Dictionary
