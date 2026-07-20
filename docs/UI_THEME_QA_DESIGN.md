@@ -115,6 +115,13 @@ Every link in the loop resolves to an existing Hera primitive:
 The shipped MVP stays inside the INT/COLOR rows — scalar tokens with no
 StyleBox or Theme-resource prerequisite.
 
+> **Reading tokens is type-scoped.** A `theme_override_*` property exists only
+> on classes that define that theme item, and `node get --props` fails the whole
+> read if any requested property is missing rather than returning the subset that
+> exists. Inspectors must enumerate per class (`node find --type`) and request
+> only that class's tokens; a single token list swept over a mixed tree is a hard
+> error, not a partial result.
+
 > **Verified against the live editor:** `node set --value` accepts only float
 > variant text `Color(r, g, b, a)`. Both a bare `#hex` and `Color("#hex")` are
 > rejected by the value coercion, even though `Color("#hex")` parses fine in
@@ -161,7 +168,10 @@ taste — plus a reference source.
 ### Area `type-scale`
 - **unscaled** — distinct `theme_override_font_sizes/font_size` values outnumber
   the rungs of a declared type scale → collapse to the scale, preserving order
-  so no two hierarchy levels merge into one rung.
+  so no two hierarchy levels merge into one rung. A collision is resolved only
+  between the two levels that collide: a *peer group* that merely shares a size
+  (all buttons in a row, all cells in a grid) is one level, and must not be
+  pushed down to settle a collision belonging to a different pair.
 - **role-confusion** — mixed `theme_override_fonts/font` with no role bijection.
 - Reference: the corpus type ladder — the engine's `default_font_size` and
   heading sizes, continued above them at the engine's own 1.25 ratio.
