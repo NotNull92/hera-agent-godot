@@ -55,6 +55,44 @@ or a manual GUI check. `--check-only` *does* catch parse/type errors —
 including the virtual-signature clash when a custom tool method is named
 `_get`/`_set` (use `_describe`/`_set_property` instead).
 
+## Toggling the plugin does not reload changed addon scripts
+
+Disabling and re-enabling the plugin in Project Settings > Plugins is **not**
+enough to pick up edits to the addon's GDScript. `hera_agent_plugin.gd` holds
+its tools through `const … = preload(…)`, so re-enabling re-runs `_enter_tree`
+against script resources Godot still has cached, and the old code keeps
+answering. **Quit and relaunch the editor** after changing anything under
+`addons/hera_agent_godot/`.
+
+Observed on 4.7: after merging a change to `diagnostics_tool.gd` and toggling
+the plugin, the on-disk source read `get_setting_with_override(...)` while
+`hera diagnostics` still returned the pre-change `file_logging_enabled:false`,
+and `output` still used the old response shape.
+
+Worth checking before you trust a live smoke: compare something the change
+actually alters — a field's value or the response shape — against the source on
+disk. If they disagree, the editor is still running the old build and the smoke
+proves nothing.
+
+## Editor console output needs `--log-file`
+
+`hera diagnostics` / `hera output` cannot see the editor's console. Godot skips
+installing the file logger entirely when running as the editor (`!editor` guard
+in `main/main.cpp`), so `debug/file_logging` only ever captures game and project
+runs. Turning that setting on does nothing for editor messages.
+
+To actually capture them, launch the editor with an explicit log file, which
+bypasses the guard:
+
+```powershell
+& '<Godot.exe>' --editor --path . --log-file "$env:TEMP\hera-editor.log"
+```
+
+Verified on 4.7: a headless editor with a deliberately broken autoload printed
+`SCRIPT ERROR: Parse Error` to the console while its `user://logs` directory was
+never created — before or after a clean exit, so it is the guard and not output
+buffering.
+
 ## Toolchain limits on this PC
 
 - **`go test -race` cannot run**: the antivirus blocks race-instrumented

@@ -29,7 +29,7 @@ func execute(params: Dictionary) -> Dictionary:
 			"available": false,
 			"file_logging_enabled": enabled,
 			"log_path": ProjectSettings.globalize_path(log_path),
-			"hint": "%s Output cannot be read. Enable Project Settings > debug/file_logging/enable_file_logging and restart the editor to capture it." % reason,
+			"hint": "%s This log only ever covers the running project — Godot installs no file logger in an editor session, so editor-console messages are never in it. Enable Project Settings > debug/file_logging/enable_file_logging for project runs, or relaunch the editor with --log-file <path> to capture editor output." % reason,
 			"lines": [],
 		})
 

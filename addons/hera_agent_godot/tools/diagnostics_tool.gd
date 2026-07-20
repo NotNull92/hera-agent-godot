@@ -35,7 +35,7 @@ func execute(params: Dictionary) -> Dictionary:
 			"warning_count": 0,
 			"errors": [],
 			"warnings": [],
-			"hint": "%s Diagnostics cannot be read. Enable Project Settings > debug/file_logging/enable_file_logging and restart the editor to capture them." % reason,
+			"hint": "%s This log only ever covers the running project — Godot installs no file logger in an editor session, so editor-console messages are never in it. Enable Project Settings > debug/file_logging/enable_file_logging for project runs, or relaunch the editor with --log-file <path> to capture editor output." % reason,
 		})
 
 	var all_lines := FileAccess.get_file_as_string(log_path).split("\n", false)
