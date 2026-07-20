@@ -134,6 +134,7 @@ contract tests (see [Contract tests](#contract-tests)).
 | `node find` | stable | ✓ `count`, `truncated`, `nodes[]` of `{name, path, type}` |
 | `node get` | stable | ✓ `name`, `path`, `type`, `properties{}` (stringified values) |
 | `signal list` | stable | ✓ `node`, `count`, `truncated`, `signals[]` of `{name, args[], connections[]}` (+ `external_connections` when editor-internal targets exist) |
+| `theme get` / `theme set` | experimental | ✓ (`get`) `path`, `types[]`, `items{<type>{colors{}, constants{}, font_sizes{}}}`; (`set`) `path`, `type`, `applied{}`, `undoable:false`. Colour values are printed to 6 decimals so a value round-trips what the caller wrote rather than float32 noise |
 | `project info` | stable | ✓ `name`, `path`, `current_scene`, `files{all, scene, script, resource, asset, shader, other}`, `godot{...}` |
 | `project list-files` | stable | file list with compact type tags |
 | `classdb info/methods/properties/signals/constants/enums/inherits` | stable | ✓ (`info`) `class`, `parent`, `can_instantiate`, `is_node`, `is_resource` |

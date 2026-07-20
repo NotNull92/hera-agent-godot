@@ -98,6 +98,7 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
 `node`(읽기+쓰기+리소스/스크립트 연결), `signal`,
 `resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),
+`theme`(Theme 리소스 항목 get/set),
 `game`(런타임 검사+input+input-log+set/call/click+assert+QA+screenshot),
 `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`, `batch`,
 `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
