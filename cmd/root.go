@@ -125,6 +125,8 @@ func Execute(args []string) int {
 		return runSignal(args[1:])
 	case "resource":
 		return runResource(args[1:])
+	case "theme":
+		return runTheme(args[1:])
 	case "classdb":
 		return runClassDB(args[1:])
 	case "game":
@@ -180,6 +182,7 @@ commands:
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
+  theme      get <res://t.tres> [--type T] | set <res://t.tres> --type T --color|--constant|--font-size name=value
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
   game       tree | ui tree | instances | screenshot | click | assert | qa discover|diagnose|--file | node get|set|call
   instances  list live Hera-enabled Godot editors

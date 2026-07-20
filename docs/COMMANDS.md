@@ -54,6 +54,8 @@ selected editor instance.
 | `resource resave <res://...>` | `resource` | ☑ | Load and save a resource to refresh serialized data and UID metadata. Persistent filesystem change. |
 | `resource update-uids` | `resource` | ☑ | Resave project resources/scripts that Godot can load, useful after migrations that need UID sidecars refreshed. Persistent filesystem change. |
 | `resource export-mesh-library <res://scene.tscn> <res://out.tres> [--item <name> ...]` | `resource` | ☑ | Build a `MeshLibrary` from top-level scene children containing `MeshInstance3D` nodes, optionally filtered by item name. |
+| `theme get <res://theme.tres> [--type <ThemeType>]` | `theme` | ☑ | Dump a `Theme`'s per-type items (colors, constants, font sizes). Read-only. A `Theme`'s data lives behind `set_color`/`set_constant`/`set_font_size` rather than properties, so `resource get` cannot reach it. |
+| `theme set <res://theme.tres> --type <ThemeType> [--color <name=Color(r,g,b,a)>] [--constant <name=int>] [--font-size <name=int>]` | `theme` | ☑ | Set items on one theme type and save the resource. Persistent filesystem change and **not undoable** — there is no `EditorUndoRedoManager` step for a resource write. Create the file first with `resource create Theme <res://theme.tres>`. |
 | `classdb info <Class>` | `classdb` | ☑ | Show ClassDB metadata: parent, instantiability, Node/Resource ancestry. |
 | `classdb methods <Class>` | `classdb` | ☑ | List ClassDB methods with compact argument and return type summaries. |
 | `classdb properties <Class>` | `classdb` | ☑ | List ClassDB properties with type, class, hint, and hint string. |

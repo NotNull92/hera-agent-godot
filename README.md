@@ -99,7 +99,8 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 The `v0.9.0` CLI/addon surface includes:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
 `classdb`, `node` (read + write + resource/script wiring), `signal`, `resource`
-(get/uid/list/set/create/resave/update-uids/export-mesh-library), `game`
+(get/uid/list/set/create/resave/update-uids/export-mesh-library), `theme`
+(get/set for `Theme` resource items), `game`
 (runtime inspect + input + input-log + set/call/click + assert + QA +
 screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`,
 `batch`, and `smoke`, with
@@ -215,7 +216,7 @@ See **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** for the full design,
 ```
 addons/hera_agent_godot/  the distributable Godot 4.7+ addon (GDScript)
 project.godot, scenes/    dev host project — the CLI's run/save/screenshot target
-cmd/                      Go CLI commands (status, instances, run/stop, scene, editor, script, project, classdb, node, signal, resource, game, guidance, game_feel, output, diagnostics, eval, screenshot, batch, smoke)
+cmd/                      Go CLI commands (status, instances, run/stop, scene, editor, script, project, classdb, node, signal, resource, theme, game, guidance, game_feel, output, diagnostics, eval, screenshot, batch, smoke)
 internal/                 client / discovery / protocol
 docs/                     ARCHITECTURE, COMMANDS, ROADMAP, release notes, prompt-game guidance
 integrations/             compact Claude Code, Cursor, and AGENTS.md harness kits
