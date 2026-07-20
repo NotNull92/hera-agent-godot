@@ -39,6 +39,77 @@ func TestDiscoverIn_returnsFreshInstancesMostRecentFirst(t *testing.T) {
 	}
 }
 
+func TestDiscoverRetrying_rescansWhenHeartbeatIsMidSwap(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Unix(1_000_000, 0)
+	inst := Instance{PID: 42, Port: 8770, TS: now.Unix()}
+
+	// The addon republishes its heartbeat by swapping <pid>.json, and on Windows
+	// the destination is removed before the rename — so the first scan can land
+	// in a window where the file does not exist yet. Publish it during the sleep.
+	slept := 0
+	sleep := func(time.Duration) {
+		slept++
+		b, err := json.Marshal(inst)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "42.json"), b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got, err := discoverRetrying(dir, func() time.Time { return now }, sleep)
+	if err != nil {
+		t.Fatalf("discoverRetrying error: %v", err)
+	}
+	if slept != 1 {
+		t.Fatalf("rescan delay used %d times, want exactly 1", slept)
+	}
+	if len(got) != 1 || got[0].PID != 42 {
+		t.Fatalf("got %#v, want the instance published during the swap window", got)
+	}
+}
+
+func TestDiscoverRetrying_doesNotRescanWhenFirstPassFinds(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Unix(1_000_000, 0)
+	b, err := json.Marshal(Instance{PID: 7, Port: 8770, TS: now.Unix()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "7.json"), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	slept := 0
+	got, err := discoverRetrying(dir, func() time.Time { return now }, func(time.Duration) { slept++ })
+	if err != nil {
+		t.Fatalf("discoverRetrying error: %v", err)
+	}
+	if slept != 0 {
+		t.Fatalf("slept %d times, want 0 — a hit on the first pass must not pay the delay", slept)
+	}
+	if len(got) != 1 || got[0].PID != 7 {
+		t.Fatalf("got %#v, want pid 7", got)
+	}
+}
+
+func TestDiscoverRetrying_stillEmptyWhenNoEditorIsRunning(t *testing.T) {
+	dir := t.TempDir()
+	slept := 0
+	got, err := discoverRetrying(dir, time.Now, func(time.Duration) { slept++ })
+	if err != nil {
+		t.Fatalf("discoverRetrying error: %v", err)
+	}
+	if slept != 1 {
+		t.Fatalf("slept %d times, want 1 — the empty case rescans once before giving up", slept)
+	}
+	if len(got) != 0 {
+		t.Fatalf("got %d instances, want 0", len(got))
+	}
+}
+
 func TestDiscoverIn_missingDirReturnsEmpty(t *testing.T) {
 	got, err := discoverIn(filepath.Join(t.TempDir(), "nope"), time.Now())
 	if err != nil {

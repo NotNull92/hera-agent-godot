@@ -16,6 +16,16 @@ import (
 const (
 	dirName   = ".hera-agent-godot"
 	freshness = 5 * time.Second // an instance is "live" only if its heartbeat is this recent
+
+	// rescanDelay covers a gap in how the addon republishes its heartbeat.
+	// Heartbeat.write() stages the JSON in a temp file and swaps it in with
+	// DirAccess.rename_absolute, which is atomic on POSIX but not on Windows:
+	// Godot's DirAccess::rename removes an existing destination *before*
+	// MoveFileW, so <pid>.json is briefly absent on every heartbeat (~0.5s).
+	// A scan landing in that window sees no instances even though the editor is
+	// live, which surfaces as a spurious "no live Godot editor found". One short
+	// rescan closes it; the window is sub-millisecond.
+	rescanDelay = 40 * time.Millisecond
 )
 
 // Instance describes a running Godot editor the CLI can talk to.
@@ -30,12 +40,29 @@ type Instance struct {
 
 // Discover scans the instances directory under the user's home and returns
 // editors whose heartbeat is still fresh, most recent first.
+//
+// An empty first pass is rescanned once after rescanDelay, so a scan that lands
+// in the addon's heartbeat swap window does not report "no editor" while one is
+// running. A genuinely empty directory just costs that one short delay.
 func Discover() ([]Instance, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	return discoverIn(filepath.Join(home, dirName, "instances"), time.Now())
+	dir := filepath.Join(home, dirName, "instances")
+	return discoverRetrying(dir, time.Now, time.Sleep)
+}
+
+// discoverRetrying is the testable core of Discover's retry: it rescans once
+// when the first pass finds nothing, since an absent file may just be the
+// heartbeat mid-swap rather than an absent editor.
+func discoverRetrying(dir string, now func() time.Time, sleep func(time.Duration)) ([]Instance, error) {
+	live, err := discoverIn(dir, now())
+	if err != nil || len(live) > 0 {
+		return live, err
+	}
+	sleep(rescanDelay)
+	return discoverIn(dir, now())
 }
 
 // discoverIn is the testable core of Discover: it scans dir and drops stale
