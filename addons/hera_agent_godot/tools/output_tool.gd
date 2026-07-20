@@ -13,8 +13,12 @@ func get_name() -> String:
 	return "output"
 
 func execute(params: Dictionary) -> Dictionary:
-	var enabled := bool(ProjectSettings.get_setting("debug/file_logging/enable_file_logging", false))
-	var log_path := String(ProjectSettings.get_setting("debug/file_logging/log_path", "user://logs/godot.log"))
+	# Read the effective value, not the base one: file logging defaults to true
+	# on desktop via the `.pc` feature-tag override, and plain get_setting()
+	# returns the untagged default (false). Keying availability off the base
+	# value would report every desktop project as unreadable while it logs fine.
+	var enabled := bool(ProjectSettings.get_setting_with_override("debug/file_logging/enable_file_logging"))
+	var log_path := String(ProjectSettings.get_setting_with_override("debug/file_logging/log_path"))
 
 	# Same blind spot as `diagnostics`: with file logging off, a stale log from an
 	# earlier run still reads, so reporting `available` on file existence alone
