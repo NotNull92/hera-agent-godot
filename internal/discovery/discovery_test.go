@@ -102,11 +102,64 @@ func TestDiscoverRetrying_stillEmptyWhenNoEditorIsRunning(t *testing.T) {
 	if err != nil {
 		t.Fatalf("discoverRetrying error: %v", err)
 	}
-	if slept != 1 {
-		t.Fatalf("slept %d times, want 1 — the empty case rescans once before giving up", slept)
+	if slept != rescanDelays {
+		t.Fatalf("slept %d times, want %d — every retry is spent before believing an empty directory", slept, rescanDelays)
 	}
 	if len(got) != 0 {
 		t.Fatalf("got %d instances, want 0", len(got))
+	}
+}
+
+func TestDiscoverRetrying_stopsAsSoonAsTheEditorAppears(t *testing.T) {
+	// Given: the heartbeat reappears on the second retry, as it would when the
+	// swap window is stretched by I/O load.
+	dir := t.TempDir()
+	now := time.Unix(1_000_000, 0)
+	slept := 0
+	sleep := func(time.Duration) {
+		slept++
+		if slept < 2 {
+			return
+		}
+		b, err := json.Marshal(Instance{PID: 5, Port: 8770, TS: now.Unix()})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "5.json"), b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// When
+	got, err := discoverRetrying(dir, func() time.Time { return now }, sleep)
+
+	// Then: it must not keep retrying once it has an answer.
+	if err != nil {
+		t.Fatalf("discoverRetrying error: %v", err)
+	}
+	if slept != 2 {
+		t.Fatalf("slept %d times, want 2 — retries stop at the first hit", slept)
+	}
+	if len(got) != 1 || got[0].PID != 5 {
+		t.Fatalf("got %#v, want the instance that appeared mid-retry", got)
+	}
+}
+
+func TestRescanDelayFor_growsAndCoversAUsefulSpread(t *testing.T) {
+	// The point of backing off is covering a window that widens under load, so
+	// each attempt must wait longer than the last.
+	var total time.Duration
+	prev := time.Duration(0)
+	for attempt := 1; attempt <= rescanDelays; attempt++ {
+		d := rescanDelayFor(attempt)
+		if d <= prev {
+			t.Fatalf("delay %d = %v, want longer than the previous %v", attempt, d, prev)
+		}
+		prev = d
+		total += d
+	}
+	if total < 300*time.Millisecond {
+		t.Fatalf("total retry window = %v, too short to cover a stretched swap", total)
 	}
 }
 

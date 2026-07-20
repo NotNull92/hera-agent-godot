@@ -17,16 +17,26 @@ const (
 	dirName   = ".hera-agent-godot"
 	freshness = 5 * time.Second // an instance is "live" only if its heartbeat is this recent
 
-	// rescanDelay covers a gap in how the addon republishes its heartbeat.
-	// Heartbeat.write() stages the JSON in a temp file and swaps it in with
-	// DirAccess.rename_absolute, which is atomic on POSIX but not on Windows:
-	// Godot's DirAccess::rename removes an existing destination *before*
-	// MoveFileW, so <pid>.json is briefly absent on every heartbeat (~0.5s).
-	// A scan landing in that window sees no instances even though the editor is
-	// live, which surfaces as a spurious "no live Godot editor found". One short
-	// rescan closes it; the window is sub-millisecond.
-	rescanDelay = 40 * time.Millisecond
+	// The addon republishes <pid>.json by staging a temp file and swapping it in
+	// with DirAccess.rename_absolute. That is atomic on POSIX but not on
+	// Windows: Godot's DirAccess::rename removes an existing destination before
+	// MoveFileW, so the file is briefly absent on every heartbeat (~0.5s). A
+	// scan landing in that window sees no instances even though the editor is
+	// live, and reports a spurious "no live Godot editor found".
+	//
+	// The window is unobservable on an idle machine — sampling the directory
+	// every 1ms for 15s catches it zero times — but widens under I/O load, when
+	// the remove and the rename are themselves delayed. So retry over a spread
+	// of delays rather than once at a fixed one. The cost is paid only when the
+	// directory really is empty, which is already a terminal error path.
+	rescanDelays = 4
 )
+
+// rescanDelayFor returns the wait before attempt n (1-based), growing so the
+// retries cover roughly 25ms, 75ms, 175ms and 375ms of elapsed time.
+func rescanDelayFor(attempt int) time.Duration {
+	return time.Duration(25*(1<<(attempt-1))) * time.Millisecond
+}
 
 // Instance describes a running Godot editor the CLI can talk to.
 type Instance struct {
@@ -41,9 +51,10 @@ type Instance struct {
 // Discover scans the instances directory under the user's home and returns
 // editors whose heartbeat is still fresh, most recent first.
 //
-// An empty first pass is rescanned once after rescanDelay, so a scan that lands
-// in the addon's heartbeat swap window does not report "no editor" while one is
-// running. A genuinely empty directory just costs that one short delay.
+// An empty pass is retried over growing delays, so a scan that lands in the
+// addon's heartbeat swap window does not report "no editor" while one is
+// running. A genuinely empty directory pays those delays once and then reports
+// nothing, which is fine: that path already ends in an error.
 func Discover() ([]Instance, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -53,16 +64,22 @@ func Discover() ([]Instance, error) {
 	return discoverRetrying(dir, time.Now, time.Sleep)
 }
 
-// discoverRetrying is the testable core of Discover's retry: it rescans once
-// when the first pass finds nothing, since an absent file may just be the
-// heartbeat mid-swap rather than an absent editor.
+// discoverRetrying is the testable core of Discover's retry: an empty result may
+// just be the heartbeat mid-swap rather than an absent editor, so it rescans a
+// few times over growing delays before believing it.
 func discoverRetrying(dir string, now func() time.Time, sleep func(time.Duration)) ([]Instance, error) {
 	live, err := discoverIn(dir, now())
 	if err != nil || len(live) > 0 {
 		return live, err
 	}
-	sleep(rescanDelay)
-	return discoverIn(dir, now())
+	for attempt := 1; attempt <= rescanDelays; attempt++ {
+		sleep(rescanDelayFor(attempt))
+		live, err = discoverIn(dir, now())
+		if err != nil || len(live) > 0 {
+			return live, err
+		}
+	}
+	return live, err
 }
 
 // discoverIn is the testable core of Discover: it scans dir and drops stale
