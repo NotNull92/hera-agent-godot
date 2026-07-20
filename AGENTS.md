@@ -42,10 +42,11 @@ agents:
   docs, skills, and code alike. Re-derive each rule from the Godot fact that
   forces it; if a rule cannot be justified that way, it does not belong.
   Attribution cuts the other way for **copied material**: anything actually
-  vendored or licensed keeps its upstream provenance and licence (for example
-  the Tailwind / Radix / WCAG constants in the `ui-theme-qa` corpus). Never
-  strip a credit while keeping copied expression — rewrite the expression
-  genuinely instead.
+  vendored or licensed keeps its upstream provenance and licence, and published
+  standards stay cited (as WCAG is in the `ui-theme-qa` corpus). Never strip a
+  credit while keeping copied expression — rewrite the expression genuinely
+  instead. Prefer deriving values from Godot's own defaults over vendoring
+  someone else's data, so the question does not arise.
 
 ## Canonical Godot sources for documentation and review
 

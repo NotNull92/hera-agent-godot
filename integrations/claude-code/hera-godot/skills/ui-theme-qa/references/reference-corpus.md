@@ -1,102 +1,104 @@
-# UI Theme QA — reference corpus (vendored snapshot)
+# UI Theme QA — reference corpus (engine-rooted)
 
-Replacement values are **snapped to real design-system constants**, not
-invented. This file is a vendored, offline snapshot of published values with
-provenance, so the skill needs no toolchain at run time. Values are numeric /
-hex and apply to Godot `Control` theme tokens unchanged.
+Replacement values are **never invented and never borrowed from another
+project's design system**. Every number here is one of:
 
-## Sources
+1. a value Godot's own default theme defines, or
+2. a value derived from those by a rule stated on this page, or
+3. a constant from a published accessibility standard.
 
-| key | source | license | provenance |
-|---|---|---|---|
-| `tailwind` | tailwindcss@3.4.19 `defaultTheme` | MIT | npm package `spacing` / `fontSize` (rem→px ×16) |
-| `radix` | @radix-ui/colors@3.0.0 | MIT | npm package 12-step ramps |
-| `wcag` | WCAG 2.1 SC 1.4.3 | W3C standard | spec constants |
+So the corpus is self-contained and reproducible: no vendored third-party data,
+no toolchain, nothing to re-download.
 
-**Regenerate / verify** (no repo toolchain; run anywhere with Node):
+## Engine roots
+
+Read from Godot's default theme (`scene/theme/default_theme.cpp` in the engine
+source). Verified independently against a live 4.7 editor.
+
+| root | value | where it comes from |
+|---|---|---|
+| spacing base unit | **4** | `separation` for BoxContainer / VBox / HBox / Grid / Flow |
+| large spacing anchor | **12** | `separation` for SplitContainer |
+| container margin default | **0** | MarginContainer margins |
+| base font size | **16** | `default_font_size` |
+| heading anchors | **20 / 24 / 28** | Label variations `HeaderSmall/Medium/Large` (base +4 / +8 / +12) |
+| engine's own step ratio | **1.25** | the first heading step, 20 ÷ 16 |
+
+**Verify live** (needs any `Control` in the edited scene):
 
 ```bash
-npm i tailwindcss@3.4.19 @radix-ui/colors@3.0.0
-node -e 'const t=require("tailwindcss/defaultTheme");
-  console.log([...new Set(Object.values(t.spacing).map(v=>{const m=/^([0-9.]+)rem$/.exec(v);return m?+(parseFloat(m[1])*16).toFixed(2):null}).filter(x=>x&&x<=256))].sort((a,b)=>a-b));
-  console.log(Object.entries(t.fontSize).map(([k,v])=>[k,+(parseFloat(Array.isArray(v)?v[0]:v)*16)]));'
+hera eval 'get_node("<some Control>").get_theme_constant("separation","BoxContainer")'   # 4
+hera eval 'get_node("<some Control>").get_theme_constant("separation","HSplitContainer")' # 12
+hera eval 'get_node("<some Control>").get_theme_default_font_size()'                      # 16
 ```
-
-If a snapshot value ever disagrees with the packages above, the packages win —
-re-vendor from them.
 
 ---
 
 ## `spacing` — ladder (px)
 
-`tailwindcss@3.4.19` spacing scale (rem→px, ≤256). Snap each spacing token
-(`theme_override_constants/separation`, `.../margin_*`) to the nearest rung
-(ties → smaller). The UI-relevant band is roughly `[2 … 96]`.
+Multiples of the engine's **4px base unit**. Below 32 every rung is available
+(fine control is useful at UI density); above 32 the ladder thins so that
+adjacent rungs stay visibly different.
 
 ```
-2, 4, 6, 8, 10, 12, 14, 16, 20, 24, 28, 32, 36, 40, 44, 48,
-56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 208, 224, 240, 256
+4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 64, 80, 96
 ```
 
-## `type-scale` — scale (px)
+Snap each spacing token (`theme_override_constants/separation`, `.../margin_*`)
+to the nearest rung, ties → smaller. Snapping is lateral — it never inflates
+macro whitespace.
 
-`tailwindcss@3.4.19` fontSize scale (rem→px). Snap each
-`theme_override_font_sizes/font_size` to the nearest rung; preserve ordering
-(never collapse two hierarchy levels into one rung).
+## `type-scale` — ladder (px)
 
-| name | px |
-|---|---|
-| xs | 12 |
-| sm | 14 |
-| base | 16 |
-| lg | 18 |
-| xl | 20 |
-| 2xl | 24 |
-| 3xl | 30 |
-| 4xl | 36 |
-| 5xl | 48 |
-| 6xl | 60 |
-| 7xl | 72 |
-| 8xl | 96 |
-| 9xl | 128 |
-
-## `color` — palette (hex)
-
-`@radix-ui/colors@3.0.0`, 12-step ramps. Converge a scattered palette to **one
-accent + the neutral ramp**.
-
-**Applying a hex to a Godot token.** In GDScript / `hera eval`, `Color("#0090ff")`
-parses hex directly. The CLI `node set --value` coercion does **not**: it rejects
-both `#0090ff` and `Color("#0090ff")` and accepts only float variant text
-`Color(r, g, b, a)` (0..1). So when enforcing via `node set`, convert the
-corpus hex to floats first — each channel `= int(hh, 16) / 255` — e.g.
-`#0090ff` → `Color(0, 0.565, 1, 1)`.
-
-**Step convention (Radix):** 1–2 = app/subtle background · 3–5 = component
-background · 6–8 = borders · **9–10 = solid accent fill** · **11 = low-contrast
-text** · **12 = high-contrast text**. Radix guarantees step-11 text on a step-2
-background ≥ 4.5:1.
-
-**Neutral ramp — `slate` (steps 1→12):**
+Rooted at the engine's `default_font_size` of 16 and the heading sizes the
+engine itself defines. Above 28 the engine defines nothing, so the ladder
+continues at the engine's own **1.25** ratio, rounded to the nearest integer.
 
 ```
-#fcfcfd #f9f9fb #f0f0f3 #e8e8ec #e0e1e6 #d9d9e0
-#cdced6 #b9bbc6 #8b8d98 #80838d #60646c #1c2024
+12, 16, 20, 24, 28, 35, 44, 55, 69, 86
+└── engine-defined ──┘ └── ×1.25 ──┘
 ```
 
-**Accent ramps (pick ONE; steps 1→12):**
+- `16, 20, 24, 28` are the engine's base + heading sizes, used unchanged.
+- `12` continues the engine's own +4 heading arithmetic one step below the base.
+- `35, 44, 55, 69, 86` = repeatedly ×1.25 from 28, rounded.
 
-- `blue`  — `#fbfdff #f4faff #e6f4fe #d5efff #c2e5ff #acd8fc #8ec8f6 #5eb1ef #0090ff #0588f0 #0d74ce #113264`
-- `green` — `#fbfefc #f4fbf6 #e6f6eb #d6f1df #c4e8d1 #adddc0 #8eceaa #5bb98b #30a46c #2b9a66 #218358 #193b2d`
-- `amber` — `#fefdfb #fefbe9 #fff7c2 #ffee9c #fbe577 #f3d673 #e9c162 #e2a336 #ffc53d #ffba18 #ab6400 #4f3422`
-- `red`   — `#fffcfc #fff7f7 #feebec #ffdbdc #ffcdce #fdbdbe #f4a9aa #eb8e90 #e5484d #dc3e42 #ce2c31 #641723`
+**Why the ratio above 28:** a fixed +4 step is a shrinking *relative* change as
+sizes grow — 12→16 is +33% and clearly visible, while 96→100 is +4% and looks
+identical. Holding a constant ratio keeps every step perceptually equivalent, so
+large headings stay distinguishable. Below 28 the engine's own sizes win over
+the rule.
 
-Reserve accent hues for real semantic roles only (brand/CTA, and existing
-error/warning/success states). Everything else → the neutral ramp.
+Snap each `theme_override_font_sizes/font_size` to the nearest rung, preserving
+order — never collapse two hierarchy levels onto one rung.
 
-## `contrast` — WCAG thresholds
+## `color` — no palette is vendored
 
-WCAG 2.1 SC 1.4.3. Contrast ratio `(L1+0.05)/(L2+0.05)`, L = relative luminance.
+There is no reference palette here, deliberately. Godot's default theme defines
+individual named colors with no ramp, no perceptual steps and no contrast
+guarantees, so there is nothing in the engine to derive a palette *from* — and
+importing another project's ramp would overwrite the project's own design with a
+foreign one.
+
+Instead:
+
+- **Contrast repair** keeps the project's existing hue and saturation and solves
+  for the lightness that satisfies the target ratio (formula below). The colour
+  stays the project's; only its lightness moves.
+- **Palette convergence** (out of MVP scope) converges to the project's *own*
+  most-used colours or its project `Theme` — its declared palette, not an
+  external one.
+
+**Applying a colour to a Godot token.** In GDScript / `hera eval`,
+`Color("#0090ff")` parses hex directly. The CLI `node set --value` coercion does
+**not**: it rejects both `#0090ff` and `Color("#0090ff")` and accepts only float
+variant text `Color(r, g, b, a)` (0..1). Convert before enforcing — each channel
+`= int(hh, 16) / 255`.
+
+## `contrast` — WCAG thresholds and the repair formula
+
+WCAG 2.1 SC 1.4.3 — a human-vision accessibility standard, independent of any UI
+toolkit.
 
 | target | min ratio |
 |---|---|
@@ -104,5 +106,32 @@ WCAG 2.1 SC 1.4.3. Contrast ratio `(L1+0.05)/(L2+0.05)`, L = relative luminance.
 | large text (≥ 24px, or ≥ 18.66px bold) | 3.0 : 1 |
 | UI component / graphical object | 3.0 : 1 |
 
-Fix a failing pair by adjusting **foreground lightness first** (same hue → a
-higher Radix step), not by recoloring the background.
+**Relative luminance.** For each sRGB channel `c` in 0..1:
+
+```
+lin(c) = c/12.92                    if c <= 0.03928
+         ((c+0.055)/1.055) ^ 2.4    otherwise
+L = 0.2126*lin(R) + 0.7152*lin(G) + 0.0722*lin(B)
+```
+
+**Contrast ratio** = `(L_lighter + 0.05) / (L_darker + 0.05)`.
+
+**Repair — solve, don't guess.** Given the background luminance `L_bg` and a
+target ratio `T`, the text luminance needed is exact:
+
+```
+lighten text:  L_text  >=  T * (L_bg + 0.05) - 0.05
+darken  text:  L_text  <=  (L_bg + 0.05) / T - 0.05
+```
+
+Move the text colour's lightness (hue and saturation unchanged) until its
+computed `L` reaches that bound, then convert to `Color(r, g, b, a)` floats.
+Never recolour the background.
+
+**One direction is often impossible — check before choosing.** Luminance is
+bounded to `0..1`, so a bound outside that range means that direction cannot
+reach the target. Against a dark surface (`L_bg ≈ 0.07`) the darken bound at
+4.5:1 comes out negative, i.e. no colour is dark enough; the text must be
+lightened. Compute both bounds, discard any that fall outside `0..1`, and take
+the feasible one. If neither is feasible the surface itself is the problem —
+report it rather than emitting an unreachable colour.
