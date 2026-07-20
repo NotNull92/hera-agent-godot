@@ -159,14 +159,26 @@ the first pass comes up empty.
 
 ---
 
-> **Known limitation — the log file is shared.** `diagnostics` and `output` read
-> `debug/file_logging/log_path` (`user://logs/godot.log`). Every Godot process
-> rotates that path on startup, so launching a game takes it over from the
-> editor and, with `max_log_files` reached, the editor's own log is eventually
-> rotated away. After a play session these tools are therefore likely reading
-> the game's log rather than the editor's, and editor-console errors can be
-> invisible to them. Godot exposes no "path of my current log", so there is no
-> clean fix from the addon side today.
+> **`diagnostics` and `output` observe the running project, not the editor.**
+> Both read `debug/file_logging/log_path` (`user://logs/godot.log`), and Godot
+> never writes that file while running as the editor. From `main/main.cpp`:
+>
+> ```cpp
+> (!log_file.is_empty() || (!project_manager && !editor && GLOBAL_GET("debug/file_logging/enable_file_logging")))
+> ```
+>
+> The `!editor` guard means the `RotatedFileLogger` is not installed at all in
+> an editor session — so editor-console messages (plugin errors, `push_warning`,
+> parse errors) never reach these tools no matter how `enable_file_logging` is
+> set. Confirmed on 4.7: a headless editor with a deliberately broken autoload
+> printed `SCRIPT ERROR: Parse Error` to the console while its `user://logs`
+> directory was never even created, before or after a clean exit. Game and
+> project runs *do* write there, which is what these tools actually cover.
+>
+> **Workaround.** The first branch of that condition is an escape hatch: launch
+> the editor with `--log-file <path>` and the guard is bypassed, so editor
+> output is captured. That is the only way to make editor diagnostics
+> observable through these commands.
 
 ## 7. Security boundaries
 

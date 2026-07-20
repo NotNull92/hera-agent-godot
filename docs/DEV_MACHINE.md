@@ -74,6 +74,25 @@ actually alters — a field's value or the response shape — against the source
 disk. If they disagree, the editor is still running the old build and the smoke
 proves nothing.
 
+## Editor console output needs `--log-file`
+
+`hera diagnostics` / `hera output` cannot see the editor's console. Godot skips
+installing the file logger entirely when running as the editor (`!editor` guard
+in `main/main.cpp`), so `debug/file_logging` only ever captures game and project
+runs. Turning that setting on does nothing for editor messages.
+
+To actually capture them, launch the editor with an explicit log file, which
+bypasses the guard:
+
+```powershell
+& '<Godot.exe>' --editor --path . --log-file "$env:TEMP\hera-editor.log"
+```
+
+Verified on 4.7: a headless editor with a deliberately broken autoload printed
+`SCRIPT ERROR: Parse Error` to the console while its `user://logs` directory was
+never created — before or after a clean exit, so it is the guard and not output
+buffering.
+
 ## Toolchain limits on this PC
 
 - **`go test -race` cannot run**: the antivirus blocks race-instrumented
