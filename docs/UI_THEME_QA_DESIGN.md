@@ -258,11 +258,15 @@ earned its keep against a real UI before any code existed.
   non-undoable expression. The MVP avoids this by enforcing per-node overrides.
   A future `hera theme set <res://t.tres> --type Label --color font_color=…`
   would unlock palette convergence at the project level.
-- **G2 — No visual regression / before-after pixel diff.** The analyzer is a
-  coarse whole-image heuristic (`game_image_analyzer.gd`): nonblank, unique
-  colors, per-edge content ratio, `possible_clipping`, `low_detail`. Good as a
-  render/clipping gate; it does not measure contrast, spacing, or palette
-  in-image. Measurement therefore stays structural.
+- **G2 — No visual regression / before-after pixel diff.** *(closed)* The
+  analyzer remains a coarse whole-image heuristic (`game_image_analyzer.gd`):
+  nonblank, unique colors, per-edge content ratio, `possible_clipping`,
+  `low_detail`. `screenshot diff <before> <after>` now compares two captures
+  directly and reports the changed pixel count, ratio, max per-channel delta and
+  a bounding box locating the change. It runs locally on files already on disk,
+  so it needs no editor. Note what it still is *not*: a confirmation that
+  something changed and where, never a measurement of contrast, spacing or
+  palette — measurement stays structural.
 - **G3 — The theme-token read surface is split.** The edited scene uses
   `node get`; the running game uses `game node get` / `eval`. The checker works
   the edited scene statically and runs the game only for the render stage.
@@ -372,8 +376,9 @@ writes reach the rendered frame.
 - **v1.1** *(done)* — `color` convergence at the node level (enforced), plus
   `containers` and `decoration` as report-only areas. Their fixes are structural
   and stay proposals; making them mutate would need an explicit opt-in flag.
-- **v2** — `hera theme set` (closes G1) → project-wide `Theme` convergence;
-  optional before/after pixel diff (closes G2).
+- **v2** *(done)* — `hera theme get/set` (closed G1) makes project-wide `Theme`
+  values reachable; `hera screenshot diff` (closed G2) compares two captures and
+  locates the change.
 - **later** — a wholesale restyle mode, if coherent re-theming (not just
   removing undisciplined values) is wanted; needs a Godot reference matrix.
 

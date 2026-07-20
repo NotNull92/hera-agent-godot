@@ -13,6 +13,11 @@ const maxScreenshotSize = 4096
 //
 // Renders the edited scene off-screen and saves a PNG; returns the absolute path.
 func runScreenshot(args []string) int {
+	// `diff` is a local subcommand: it compares two PNGs already on disk and
+	// needs no editor. Flags all start with "--", so a bare word cannot collide.
+	if len(args) > 0 && args[0] == "diff" {
+		return runScreenshotDiff(args[1:])
+	}
 	params, err := parseScreenshotArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "screenshot: %v\n", err)

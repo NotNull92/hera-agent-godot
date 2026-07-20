@@ -102,7 +102,8 @@ The `v0.9.0` CLI/addon surface includes:
 (get/uid/list/set/create/resave/update-uids/export-mesh-library), `theme`
 (get/set for `Theme` resource items), `game`
 (runtime inspect + input + input-log + set/call/click + assert + QA +
-screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`,
+screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`
+(capture + local before/after `diff`),
 `batch`, and `smoke`, with
 `--json`/`--ids` output modes. See
 [docs/COMMANDS.md](docs/COMMANDS.md) for the command reference and
