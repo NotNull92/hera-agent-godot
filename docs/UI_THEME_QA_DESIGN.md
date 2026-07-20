@@ -71,9 +71,16 @@ are not stylistic preferences.
 **In scope (reductive only):**
 
 - Edited-scene `Control` trees — the primary, static surface.
-- Measurable defect areas: `spacing`, `type-scale`, `color`, `contrast`, and
-  (later) decoration and container discipline.
+- Measurable defect areas: `spacing`, `type-scale`, `color`, `contrast` —
+  enforced; `containers` and `decoration` — measured and reported only.
 - Per-node `theme_override_*` enforcement — directly settable and undoable.
+
+The split is not arbitrary. Enforcing `containers` or `decoration` would mean
+deleting or re-parenting nodes, which collides with the inviolability of node
+order below, and neither is mechanically decidable: a node that looks decorative
+may be a divider (the dock's 1px `ColorRect` is exactly that), and flattening a
+wrapper breaks the `$Path/To/Node` references scripts address nodes by. So they
+surface findings instead.
 
 **Out of scope:**
 
@@ -221,6 +228,19 @@ Values measured directly from source; contrast via WCAG relative-luminance math.
 | `decoration/blob` | ✅ silent (correct — *role qualifier*) | The 1px `ColorRect` divider has a functional role, so it is not a decorative blob. Confirms the "no informational role" qualifier is load-bearing. |
 | `containers/ghost-wrapper` | 🟡 candidate | `MarginContainer → VBox(layout) → PanelContainer(shell) → …` — the `layout` VBox has one child, so its `separation:14` does nothing → foldable wrapper. |
 
+**Second pass — the v1.1 areas.** The three areas added after the MVP were
+dry-run against the same dock before shipping:
+
+| Tell | Result | Measurement |
+|---|---|---|
+| `color/scattered-literals` | ✅ silent (true negative) | No near-duplicate pair among the 8 constants at the 0.04/channel threshold, *and* every one is a named constant with a single role — the trigger and the escape agree independently. |
+| `containers/ghost-wrapper` | 🔴 fires on exactly 1 of 7 (true positive) | Seven single-child containers exist; only `layout` (VBox whose sole property is `separation:14`) has inert layout. `panel`/`shell_margin` apply margins, `shell` and both cards draw a `StyleBox` — correctly excluded. The "one child is not the tell" qualifier does the discriminating. |
+| `decoration/blob` | ⚠️ **false positive — rule corrected** | The divider escaped as before, but the 86×86 logo `TextureRect` matched: no text, no layout dependents. The escape list had no entry for identity/branding, so it would have proposed deleting a brand mark. Escapes 2 (identity) and 3 (`tooltip_text` set) were added because of this. |
+
+That last row is the taxonomy earning its keep a second time: the rule was wrong
+in a way only a real UI exposed, and it was corrected before shipping rather
+than after a user lost a logo.
+
 **What validation changed:** two escape conditions were promoted from implicit
 to explicit — `color`'s *shared-source* escape and `decoration`'s
 *functional-role* escape — because the first real target is precisely the case
@@ -349,8 +369,9 @@ writes reach the rendered frame.
 
 - **v1** *(done)* — MVP skill: `spacing`, `type-scale`, `contrast` on per-node
   overrides.
-- **v1.1** — `decoration` and `containers` (deletion/flatten) + `color`
-  convergence at the node level.
+- **v1.1** *(done)* — `color` convergence at the node level (enforced), plus
+  `containers` and `decoration` as report-only areas. Their fixes are structural
+  and stay proposals; making them mutate would need an explicit opt-in flag.
 - **v2** — `hera theme set` (closes G1) → project-wide `Theme` convergence;
   optional before/after pixel diff (closes G2).
 - **later** — a wholesale restyle mode, if coherent re-theming (not just
