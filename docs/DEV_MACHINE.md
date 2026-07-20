@@ -55,6 +55,25 @@ or a manual GUI check. `--check-only` *does* catch parse/type errors —
 including the virtual-signature clash when a custom tool method is named
 `_get`/`_set` (use `_describe`/`_set_property` instead).
 
+## Toggling the plugin does not reload changed addon scripts
+
+Disabling and re-enabling the plugin in Project Settings > Plugins is **not**
+enough to pick up edits to the addon's GDScript. `hera_agent_plugin.gd` holds
+its tools through `const … = preload(…)`, so re-enabling re-runs `_enter_tree`
+against script resources Godot still has cached, and the old code keeps
+answering. **Quit and relaunch the editor** after changing anything under
+`addons/hera_agent_godot/`.
+
+Observed on 4.7: after merging a change to `diagnostics_tool.gd` and toggling
+the plugin, the on-disk source read `get_setting_with_override(...)` while
+`hera diagnostics` still returned the pre-change `file_logging_enabled:false`,
+and `output` still used the old response shape.
+
+Worth checking before you trust a live smoke: compare something the change
+actually alters — a field's value or the response shape — against the source on
+disk. If they disagree, the editor is still running the old build and the smoke
+proves nothing.
+
 ## Toolchain limits on this PC
 
 - **`go test -race` cannot run**: the antivirus blocks race-instrumented
