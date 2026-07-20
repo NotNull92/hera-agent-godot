@@ -100,7 +100,8 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 `resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),
 `theme`(Theme 리소스 항목 get/set),
 `game`(런타임 검사+input+input-log+set/call/click+assert+QA+screenshot),
-`guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`, `batch`,
+`guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`(캡처 +
+로컬 before/after `diff`), `batch`,
 `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는
 [docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Store 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.

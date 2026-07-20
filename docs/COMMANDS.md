@@ -84,6 +84,7 @@ selected editor instance.
 | `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
 | `instances` | local | ☑ | List all live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. |
 | `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--analyze` is supported for runtime captures and returns generic image/layout metrics, including per-edge content ratios and possible clipping. |
+| `screenshot diff <before.png> <after.png> [--threshold N]` | local | ☐ | Compare two captures and report `changed_pixels`, `changed_ratio`, `max_delta` and a `changed_bounds` box locating the change. Runs entirely locally on files already on disk — **no editor needed**. `--threshold` (default 4, per channel 0..255) absorbs anti-aliasing wobble between captures; the two frames must share dimensions. |
 | `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially, including async tools such as `game` and `screenshot`. |
 | `smoke [--run-game\|--skip-game]` | local + tools | ☑ | Run a quick live-editor smoke check. `--run-game` also plays the current scene, checks `game tree`, captures/analyzes a runtime screenshot, then stops. |
 

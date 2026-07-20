@@ -23,6 +23,7 @@ commands:
   output     tail project log (--type log|error|warning|all, --lines N)
   diagnostics summarize project log errors and warnings (--lines N)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent, --runtime, --analyze)
+             diff <before.png> <after.png> [--threshold N]  compare two captures locally
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
   smoke      run a live editor smoke check [--run-game|--skip-game]
   version    print the CLI version
