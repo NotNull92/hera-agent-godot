@@ -33,6 +33,19 @@ agents:
   limits, external-form gotchas) live in [docs/DEV_MACHINE.md](docs/DEV_MACHINE.md)
   — read it before local Godot smokes, third-party PRs, or publishes, and
   update it there instead of re-discovering.
+- **Ported capabilities must be fully naturalized.** When an idea, architecture,
+  or workflow is adapted from an outside tool, what ships is a Hera-native
+  capability: named for the Godot/Hera construct it operates on, and justified
+  from engine behaviour rather than from "the other tool does it this way".
+  Leave no external tool name, no "ported from X" framing, no side-by-side
+  comparison tables, and no borrowed taxonomy labels anywhere in the repo —
+  docs, skills, and code alike. Re-derive each rule from the Godot fact that
+  forces it; if a rule cannot be justified that way, it does not belong.
+  Attribution cuts the other way for **copied material**: anything actually
+  vendored or licensed keeps its upstream provenance and licence (for example
+  the Tailwind / Radix / WCAG constants in the `ui-theme-qa` corpus). Never
+  strip a credit while keeping copied expression — rewrite the expression
+  genuinely instead.
 
 ## Canonical Godot sources for documentation and review
 

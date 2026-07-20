@@ -1,22 +1,22 @@
 ---
-name: ui-slop-qa
-description: "Use this skill to detect and remove AI-slop in a Godot project's Control-node UI — undisciplined spacing, unscaled font sizes, and low-contrast text — by measuring the live editor with the `hera` CLI and snapping theme tokens to a reference corpus. Triggers: \"de-slop this UI\", \"clean up the UI spacing/type/contrast\", \"the UI looks AI-generated\", \"tidy the Godot UI\", or any request to mechanically remove statistical UI-design defects without a redesign. Reductive only; edits per-node theme overrides (undoable), never copy or layout content."
+name: ui-theme-qa
+description: "Use this skill to find and fix undisciplined Control-node UI in a Godot project — spacing that follows no ladder, font sizes with no modular scale, and text that fails WCAG contrast — by measuring the live editor with the `hera` CLI and snapping theme tokens to a reference corpus. Triggers: \"clean up the UI spacing/type/contrast\", \"the UI values look arbitrary\", \"tidy the Godot UI\", \"check UI contrast\", or any request to mechanically remove statistical UI-design defects without a redesign. Reductive only; edits per-node theme overrides (undoable), never copy or layout content."
 ---
 
-# UI Slop QA (Godot, reductive)
+# UI Theme QA (Godot, reductive)
 
-Mechanically remove statistical UI-design defects from a live Godot editor. This
-MVP covers three measurable areas — **C spacing · D type · E2 contrast** — over
-`Control` nodes. It does not redesign: it snaps theme tokens to a reference
+Mechanically remove statistical design defects from a live Godot editor. This
+MVP covers three measurable areas — **`spacing` · `type-scale` · `contrast`** —
+over `Control` nodes. It does not redesign: it snaps theme tokens to a reference
 corpus and never touches copy, information order, or layout structure.
 
 **Why a pipeline, not one pass:** one context holding every rule while fixing a
-large UI lets loud items crowd out quiet rules (silent drops). So inspection and
-enforcement are split per area, and findings live in files. The orchestrator
-(this context) stays thin — it holds routing only; the detailed rules and
-findings live in the reference doc and the findings files.
+large UI lets loud items crowd out quiet rules, which get silently dropped. So
+inspection and enforcement are split per area, and findings live in files. The
+orchestrator (this context) stays thin — it holds routing only; the detailed
+rules and findings live in the reference doc and the findings files.
 
-Rules SSOT: [references/ui-slop-areas.md](references/ui-slop-areas.md).
+Rules SSOT: [references/ui-theme-areas.md](references/ui-theme-areas.md).
 Values: [references/reference-corpus.md](references/reference-corpus.md).
 Read only the area section you are working; do not load all rules into one
 context.
@@ -32,8 +32,8 @@ context.
 
 ## 1. Inspect (parallel, static, read-only)
 
-Dispatch one inspector per area (C, D, E2). Each:
-- reads **only its area section** of `references/ui-slop-areas.md`,
+Dispatch one inspector per area (`spacing`, `type-scale`, `contrast`). Each:
+- reads **only its area section** of `references/ui-theme-areas.md`,
 - measures the live editor with the read commands listed there
   (`node get --props`, `eval get_theme_color`, `game ui tree` rects),
 - writes `findings-<area>.md` using the schema (each item a **`check`
@@ -50,7 +50,7 @@ Merge the `findings-*.md` into one local HTML report and serve it:
 values, font-size ratios, contrast ratios). No artifact, no browser auto-open —
 link only.
 
-## 3. Enforce (sequential C → D → E)
+## 3. Enforce (sequential: spacing → type-scale → contrast)
 
 One area enforcer at a time, in order. Each:
 - loads `findings-<area>.md` + its area section,
@@ -60,7 +60,8 @@ One area enforcer at a time, in order. Each:
   (undoable), snapping to the corpus rung/hex,
 - commits that area before the next runs.
 
-Order = dependency order: spacing commits before type before color.
+Order = dependency order: spacing commits before type before color, and contrast
+runs last because it depends on the final colors.
 
 ## 4. Re-inspect (fresh, parallel)
 
@@ -79,7 +80,7 @@ came from steps 1/3. Update the report in place.
 
 - **Thin orchestrator.** This context holds routing only. Rules and findings
   live in files. Holding all areas here reintroduces the capacity drop.
-- **Checklist = eval function.** A finding is a `check` predicate recomputed
+- **A check is a predicate, not a status.** A finding is a `check` recomputed
   from the live editor every time — never a stored "done". Enforcers fix only
   false predicates; fresh re-inspectors recompute them.
 - **Snap, don't invent.** Replacement values come from the corpus (real Tailwind
@@ -87,8 +88,8 @@ came from steps 1/3. Update the report in place.
 - **Undoable + reductive.** Only per-node theme overrides change, via
   `node set` (Ctrl+Z survives). Copy, order, and layout are inviolable.
 - **Static inspect, render once.** Measurement is `node get` / `eval` /
-  `game ui tree`; the browserless screenshot analyzer is the confirmation gate,
-  not a measurement tool.
+  `game ui tree`; the screenshot analyzer is the confirmation gate, not a
+  measurement tool.
 
 ## Non-interactive
 
@@ -98,6 +99,6 @@ out of scope — surface them, do not silently pick.
 
 ## Out of MVP scope
 
-Areas A (decorative removal) and B (layout/containers); project-wide `Theme`
-resource construction; `transform` mode. See the repo's
-`docs/UI_SLOP_QA_DESIGN.md` (§6 gaps, §11 phasing).
+Areas `decoration` (decorative removal) and `containers` (layout discipline);
+`color` palette convergence; project-wide `Theme` resource construction. See the
+repo's `docs/UI_THEME_QA_DESIGN.md` (§6 gaps, §11 phasing).
