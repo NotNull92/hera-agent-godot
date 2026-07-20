@@ -51,7 +51,7 @@ are not stylistic preferences.
 3. **Inspect is static and parallel; enforce is sequential and undoable.**
    Reading geometry and theme tokens is side-effect-free, so ordering does not
    matter and areas can run concurrently. Mutations register with
-   `EditorUndoRedoManager` (`node_tool.gd:150`), so the developer keeps Ctrl+Z
+   `EditorUndoRedoManager` (`node_tool.gd:151`), so the developer keeps Ctrl+Z
    over everything the tool did — which is what makes a mechanical pass safe to
    run on a real project.
 4. **Thin orchestrator, isolated areas.** The skill holds routing only; each
@@ -71,7 +71,7 @@ are not stylistic preferences.
 **In scope (reductive only):**
 
 - Edited-scene `Control` trees — the primary, static surface.
-- Measurable defect areas: spacing, type scale, palette, contrast, and
+- Measurable defect areas: `spacing`, `type-scale`, `color`, `contrast`, and
   (later) decoration and container discipline.
 - Per-node `theme_override_*` enforcement — directly settable and undoable.
 
@@ -93,9 +93,9 @@ Every link in the loop resolves to an existing Hera primitive:
 | Stage | Hera primitive | Evidence | Status |
 |---|---|---|---|
 | Enumerate UI | `scene tree`, `node find --type Control` | `node_tool.gd:59` | ✅ |
-| Read layout geometry | `game ui tree` rect x/y/w/h | `game_ui_inspector.gd:112` | ✅ (runtime) |
+| Read layout geometry | `game ui tree` rect x/y/w/h | `game_ui_inspector.gd:113` | ✅ (runtime) |
 | Read design tokens | `node get --props theme_override_*` | `node_value_codec.gd:45` | ✅ (edited scene) |
-| Read *effective* color | `eval "get_node(p).get_theme_color('font_color')"` | `eval_tool.gd:33` | ✅ read-only |
+| Read *effective* color | `eval "get_node(p).get_theme_color('font_color')"` | `eval_tool.gd:48` | ✅ read-only |
 | Contrast math | skill-side WCAG on the read colors | — | ✅ values only |
 | Enforce token | `node set --prop theme_override_*` (undoable) | `node_tool.gd:134` | ✅ scalars |
 | Re-inspect | `node get` again (same predicate) | `node_value_codec.gd:72` | ✅ |

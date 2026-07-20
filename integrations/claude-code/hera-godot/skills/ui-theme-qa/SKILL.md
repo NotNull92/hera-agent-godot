@@ -60,7 +60,7 @@ One area enforcer at a time, in order. Each:
   (undoable), snapping to the corpus rung/hex,
 - commits that area before the next runs.
 
-Order = dependency order: spacing commits before type before color, and contrast
+Order = dependency order: `spacing` commits before `type-scale`, and `contrast`
 runs last because it depends on the final colors.
 
 ## 4. Re-inspect (fresh, parallel)

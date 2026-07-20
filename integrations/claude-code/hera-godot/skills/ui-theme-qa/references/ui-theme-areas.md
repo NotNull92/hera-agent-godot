@@ -24,8 +24,8 @@ Godot theme-token property paths used below:
 `theme_override_colors/font_color`.
 
 > **Enforcement order** (dependency order): `spacing` → `type-scale` →
-> `contrast`. Spacing commits before type before color, and contrast runs last
-> because it depends on the final colors. (Areas `decoration`, `containers`, and
+> `contrast`. Spacing commits before type-scale, and contrast runs last because
+> it depends on the final colors. (Areas `decoration`, `containers`, and
 > `color` from the design doc are out of MVP scope.)
 
 ---
