@@ -159,6 +159,15 @@ the first pass comes up empty.
 
 ---
 
+> **Known limitation — the log file is shared.** `diagnostics` and `output` read
+> `debug/file_logging/log_path` (`user://logs/godot.log`). Every Godot process
+> rotates that path on startup, so launching a game takes it over from the
+> editor and, with `max_log_files` reached, the editor's own log is eventually
+> rotated away. After a play session these tools are therefore likely reading
+> the game's log rather than the editor's, and editor-console errors can be
+> invisible to them. Godot exposes no "path of my current log", so there is no
+> clean fix from the addon side today.
+
 ## 7. Security boundaries
 
 - Listener binds only to `127.0.0.1`.

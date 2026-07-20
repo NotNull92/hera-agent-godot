@@ -27,6 +27,39 @@ func TestParseGameQADiagnoseArgs_acceptsGenericThresholds(t *testing.T) {
 	}
 }
 
+func TestEvaluateGameQADiagnostics_flagsUnreadableDiagnostics(t *testing.T) {
+	// Given: file logging is off, so the editor reports zero of everything
+	// simply because it cannot read its own log.
+	data := map[string]any{"available": false, "error_count": float64(0), "warning_count": float64(0)}
+
+	// When
+	check, issues := evaluateGameQADiagnostics(data, gameQADiagnoseOptions{maxErrors: 0, maxWarnings: 0})
+
+	// Then: zero counts must not read as a healthy project.
+	if ok, _ := check["ok"].(bool); ok {
+		t.Fatalf("check ok = true, want false when diagnostics cannot be read: %#v", check)
+	}
+	if len(issues) == 0 || !strings.Contains(issues[0], "not readable") {
+		t.Fatalf("issues = %#v, want one explaining diagnostics are unreadable", issues)
+	}
+}
+
+func TestEvaluateGameQADiagnostics_staysQuietWhenAvailabilityIsUnreported(t *testing.T) {
+	// Given: an older addon that does not send `available` at all.
+	data := map[string]any{"error_count": float64(0), "warning_count": float64(0)}
+
+	// When
+	check, issues := evaluateGameQADiagnostics(data, gameQADiagnoseOptions{maxErrors: 0, maxWarnings: 0})
+
+	// Then: absence of the field must not be treated as unavailable.
+	if ok, _ := check["ok"].(bool); !ok {
+		t.Fatalf("check ok = false, want true when availability is simply unreported: %#v", check)
+	}
+	if len(issues) != 0 {
+		t.Fatalf("issues = %#v, want none", issues)
+	}
+}
+
 func TestExecuteGameQADiagnosis_passesWhenGenericRuntimeSignalsAreHealthy(t *testing.T) {
 	// Given
 	srv := newGameQADiagnoseServer(t, map[string]protocol.Response{

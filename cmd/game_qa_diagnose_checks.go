@@ -9,7 +9,16 @@ func evaluateGameQADiagnostics(data map[string]any, options gameQADiagnoseOption
 		return gameQADiagnoseFailure("editor_diagnostics", fmt.Errorf("missing error or warning counts")), []string{"editor diagnostics response is incomplete"}
 	}
 	check := map[string]any{"name": "editor_diagnostics", "ok": true, "errors": errors, "warnings": warnings}
-	issues := make([]string, 0, 2)
+	issues := make([]string, 0, 3)
+	// Zero errors means nothing when the editor cannot read its own log: with
+	// file logging off the counts are always zero, so a silent pass here would
+	// report a healthy project purely because we are blind. Only an explicit
+	// false counts, so older addons that omit the field keep their behaviour.
+	if available, ok := data["available"].(bool); ok && !available {
+		check["ok"] = false
+		check["available"] = false
+		issues = append(issues, "editor diagnostics are not readable (enable debug/file_logging and restart the editor); error and warning counts are meaningless")
+	}
 	if errors > options.maxErrors {
 		check["ok"] = false
 		issues = append(issues, fmt.Sprintf("editor diagnostics report %d errors (want <= %d)", errors, options.maxErrors))
