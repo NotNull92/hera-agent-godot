@@ -62,7 +62,13 @@ func _handle_file(path: String, response_path: String) -> void:
 	var text := file.get_as_text()
 	file.close()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	var decoded: Variant = JSON.parse_string(text)
+	# A poll can catch the file mid-write, so a parse failure is an expected
+	# retry, not a fault. JSON.parse_string() prints an engine error on every
+	# failure; JSON.parse() reports it quietly.
+	var json := JSON.new()
+	if json.parse(text) != OK:
+		return
+	var decoded: Variant = json.data
 	if typeof(decoded) != TYPE_DICTIONARY:
 		return
 	var request := decoded as Dictionary
