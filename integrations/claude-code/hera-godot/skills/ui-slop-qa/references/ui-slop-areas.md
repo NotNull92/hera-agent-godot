@@ -89,7 +89,9 @@ corpus threshold for that text's size (body 4.5:1; large ≥24px or ≥18.66px b
   the effective panel/root background.
 
 **Fix:** raise foreground lightness first (same hue → a higher Radix step) until
-the pair passes. Do not recolor the background.
+the pair passes. Do not recolor the background. Enforce with `node set --value
+"Color(r, g, b, a)"` (float 0..1) — the CLI rejects bare `#hex` and
+`Color("#hex")`; convert the corpus hex first (each channel `= int(hh,16)/255`).
 
 **Escape:** pair already ≥ threshold. This check is objective — no taste escape.
 

@@ -63,8 +63,14 @@ re-vendor from them.
 ## E — palette (hex) + contrast
 
 `@radix-ui/colors@3.0.0`, 12-step ramps. Converge a scattered palette to **one
-accent + the neutral ramp**. Godot `Color` takes hex directly
-(`Color("#0090ff")`) or 0..1 floats.
+accent + the neutral ramp**.
+
+**Applying a hex to a Godot token.** In GDScript / `hera eval`, `Color("#0090ff")`
+parses hex directly. The CLI `node set --value` coercion does **not**: it rejects
+both `#0090ff` and `Color("#0090ff")` and accepts only float variant text
+`Color(r, g, b, a)` (0..1). So when enforcing E2 via `node set`, convert the
+corpus hex to floats first — each channel `= int(hh, 16) / 255` — e.g.
+`#0090ff` → `Color(0, 0.565, 1, 1)`.
 
 **Step convention (Radix):** 1–2 = app/subtle background · 3–5 = component
 background · 6–8 = borders · **9–10 = solid accent fill** · **11 = low-contrast
