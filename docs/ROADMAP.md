@@ -236,6 +236,30 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       optional, coarse adapter over the existing CLI rather than a parallel
       product surface.
 
+## UI Theme QA — shipped
+
+A Godot-native design-QA capability, complete across its planned phases.
+
+- [x] `ui-theme-qa` skill in both plugin trees. `spacing`, `type-scale`,
+      `color` and `contrast` enforce `theme_override_*` tokens; `containers`
+      and `decoration` report only, because their fixes are structural
+      (deleting or re-parenting nodes) and not mechanically decidable.
+- [x] Reference corpus rooted in Godot's own default theme plus WCAG — no
+      third-party design system is vendored, and no palette is imported.
+- [x] `theme get/set` (closed gap G1): a `Theme`'s data sits behind
+      `set_color`/`set_constant`/`set_font_size`, out of reach of
+      `resource set --prop`, so project-level values needed their own tool.
+- [x] `screenshot diff` (closed gap G2): compares two captures locally and
+      locates the change with a bounding box.
+- [x] Rules dry-run against a real UI before shipping. That caught a false
+      positive on the dock's logo and corrected the rule rather than the UI.
+- Wholesale restyle mode: **deliberately unbuilt**, not pending. An agent
+      driving Hera can restyle a project today; only automating the taste
+      decision is excluded. Reasoning and reopening conditions:
+      [docs/UI_THEME_QA_DESIGN.md](UI_THEME_QA_DESIGN.md) §11.1.
+
+Design, taxonomy and validation runs: [docs/UI_THEME_QA_DESIGN.md](UI_THEME_QA_DESIGN.md).
+
 ## Phase 9 — Standard declaration (v1.0)
 
 Goal: declare the contract stable and make depending on Hera boring.
@@ -257,10 +281,3 @@ Goal: declare the contract stable and make depending on Hera boring.
 - Reflection vs explicit tool registry as the surface grows (currently explicit).
 - How far `eval` should go (Expression only vs dynamically-loaded `@tool` GDScript).
 - Whether a native HTTP server or StreamPeerTCP gives the cleaner Godot-only transport.
-- UI Theme QA (Control-node theme-token discipline): a Godot-native design-QA
-  capability that snaps spacing/type/color to a reference corpus and checks
-  contrast. Design + taxonomy in
-  [docs/UI_THEME_QA_DESIGN.md](UI_THEME_QA_DESIGN.md); the MVP ships as the
-  `ui-theme-qa` skill (skill-first, reuses existing `node get/set` +
-  `game ui tree` + `screenshot --analyze`). Remaining areas (`decoration`,
-  `containers`, `color`) and the `hera theme set` tool are not scheduled.

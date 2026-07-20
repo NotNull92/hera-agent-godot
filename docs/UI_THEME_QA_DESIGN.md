@@ -5,11 +5,14 @@
 > ad-hoc colors, and failing contrast, and snaps them to a reference corpus —
 > using Hera's existing inspect/mutate/QA primitives.
 
-**Status:** the MVP (areas `spacing`, `type-scale`, `contrast`) ships as the
-`ui-theme-qa` skill in both plugin trees and has been driven end-to-end against
-a live Godot 4.7 editor. Later areas and the `hera theme set` tool remain
-proposals. Capability claims cite code paths (`file:line`) read during the
-survey.
+**Status: complete.** All planned phases have shipped. The `ui-theme-qa` skill
+covers six areas in both plugin trees — `spacing`, `type-scale`, `color` and
+`contrast` enforce theme tokens; `containers` and `decoration` report only. The
+gaps that blocked project-level work are closed by `hera theme get/set` (G1) and
+`hera screenshot diff` (G2). The one remaining phase, a wholesale restyle mode,
+is **deliberately unbuilt** — see §11.1 for why, so it is not mistaken for
+pending work. Capability claims cite code paths (`file:line`) verified against
+the addon sources.
 
 ---
 
@@ -86,7 +89,8 @@ surface findings instead.
 
 - Wholesale restyle ("adopt a different visual language"). That borrows a whole
   external contract for coherence and is a different mode; removing
-  undisciplined values does not require it.
+  undisciplined values does not require it. Closed rather than deferred —
+  §11.1 records the reasoning and what it would take to reopen.
 - Project-wide `Theme` resource construction (see §6, gap G1).
 - 2D/3D "game feel" visuals — that is the existing Game Feel surface.
 - Copy, information architecture, and node order — inviolable.
@@ -379,8 +383,51 @@ writes reach the rendered frame.
 - **v2** *(done)* — `hera theme get/set` (closed G1) makes project-wide `Theme`
   values reachable; `hera screenshot diff` (closed G2) compares two captures and
   locates the change.
-- **later** — a wholesale restyle mode, if coherent re-theming (not just
-  removing undisciplined values) is wanted; needs a Godot reference matrix.
+- **later** — a wholesale restyle mode. **Closed as deliberately unbuilt**, not
+  pending. See §11.1.
+
+### 11.1 Why the restyle mode stays unbuilt
+
+The phasing list once ended with "a wholesale restyle mode, if coherent
+re-theming is wanted; needs a Godot reference matrix." Read as a backlog item it
+looks like the last box to tick. It is not, and leaving it ambiguous invites
+someone to build it without the context that argues against it.
+
+**What it would be.** A canned visual contract — "Apple-like", "arcade", pick a
+name — stored in this repo and applied to a project on command, replacing its
+look wholesale.
+
+**Why it does not get built:**
+
+1. **§3 already excludes it, with the reason.** It "borrows a whole external
+   contract for coherence and is a different mode; removing undisciplined values
+   does not require it."
+2. **It contradicts §13.** This capability "does not invent taste". Adopting a
+   different visual language is exactly inventing taste, on the user's project.
+3. **It reverses a decision this repo already made.** The corpus deliberately
+   vendors no palette, because "importing another project's ramp would overwrite
+   the project's own design". A restyle mode's whole premise is importing
+   someone else's contract — the same move, much larger.
+4. **The prerequisite does not exist.** A "Godot reference matrix" — a set of
+   coherent visual contracts extracted from finished Godot UIs — would have to
+   be built first, and building it is a separate project with its own sourcing
+   and licensing questions.
+
+**The capability is not missing.** An agent driving Hera can already restyle a
+project: read the scene, decide the values, and apply them with `node set`,
+`theme set` and `resource create Theme`. v2 made that materially better, since a
+whole-project `Theme` can now be written instead of per-node overrides. What is
+absent is only the *automation of the taste decision* — and §12's fourth open
+question is precisely why: **values can be borrowed, decisions cannot.**
+
+So the division of labour is deliberate. A human or an agent chooses the look;
+`ui-theme-qa` then checks that the chosen look was applied consistently. Style
+selection and style discipline are different jobs, and only the second one is
+mechanical.
+
+**If it is ever wanted anyway**, it needs, in order: the reference matrix; a
+rewrite of §3 and §13 to drop "does not invent taste"; and a separate opt-in
+mode, so a default run can never silently restyle a project.
 
 ---
 
