@@ -11,8 +11,8 @@ selected editor instance.
 | `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, Game Feel UI Mode state, and Game Feel Mode state. |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
-| `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the project log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Needs `debug/file_logging` enabled. |
-| `diagnostics [--lines N]` | `diagnostics` | ☑ | Summarize project log errors and warnings, returning counts plus the latest matching lines. Needs `debug/file_logging` enabled. |
+| `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the project log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Needs `debug/file_logging` enabled — without it the response reports `available:false` and a `hint` rather than an empty tail. |
+| `diagnostics [--lines N]` | `diagnostics` | ☑ | Summarize project log errors and warnings, returning counts plus the latest matching lines. Needs `debug/file_logging` enabled — without it the response reports `available:false`, `clean:false` and a `hint`, because the counts would otherwise read as a clean project while nothing is being captured. |
 | `scene tree` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |

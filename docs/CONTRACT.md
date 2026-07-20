@@ -141,7 +141,7 @@ contract tests (see [Contract tests](#contract-tests)).
 | `resource uid` | stable | ✓ `path`, `uid`, `uid_path`, `sidecar`, `sidecar_exists` |
 | `resource list` | stable | resource entries with class + path |
 | `output` | stable | ✓ `available`, `log_path`, `type`, `total`, `lines[]` |
-| `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]` |
+| `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. `available` is false whenever the log cannot be read — including file logging being disabled with a stale log present — and `clean` is false there too, since cleanliness cannot be asserted without a readable log |
 | `script current` / `script inspect` | experimental | compact script metadata (class name, extends, functions, signals, exports, line count) |
 
 ### Editor mutations

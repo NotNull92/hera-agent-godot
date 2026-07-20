@@ -16,12 +16,16 @@ func execute(params: Dictionary) -> Dictionary:
 	var enabled := bool(ProjectSettings.get_setting("debug/file_logging/enable_file_logging", false))
 	var log_path := String(ProjectSettings.get_setting("debug/file_logging/log_path", "user://logs/godot.log"))
 
-	if not FileAccess.file_exists(log_path):
+	# Same blind spot as `diagnostics`: with file logging off, a stale log from an
+	# earlier run still reads, so reporting `available` on file existence alone
+	# would return an empty tail as if the project were quiet.
+	if not enabled or not FileAccess.file_exists(log_path):
+		var reason := "No log file yet." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
 			"file_logging_enabled": enabled,
 			"log_path": ProjectSettings.globalize_path(log_path),
-			"hint": "No log file. Enable Project Settings > debug/file_logging/enable_file_logging (restart the editor) to capture output.",
+			"hint": "%s Output cannot be read. Enable Project Settings > debug/file_logging/enable_file_logging and restart the editor to capture it." % reason,
 			"lines": [],
 		})
 
