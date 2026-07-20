@@ -149,6 +149,14 @@ The CLI treats an instance as live only if `now - ts` is within the freshness
 window. Stale files from crashed editors are ignored and may be cleaned
 opportunistically.
 
+The addon republishes the file by staging it under a temp name and swapping it
+in with `DirAccess.rename_absolute`. That swap is atomic on POSIX but **not on
+Windows**, where Godot's `DirAccess::rename` removes an existing destination
+before `MoveFileW` — so `<pid>.json` is briefly absent on every heartbeat. A CLI
+scan landing in that window would otherwise report "no live Godot editor found"
+while an editor is running, so discovery rescans once after a short delay when
+the first pass comes up empty.
+
 ---
 
 ## 7. Security boundaries
