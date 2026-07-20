@@ -13,6 +13,7 @@ is snapped to the corpus rather than invented.
 All measurement uses existing `hera` commands (no custom tooling):
 - Enumerate: `hera --ids scene tree` / `hera node find --type <Class>`
 - Read tokens: `hera node get <path> --props "<a>,<b>"`
+  (**type-aware — see below**)
 - Read effective color: `hera eval "get_node('<path>').get_theme_color('font_color')"`
 - Read geometry (runtime): `hera game ui tree --fields rect,type,path`
 - Enforce (undoable): `hera node set <path> --prop "<token>" --value <v>`
@@ -22,6 +23,31 @@ Godot theme-token property paths used below:
 `theme_override_constants/separation`, `theme_override_constants/margin_left`
 (`margin_top|right|bottom`), `theme_override_font_sizes/font_size`,
 `theme_override_colors/font_color`.
+
+> **Read tokens by node type — never sweep one token list over the whole tree.**
+> A theme-override property only exists on nodes whose class defines that theme
+> item, and `node get --props` **fails the entire read** if *any* requested
+> property is missing on that node — it does not return the subset that exists.
+> Asking a `Label` for `.../separation`, or a `HBoxContainer` for `.../margin_*`,
+> is a hard error, so a naive whole-tree sweep breaks on any real mixed UI.
+>
+> Enumerate per class first, then request only the tokens that class defines:
+>
+> | token | classes that define it |
+> |---|---|
+> | `constants/separation` | `BoxContainer` (`HBoxContainer`, `VBoxContainer`), `SplitContainer`, `FlowContainer` |
+> | `constants/h_separation`, `constants/v_separation` | `GridContainer`, and `h_separation` on `Button`/`Tree`/`ItemList` |
+> | `constants/margin_*` | `MarginContainer` only |
+> | `font_sizes/font_size`, `colors/font_color` | text controls — `Label`, `Button`, `LineEdit`, … |
+>
+> ```bash
+> hera node find --type VBoxContainer     # then --props ".../separation"
+> hera node find --type GridContainer     # then --props ".../h_separation,.../v_separation"
+> ```
+>
+> A bare `hera node get <path>` (no `--props`) returns every property and is
+> failure-proof, but costs ~100 properties per node — use it only to discover
+> what a class supports, never for the sweep itself.
 
 > **Enforcement order** (dependency order): `spacing` → `type-scale` →
 > `contrast`. Spacing commits before type-scale, and contrast runs last because
@@ -36,8 +62,10 @@ Godot theme-token property paths used below:
 ladder — a spread of near-but-unequal values (`3, 6, 10, 14, 22 …`) instead of
 a scale.
 
-**Mechanical trigger:** collect every `separation` and `margin_*` override
-across the Control tree. If the count of **distinct** spacing values exceeds the
+**Mechanical trigger:** collect every `separation` and `margin_*` override,
+reading **per container class** (see the type table above — `separation` from
+`BoxContainer`s, `h/v_separation` from `GridContainer`s, `margin_*` from
+`MarginContainer`s only). If the count of **distinct** spacing values exceeds the
 count of corpus rungs they map to — i.e. two or more distinct values snap to the
 same rung, or values sit off-ladder — the ladder is undisciplined.
 
@@ -64,8 +92,23 @@ If distinct sizes are not all on the corpus type scale, or two hierarchy levels
 would collapse to one rung, the scale is undisciplined.
 
 **Fix:** snap each size to the nearest corpus rung, **preserving order** — if two
-adjacent levels round to the same rung, push the smaller one down a rung so the
-hierarchy survives. Hierarchy is size/weight/spacing, never font swaps.
+sizes that express a hierarchy round to the same rung, push the smaller one down
+a rung so the hierarchy survives. Hierarchy is size/weight/spacing, never font
+swaps.
+
+> **Resolve a collision only between the two levels that collide.** Group the
+> nodes before snapping: a *hierarchy chain* is a set of text nodes whose sizes
+> rank them against each other (title vs body vs caption in one panel), while a
+> *peer group* is a set of controls that intentionally share one size (every
+> button in a row, every cell in a grid). Snap each group to the nearest rung;
+> when a collision forces one level down, move **only the colliding hierarchy
+> level**, never a peer group that merely happened to share that size.
+>
+> Worked example — sizes `{42 cells, 22 title, 17 score, 15 status, 15 buttons}`:
+> `17` and `15` both snap to `16`, so the *status* level drops to `12`. The
+> buttons are a peer group, not the level below `score`, so they stay at `16`.
+> Dragging them down too would shrink interactive labels for a collision that
+> was never theirs.
 
 **Escape:** sizes already all on the scale with a monotonic hierarchy.
 
