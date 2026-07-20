@@ -257,3 +257,9 @@ Goal: declare the contract stable and make depending on Hera boring.
 - Reflection vs explicit tool registry as the surface grows (currently explicit).
 - How far `eval` should go (Expression only vs dynamically-loaded `@tool` GDScript).
 - Whether a native HTTP server or StreamPeerTCP gives the cleaner Godot-only transport.
+- UI design QA (de-slop Control-node UI): a Godot-native design-QA capability
+  that snaps spacing/type/color to a reference corpus and checks contrast.
+  Feasibility survey + v0 taxonomy drafted in
+  [docs/UI_SLOP_QA_DESIGN.md](UI_SLOP_QA_DESIGN.md) (skill-first, reuses existing
+  `node get/set` + `game ui tree` + `screenshot --analyze`). Proposal only, not
+  scheduled.
