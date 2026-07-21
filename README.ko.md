@@ -35,35 +35,29 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 현재 릴리스 기준: v0.9.0
+## 현재 릴리스 기준: v1.0.0
 
-`v0.9.0`은 현재 저장소 태그와 애드온 매니페스트 기준 버전입니다. v0.8.0 토대
-(Godot 4.2–4.7 지원, 출력 계약, 옵트인 공유 토큰 인증) 위에서 **리치(reach)**에
-집중합니다: 에이전트가 도구를 고르는 곳에 Hera를 두고, 라이브 세션을 쉽게
-증명할 수 있게 만드는 것입니다.
+`v1.0.0`은 저장소 태그와 애드온 매니페스트 기준 버전입니다. 문서화된 안정 CLI
+계약을 동결하고 명시적인 사용 중단 정책과 함께 시맨틱 버저닝을 채택합니다.
 
 주요 변경 사항:
 
-- **에이전트 측 배포**:
-  [`hera-godot` npm 래퍼](https://www.npmjs.com/package/hera-godot),
-  Homebrew tap, 저장소 내 Scoop 버킷으로 CLI를 설치하고, 하나의 자동 호출
-  ~1k 토큰 `live-editor` 스킬을 공유하는 Claude Code·Codex 플러그인과 Cursor
-  규칙으로 에이전트에 Hera를 붙일 수 있습니다
-  ([integrations/](integrations/), [plugins/](plugins/)).
-- **에러 메시지 값-문법 힌트**: `node set`, `game node set`, `resource set`
-  값을 파싱하지 못하면 이제 기대하는 Godot variant 텍스트를 알려줍니다
-  (예: `Vector2(x, y)`, 평탄한 `PackedVector2Array(...)`, 객체 속성이면
-  `node set-resource`) — 조용히 실패하지 않습니다.
-- **더 안정적인 런타임 QA**: `game qa` 라이프사이클 대기·타임아웃을 안정화해
-  실행 → 검사 → QA → 정지 흐름이 CI에서도 안정적입니다.
-- **복사 가능한 비시각 CI 티어**: 고정된 Godot 4.7 헤드리스 라이프사이클
-  (활성 에디터 → `smoke` → `game qa` 런타임 로직)과 4.2/4.7 정적 스크립트
-  게이트 ([docs/HEADLESS_CI.md](docs/HEADLESS_CI.md)).
-- **라이브 데모**: 이 README 상단에 실제 에디터에서 빌드 → 실행 → QA 전체
-  세션을 약 1,170 토큰의 도구 출력으로 녹화해 실었습니다.
+- **안정 계약과 SemVer:** 문서화된 안정 명령, 출력 필드, 스트림, 종료 코드
+  의미에 메이저 버전 호환성 약속을 적용합니다
+  ([docs/CONTRACT.md](docs/CONTRACT.md)).
+- **Godot 네이티브 UI 테마 QA:** 에이전트가 `Theme` 리소스 항목을 읽고 수정한
+  뒤 간격, 타입, 색상, 대비, 컨테이너, 장식 측정 규칙을 적용할 수 있습니다.
+- **스크린샷 diff:** 프로젝트 이미지를 업로드하지 않고 두 캡처의 변경 픽셀 수,
+  비율, 경계 상자를 로컬에서 계산합니다.
+- **더 신뢰할 수 있는 라이브 상태:** discovery가 heartbeat 교체를 제한된
+  backoff로 재시도하고, diagnostics가 거짓 clean 대신 로깅 사각지대를 보고하며,
+  런타임 파일 교환은 정상적인 경합 잡음을 출력하지 않습니다.
+- **0.9에서 깨지는 마이그레이션 없음:** CLI와 애드온을 함께 업데이트하고
+  에디터를 재시작하면 기존 스크립트와 인증 설정을 유지할 수 있습니다.
+  [docs/MIGRATING_TO_V1.md](docs/MIGRATING_TO_V1.md)를 참고하세요.
 
 릴리스 노트와 Asset Store 패키징 세부 사항:
-[docs/releases/v0.9.0-asset-store-upload.md](docs/releases/v0.9.0-asset-store-upload.md).
+[docs/releases/v1.0.0-asset-store-upload.md](docs/releases/v1.0.0-asset-store-upload.md).
 
 ## 헤드리스 CI(구성된 티어)
 
@@ -94,7 +88,7 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 
 ## 명령 표면
 
-`v0.9.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
+`v1.0.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
 `node`(읽기+쓰기+리소스/스크립트 연결), `signal`,
 `resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),

@@ -1,9 +1,8 @@
 # Output Contract
 
-> Status: **draft** (ROADMAP Phase 7). Field lists below were captured from a
-> live Godot 4.7 editor with the current CLI. The stable/experimental markings
-> are a *proposal*: they become binding commitments at `v1.0.0`. Until then,
-> contract changes are allowed but must be listed in release notes.
+> Status: **stable as of v1.0.0**. Field lists below were captured from a live
+> Godot 4.7 editor and are protected by contract goldens. The stable markings
+> are binding compatibility commitments for the v1 major line.
 
 This document defines what consumers of the `hera` CLI — agents, scripts,
 CI pipelines, wrappers — may rely on: invocation shape, output streams, exit
@@ -23,12 +22,29 @@ the transitional alias for the same binary; the contract is identical.)
 
 | Tier | Meaning |
 |------|---------|
-| **stable** | Shape is intended to freeze at `v1.0.0`. Documented fields keep their name and JSON type within a major version. New fields may be **added** at any time — consumers must ignore unknown fields. |
+| **stable** | Shape is frozen for `v1.0.0`. Documented fields keep their name and JSON type within a major version. New fields may be **added** at any time — consumers must ignore unknown fields. |
 | **experimental** | Shape may change in any release. Changes are called out in release notes but carry no compatibility promise. |
 
 Removing or renaming a stable field, or changing its JSON type, is a breaking
-change and (post-1.0) requires a major version bump plus a deprecation cycle
-(deprecate in a minor, remove no earlier than the next major).
+change and requires a major version bump plus a deprecation cycle.
+
+## Versioning and deprecation policy
+
+Hera follows semantic versioning from `v1.0.0` onward. The CLI and addon ship
+as one versioned product and should be upgraded together.
+
+- Patch releases contain compatible fixes and documentation corrections.
+- Minor releases may add commands, flags, or response fields. Consumers of
+  stable JSON must ignore unknown fields.
+- A stable command, flag, field, JSON type, output stream, or exit-code meaning
+  is deprecated in a minor release before it can be removed or incompatibly
+  changed. Removal happens no earlier than the next major release.
+- Experimental surfaces may change in a minor release. Their release notes must
+  identify the change, but they do not carry the stable compatibility promise.
+- The internal localhost HTTP protocol and heartbeat files remain internal and
+  may change without a public deprecation cycle.
+
+See [MIGRATING_TO_V1.md](MIGRATING_TO_V1.md) for the 0.x upgrade path.
 
 ## Invocation
 

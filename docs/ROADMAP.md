@@ -2,8 +2,8 @@
 
 Phased build plan. Each phase is independently testable. The current repository
 has the core CLI/addon surface implemented and the v0.9.0 GitHub Release
-published, with the v0.9.0 Godot Asset Store version uploaded 2026-07-14
-(approval pending; the v0.8.0 version was approved 2026-07-14).
+published. The v0.9.0 Godot Asset Store version is publicly listed, and the
+v1.0.0 release candidate is in local validation and packaging.
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
@@ -141,10 +141,10 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera)),
       Scoop bucket (in-repo `bucket/hera.json`), npm wrapper package
       [`hera-godot`](https://www.npmjs.com/package/hera-godot)
-      (`packaging/npm/`; approved and published 2026-07-14 at 0.8.0 —
+      (`packaging/npm/`; published 2026-07-14 at 0.9.0 —
       postinstall downloads the pinned, SHA256-verified release binary and
       points users to the Asset Store addon; verified from the registry via
-      `npx hera-godot@0.8.0 version`), and the existing one-line installers.
+      `npx hera-godot@0.9.0 version`), and the existing one-line installers.
       Per-release bump steps: [packaging/README.md](../packaging/README.md).
 - [x] Agent harness kits: Claude Code and Codex repo marketplaces/plugins
       sharing an auto-invoked `live-editor` skill (`.claude-plugin/` +
@@ -164,7 +164,8 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         MIT — confirmation screen "플러그인 검토 제출됨". If approved, the
         catalog pins the commit SHA and auto-bumps on new pushes; check
         installability by searching the community catalog's
-        `marketplace.json`.
+        `marketplace.json`. No Hera entry was found there on 2026-07-21, so
+        review remains pending and no release-specific update can be made yet.
       - awesome-claude-code: submitted 2026-07-14 via its required web-UI
         issue form as
         [issue #2243](https://github.com/hesreallyhim/awesome-claude-code/issues/2243);
@@ -176,14 +177,17 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         Their form only accepts a repository-root plugin or a
         `plugins/<name>` path, which is why the Codex plugin lives under
         `plugins/` instead of `integrations/`. Scanner checks and human
-        review follow.
+        review follow. No public Hera listing appeared on the marketplace
+        landing page on 2026-07-21; the submission status is not publicly
+        queryable.
       - awesome-codex-plugins: submitted 2026-07-14 as
         [PR #300](https://github.com/hashgraph-online/awesome-codex-plugins/pull/300)
         after the user approved their required HOL scanner CI. The scanner
         workflow (`.github/workflows/hol-scanner.yml`, gate: score ≥ 80, no
         critical/high findings) passed on
         [run 29298946262](https://github.com/NotNull92/hera-agent-godot/actions/runs/29298946262).
-        Maintainer review pending.
+        The PR merged 2026-07-14; the listing links to this repository and does
+        not require a per-release version update.
 - [x] **Priority 1 — Nonvisual/CI remote verification:** the documented
       GitHub Actions workflow passed its authorized remote run on 2026-07-13.
       The [4.7-only nonvisual tier](./HEADLESS_CI.md) proved the enabled
@@ -218,13 +222,14 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
         [DEV_MACHINE.md](./DEV_MACHINE.md). Maintainer review pending.
       - Showcase projects and write-ups with real agent transcripts: not
         started.
-- [x] **Priority 4 — Asset Store upload `v0.9.0`:** uploaded 2026-07-14
-      (store approval pending, as with v0.8.0's next-day approval).
+- [x] **Priority 4 — Asset Store upload `v0.9.0`:** uploaded 2026-07-14 and
+      publicly listed by 2026-07-21.
       The `v0.9.0` GitHub Release is published (addon ZIP SHA
       `a025f918…f501aa`, 100 entries, embedded manifest `0.9.0`; release
       workflow run 29310410241 with `go test -race`), the store version was
-      uploaded on the Versions tab (Min `Godot 4.2` / Max `Godot 4.7`, Stable)
-      and the Settings Summary/Description replaced per
+      uploaded on the Versions tab (Min `Godot 4.2` / Max undefined, Stable).
+      The public page still exposed the older v0.8 Summary metadata on
+      2026-07-21, so the v1.0 Settings update must replace it per
       [docs/releases/v0.9.0-asset-store-upload.md](./releases/v0.9.0-asset-store-upload.md).
       The v0.9 scope is Phase 8 itself: agent-side distribution
       (npm `hera-godot@0.9.0`, Homebrew tap, Scoop bucket — all pinned to the
@@ -264,10 +269,10 @@ Design, taxonomy and validation runs: [docs/UI_THEME_QA_DESIGN.md](UI_THEME_QA_D
 
 Goal: declare the contract stable and make depending on Hera boring.
 
-- [ ] Freeze the stable command surface and adopt semver with a written
+- [x] Freeze the stable command surface and adopt semver with a written
       deprecation policy (deprecate in a minor, remove no earlier than the
       next major).
-- [ ] `v1.0.0` release: 0.x migration notes and the compatibility promise
+- [x] `v1.0.0` release: 0.x migration notes and the compatibility promise
       stated in the README.
 - [ ] Contributor on-ramp: `CONTRIBUTING.md`, issue/PR templates, and a
       labeled starter-issue set.
@@ -275,6 +280,8 @@ Goal: declare the contract stable and make depending on Hera boring.
       front and center.
 - [ ] Asset Store upload `v1.0.0` + announcement posts (Godot forums,
       Discord, sibling Unity repo cross-link).
+      Local upload packaging and form-copy preparation are complete; public
+      release assets, Store submission, and announcements remain owner steps.
 
 ## Open questions to revisit
 

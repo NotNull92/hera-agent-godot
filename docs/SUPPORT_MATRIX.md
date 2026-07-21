@@ -26,10 +26,12 @@ deterministic runtime-logic scenario. It does not claim live headless runtime
 support for 4.2–4.6, all Hera commands, screenshots, visual UI, renderer output,
 or window/input behavior.
 
-**Remote GitHub Actions verification is pending.** No real authorized GitHub
-Actions run has succeeded yet, so this is a configured tier rather than new
-remote support evidence. See [HEADLESS_CI.md](HEADLESS_CI.md) for the exact
-lifecycle, artifacts, and exclusions.
+Remote GitHub Actions verification passed on 2026-07-13 at commit
+[`5c0ba65`](https://github.com/NotNull92/hera-agent-godot/commit/5c0ba6562961a6a11ab581d0f4eab440d34ce008).
+The [successful run](https://github.com/NotNull92/hera-agent-godot/actions/runs/29256396824)
+covered the Godot 4.7 nonvisual editor-to-game lifecycle and its
+requirement-covered runtime-logic scenario. See
+[HEADLESS_CI.md](HEADLESS_CI.md) for the exact lifecycle and exclusions.
 
 **What this means**
 
