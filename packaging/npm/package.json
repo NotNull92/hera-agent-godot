@@ -1,6 +1,6 @@
 {
   "name": "hera-godot",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Low-token CLI that lets AI coding agents inspect and control a live Godot editor over localhost HTTP.",
   "keywords": [
     "godot",

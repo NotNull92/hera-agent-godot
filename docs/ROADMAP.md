@@ -1,9 +1,10 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented and the v0.9.0 GitHub Release
-published. The v0.9.0 Godot Asset Store version is publicly listed, and the
-v1.0.0 release candidate is in local validation and packaging.
+has the core CLI/addon surface implemented and the v1.0.0 GitHub Release
+published 2026-07-21. The v0.9.0 Godot Asset Store version remains public
+while the verified v1.0.0 Release ZIP and form copy await the owner's Store
+submission.
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
@@ -280,8 +281,10 @@ Goal: declare the contract stable and make depending on Hera boring.
       front and center.
 - [ ] Asset Store upload `v1.0.0` + announcement posts (Godot forums,
       Discord, sibling Unity repo cross-link).
-      Local upload packaging and form-copy preparation are complete; public
-      release assets, Store submission, and announcements remain owner steps.
+      GitHub Release assets, Scoop/npm package metadata, the Homebrew Formula,
+      local upload verification, and form-copy preparation are complete; npm
+      publication with 2FA, Store submission, and announcements remain owner
+      steps.
 
 ## Open questions to revisit
 
