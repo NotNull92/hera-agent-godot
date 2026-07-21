@@ -281,10 +281,9 @@ Goal: declare the contract stable and make depending on Hera boring.
       front and center.
 - [ ] Asset Store upload `v1.0.0` + announcement posts (Godot forums,
       Discord, sibling Unity repo cross-link).
-      GitHub Release assets, Scoop/npm package metadata, the Homebrew Formula,
-      local upload verification, and form-copy preparation are complete; npm
-      publication with 2FA, Store submission, and announcements remain owner
-      steps.
+      GitHub Release assets, npm publication, the Scoop manifest, the Homebrew
+      Formula, local upload verification, and form-copy preparation are
+      complete; Store submission and announcements remain owner steps.
 
 ## Open questions to revisit
 
