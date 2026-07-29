@@ -44,6 +44,7 @@ type gameQAResult struct {
 	OK     bool     `json:"ok"`
 	Covers []string `json:"covers,omitempty"`
 	Error  string   `json:"error,omitempty"`
+	Data   any      `json:"data,omitempty"`
 }
 
 func readGameQAScenario(file string) (gameQAScenario, error) {

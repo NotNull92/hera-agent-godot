@@ -24,7 +24,8 @@ func execute(params: Dictionary) -> Dictionary:
 func execute_async(params: Dictionary) -> Dictionary:
 	if _host == null:
 		return ToolResponse.failure("game host not set")
-	if String(params.get("action", "")) == "instances":
+	var action := String(params.get("action", ""))
+	if action == "instances":
 		return ToolResponse.success({ "instances": _game_instances() })
 	if not EditorInterface.is_playing_scene():
 		return ToolResponse.failure("no game is running; start one with `hera run --current --wait`")
@@ -46,6 +47,9 @@ func execute_async(params: Dictionary) -> Dictionary:
 			if bool(response.get("ok", false)):
 				response.erase("ok")
 				response.erase("id")
+				if action == "ui_audit":
+					response["ok"] = bool(response.get("passed", false))
+					response.erase("passed")
 				return ToolResponse.success(response)
 			return ToolResponse.failure(String(response.get("error", "game request failed")))
 		await _host.get_tree().create_timer(POLL_INTERVAL_SEC).timeout

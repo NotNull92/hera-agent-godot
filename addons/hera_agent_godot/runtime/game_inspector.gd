@@ -4,6 +4,7 @@ const GameValueCodec = preload("res://addons/hera_agent_godot/runtime/game_value
 const GameAssertions = preload("res://addons/hera_agent_godot/runtime/game_assertions.gd")
 const GameTreeInspector = preload("res://addons/hera_agent_godot/runtime/game_tree_inspector.gd")
 const GameUIInspector = preload("res://addons/hera_agent_godot/runtime/game_ui_inspector.gd")
+const GameUIAuditor = preload("res://addons/hera_agent_godot/runtime/game_ui_auditor.gd")
 const GameViewportActions = preload("res://addons/hera_agent_godot/runtime/game_viewport_actions.gd")
 
 const INSTANCE_DIR := "user://hera_game_instances"
@@ -86,6 +87,8 @@ func _handle(request: Dictionary) -> Dictionary:
 			return _tree(request)
 		"ui_tree":
 			return _ui_tree(request)
+		"ui_audit":
+			return _ui_audit(request)
 		"get":
 			return _get_node(request)
 		"set":
@@ -105,7 +108,7 @@ func _handle(request: Dictionary) -> Dictionary:
 		"screenshot":
 			return _screenshot(request)
 		_:
-			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|get|set|assert|call|qa_discover|click|input|input_log|screenshot)" % action })
+			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|ui_audit|get|set|assert|call|qa_discover|click|input|input_log|screenshot)" % action })
 
 func _tree(request: Dictionary) -> Dictionary:
 	var result := GameTreeInspector.tree(get_tree().root, MAX_NODES)
@@ -128,6 +131,15 @@ func _ui_tree(request: Dictionary) -> Dictionary:
 		"truncated": result.get("truncated", false),
 		"controls": result.get("controls", []),
 	})
+
+
+func _ui_audit(request: Dictionary) -> Dictionary:
+	var result := GameUIAuditor.audit(get_tree().root, get_tree().current_scene, MAX_NODES, request)
+	if not bool(result.get("ok", false)):
+		return _response(request, false, { "error": String(result.get("error", "UI audit failed")) })
+	result.erase("ok")
+	return _response(request, true, result)
+
 
 func _get_node(request: Dictionary) -> Dictionary:
 	var path := String(request.get("path", ""))

@@ -55,11 +55,13 @@ func normalizeInstances(s string) string {
 
 func contractCases() []contractCase {
 	const (
-		gameTree    = `{"ok":true,"data":{"count":1,"nodes":[{"name":"Main","path":".","type":"Node2D"}],"scene":"res://scenes/Main.tscn","truncated":false}}`
-		gameNodeGet = `{"ok":true,"data":{"name":"Main","path":".","properties":{"position":"(0.0, 0.0)","visible":"true"},"type":"Node2D"}}`
-		gameAssert  = `{"ok":true,"data":{"actual":"true","expected":"true","op":"eq","prop":"visible"}}`
-		runPlaying  = `{"ok":true,"data":{"playing":true,"scene":"res://scenes/Main.tscn"}}`
-		runStopped  = `{"ok":true,"data":{"playing":false,"scene":""}}`
+		gameTree          = `{"ok":true,"data":{"count":1,"nodes":[{"name":"Main","path":".","type":"Node2D"}],"scene":"res://scenes/Main.tscn","truncated":false}}`
+		gameNodeGet       = `{"ok":true,"data":{"name":"Main","path":".","properties":{"position":"(0.0, 0.0)","visible":"true"},"type":"Node2D"}}`
+		gameAssert        = `{"ok":true,"data":{"actual":"true","expected":"true","op":"eq","prop":"visible"}}`
+		gameUIAuditClean  = `{"ok":true,"data":{"ok":true,"strict":false,"scope":"/root/Main","controls":2,"errors":0,"warnings":0,"findings":[],"truncated":false}}`
+		gameUIAuditIssues = `{"ok":true,"data":{"ok":false,"strict":true,"scope":"/root/Main","controls":2,"errors":0,"warnings":1,"findings":[{"rule":"fullscreen_mouse_blocker","severity":"warning","path":"/root/Main/Overlay"}],"truncated":false}}`
+		runPlaying        = `{"ok":true,"data":{"playing":true,"scene":"res://scenes/Main.tscn"}}`
+		runStopped        = `{"ok":true,"data":{"playing":false,"scene":""}}`
 
 		diagClean      = `{"ok":true,"data":{"error_count":0,"warning_count":0}}`
 		gameOneProc    = `{"ok":true,"data":{"instances":[{"pid":42}]}}`
@@ -96,6 +98,8 @@ func contractCases() []contractCase {
 		{name: "game_tree", args: []string{"game", "tree"}, responses: map[string]string{"game": gameTree}, golden: "game_tree"},
 		{name: "game_node_get", args: []string{"game", "node", "get", "/root/Main"}, responses: map[string]string{"game": gameNodeGet}, golden: "game_node_get"},
 		{name: "game_assert_pass", args: []string{"game", "assert", "/root/Main", "visible", "eq", "true"}, responses: map[string]string{"game": gameAssert}, golden: "game_assert_pass"},
+		{name: "game_ui_audit_clean", args: []string{"game", "ui", "audit"}, responses: map[string]string{"game:ui_audit": gameUIAuditClean}, golden: "game_ui_audit_clean"},
+		{name: "game_ui_audit_issues", args: []string{"game", "ui", "audit", "--strict"}, responses: map[string]string{"game:ui_audit": gameUIAuditIssues}, wantExit: 1, golden: "game_ui_audit_issues"},
 
 		// Commands that answer without an /rpc round trip.
 		{name: "version", args: []string{"version"}, golden: "version"},

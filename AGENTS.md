@@ -122,6 +122,7 @@ hera resource set <res://...> --prop p=v     # set and save resource properties
 hera resource create <Class> <res://out.tres> [--force] [--prop name=value]
 hera game tree                               # running game node tree
 hera game ui tree [--path p] [--depth N] [--fields a,b] [--type Class] [--text t] # running Control nodes, optionally scoped
+hera game ui audit [--path p] [--severity error|warning|all] [--rule id] [--strict] [--limit N] # generic runtime UI defects
 hera game instances                          # running game process heartbeats
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
 hera game click --x N --y N                  # click the running game viewport
@@ -202,7 +203,7 @@ default 5000). Default output is compact JSON.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
   are still alive, `game instances` shows them and mutation/read requests refuse
   ambiguous targets instead of accepting an old response.
-- **Prefer low-token QA reads.** Use `game ui tree`, `game node get --prop/--props`,
+- **Prefer low-token QA reads.** Use `game ui audit`, `game ui tree`, `game node get --prop/--props`,
   `game assert`, `game qa discover`, `screenshot --runtime --analyze`, and
   `game qa --file` before dumping full node properties during automated QA.
   Runtime screenshot analysis

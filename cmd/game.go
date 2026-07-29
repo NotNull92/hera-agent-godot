@@ -22,6 +22,9 @@ func runGame(args []string) int {
 		fmt.Fprintf(os.Stderr, "game: %v\n", err)
 		return 2
 	}
+	if params["action"] == "ui_audit" {
+		return runGameUIAudit(params)
+	}
 	if gameActionMutates(params["action"]) {
 		return dialMutationPostPrint("game", params, "game")
 	}

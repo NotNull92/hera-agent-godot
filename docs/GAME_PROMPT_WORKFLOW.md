@@ -56,11 +56,15 @@ func qa_spawn_entity_at(position: Vector2) -> Dictionary
 func qa_force_interaction(a: int, b: int) -> Dictionary
 ```
 
-Report-derived patterns from the v0.7.0 prompt cycles:
+Reusable prompt-game QA patterns:
 
 - Treat state-changing runtime QA as an ordered transaction. Do not parallelize
   semantic clicks, `game input`, `game node call qa_*`, or other state-mutating
   runtime commands against the same live game process.
+- Before capture-heavy or state-changing runtime QA, run `game instances`.
+  If more than one process is registered, stop only the intended test session
+  and establish one fresh runtime instance before continuing. Do not choose or
+  terminate a process by age alone.
 - If live runtime registration is empty while editor diagnostics are clean, run
   a direct affected-scene load before changing autoloads or adding runtime
   workarounds. Warning-as-error parse failures are the first branch to rule out.
@@ -73,7 +77,9 @@ Report-derived patterns from the v0.7.0 prompt cycles:
   interactive.
 - For framed board, grid, lane, arena, or sidebar UIs, verify parent padding,
   child rect bounds, readable text contrast, and disabled-state contrast from
-  the live UI state, not only screenshot clipping.
+  the live UI state, not only screenshot clipping. Compare sibling rectangles,
+  multiline minimum sizes, and local padding; internal overlap is a failure even
+  when no content reaches the viewport edge.
 - For tokens, markers, cards, units, hazards, rewards, and grid marks, use
   semantic bounded child visuals instead of letter-only control text. Keep the
   interactive frame stable and animate the child visual, overlay, or draw layer.
@@ -84,8 +90,11 @@ Report-derived patterns from the v0.7.0 prompt cycles:
   settings restored, stale transient feedback cleared, and at least two
   state-linked Game Feel channels visible when Game Feel is part of the prompt.
 - For primary play-surface plus HUD/sidebar layouts, compare sibling panel
-  geometry in the runtime UI tree. Mismatched outer heights, unbounded helper
-  copy, and uneven density are visual QA failures even without clipping.
+  geometry in the runtime UI tree. Define one shared outer rectangle or explicit
+  top/bottom coordinates for paired primary frames, then compare their resolved
+  live rect bounds rather than trusting independent size hints. Mismatched outer
+  heights, unbounded helper copy, and uneven density are visual QA failures even
+  without clipping.
 - For runtime drawing, derive backgrounds from the live viewport and keep
   map/playfield/HUD rectangles inside explicit padded layout bounds. Do not set
   `get_viewport().size` from gameplay scripts unless fixed resolution is an
@@ -104,12 +113,23 @@ Report-derived patterns from the v0.7.0 prompt cycles:
 - For AI-assisted or automated-turn games with undo, document whether undo rolls
   back one atomic action or a full player-plus-system turn, and expose QA that
   proves that boundary.
+- During automated or temporary lock phases, keep dense collections of
+  interactive controls visually stable. Gate rejected actions at one input
+  boundary with explicit feedback instead of synchronously toggling every
+  control's disabled state. Reserve per-control disabling for persistent
+  semantic unavailability and verify runtime heartbeat continuity.
 - For autonomous movement games, expose a restart-paused helper, pause control,
   and one-step movement helper. Restart and pause immediately before
-  deterministic inspection.
+  deterministic inspection. Stage exact timer, physics, position, cooldown, or
+  threshold assertions while simulation is frozen, or combine setup and action
+  atomically. Resume only when measuring real elapsed behavior and use explicit
+  tolerances for those assertions.
 - For every generated game, identify the primary input scheme from the prompt
   and drive it through the live runtime with `game input`. Helper-only QA is not
   enough for keyboard-first, mouse-first, touch-first, or controller-first games.
+  After live input, assert a gameplay state delta; successful injection or an
+  input-log entry alone does not prove that focused UI or another input consumer
+  allowed the gameplay action through.
 - For priority-based AI, expose explicit setup helpers for the highest-priority
   branches in addition to a simple smoke check.
 - For stateful toggles or mode buttons, read the current UI tree before
@@ -120,7 +140,10 @@ Report-derived patterns from the v0.7.0 prompt cycles:
   proven without waiting for random movement.
 - For settings controls available during pause, win, loss, draw, or game-over,
   append to or preserve the terminal-state instruction instead of replacing it
-  with only the setting change.
+  with only the setting change. Treat terminal, modal, automated, and restart
+  transitions as presentation boundaries: normalize every dependent control
+  label and enabled state in the same transition, then assert both model state
+  and live Control properties.
 - Programmatic state or configuration changes must update visible selectors,
   labels, and counters in the same transaction. QA should compare internal state
   against the current UI tree when helpers change difficulty, mode, tool, or
@@ -128,16 +151,26 @@ Report-derived patterns from the v0.7.0 prompt cycles:
 - For resource, progression, survival, or failure loops, isolate state changes
   such as spend, reward, damage, recovery, spawn, completion, and loss with
   focused helpers instead of relying only on a full natural run.
+- When QA jumps directly to a large synthetic state, separate state
+  construction, rule evaluation, and render refresh into bounded calls. Put
+  requirement coverage on the rule step; add the render step only when that
+  visual state must be inspected.
 - If generated code needs Hera runtime helper entrypoints, discover the current
   add-on path or autoload from this checkout before hardcoding helper script
   paths, then run a direct affected-scene load.
+- Do not place packed-array constructor calls in GDScript `const`
+  initializers. Build required packed collections in typed runtime variables or
+  typed functions, keep typed reads at the consumption boundary, and run
+  `--check-only` immediately after adding lookup tables.
 - For visible traversal paths, lanes, rails, patrols, projectiles, or routes,
-  derive drawing and movement from one authoritative geometry. Smooth corners
-  before rendering thick paths and verify with a screenshot plus one live
-  movement step.
+  keep a small set of authoring guide points, bake smoothed samples once, and
+  use that same sampled sequence for drawing and movement. Verify endpoints,
+  sample density, one live movement step, and the full path in a screenshot.
 - For Game Feel QA, expose the active target, channel list, duration,
   intensity/scope, and visible values. Do not treat a boolean or feature-list
-  string as proof that the rendered target changed.
+  string as proof that the rendered target changed. Preserve a separate snapshot
+  of the last triggered event's target, configured duration, intensity, scope,
+  and visible state so delayed QA can verify effects after active timers expire.
 - For animated UI feedback, regenerate style/theme resources only on state
   changes. Frame loops should update bounded transforms, offsets, opacity, or
   draw values.
@@ -175,6 +208,7 @@ rules; generic diagnosis cannot prove genre-specific behavior.
 Start broad once, then narrow every repeated read.
 
 ```sh
+./hera game ui audit
 ./hera game ui tree --type Button --fields name,path,text,disabled
 ./hera game ui tree --text Restart --fields name,path,text,rect,disabled
 ./hera game node get /root/Main --prop score
@@ -195,10 +229,12 @@ from step 1 should appear in at least one step's `covers`.
     "secondary-pointer-diagnostics",
     "keyboard-input",
     "hud-reflects-runtime-state",
+    "runtime-ui-structure-clean",
     "runtime-screenshot-no-clipping"
   ],
   "steps": [
     {"tool": "run", "current": true, "wait": true},
+    {"tool": "game.ui.audit", "covers": ["runtime-ui-structure-clean"]},
     {"tool": "game.qa.discover", "covers": ["qa-hooks-present"]},
     {
       "tool": "game.input",

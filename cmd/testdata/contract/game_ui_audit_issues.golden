@@ -1,0 +1,1 @@
+{"controls":2,"errors":0,"findings":[{"path":"/root/Main/Overlay","rule":"fullscreen_mouse_blocker","severity":"warning"}],"ok":false,"scope":"/root/Main","strict":true,"truncated":false,"warnings":1}

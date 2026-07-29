@@ -97,7 +97,7 @@ The `v1.0.0` CLI/addon surface includes:
 `classdb`, `node` (read + write + resource/script wiring), `signal`, `resource`
 (get/uid/list/set/create/resave/update-uids/export-mesh-library), `theme`
 (get/set for `Theme` resource items), `game`
-(runtime inspect + input + input-log + set/call/click + assert + QA +
+(runtime inspect + UI audit + input + input-log + set/call/click + assert + QA +
 screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`
 (capture + local before/after `diff`),
 `batch`, and `smoke`, with

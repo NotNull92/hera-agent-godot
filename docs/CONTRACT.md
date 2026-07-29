@@ -102,7 +102,7 @@ hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 | Code | Meaning | Examples (verified) |
 |------|---------|---------------------|
 | `0` | Success. | `status`, `scene tree`, passing `game assert` |
-| `1` | Runtime failure or failed check: no live editor, tool returned an error, mutation guard refused, or a verdict command reported not-OK. | `node get /nonexistent`, `game tree` with no game running, `game qa diagnose` with issues |
+| `1` | Runtime failure or failed check: no live editor, tool returned an error, mutation guard refused, or a verdict command reported not-OK. | `node get /nonexistent`, `game tree` with no game running, `game ui audit` with errors, `game qa diagnose` with issues |
 | `2` | Usage error: unknown command, missing/invalid flag argument, invalid `--instance` pid or `--timeout` value, malformed scenario file arguments. | `hera bogus`, `run --scene` (missing value), `--instance abc`, `--timeout abc` |
 
 ### Verdict commands
@@ -121,6 +121,10 @@ differ in where the detail goes:
 - `game qa diagnose` — report JSON on **stdout**
   (`{"ok","checks":[{"name","ok",...}],"issues":[...]}`), exit `0`/`1`
   following `ok`.
+- `game ui audit` — audit JSON on **stdout**
+  (`{"ok","strict","scope","controls","errors","warnings","findings","truncated"}`),
+  exit `0`/`1` following `ok`. Errors always make `ok` false; warnings do so
+  only with `--strict`. Operation failures remain stderr-only.
 - `smoke` — progress/summary output, exit `0`/`1` by overall result.
 
 ## Per-command contract
@@ -193,6 +197,7 @@ Requires a play session plus the `HeraGameInspector` autoload; not undoable.
 | `game assert` | stable | ✓ pass: `{prop, op, actual, expected}`; fail: stderr + exit 1 |
 | `game instances` | experimental | `instances[]` with pid, scene, heartbeat age |
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
+| `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` |
 | `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface) |
 | `game screenshot` | experimental | capture path; `--analyze` metrics evolve with QA guidance |
 | `game qa discover` | experimental | callable `qa_*` helpers |

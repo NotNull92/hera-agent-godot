@@ -10,7 +10,7 @@ import (
 
 func TestHeadlessRuntimeScenario(t *testing.T) {
 	// Given
-	wantRequirements := []string{"fixture-launches", "counter-mutates"}
+	wantRequirements := []string{"fixture-launches", "counter-mutates", "runtime-ui-audit-clean"}
 	wantSteps := []gameQAStep{
 		{
 			Tool:  "run",
@@ -24,6 +24,10 @@ func TestHeadlessRuntimeScenario(t *testing.T) {
 			Op:     "eq",
 			Value:  float64(0),
 			Covers: []string{"fixture-launches"},
+		},
+		{
+			Tool:   "game.ui.audit",
+			Covers: []string{"runtime-ui-audit-clean"},
 		},
 		{
 			Tool:   "game.node.call",

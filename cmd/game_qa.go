@@ -83,6 +83,18 @@ func executeGameQAStep(c *client.Client, index int, step gameQAStep) gameQAResul
 		result.Error = resp.Error
 		return result
 	}
+	if step.Tool == "game.ui.audit" {
+		passed, auditErr := gameUIAuditPassed(resp.Data)
+		if auditErr != nil {
+			result.Error = auditErr.Error()
+			return result
+		}
+		if !passed {
+			result.Error = gameUIAuditFailure(resp.Data)
+			result.Data = resp.Data
+			return result
+		}
+	}
 	result.OK = true
 	return result
 }
@@ -134,6 +146,8 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		return c.Post("game", gameInputLogParamsFromQAStep(step))
 	case "game.ui.tree":
 		return c.Post("game", gameUITreeParamsFromQAStep(step))
+	case "game.ui.audit":
+		return c.Post("game", gameUIAuditParamsFromQAStep(step))
 	case "game.assert":
 		return c.Post("game", map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value})
 	case "screenshot.runtime":
@@ -182,6 +196,15 @@ func gameUITreeParamsFromQAStep(step gameQAStep) map[string]any {
 	}
 	if step.Text != "" {
 		params["text"] = step.Text
+	}
+	return params
+}
+
+func gameUIAuditParamsFromQAStep(step gameQAStep) map[string]any {
+	params := cloneJSONMap(step.Params)
+	params["action"] = "ui_audit"
+	if step.Path != "" {
+		params["path"] = normalizeGameNodePath(step.Path)
 	}
 	return params
 }

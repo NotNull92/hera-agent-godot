@@ -62,6 +62,10 @@ Goal: `hera-agent-godot status` prints info from a live editor.
 - [x] `scene create` and `scene save-as`: scene file helpers.
 - [x] `node set-resource`, `node attach-script`, and `node detach-script`: resource/script wiring helpers.
 - [x] `game tree`, `game node get`, `game node set`, `game node call`: runtime inspection and control through the `HeraGameInspector` autoload.
+- [x] `game ui audit`: project-agnostic runtime checks for interactive geometry,
+      clipping, viewport placement, mouse blockers, minimum-size fit, and
+      overlapping interactive siblings, with strict warning handling and QA
+      scenario coverage.
 - [x] `batch` awaits async tools such as `game` and `screenshot`.
 - [x] Verified: `go build/vet/test` green; addon GDScript passes `--check-only`.
 
