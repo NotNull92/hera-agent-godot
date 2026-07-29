@@ -48,7 +48,9 @@ sidebars interactive.
 
 For framed gameplay UIs, automated clipping checks are not enough. Keep parent
 frame padding explicit, keep child controls bounded inside their frames, and set
-readable text colors for normal, hover, pressed, and disabled states.
+readable text colors for normal, hover, pressed, and disabled states. Compare
+sibling rectangles, multiline minimum sizes, and local padding; internal overlap
+is a failure even when no content reaches the viewport edge.
 
 For game tokens, markers, cards, units, hazards, rewards, and board marks, do not
 use raw letters inside generic controls as the final visual. Use semantic shapes,
@@ -60,9 +62,11 @@ content, pulse overlay, draw layer, offset, or opacity; do not scale or rebuild
 the whole interactive control on every frame.
 
 For play-surface plus HUD/sidebar UIs, give sibling panels a shared geometry
-budget. Matching top edges with very different heights, unbounded helper text,
-or one panel growing because of dense controls should be treated as a visual QA
-failure.
+budget and define one shared outer rectangle or explicit top/bottom coordinates
+for paired primary frames. Compare their resolved live rect bounds rather than
+trusting independent size hints. Matching top edges with different heights,
+unbounded helper text, or one panel growing because of dense controls is a
+visual QA failure.
 
 For grid, board, inventory, card, lane, and tile layouts, derive internal insets
 from the frame size, cell count, and gap sizes. Avoid hand-tuned offsets that
@@ -75,9 +79,10 @@ Only set `get_viewport().size` when fixed-resolution output is an explicit
 requirement.
 
 For visible paths, lanes, rails, patrol lines, projectiles, and guided movement,
-build one authoritative geometry and use it for both rendering and movement.
-Smooth raw corner points before drawing thick paths, and place decorative flow
-markers by total path distance so entities do not appear offset from the route.
+keep a small set of authoring guide points, bake smoothed samples once, and use
+that same sampled sequence for both rendering and movement. Place decorative
+flow markers by total path distance, then verify endpoints, sample density,
+live movement, and the full path in a screenshot.
 
 Create a deterministic inspection handoff helper for autonomous or stateful
 prompt games. It should restore default settings, pause or freeze simulation when
@@ -93,22 +98,36 @@ Prompt-game QA helpers should match the source of flake:
 - Hidden-state rules: after flag, mark, or setup flows, avoid preconditions
   created by earlier QA steps or reset them explicitly.
 - AI or automated turns: priority setup helpers and a documented undo boundary.
+- Automated or temporary locks: keep dense collections of controls visually
+  stable and reject actions at one input boundary with explicit feedback.
+  Reserve per-control disabling for persistent semantic unavailability and
+  verify runtime heartbeat continuity through the transition.
 - Autonomous loops: restart-paused helpers, pause controls, and one-step
-  advancement before inspection.
+  advancement before inspection. Stage exact timer, physics, position,
+  cooldown, and threshold assertions while simulation is frozen or in one
+  atomic helper. Resume only for intentional real-time measurements and use
+  explicit tolerances there.
 - Primary input: after helper-based checks, drive the prompt's primary keyboard,
   mouse, touch, or controller path through live runtime input before reporting
-  success.
+  success, then assert an observable gameplay state delta. An injected event or
+  input-log entry alone does not prove that focused UI or another input consumer
+  allowed the gameplay action through.
 - Collision and impact: forced-overlap helpers for feedback, end-state, and
   Game Feel evidence when Game Feel Mode matters.
 - Wave and economy loops: isolate placement, spawn, reward, spend, leak, and
   loss assertions instead of relying only on a full natural run.
+- Large synthetic states: split QA-only state construction, rule evaluation,
+  and render refresh into bounded calls. Cover the requirement on the rule step
+  and render afterward only when the visual state must be inspected.
 - High-volume UI: filtered `game ui tree --type ... --fields ...` reads scoped
   by path, text, depth, or class.
 - Stateful controls: if a toggle or mode button changes label, read the current
   UI tree or target a stable node path before semantic clicks.
 - Terminal states: controls available during pause, win, loss, draw, or
   game-over should preserve or append the terminal-state instruction instead of
-  replacing it outright.
+  replacing it outright. Terminal, modal, automated, and restart transitions
+  should normalize every dependent control label and enabled state in the same
+  transition; QA should assert both model state and live Control properties.
 - Selectors and labels: when helper code changes a difficulty, mode, tool,
   level, ruleset, or score state, update the user-visible selector, label, or
   counter in the same transaction.
@@ -116,7 +135,9 @@ Prompt-game QA helpers should match the source of flake:
   project or autoload configuration before preloading helper scripts.
 - Game Feel evidence: expose the target, active channels, duration,
   intensity/scope, and visible values. A boolean or feature list alone is not
-  enough.
+  enough. Keep a durable snapshot of the last triggered event's target,
+  configured duration, intensity, scope, and visible state so QA remains
+  deterministic after short active effects expire.
 - Animated UI: create or update style/theme resources on state changes, not in
   `_process`; per-frame work should update transforms, offsets, opacity, or draw
   values.
@@ -298,6 +319,11 @@ const EMPTY: int = 0
 const BLACK: int = 1
 const WHITE: int = 2
 ```
+
+Constant values must be valid compile-time expressions. Do not use packed-array
+constructor calls such as `PackedInt32Array(...)` in `const` initializers.
+Build packed lookup data in a typed runtime variable or typed function instead,
+then run `--check-only` immediately after introducing the table.
 
 Use enums when values form a closed set:
 
