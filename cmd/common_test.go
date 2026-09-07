@@ -3,6 +3,7 @@ package cmd
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NotNull92/hera-agent-godot/internal/discovery"
 )
@@ -28,7 +29,7 @@ func TestSelectEditor_reportsActionableMessage_whenNoInstances(t *testing.T) {
 
 func TestSelectEditor_distinguishesExpiredHeartbeatFromMissing(t *testing.T) {
 	scan := discovery.Scan{
-		Stale: []discovery.Instance{{PID: 33516, Port: 8770, TS: 1, AgeSec: 54}},
+		Stale: []discovery.Instance{{PID: 33516, Port: 8770, TS: time.Now().Add(-54 * time.Second).Unix()}},
 	}
 
 	_, err := selectEditor(scan, false, 33516)
@@ -36,7 +37,7 @@ func TestSelectEditor_distinguishesExpiredHeartbeatFromMissing(t *testing.T) {
 		t.Fatal("expected expired-heartbeat error")
 	}
 	message := err.Error()
-	for _, want := range []string{"pid 33516", "expired 54s ago", "hera instances"} {
+	for _, want := range []string{"pid 33516", "expired", "ago", "hera instances"} {
 		if !strings.Contains(message, want) {
 			t.Fatalf("targeted stale error %q does not include %q", message, want)
 		}
@@ -50,7 +51,7 @@ func TestSelectEditor_distinguishesExpiredHeartbeatFromMissing(t *testing.T) {
 		t.Fatal("expected stale-list error when no live editor exists")
 	}
 	message = err.Error()
-	for _, want := range []string{"no live Godot editor found", "stale heartbeat", "pid 33516 expired 54s ago"} {
+	for _, want := range []string{"no live Godot editor found", "stale heartbeat", "pid 33516 expired"} {
 		if !strings.Contains(message, want) {
 			t.Fatalf("untargeted stale error %q does not include %q", message, want)
 		}

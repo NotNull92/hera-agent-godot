@@ -318,8 +318,9 @@ Goal: declare the contract stable and make depending on Hera boring.
 ## Unreleased viewport, heartbeat, and user-data honesty (2026-09-07)
 
 - [x] Runtime screenshots report live PNG, window, visible-rect, and project
-  viewport sizes with `size_matches_project`. Smaller embedded captures are not
-  upscaled; input coordinates stay in the actual viewport.
+  viewport sizes. `size_matches_project` compares the PNG to the project
+  viewport. Smaller embedded captures are not upscaled; input coordinates stay
+  in the actual viewport.
 - [x] Editor discovery distinguishes expired heartbeats from missing ones.
   `hera instances` lists `stale`; `--instance` against an expired pid says so.
 - [x] Game heartbeats include `user_data_dir` and mark `shared_user_data` when

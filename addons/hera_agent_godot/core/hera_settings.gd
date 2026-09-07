@@ -21,9 +21,7 @@ static func set_game_feel_mode_enabled(enabled: bool) -> void:
 
 
 static func _get_bool(key: String, fallback: bool) -> bool:
-	var settings := _editor_settings()
-	if settings == null:
-		return fallback
+	var settings: EditorSettings = EditorInterface.get_editor_settings()
 	if not settings.has_setting(key):
 		settings.set_setting(key, fallback)
 		settings.mark_setting_changed(key)
@@ -31,15 +29,6 @@ static func _get_bool(key: String, fallback: bool) -> bool:
 
 
 static func _set_bool(key: String, enabled: bool) -> void:
-	var settings := _editor_settings()
-	if settings == null:
-		return
+	var settings: EditorSettings = EditorInterface.get_editor_settings()
 	settings.set_setting(key, enabled)
 	settings.mark_setting_changed(key)
-
-
-static func _editor_settings() -> EditorSettings:
-	var settings: EditorSettings = EditorInterface.get_editor_settings()
-	if settings == null or not is_instance_valid(settings):
-		return null
-	return settings

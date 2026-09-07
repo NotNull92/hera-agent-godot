@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func TestDiscoverIn_returnsFreshInstancesMostRecentFirst(t *testing.T) {
+func TestScanIn_returnsFreshInstancesMostRecentFirst(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Unix(1_000_000, 0)
 
@@ -27,15 +27,18 @@ func TestDiscoverIn_returnsFreshInstancesMostRecentFirst(t *testing.T) {
 		}
 	}
 
-	got, err := discoverIn(dir, now)
+	scan, err := scanIn(dir, now)
 	if err != nil {
-		t.Fatalf("discoverIn error: %v", err)
+		t.Fatalf("scanIn error: %v", err)
 	}
-	if len(got) != 2 {
-		t.Fatalf("got %d live instances, want 2 (stale dropped): %#v", len(got), got)
+	if len(scan.Live) != 2 {
+		t.Fatalf("got %d live instances, want 2 (stale dropped): %#v", len(scan.Live), scan)
 	}
-	if got[0].PID != 1 || got[1].PID != 2 {
-		t.Fatalf("order = [pid %d, pid %d], want [1, 2] (most recent first)", got[0].PID, got[1].PID)
+	if scan.Live[0].PID != 1 || scan.Live[1].PID != 2 {
+		t.Fatalf("order = [pid %d, pid %d], want [1, 2] (most recent first)", scan.Live[0].PID, scan.Live[1].PID)
+	}
+	if len(scan.Stale) != 1 || scan.Stale[0].PID != 3 {
+		t.Fatalf("stale = %#v, want pid 3", scan.Stale)
 	}
 }
 
@@ -63,12 +66,15 @@ func TestScanIn_keepsExpiredHeartbeatsSeparateFromLive(t *testing.T) {
 	if len(scan.Live) != 1 || scan.Live[0].PID != 1 {
 		t.Fatalf("live = %#v, want pid 1", scan.Live)
 	}
-	if len(scan.Stale) != 1 || scan.Stale[0].PID != 3 || scan.Stale[0].AgeSec != 54 {
-		t.Fatalf("stale = %#v, want pid 3 age 54s", scan.Stale)
+	if len(scan.Stale) != 1 || scan.Stale[0].PID != 3 {
+		t.Fatalf("stale = %#v, want pid 3", scan.Stale)
+	}
+	if got := scan.Stale[0].AgeSeconds(now); got != 54 {
+		t.Fatalf("stale age = %d, want 54", got)
 	}
 }
 
-func TestDiscoverRetrying_rescansWhenHeartbeatIsMidSwap(t *testing.T) {
+func TestScanRetrying_rescansWhenHeartbeatIsMidSwap(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Unix(1_000_000, 0)
 	inst := Instance{PID: 42, Port: 8770, TS: now.Unix()}
@@ -88,19 +94,19 @@ func TestDiscoverRetrying_rescansWhenHeartbeatIsMidSwap(t *testing.T) {
 		}
 	}
 
-	got, err := discoverRetrying(dir, func() time.Time { return now }, sleep)
+	scan, err := scanRetrying(dir, func() time.Time { return now }, sleep)
 	if err != nil {
-		t.Fatalf("discoverRetrying error: %v", err)
+		t.Fatalf("scanRetrying error: %v", err)
 	}
 	if slept != 1 {
 		t.Fatalf("rescan delay used %d times, want exactly 1", slept)
 	}
-	if len(got) != 1 || got[0].PID != 42 {
-		t.Fatalf("got %#v, want the instance published during the swap window", got)
+	if len(scan.Live) != 1 || scan.Live[0].PID != 42 {
+		t.Fatalf("got %#v, want the instance published during the swap window", scan)
 	}
 }
 
-func TestDiscoverRetrying_doesNotRescanWhenFirstPassFinds(t *testing.T) {
+func TestScanRetrying_doesNotRescanWhenFirstPassFinds(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Unix(1_000_000, 0)
 	b, err := json.Marshal(Instance{PID: 7, Port: 8770, TS: now.Unix()})
@@ -112,34 +118,34 @@ func TestDiscoverRetrying_doesNotRescanWhenFirstPassFinds(t *testing.T) {
 	}
 
 	slept := 0
-	got, err := discoverRetrying(dir, func() time.Time { return now }, func(time.Duration) { slept++ })
+	scan, err := scanRetrying(dir, func() time.Time { return now }, func(time.Duration) { slept++ })
 	if err != nil {
-		t.Fatalf("discoverRetrying error: %v", err)
+		t.Fatalf("scanRetrying error: %v", err)
 	}
 	if slept != 0 {
 		t.Fatalf("slept %d times, want 0 — a hit on the first pass must not pay the delay", slept)
 	}
-	if len(got) != 1 || got[0].PID != 7 {
-		t.Fatalf("got %#v, want pid 7", got)
+	if len(scan.Live) != 1 || scan.Live[0].PID != 7 {
+		t.Fatalf("got %#v, want pid 7", scan)
 	}
 }
 
-func TestDiscoverRetrying_stillEmptyWhenNoEditorIsRunning(t *testing.T) {
+func TestScanRetrying_stillEmptyWhenNoEditorIsRunning(t *testing.T) {
 	dir := t.TempDir()
 	slept := 0
-	got, err := discoverRetrying(dir, time.Now, func(time.Duration) { slept++ })
+	scan, err := scanRetrying(dir, time.Now, func(time.Duration) { slept++ })
 	if err != nil {
-		t.Fatalf("discoverRetrying error: %v", err)
+		t.Fatalf("scanRetrying error: %v", err)
 	}
 	if slept != rescanDelays {
 		t.Fatalf("slept %d times, want %d — every retry is spent before believing an empty directory", slept, rescanDelays)
 	}
-	if len(got) != 0 {
-		t.Fatalf("got %d instances, want 0", len(got))
+	if len(scan.Live) != 0 {
+		t.Fatalf("got %d instances, want 0", len(scan.Live))
 	}
 }
 
-func TestDiscoverRetrying_stopsAsSoonAsTheEditorAppears(t *testing.T) {
+func TestScanRetrying_stopsAsSoonAsTheEditorAppears(t *testing.T) {
 	// Given: the heartbeat reappears on the second retry, as it would when the
 	// swap window is stretched by I/O load.
 	dir := t.TempDir()
@@ -160,17 +166,17 @@ func TestDiscoverRetrying_stopsAsSoonAsTheEditorAppears(t *testing.T) {
 	}
 
 	// When
-	got, err := discoverRetrying(dir, func() time.Time { return now }, sleep)
+	scan, err := scanRetrying(dir, func() time.Time { return now }, sleep)
 
 	// Then: it must not keep retrying once it has an answer.
 	if err != nil {
-		t.Fatalf("discoverRetrying error: %v", err)
+		t.Fatalf("scanRetrying error: %v", err)
 	}
 	if slept != 2 {
 		t.Fatalf("slept %d times, want 2 — retries stop at the first hit", slept)
 	}
-	if len(got) != 1 || got[0].PID != 5 {
-		t.Fatalf("got %#v, want the instance that appeared mid-retry", got)
+	if len(scan.Live) != 1 || scan.Live[0].PID != 5 {
+		t.Fatalf("got %#v, want the instance that appeared mid-retry", scan)
 	}
 }
 
@@ -192,12 +198,12 @@ func TestRescanDelayFor_growsAndCoversAUsefulSpread(t *testing.T) {
 	}
 }
 
-func TestDiscoverIn_missingDirReturnsEmpty(t *testing.T) {
-	got, err := discoverIn(filepath.Join(t.TempDir(), "nope"), time.Now())
+func TestScanIn_missingDirReturnsEmpty(t *testing.T) {
+	scan, err := scanIn(filepath.Join(t.TempDir(), "nope"), time.Now())
 	if err != nil {
 		t.Fatalf("error = %v, want nil for a missing directory", err)
 	}
-	if len(got) != 0 {
-		t.Fatalf("got %d instances, want 0", len(got))
+	if len(scan.Live) != 0 || len(scan.Stale) != 0 {
+		t.Fatalf("got %#v, want empty live and stale", scan)
 	}
 }

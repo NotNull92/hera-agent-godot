@@ -223,7 +223,7 @@ without fallback.
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
 | `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` |
 | `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface); click/input coordinates are live viewport pixels, not the project window setting |
-| `game screenshot` | experimental | capture path and live PNG size; window/visible/project sizes and `size_matches_project`; `--analyze` metrics evolve with QA guidance. Captures are not upscaled. |
+| `game screenshot` | experimental | capture path and live PNG size; window/visible/project sizes; `size_matches_project` compares PNG pixels to the project viewport, not the visible rect. `--analyze` metrics evolve with QA guidance. Captures are not upscaled. |
 | `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |

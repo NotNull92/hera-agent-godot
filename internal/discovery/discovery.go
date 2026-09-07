@@ -2,7 +2,7 @@
 //
 // The addon's Heartbeat writes one JSON file per editor under
 // ~/.hera-agent-godot/instances/<pid>.json. This package scans that directory
-// and returns the live ones (most recent first).
+// and returns live editors plus expired heartbeat files (most recent first).
 package discovery
 
 import (
@@ -45,8 +45,17 @@ type Instance struct {
 	ProjectPath  string `json:"project_path"`
 	GodotVersion string `json:"godot_version"`
 	Scene        string `json:"scene"`
-	TS           int64  `json:"ts"`                // unix seconds of last heartbeat
-	AgeSec       int64  `json:"age_sec,omitempty"` // set on stale entries only
+	TS           int64  `json:"ts"` // unix seconds of last heartbeat
+}
+
+// AgeSeconds is how old the heartbeat is at now. Display code uses this; it is
+// not stored on disk.
+func (inst Instance) AgeSeconds(now time.Time) int64 {
+	sec := int64(now.Sub(time.Unix(inst.TS, 0)).Seconds())
+	if sec < 1 {
+		return 1
+	}
+	return sec
 }
 
 // Scan is one pass over the instance directory, split into live heartbeats and
@@ -56,24 +65,15 @@ type Scan struct {
 	Stale []Instance
 }
 
-// Discover scans the instances directory under the user's home and returns
-// editors whose heartbeat is still fresh, most recent first.
+// DiscoverScan scans ~/.hera-agent-godot/instances/ and returns live editors
+// plus expired heartbeat files still on disk. A stalled editor can leave a
+// process running after its heartbeat ages out; callers use Stale to
+// distinguish that from "no editor advertised".
 //
-// An empty pass is retried over growing delays, so a scan that lands in the
-// addon's heartbeat swap window does not report "no editor" while one is
-// running. A genuinely empty directory pays those delays once and then reports
-// nothing, which is fine: that path already ends in an error.
-func Discover() ([]Instance, error) {
-	scan, err := DiscoverScan()
-	if err != nil {
-		return nil, err
-	}
-	return scan.Live, nil
-}
-
-// DiscoverScan is Discover plus expired heartbeat files that are still on disk.
-// A stalled editor can leave a process running after its heartbeat ages out;
-// callers use Stale to distinguish that from "no editor advertised".
+// An empty live pass is retried over growing delays, so a scan that lands in
+// the addon's heartbeat swap window does not report "no editor" while one is
+// running. A genuinely empty directory pays those delays once and then
+// reports nothing, which is fine: that path already ends in an error.
 func DiscoverScan() (Scan, error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -81,17 +81,6 @@ func DiscoverScan() (Scan, error) {
 	}
 	dir := filepath.Join(home, dirName, "instances")
 	return scanRetrying(dir, time.Now, time.Sleep)
-}
-
-// discoverRetrying is the testable core of Discover's retry: an empty result may
-// just be the heartbeat mid-swap rather than an absent editor, so it rescans a
-// few times over growing delays before believing it.
-func discoverRetrying(dir string, now func() time.Time, sleep func(time.Duration)) ([]Instance, error) {
-	scan, err := scanRetrying(dir, now, sleep)
-	if err != nil {
-		return nil, err
-	}
-	return scan.Live, nil
 }
 
 func scanRetrying(dir string, now func() time.Time, sleep func(time.Duration)) (Scan, error) {
@@ -109,17 +98,6 @@ func scanRetrying(dir string, now func() time.Time, sleep func(time.Duration)) (
 	return scan, err
 }
 
-// discoverIn is the testable core of Discover: it scans dir and drops stale
-// entries relative to now.
-func discoverIn(dir string, now time.Time) ([]Instance, error) {
-	scan, err := scanIn(dir, now)
-	if err != nil {
-		return nil, err
-	}
-	return scan.Live, nil
-}
-
-// scanIn is the testable core of DiscoverScan: live vs expired files.
 func scanIn(dir string, now time.Time) (Scan, error) {
 	scan := Scan{Live: []Instance{}, Stale: []Instance{}}
 	entries, err := os.ReadDir(dir)
@@ -145,9 +123,7 @@ func scanIn(dir string, now time.Time) (Scan, error) {
 		if inst.Port == 0 {
 			continue
 		}
-		age := now.Sub(time.Unix(inst.TS, 0))
-		if age > freshness {
-			inst.AgeSec = int64(age.Seconds())
+		if now.Sub(time.Unix(inst.TS, 0)) > freshness {
 			scan.Stale = append(scan.Stale, inst)
 			continue
 		}

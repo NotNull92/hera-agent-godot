@@ -66,12 +66,5 @@ func describeEditors(scan discovery.Scan) string {
 }
 
 func heartbeatAgeText(inst discovery.Instance) string {
-	if inst.AgeSec > 0 {
-		return fmt.Sprintf("%ds", inst.AgeSec)
-	}
-	age := time.Since(time.Unix(inst.TS, 0)).Truncate(time.Second)
-	if age < time.Second {
-		age = time.Second
-	}
-	return age.String()
+	return fmt.Sprintf("%ds", inst.AgeSeconds(time.Now()))
 }

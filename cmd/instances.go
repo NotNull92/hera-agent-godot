@@ -4,9 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/NotNull92/hera-agent-godot/internal/discovery"
 )
+
+type listedEditor struct {
+	discovery.Instance
+	AgeSec int64 `json:"age_sec,omitempty"`
+}
 
 func runInstances(args []string) int {
 	if len(args) != 0 {
@@ -20,7 +26,12 @@ func runInstances(args []string) int {
 	}
 	data := map[string]any{"count": len(scan.Live), "instances": scan.Live}
 	if len(scan.Stale) > 0 {
-		data["stale"] = scan.Stale
+		now := time.Now()
+		stale := make([]listedEditor, 0, len(scan.Stale))
+		for _, inst := range scan.Stale {
+			stale = append(stale, listedEditor{Instance: inst, AgeSec: inst.AgeSeconds(now)})
+		}
+		data["stale"] = stale
 	}
 	var out []byte
 	if outputMode == "json" {

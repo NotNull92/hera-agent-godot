@@ -155,10 +155,7 @@ func _get_plugin_name() -> String:
 	return MAIN_SCREEN_PLUGIN_NAME
 
 func _get_plugin_icon() -> Texture2D:
-	var theme := EditorInterface.get_editor_theme()
-	if theme == null:
-		return null
-	return theme.get_icon("Node", "EditorIcons")
+	return EditorInterface.get_editor_theme().get_icon("Node", "EditorIcons")
 
 func _ensure_game_autoload() -> void:
 	var key := "autoload/%s" % GAME_AUTOLOAD_NAME

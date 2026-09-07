@@ -12,7 +12,7 @@ func _initialize() -> void:
 	_check(not GameViewportActions.sizes_match(1080, 1920, 0, 0), "unknown project size does not match")
 	var metrics: Dictionary = GameViewportActions.geometry(root)
 	_check(metrics.has("visible_width") and metrics.has("window_width") and metrics.has("project_width"), "geometry reports window, visible, and project size")
-	_check(metrics.has("size_matches_project"), "geometry reports size_matches_project")
+	_check(not metrics.has("size_matches_project"), "geometry does not claim a PNG match")
 
 	var tool := GameTool.new()
 	var instances := [

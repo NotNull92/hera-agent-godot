@@ -36,23 +36,25 @@ func evaluateGameQAInstances(data map[string]any, targetPID int) (map[string]any
 		return gameQADiagnoseFailure("runtime_instances", fmt.Errorf("missing instances")), []string{"runtime instance response is incomplete"}
 	}
 	check := map[string]any{"name": "runtime_instances", "ok": len(instances) == 1, "count": len(instances)}
+	selected := false
 	for _, raw := range instances {
 		instance, instanceOK := raw.(map[string]any)
-		if instanceOK {
-			if shared, ok := instance["shared_user_data"].(bool); ok && shared {
-				check["shared_user_data"] = true
-			}
+		if !instanceOK {
+			continue
+		}
+		if shared, ok := instance["shared_user_data"].(bool); ok && shared {
+			check["shared_user_data"] = true
+		}
+		pid, pidOK := numericField(instance, "pid")
+		if targetPID > 0 && pidOK && pid == targetPID {
+			selected = true
 		}
 	}
 	if targetPID > 0 {
 		check["selected_pid"] = targetPID
-		for _, raw := range instances {
-			instance, instanceOK := raw.(map[string]any)
-			pid, pidOK := numericField(instance, "pid")
-			if instanceOK && pidOK && pid == targetPID {
-				check["ok"] = true
-				return check, nil
-			}
+		if selected {
+			check["ok"] = true
+			return check, nil
 		}
 		check["ok"] = false
 		return check, []string{fmt.Sprintf("selected game process %d is not live", targetPID)}

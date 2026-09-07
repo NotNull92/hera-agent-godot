@@ -41,7 +41,6 @@ static func geometry(viewport: Viewport) -> Dictionary:
 		"visible_height": visible_height,
 		"project_width": project_width,
 		"project_height": project_height,
-		"size_matches_project": sizes_match(visible_width, visible_height, project_width, project_height),
 	}
 
 static func screenshot(viewport: Viewport, request: Dictionary, scene_path: String, pid: int) -> Dictionary:
