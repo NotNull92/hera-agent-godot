@@ -2,6 +2,18 @@ package cmd
 
 import "testing"
 
+func TestParseScriptValidate(t *testing.T) {
+	params, err := parseScriptArgs([]string{"validate", "res://scripts/player.gd"})
+	if err != nil || params["action"] != "validate" || params["path"] != "res://scripts/player.gd" {
+		t.Fatalf("params=%v error=%v", params, err)
+	}
+	for _, args := range [][]string{{"validate"}, {"validate", "res://a.gd", "--bad"}} {
+		if _, err := parseScriptArgs(args); err == nil {
+			t.Fatalf("accepted %v", args)
+		}
+	}
+}
+
 func TestParseScriptOpenArgs(t *testing.T) {
 	tests := []struct {
 		name       string

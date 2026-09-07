@@ -26,6 +26,8 @@ func execute(params: Dictionary) -> Dictionary:
 			return _current()
 		"inspect":
 			return _inspect(params)
+		"validate-context":
+			return _validate_context(params)
 		"open":
 			return _open(params)
 		"create":
@@ -82,6 +84,20 @@ func _open(params: Dictionary) -> Dictionary:
 		data["language"] = "csharp"
 		data["build_warning"] = CSharpSupport.BUILD_WARNING
 	return ToolResponse.success(data)
+
+
+func _validate_context(params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	if path.ends_with(".cs"):
+		return ToolResponse.failure("script validate supports GDScript only; build C# with the .NET SDK")
+	var guard := _guard_readable_script_path(path)
+	if guard != "":
+		return ToolResponse.failure(guard)
+	return ToolResponse.success({
+		"path": path,
+		"project_path": ProjectSettings.globalize_path("res://"),
+		"executable": OS.get_executable_path(),
+	})
 
 
 func _inspect_path(path: String) -> Dictionary:

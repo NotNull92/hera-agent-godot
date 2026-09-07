@@ -13,6 +13,9 @@ func runScript(args []string) int {
 		fmt.Fprintf(os.Stderr, "script: %v\n", err)
 		return 2
 	}
+	if params["action"] == "validate" {
+		return runScriptValidate(params)
+	}
 	if scriptActionMutates(params["action"]) {
 		return dialMutationPostPrint("script", params, "script")
 	}
@@ -21,7 +24,7 @@ func runScript(args []string) int {
 
 func scriptActionMutates(action any) bool {
 	switch action {
-	case "create", "open":
+	case "create", "open", "validate", "validate-context":
 		return true
 	default:
 		return false
@@ -30,7 +33,7 @@ func scriptActionMutates(action any) bool {
 
 func parseScriptArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: script <current|inspect|open|create> ...")
+		return nil, fmt.Errorf("usage: script <current|inspect|validate|open|create> ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -44,12 +47,17 @@ func parseScriptArgs(args []string) (map[string]any, error) {
 			return nil, fmt.Errorf("usage: script inspect <res://script.gd|.cs>")
 		}
 		return map[string]any{"action": "inspect", "path": rest[0]}, nil
+	case "validate":
+		if len(rest) != 1 {
+			return nil, fmt.Errorf("usage: script validate <res://script.gd>")
+		}
+		return map[string]any{"action": "validate", "path": rest[0]}, nil
 	case "open":
 		return parseScriptOpenArgs(rest)
 	case "create":
 		return parseScriptCreateArgs(rest)
 	default:
-		return nil, fmt.Errorf("unknown script subcommand %q (want current|inspect|open|create)", sub)
+		return nil, fmt.Errorf("unknown script subcommand %q (want current|inspect|validate|open|create)", sub)
 	}
 }
 
