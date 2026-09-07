@@ -57,6 +57,8 @@ hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 - `--timeout <ms>` bounds **each HTTP request** (default 5000 ms); it does not
   bound a whole command — `--wait` polls send many requests. A timed-out
   request is a runtime failure (exit `1`).
+  For `script validate`, the same value separately bounds the native engine
+  child process after context discovery, with up to one second to close pipes.
 - Unknown commands and malformed flags/arguments never reach the editor; they
   fail fast with exit code `2`.
 - With opt-in shared-token auth enabled ([SECURITY.md](./SECURITY.md)), a
@@ -165,6 +167,7 @@ contract tests (see [Contract tests](#contract-tests)).
 | `output` | stable | ✓ `available`, `log_path`, `type`, `total`, `lines[]` |
 | `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. `available` is false whenever the log cannot be read, and `clean` is false there too since cleanliness cannot be asserted without a readable log. `file_logging_enabled` is the *effective* value (`get_setting_with_override`), because file logging defaults to true on desktop through the `.pc` feature tag while the untagged default is false |
 | `script current` / `script inspect` | experimental | compact script metadata; GDScript source response unchanged, C# loaded-assembly metadata as specified below |
+| `script validate` | experimental | fresh on-disk `.gd` native engine check; JSON `{path,valid,exit_code,output,output_truncated,timed_out}`; optional `error` for launch failure; invalid/timeout exits 1, output capped at 64 KiB; leading `--timeout` also bounds the child process (default 5 s) |
 
 ### C# script metadata and build boundary
 
@@ -194,7 +197,7 @@ refusal is exit `1`.
 | Command | Tier | Notes |
 |---------|------|-------|
 | `node add` / `node set` / `node remove` | stable | undoable; `node add` may include an experimental `agent_hint` field when Game Feel Mode is on |
-| `node reparent` | experimental | undoable; uses `Node.reparent` and defaults to keeping the global transform |
+| `node reparent` | experimental | undoable; uses `Node.reparent` and defaults to keeping the global transform; undo restores the original name after a sibling-name collision |
 | `signal connect` / `signal disconnect` | stable | undoable, `CONNECT_PERSIST` |
 | `scene open` / `scene save` | stable | |
 | `eval` | stable | stringified expression result |
@@ -225,10 +228,18 @@ without fallback.
 | `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` |
 | `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface); click/input coordinates are live viewport pixels, not the project window setting. `game input` also injects joypad buttons and axes |
 | `game clock` | experimental | `{paused, time_scale, process_frames, physics_frames}`; `--step` adds `stepped` (`process` or `physics`) |
+| `game input sequence --file` | experimental | array of 1–128 `{frame,action,pressed}` events, ordered offsets 0–120; result `{kind,frames,events[],pid}` includes observed `physics_frame` per event; prevalidates actions, cancels on clock changes/deadline and releases held inputs |
 | `game screenshot` | experimental | capture path and live PNG size; window/visible/project sizes; `size_matches_project` compares PNG pixels to the project viewport, not the visible rect. `--analyze` metrics evolve with QA guidance. Captures are not upscaled. |
 | `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |
+
+Clock steps finish one selected node-callback phase before pausing. Input
+sequences require an unpaused tree, time scale 1, and physics rate >=60 Hz;
+their wall deadline is 2.5 s. Concurrent clock/input mutations are rejected.
+`script validate` is CLI-owned; `script/validate-context` only resolves the
+selected editor's paths. Native script loading may execute initializers;
+validation is not a sandbox or a warning-free guarantee.
 
 Explicitly targeted successful responses add experimental `game_pid` and
 `game_scene` fields. `game qa diagnose` accepts multiple live processes when

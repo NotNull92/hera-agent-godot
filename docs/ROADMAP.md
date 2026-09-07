@@ -12,6 +12,24 @@ to drive Godot from a shell.
 
 ## Unreleased: play-clock, reparent, joypad input (2026-09-07)
 
+CLI follow-up work in this working tree:
+
+- [x] Restore the original node name on reparent undo after a sibling-name collision.
+- [x] `script validate`: use the selected editor's engine for bounded, fresh
+  on-disk GDScript checks and return the exit status and bounded engine output.
+- [x] `game input sequence`: replay bounded action events on physics frames,
+  with validation before input, completion cleanup, and cancellation on clock changes.
+- [x] Complete the selected process/physics callback phase before pausing a clock step.
+- Further CLI candidates, not implemented here: InputMap inspection/binding,
+  bounded performance samples, and GDScript debugger commands over Godot's DAP.
+  These do not require an MCP server.
+- Verified on an isolated Godot 4.7.2 .NET editor: clean/broken/repaired
+  GDScript checks, name-collision reparent and editor undo, exact process and
+  physics callback stepping, and a 12-step QA scenario covering all three
+  runtime requirements, both with default selection and explicit runtime PID.
+  Runtime diagnostics were clean. Go build/vet/shuffled tests and affected
+  GDScript parse checks passed; the known Windows race-test limit still applies.
+
 - [x] `game clock`: `SceneTree.paused`, `Engine.time_scale`, and one-frame
   `--step` / `--physics` through the runtime inspector (`PROCESS_MODE_ALWAYS`,
   wall-clock heartbeats so scaled time does not starve discovery).

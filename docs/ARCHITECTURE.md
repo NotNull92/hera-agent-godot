@@ -29,6 +29,9 @@ Two processes talk over localhost HTTP:
 
 - The CLI is a thin client. It discovers running editors, picks one, and sends a
   single compact JSON request per command.
+- `script validate` first resolves the selected editor's engine/project paths,
+  then runs a bounded native `--check-only` child process to avoid stale script
+  cache results. It captures at most 64 KiB and reports the engine exit status.
 - The addon is a GDScript `@tool` `EditorPlugin`. It binds a local HTTP server,
   queues each request, and executes editor work from the editor main loop.
 - No MCP server — by design, not for lack of one. Godot's MCP-addon ecosystem is
@@ -127,6 +130,7 @@ need a duplicate `LICENSE` at the ZIP download root.
 | `runtime/game_value_codec.gd` | Runtime value serialization and argument/property coercion shared by live `game node get/set/call`. |
 | `runtime/game_image_analyzer.gd` | Generic runtime screenshot metrics for low-token visual QA (`nonblank`, dimensions, sampled color count, brightness, per-edge content ratios, asymmetric clipping, and low-detail hints). |
 | `runtime/game_assertions.gd` | Generic runtime property assertion comparisons for `game assert` and scenario QA. |
+| `runtime/game_input_sequence.gd` | Bounded action replay on `physics_frame`, buffered input flushing, and held-action cleanup. Clock steps use a selected-phase SceneTreeTimer to pause after node callbacks. |
 
 ---
 

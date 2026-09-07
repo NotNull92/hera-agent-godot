@@ -106,6 +106,15 @@ screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screensh
 [docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Store
 packaging status.
 
+Check on-disk GDScript with `hera script validate res://Player.gd`.
+Validation uses the connected editor's engine in a bounded headless process,
+prints the engine output as JSON, and exits nonzero on failure. It does not
+compile C# or certify warning-free code; loading dependencies can execute code.
+Replay input actions with `hera game input sequence --file events.json`, where
+the array contains `{ "frame": 0, "action": "ui_accept", "pressed": true }`
+events. Frames are relative physics frames; held actions are released on exit.
+See the command reference for timing limits and QA examples.
+
 Choose GDScript or C# by the script filename: `hera script create res://Player.gd`
 or `hera script create res://Player.cs --ready --export Speed:float=3.5f`.
 Optional `--lang gdscript|csharp` must agree with the extension. C# creation,

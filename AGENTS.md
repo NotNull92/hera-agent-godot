@@ -99,6 +99,7 @@ hera editor select <node> [--add]            # select a node in the editor
 hera editor clear-selection                  # clear editor node selection
 hera script current                          # inspect focused script
 hera script inspect res://scripts/foo.gd     # script metadata
+hera script validate res://scripts/foo.gd    # fresh on-disk GDScript check; nonzero on failure
 hera script open res://scripts/foo.gd [--line N] [--column N] # open in script editor
 hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal name] [--export name:type=value]
 hera script create res://Player.cs --lang csharp --ready --export Speed:float=3.5f # Godot .NET; build/reload before attach
@@ -133,6 +134,7 @@ hera game click --node /root/Main/Button     # click the center of a live Contro
 hera game click --text Restart               # click the center of a visible Control by text
 hera game clock [--pause|--resume] [--time-scale N] [--step] [--physics] # SceneTree.paused / Engine.time_scale / one frame
 hera game input joypad --button A --press    # InputEventJoypadButton; axis: game input axis --axis LEFT_X --value 1
+hera game input sequence --file events.json # ordered {frame,action,pressed} events on physics frames
 hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
@@ -171,6 +173,17 @@ default 5000). Default output is compact JSON.
   expression in both project languages. See [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
+- **Validate disk code before running it.** `script validate res://file.gd`
+  uses the selected editor's engine in a separate bounded process. It does not
+  check unsaved editor text or compile C#. Native dependency loading may execute
+  initializers; success is not a warning-free guarantee. `--timeout` also bounds
+  this process (default 5 seconds). Validation requires explicit `--instance`
+  when multiple editors are live.
+- **Replay actions on physics frames.** `game input sequence --file events.json`
+  accepts 1–128 ordered `{frame,action,pressed}` entries with offsets 0–120.
+  It requires existing, unheld InputMap actions, an unpaused tree, time scale 1,
+  and physics rate >=60 Hz; held inputs are released on completion/cancellation.
+  The runtime deadline is 2.5 seconds. See `docs/COMMANDS.md` for QA integration.
 - **UI work reads the live guidance mode first.** Before agent-driven UI work,
   run `hera guidance ui`. If it reports `game_feel_ui_mode: true`, implement
   UI around Game Feel: immediate input feedback, expressive state changes,

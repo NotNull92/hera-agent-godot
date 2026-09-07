@@ -179,12 +179,14 @@ commands:
   editor     state | selected | select <node> [--add] | clear-selection
   node       find|get|add|instance|set|set-resource|remove|reparent|attach-script|detach-script
   script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
+             validate <res://script.gd>  check fresh on-disk GDScript with the editor's engine
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
   theme      get <res://t.tres> [--type T] | set <res://t.tres> --type T --color|--constant|--font-size name=value
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
   game       [--pid N] tree | ui tree|audit | instances | screenshot | click | input | clock | assert | qa discover|diagnose|--file | node get|set|call
+             input sequence --file <events.json>  replay actions on physics frames
   instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel
@@ -203,6 +205,7 @@ global flags (before the command):
   --instance N   target the editor with pid N (required for mutations when
                  more than one editor is live; status output includes the pid)
   --timeout MS   per-request HTTP timeout in milliseconds (default 5000)
+                 also bounds the engine process for script validate
 
 See docs/COMMANDS.md for details.
 `)

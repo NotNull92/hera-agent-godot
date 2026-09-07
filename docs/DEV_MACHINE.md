@@ -7,6 +7,11 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **Additional active editor (2026-09-07)**: Godot 4.7.2 .NET is installed at
+  `C:\Users\PC\Desktop\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64.exe`.
+  The user's open project in this session was the sibling `testproject`, not
+  this repository. Always inspect `hera status` before assuming the target.
+
 - **Binary**: Godot 4.7 stable lives at
   `C:\Users\PC\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe`
   (note the nested folder with the same name). It is **not on PATH**. Always

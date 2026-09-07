@@ -115,6 +115,62 @@ selected editor instance.
 > stops. Hera assumes one live editor per project; mutation commands enforce that
 > precondition unless `--instance <pid>` is passed explicitly.
 
+## Fresh GDScript validation
+
+`hera script validate res://scripts/player.gd` selects a live editor (use
+`--instance` when several are open), obtains its engine/project paths, and runs
+that engine with `--headless --check-only --script` in a separate process.
+It checks the file on disk, including relative dependencies, rather than the
+editor's cached script or unsaved text. It neither starts the scene nor builds C#.
+Script/dependency loading can execute static initializers: this is not a sandbox.
+
+The JSON result contains `path`, `valid`, `exit_code`, `output`,
+`output_truncated`, and `timed_out`. Engine output is capped at 64 KiB.
+Invalid scripts or timeouts exit 1; invalid CLI arguments exit 2. The engine
+process has a five-second default deadline; leading `--timeout MS` overrides
+both the HTTP timeout and this process deadline. Engine output includes native
+file/line details when available; success does not certify absence of warnings.
+This is a CLI operation; the internal `script/validate-context` RPC only
+resolves the paths and does not validate code when called through `batch`.
+
+## Physics-frame input sequences
+
+`hera game input sequence --file events.json` reads a JSON array:
+
+```json
+[
+  {"frame": 0, "action": "ui_accept", "pressed": true},
+  {"frame": 3, "action": "ui_accept", "pressed": false}
+]
+```
+
+Frame 0 is the next physics frame. This example holds `ui_accept` for three
+physics callbacks. Events must be ordered by frame (equal frames are allowed),
+with 1–128 entries, frame offsets 0–120, existing InputMap action names, and
+boolean `pressed` fields. The CLI file is bounded to 64 KiB. The tree must be
+unpaused, `Engine.time_scale` must be 1, and the physics rate must be at least
+60 ticks per second. Already-held actions are rejected before any injection.
+
+The runtime validates the whole sequence first, flushes input at each scheduled
+physics frame, and releases sequence-held actions after the last event frame.
+It cancels and releases input on clock changes or a 2.5-second wall-clock
+deadline. Other input/clock mutations fail while a sequence or clock step is
+active. Runtime node calls and external human input can still affect the game;
+this does not make arbitrary game logic deterministic.
+
+Success returns `kind: "sequence"`, `pid`, `frames` (last offset plus one),
+and `events[]` with requested fields plus the observed `physics_frame` counter.
+For requirement-based QA, use `game.input` with
+`params: {"kind":"sequence","events":[...]}`, followed by `game.assert`
+steps whose `covers` name the gameplay requirements. `game --pid N` selects a
+specific runtime just as for other input commands.
+
+`game clock --step` now pauses until the selected frame starts, permits its
+node callbacks to complete, and pauses again. Only the selected callback phase
+is counted; this is not a debugger step and does not stop `PROCESS_MODE_ALWAYS`
+nodes. Reparent undo restores the original node name after a name collision,
+as well as the original parent, sibling index, and owner.
+
 ## Script languages
 
 The `.gd` or `.cs` extension is required and selects the language; Hera never
@@ -172,7 +228,7 @@ Global flags go **before** the command (e.g. `hera --ids node find`,
 | `--ids` | ☑ | Print only node paths (for `scene tree` / `node find`); compact JSON otherwise. |
 | (default) | ☑ | Compact JSON — minimal tokens. |
 | `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
-| `--timeout <ms>` | ☑ | Per-request HTTP timeout in milliseconds (default 5000). Bounds each request, not a whole command (`--wait` polls send many requests). Accepts `--timeout N` or `--timeout=N`. |
+| `--timeout <ms>` | ☑ | Per-request HTTP timeout in milliseconds (default 5000); also separately bounds the engine child process for `script validate`. It does not bound a whole polling command (`--wait` sends many requests). Accepts `--timeout N` or `--timeout=N`. |
 
 See [CONTRACT.md](./CONTRACT.md) for the output contract (exit codes, error
 shapes, stability tiers), [ARCHITECTURE.md](./ARCHITECTURE.md) for the request

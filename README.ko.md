@@ -101,6 +101,16 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.
 
 스크립트 확장자로 GDScript 또는 C#을 선택합니다:
+`hera script validate res://Player.gd`는 연결된 에디터의 엔진으로 별도 headless
+프로세스에서 디스크의 최신 GDScript를 검사합니다. 엔진 출력을 JSON으로 반환하고
+실패 시 비정상 종료합니다. C# 컴파일이나 경고가 없다는 보장은 제공하지 않으며,
+의존성을 로드하면서 코드가 실행될 수 있습니다.
+`hera game input sequence --file events.json`은
+`{ "frame": 0, "action": "ui_accept", "pressed": true }` 객체의 배열을 받아
+상대 물리 프레임에 맞춰 입력하고 종료 시 눌린 액션을 해제합니다.
+시간 제한과 QA 예제는 명령 레퍼런스를 참고하세요.
+
+스크립트 생성 예:
 `hera script create res://Player.gd` 또는
 `hera script create res://Player.cs --ready --export Speed:float=3.5f`.
 선택 옵션 `--lang gdscript|csharp`는 확장자와 일치해야 합니다. C# 생성·열기·연결은
