@@ -1,0 +1,528 @@
+diff --git a/addons/hera_agent_godot/README.md b/addons/hera_agent_godot/README.md
+index 45ee809..43e9130 100644
+--- a/addons/hera_agent_godot/README.md
++++ b/addons/hera_agent_godot/README.md
+@@ -40,3 +40,23 @@ and requirement-covered QA scenarios.
+ 
+ The entry script uses `@tool`, so it runs inside the editor. Full design and CLI
+ docs: <https://github.com/NotNull92/hera-agent-godot>.
++
++## External runtime targeting
++
++Game requests may include a positive integral `pid` in their params. A fresh
++matching runtime heartbeat is required; without `pid`, the existing editor-play
++selection and ambiguity checks are unchanged. CLI integration is one field:
++`hera game --pid <PID> ...` must send `{"tool":"game","params":{"pid":PID,...}}`.
++
++For portrait runtimes taller than macOS permits for a titled window, launch the
++bounded borderless runner with the installed Godot binary:
++
++```bash
++Godot --display-driver macos --audio-driver Dummy --rendering-method gl_compatibility \
++  --path /path/to/project --resolution 1080x1920 --fixed-fps 60 --disable-vsync \
++  --script res://addons/hera_agent_godot/runtime/external_launcher.gd -- \
++  res://game/Main.tscn 1080 1920 1900 20
++```
++
++The five runner arguments are scene, width, height, x, and y. The scene must be
++a `res://` `.tscn`; dimensions are limited to 64–4096 and positions to ±8192.
+diff --git a/addons/hera_agent_godot/tools/game_tool.gd b/addons/hera_agent_godot/tools/game_tool.gd
+index d3852f7..71ebaa1 100644
+--- a/addons/hera_agent_godot/tools/game_tool.gd
++++ b/addons/hera_agent_godot/tools/game_tool.gd
+@@ -26,9 +26,7 @@ func execute_async(params: Dictionary) -> Dictionary:
+ 		return ToolResponse.failure("game host not set")
+ 	if String(params.get("action", "")) == "instances":
+ 		return ToolResponse.success({ "instances": _game_instances() })
+-	if not EditorInterface.is_playing_scene():
+-		return ToolResponse.failure("no game is running; start one with `hera run --current --wait`")
+-	var target := _target_game()
++	var target := _select_target(_game_instances(), params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
+ 	if target.has("error"):
+ 		return ToolResponse.failure(String(target["error"]))
+ 	var request_id := _new_request_id()
+@@ -115,16 +113,26 @@ func _request_path(game_pid: int, request_id: String) -> String:
+ func _response_path(game_pid: int, request_id: String) -> String:
+ 	return "%s/%s.json" % [_response_dir(game_pid), request_id]
+ 
+-func _target_game() -> Dictionary:
+-	var scene := EditorInterface.get_playing_scene()
++func _select_target(instances: Array, params: Dictionary, scene: String, editor_playing: bool) -> Dictionary:
++	if params.has("pid"):
++		var raw_pid: Variant = params["pid"]
++		if (typeof(raw_pid) != TYPE_INT and typeof(raw_pid) != TYPE_FLOAT) or float(raw_pid) != floorf(float(raw_pid)) or int(raw_pid) <= 0:
++			return { "error": "game pid must be a positive integer" }
++		var requested_pid := int(params["pid"])
++		for inst in instances:
++			if int(inst.get("pid", 0)) == requested_pid:
++				return inst
++		return { "error": "no live Hera game process found for pid %d" % requested_pid }
++	if not editor_playing:
++		return { "error": "no game is running; start one with `hera run --current --wait` or pass --pid" }
+ 	var matches := []
+-	for inst in _game_instances():
++	for inst in instances:
+ 		if scene == "" or String(inst.get("scene", "")) == scene:
+ 			matches.append(inst)
+ 	if matches.is_empty():
+ 		return { "error": "no Hera game process found for scene %s; wait a moment or restart the play session" % scene }
+ 	if matches.size() > 1:
+-		return { "error": "multiple Hera game processes found for scene %s (%s); stop stale Godot game processes and retry" % [scene, _pids(matches)] }
++		return { "error": "multiple Hera game processes found for scene %s (%s); pass --pid" % [scene, _pids(matches)] }
+ 	return matches[0]
+ 
+ func _game_instances() -> Array:
+diff --git a/addons/hera_agent_godot/runtime/external_launcher.gd b/addons/hera_agent_godot/runtime/external_launcher.gd
+new file mode 100644
+index 0000000..e96d7c1
+--- /dev/null
++++ b/addons/hera_agent_godot/runtime/external_launcher.gd
+@@ -0,0 +1,40 @@
++extends SceneTree
++
++const MIN_SIZE := 64
++const MAX_SIZE := 4096
++const MAX_POSITION := 8192
++
++func _init() -> void:
++	var parsed := parse_args(OS.get_cmdline_user_args())
++	if parsed.has("error"):
++		push_error(String(parsed["error"]))
++		quit(2)
++		return
++	call_deferred("_launch", parsed)
++
++static func parse_args(args: PackedStringArray) -> Dictionary:
++	if args.size() != 5:
++		return { "error": "expected: <res://scene.tscn> <width> <height> <x> <y>" }
++	if not args[0].begins_with("res://") or not args[0].ends_with(".tscn"):
++		return { "error": "scene must be a res:// .tscn path" }
++	for value in args.slice(1):
++		if not value.is_valid_int():
++			return { "error": "size and position values must be integers" }
++	var width := args[1].to_int()
++	var height := args[2].to_int()
++	var x := args[3].to_int()
++	var y := args[4].to_int()
++	if width < MIN_SIZE or width > MAX_SIZE or height < MIN_SIZE or height > MAX_SIZE:
++		return { "error": "width and height must be between %d and %d" % [MIN_SIZE, MAX_SIZE] }
++	if abs(x) > MAX_POSITION or abs(y) > MAX_POSITION:
++		return { "error": "window position must be between -%d and %d" % [MAX_POSITION, MAX_POSITION] }
++	return { "scene": args[0], "size": Vector2i(width, height), "position": Vector2i(x, y) }
++
++func _launch(parsed: Dictionary) -> void:
++	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
++	DisplayServer.window_set_size(parsed["size"])
++	DisplayServer.window_set_position(parsed["position"])
++	var err := change_scene_to_file(String(parsed["scene"]))
++	if err != OK:
++		push_error("could not launch scene: %s" % error_string(err))
++		quit(2)
+diff --git a/addons/hera_agent_godot/runtime/external_launcher.gd.uid b/addons/hera_agent_godot/runtime/external_launcher.gd.uid
+new file mode 100644
+index 0000000..eafb098
+--- /dev/null
++++ b/addons/hera_agent_godot/runtime/external_launcher.gd.uid
+@@ -0,0 +1 @@
++uid://cw731xd6mlf47
+diff --git a/addons/hera_agent_godot/tests/test_game_target_selection.gd b/addons/hera_agent_godot/tests/test_game_target_selection.gd
+new file mode 100644
+index 0000000..8f48551
+--- /dev/null
++++ b/addons/hera_agent_godot/tests/test_game_target_selection.gd
+@@ -0,0 +1,37 @@
++extends SceneTree
++
++const GameTool = preload("res://addons/hera_agent_godot/tools/game_tool.gd")
++
++func _init() -> void:
++	call_deferred("_run")
++
++func _run() -> void:
++	var tool := GameTool.new()
++	if not tool.has_method("_select_target"):
++		fail("GameTool must support explicit PID selection")
++		quit(1)
++		return
++	var instances := [
++		{ "pid": 101, "scene": "res://game/Main.tscn" },
++		{ "pid": 202, "scene": "res://game/Main.tscn" },
++	]
++	check(tool._select_target(instances, { "pid": 202 }, "", false).get("pid") == 202, "explicit PID targets an external runtime")
++	check(tool._select_target(instances, { "pid": 202.0 }, "", false).get("pid") == 202, "JSON numeric PID targets an external runtime")
++	check(tool._select_target([instances[0]], {}, "res://game/Main.tscn", true).get("pid") == 101, "single editor-play runtime remains the default")
++	check(tool._select_target(instances, {}, "res://game/Main.tscn", true).has("error"), "multiple editor-play instances stay ambiguous")
++	check(tool._select_target(instances, { "pid": 303 }, "", false).has("error"), "missing PID fails")
++	check(tool._select_target(instances, { "pid": "oops" }, "", false).has("error"), "malformed PID fails")
++	check(tool._select_target([instances[0]], {}, "", false).has("error"), "external runtime requires explicit PID")
++	if not _failed:
++		print("PASS: game target selection")
++	quit(1 if _failed else 0)
++
++var _failed := false
++
++func check(value: bool, message: String) -> void:
++	if not value:
++		fail(message)
++
++func fail(message: String) -> void:
++	_failed = true
++	push_error("FAIL: %s" % message)
+diff --git a/addons/hera_agent_godot/tests/test_game_target_selection.gd.uid b/addons/hera_agent_godot/tests/test_game_target_selection.gd.uid
+new file mode 100644
+index 0000000..8c4e6fa
+--- /dev/null
++++ b/addons/hera_agent_godot/tests/test_game_target_selection.gd.uid
+@@ -0,0 +1 @@
++uid://dkbjve036urnc
+diff --git a/addons/hera_agent_godot/tests/test_external_launcher_args.gd b/addons/hera_agent_godot/tests/test_external_launcher_args.gd
+new file mode 100644
+index 0000000..2a536ac
+--- /dev/null
++++ b/addons/hera_agent_godot/tests/test_external_launcher_args.gd
+@@ -0,0 +1,24 @@
++extends SceneTree
++
++const ExternalLauncher = preload("res://addons/hera_agent_godot/runtime/external_launcher.gd")
++
++func _init() -> void:
++	call_deferred("_run")
++
++func _run() -> void:
++	var valid := ExternalLauncher.parse_args(PackedStringArray(["res://game/Main.tscn", "1080", "1920", "1900", "20"]))
++	check(valid.get("size") == Vector2i(1080, 1920), "native portrait size is accepted")
++	check(valid.get("position") == Vector2i(1900, 20), "bounded position is accepted")
++	check(ExternalLauncher.parse_args(PackedStringArray(["../Main.tscn", "1080", "1920", "0", "0"])).has("error"), "non-resource scene is rejected")
++	check(ExternalLauncher.parse_args(PackedStringArray(["res://game/Main.tscn", "oops", "1920", "0", "0"])).has("error"), "malformed size is rejected")
++	check(ExternalLauncher.parse_args(PackedStringArray(["res://game/Main.tscn", "1080", "9000", "0", "0"])).has("error"), "oversized window is rejected")
++	if not _failed:
++		print("PASS: external launcher arguments")
++	quit(1 if _failed else 0)
++
++var _failed := false
++
++func check(value: bool, message: String) -> void:
++	if not value:
++		_failed = true
++		push_error("FAIL: %s" % message)
+diff --git a/addons/hera_agent_godot/tests/test_external_launcher_args.gd.uid b/addons/hera_agent_godot/tests/test_external_launcher_args.gd.uid
+new file mode 100644
+index 0000000..472e2f7
+--- /dev/null
++++ b/addons/hera_agent_godot/tests/test_external_launcher_args.gd.uid
+@@ -0,0 +1 @@
++uid://dh2pg1aril4sw
+diff --git a/tools/hera.py b/tools/hera.py
+new file mode 100755
+index 0000000..91bf87a
+--- /dev/null
++++ b/tools/hera.py
+@@ -0,0 +1,200 @@
++#!/usr/bin/env -S uv run --script
++# /// script
++# requires-python = ">=3.11"
++# dependencies = []
++# ///
++
++# ─── How to run ───
++# 1. Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh
++# 2. Run: tools/hera game --pid PID screenshot --path /absolute/output.png --analyze
++# ─────────────────
++
++from __future__ import annotations
++
++import json
++import os
++import subprocess
++import sys
++from pathlib import Path
++from typing import NoReturn
++
++
++def main() -> int:
++    real = real_hera()
++    global_args, command = split_global(sys.argv[1:])
++    if len(command) < 3 or command[0:2] != ["game", "--pid"]:
++        _ = os.execv(real, [real, *sys.argv[1:]])
++    pid = positive_int(command[2], "--pid")
++    params = game_params(command[3:])
++    params["pid"] = pid
++    batch_args = [arg for arg in global_args if arg != "--ids"]
++    if "--json" not in batch_args:
++        batch_args.insert(0, "--json")
++    run = subprocess.run(
++        [real, *batch_args, "batch"],
++        input=json.dumps([{"tool": "game", "params": params}]),
++        text=True,
++        capture_output=True,
++        check=False,
++    )
++    if run.returncode != 0:
++        _ = sys.stderr.write(run.stderr)
++        return run.returncode
++    if '"ok": false' in run.stdout or '"ok":false' in run.stdout:
++        _ = sys.stderr.write(run.stdout)
++        return 1
++    _ = sys.stdout.write(run.stdout)
++    return 0
++
++
++def split_global(args: list[str]) -> tuple[list[str], list[str]]:
++    out: list[str] = []
++    i = 0
++    while i < len(args) and args[i] in {"--json", "--ids", "--instance", "--timeout"}:
++        out.append(args[i])
++        if args[i] in {"--instance", "--timeout"}:
++            if i + 1 >= len(args):
++                fail(f"{args[i]} requires a value")
++            i += 1
++            out.append(args[i])
++        i += 1
++    return out, args[i:]
++
++
++def game_params(args: list[str]) -> dict[str, bool | float | int | str | list[str]]:
++    if not args:
++        fail("game --pid requires an action")
++    action = args[0]
++    if action in {"tree", "instances"}:
++        exact_count(args, 1)
++        return {"action": action}
++    if action == "screenshot":
++        return {"action": action, **flags(args[1:], boolean={"analyze"})}
++    if action == "input":
++        if len(args) < 2 or args[1] not in {"mouse", "key", "action", "text"}:
++            fail("game input requires mouse, key, action, or text")
++        kind = args[1]
++        if kind == "text":
++            exact_count(args, 3)
++            return {"action": "input", "kind": kind, "text": args[2]}
++        positional: dict[str, bool | float | int | str | list[str]] = {"action": "input", "kind": kind}
++        rest = args[2:]
++        if kind == "action":
++            if not rest or rest[0].startswith("--"):
++                fail("game input action requires a name")
++            positional["name"] = rest[0]
++            rest = rest[1:]
++        return {**positional, **flags(rest, modes={"press", "release", "click", "move"}, boolean={"double", "physical"})}
++    if action == "click":
++        return {"action": action, **flags(args[1:])}
++    if action == "input-log":
++        return {"action": "input_log", **flags(args[1:], boolean={"clear"})}
++    if action == "assert":
++        if len(args) not in {4, 5}:
++            fail("game assert requires path, property, operator, and optional value")
++        params: dict[str, bool | float | int | str | list[str]] = {
++            "action": "assert", "path": args[1], "prop": args[2], "op": args[3]
++        }
++        if len(args) == 5:
++            params["value"] = args[4]
++        return params
++    if action == "ui" and len(args) >= 2 and args[1] == "tree":
++        return {"action": "ui_tree", **flags(args[2:])}
++    if action == "node" and len(args) >= 3 and args[1] in {"get", "set", "call"}:
++        operation = args[1]
++        params = {"action": operation, "path": args[2]}
++        rest = args[3:]
++        if operation == "call":
++            if not rest:
++                fail("game node call requires a method")
++            params["method"] = rest[0]
++            rest = rest[1:]
++        return {**params, **flags(rest, repeated={"arg"})}
++    fail(f"unsupported PID-targeted game action: {' '.join(args)}")
++
++
++def flags(
++    args: list[str], *, boolean: set[str] | None = None, modes: set[str] | None = None,
++    repeated: set[str] | None = None,
++) -> dict[str, bool | float | int | str | list[str]]:
++    booleans = boolean or set()
++    mode_names = modes or set()
++    repeated_names = repeated or set()
++    numeric = {"x", "y", "dx", "dy", "keycode", "unicode", "limit", "depth"}
++    out: dict[str, bool | float | int | str | list[str]] = {}
++    i = 0
++    while i < len(args):
++        if not args[i].startswith("--"):
++            fail(f"unexpected argument: {args[i]}")
++        name = args[i][2:].replace("-", "_")
++        if name in booleans:
++            out[name] = True
++        elif name in mode_names:
++            if "mode" in out:
++                fail("only one input mode is allowed")
++            out["mode"] = name
++        else:
++            if i + 1 >= len(args):
++                fail(f"--{name} requires a value")
++            i += 1
++            value: bool | float | int | str | list[str]
++            if name in numeric:
++                value = nonnegative_int(args[i], f"--{name}")
++            elif name == "strength":
++                value = float(args[i])
++                if not 0 <= value <= 1:
++                    fail("--strength must be between 0 and 1")
++            elif name in {"fields", "props", "modifiers"}:
++                value = [item.strip() for item in args[i].split(",") if item.strip()]
++                if not value:
++                    fail(f"--{name} requires a value")
++            elif name in repeated_names:
++                prior = out.get("args", [])
++                value = [*prior, args[i]] if isinstance(prior, list) else [args[i]]
++                name = "args"
++            else:
++                value = args[i]
++            out[name] = value
++        i += 1
++    return out
++
++
++def real_hera() -> str:
++    override = os.environ.get("HERA_REAL_BIN")
++    candidates = [Path(override)] if override else [Path.home() / ".local/bin/hera"]
++    self_path = Path(__file__).resolve()
++    for candidate in candidates:
++        if candidate.is_absolute() and candidate.resolve() != self_path and os.access(candidate, os.X_OK):
++            return str(candidate)
++    fail("set HERA_REAL_BIN to the absolute installed Hera executable")
++
++
++def positive_int(raw: str, name: str) -> int:
++    value = nonnegative_int(raw, name)
++    if value == 0:
++        fail(f"{name} must be positive")
++    return value
++
++
++def nonnegative_int(raw: str, name: str) -> int:
++    try:
++        value = int(raw)
++    except ValueError:
++        fail(f"{name} must be an integer")
++    if value < 0:
++        fail(f"{name} must be non-negative")
++    return value
++
++
++def exact_count(args: list[str], count: int) -> None:
++    if len(args) != count:
++        fail(f"{args[0]} does not accept arguments")
++
++
++def fail(message: str) -> NoReturn:
++    print(f"hera: {message}", file=sys.stderr)
++    raise SystemExit(2)
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())
+diff --git a/tools/hera b/tools/hera
+new file mode 120000
+index 0000000..b7fbbe1
+--- /dev/null
++++ b/tools/hera
+@@ -0,0 +1 @@
++hera.py
+\ No newline at end of file
+diff --git a/.omo/evidence/start-work/monstel-game-feel-implementation/task-22/repair-hera-external/hera_pid_rpc.py b/.omo/evidence/start-work/monstel-game-feel-implementation/task-22/repair-hera-external/hera_pid_rpc.py
+new file mode 100644
+index 0000000..41a1450
+--- /dev/null
++++ b/.omo/evidence/start-work/monstel-game-feel-implementation/task-22/repair-hera-external/hera_pid_rpc.py
+@@ -0,0 +1,94 @@
++#!/usr/bin/env -S uv run --script
++# /// script
++# requires-python = ">=3.11"
++# dependencies = []
++# ///
++
++# ─── How to run ───
++# 1. Install uv: curl -LsSf https://astral.sh/uv/install.sh | sh
++# 2. Run: uv run hera_pid_rpc.py --pid PID --path /absolute/output.png --analyze
++# ─────────────────
++
++from __future__ import annotations
++
++import argparse
++import json
++import os
++import time
++import urllib.request
++from pathlib import Path
++
++
++def main() -> int:
++    parser = argparse.ArgumentParser()
++    parser.add_argument("--editor-pid", type=positive_int)
++    parser.add_argument("--pid", required=True, type=positive_int)
++    parser.add_argument("--timeout", type=bounded_timeout, default=5.0)
++    parser.add_argument("--path", required=True, type=absolute_path)
++    parser.add_argument("--analyze", action="store_true")
++    args = parser.parse_args()
++    instance = editor_instance(args.editor_pid)
++    payload = json.dumps({
++        "tool": "game",
++        "params": {"action": "screenshot", "pid": args.pid, "path": args.path, "analyze": args.analyze},
++    }).encode()
++    request = urllib.request.Request(
++        f"http://127.0.0.1:{instance['port']}/rpc",
++        data=payload,
++        headers={"Content-Type": "application/json", **token_header()},
++    )
++    with urllib.request.urlopen(request, timeout=args.timeout) as response:
++        result = json.load(response)
++    print(json.dumps(result, indent=2, sort_keys=True))
++    return 0 if result.get("ok") else 1
++
++
++def positive_int(value: str) -> int:
++    parsed = int(value)
++    if parsed <= 0:
++        raise argparse.ArgumentTypeError("PID must be positive")
++    return parsed
++
++
++def bounded_timeout(value: str) -> float:
++    parsed = float(value)
++    if not 0.1 <= parsed <= 10.0:
++        raise argparse.ArgumentTypeError("timeout must be between 0.1 and 10 seconds")
++    return parsed
++
++
++def absolute_path(value: str) -> str:
++    path = Path(value)
++    if not path.is_absolute():
++        raise argparse.ArgumentTypeError("screenshot path must be absolute")
++    return str(path)
++
++
++def editor_instance(editor_pid: int | None) -> dict[str, int | float | str]:
++    project = Path.cwd().resolve()
++    now = time.time()
++    matches = []
++    for path in (Path.home() / ".hera-agent-godot" / "instances").glob("*.json"):
++        try:
++            instance = json.loads(path.read_text())
++            same_editor = editor_pid is not None and int(instance["pid"]) == editor_pid
++            same_project = editor_pid is None and Path(instance["project_path"]).resolve() == project
++            if (same_editor or same_project) and now - float(instance["ts"]) <= 5:
++                matches.append(instance)
++        except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError):
++            continue
++    if len(matches) != 1:
++        raise SystemExit(f"expected one live Hera editor for {project}, found {len(matches)}")
++    return matches[0]
++
++
++def token_header() -> dict[str, str]:
++    token = os.environ.get("HERA_AGENT_GODOT_TOKEN", "").strip()
++    token_path = Path.home() / ".hera-agent-godot" / "token"
++    if not token and token_path.is_file():
++        token = token_path.read_text().strip()
++    return {"X-Hera-Token": token} if token else {}
++
++
++if __name__ == "__main__":
++    raise SystemExit(main())

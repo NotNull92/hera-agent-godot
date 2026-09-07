@@ -1,0 +1,13 @@
+real-home state after isolated QA
+8c71dfeca73a50af367f8ef5eb7f5b6ec125691e  project.godot
+dba5fce8aab29247ff64ce7e2312bd9815974911  /Users/admin/Library/Application Support/Godot/app_userdata/monstel/save.json
+04073ea57001a22068813ee6c30e169c19d2d174  /Users/admin/Library/Application Support/Godot/editor_settings-4.7.tres
+initial snapshot
+8c71dfeca73a50af367f8ef5eb7f5b6ec125691e  project.godot
+61f8029029c7c66348ec474e4f9c1d00029e98d2  /Users/admin/Library/Application Support/Godot/app_userdata/monstel/save.json
+04073ea57001a22068813ee6c30e169c19d2d174  /Users/admin/Library/Application Support/Godot/editor_settings-4.7.tres
+task backup
+61f8029029c7c66348ec474e4f9c1d00029e98d2  /tmp/monstel-task22-save.json
+04073ea57001a22068813ee6c30e169c19d2d174  /tmp/monstel-task22-editor-settings.tres
+
+Attribution was reported by the historical repair agent; this excerpt proves save hashes differ, not which process wrote them. Full session report records concurrent runtime PIDs; no filesystem trace was recovered.

@@ -132,6 +132,20 @@ buffering.
   Codex plugin lives at `plugins/hera-godot/` instead of under
   `integrations/`.
 
+## macOS / Monstel integration record (2026-09-07)
+
+A separate macOS 26.6.2 machine used Godot 4.7.2 .NET at
+`/Users/admin/Downloads/Godot_mono.app/Contents/MacOS/Godot` and the installed
+`/Users/admin/.local/bin/hera` (`--version` reports `dev`). Android checks used
+a Galaxy Z Flip7 / Android 16. These facts do not replace the Windows setup above.
+
+[Monstel incident handoff](incidents/monstel-2026-09-07/README.md) records external
+runtime targeting failures, ambiguous game processes, embedded viewport sizing,
+an editor heartbeat stall, Android autoload/export errors, and shared-save risks.
+It includes historical patches and raw evidence; no fix was applied by that
+handoff. The same-project editor/headless stall is observed but its cause is
+unconfirmed. Reproduce on isolated project copies and isolated user data.
+
 ## C# support verification on macOS (2026-09-07)
 
 - The installed .NET SDK is `10.0.201` (`dotnet` on PATH). The existing

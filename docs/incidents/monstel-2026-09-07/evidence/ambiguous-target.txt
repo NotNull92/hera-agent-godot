@@ -1,0 +1,1 @@
+game: multiple Hera game processes found for scene res://game/Main.tscn (pid 64250, pid 64159); stop stale Godot game processes and retry

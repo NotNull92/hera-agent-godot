@@ -1,0 +1,5 @@
+{
+  "error": "game request timed out; ensure HeraGameInspector autoload is active",
+  "ok": false
+}
+HOME="$RUNTIME_HOME" python3 "$EVID/hera_pid_rpc.py" --editor-pid  --pid   5   0.05s user 0.02s system 2% cpu 3.112 total

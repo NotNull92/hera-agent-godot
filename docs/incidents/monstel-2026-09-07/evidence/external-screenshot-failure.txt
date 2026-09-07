@@ -1,0 +1,1 @@
+game: no game is running; start one with `hera run --current --wait`

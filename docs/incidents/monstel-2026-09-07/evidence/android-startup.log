@@ -1,0 +1,15 @@
+09-07 12:56:27.902  8499  8499 E godot   : ERROR: Unrecognized UID: "uid://c4ug7a211oav8".
+09-07 12:56:27.902  8499  8499 E godot   :    at: get_id_path (core/io/resource_uid.cpp:214)
+09-07 12:56:27.950  8499  8541 I godot   : Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+09-07 12:56:27.985  8499  8541 I godot   : Vulkan 1.3.279 - Forward Mobile - Using Device #0: Unknown - Samsung Xclipse 950
+09-07 12:56:28.192  8499  8541 I godot   : 
+09-07 12:56:28.480  8499  8541 E godot   : ERROR: No loader found for resource: res:// (expected type: unknown)
+09-07 12:56:28.480  8499  8541 E godot   :    at: _load (core/io/resource_loader.cpp:332)
+09-07 12:56:28.480  8499  8541 E godot   : ERROR: Failed to instantiate an autoload, can't load from path: .
+09-07 12:56:28.480  8499  8541 E godot   :    at: start (main/main.cpp:4533)
+09-07 12:56:28.803  8499  8541 I godot   : motion System -> Full (system -1)
+09-07 12:56:28.803  8499  8541 I godot   : MotionCheck OK — matrix, cycle, invalid fallback
+09-07 12:56:28.803  8499  8541 I godot   : ReadyActionCheck OK — lobby > staff > front, suppression, modes
+09-07 12:56:28.803  8499  8541 I godot   : PayoutCheck OK — exact payload, delayed/instant modes, rapid/interruption sync
+09-07 12:56:29.128  8499  8541 I godot   : SimCheck OK — game-feel contracts, runs 7, cash 2197, floors 5, harvests 1, auto 0
+09-07 12:56:29.160  8499  8541 I godot   : loaded save

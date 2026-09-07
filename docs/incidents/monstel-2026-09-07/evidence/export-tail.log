@@ -1,0 +1,10 @@
+5 param: #000000
+[ DONE ] export
+
+[hera] Hera Agent Godot exited
+ERROR: EditorSettings not instantiated yet when getting setting "export/android/shutdown_adb_on_exit".
+   at: _EDITOR_GET (editor/settings/editor_settings.cpp:1656)
+WARNING: 45 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 22 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

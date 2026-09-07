@@ -1,0 +1,1 @@
+ok=True pid_match=True ihdr=0000043800000780 size=(1080, 1920) nonblank=True colors=67

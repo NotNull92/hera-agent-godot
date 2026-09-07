@@ -1,0 +1,27 @@
+{
+  "analysis": {
+    "alpha_mean": 1,
+    "brightness_mean": 0.719021383543524,
+    "dark_sample_ratio": 0,
+    "edge_content_by_side": {
+      "bottom": 1,
+      "left": 0.889830508474576,
+      "right": 0.936440677966102,
+      "top": 0.0149253731343284
+    },
+    "edge_content_detected": true,
+    "edge_content_ratio": 0.732941176470588,
+    "height": 1649,
+    "low_detail": false,
+    "nonblank": true,
+    "possible_clipping": false,
+    "samples": 7906,
+    "unique_colors": 103,
+    "width": 927
+  },
+  "height": 1649,
+  "path": "/Users/admin/Desktop/Cowork/monstel/.omo/evidence/start-work/monstel-game-feel-implementation/task-22/repair-hera-external/baseline/embedded.png",
+  "pid": 25626,
+  "scene": "res://game/Main.tscn",
+  "width": 927
+}

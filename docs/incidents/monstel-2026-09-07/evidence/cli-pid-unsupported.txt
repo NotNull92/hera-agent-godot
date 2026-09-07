@@ -1,0 +1,1 @@
+game: unknown game subcommand "--pid" (want tree|ui tree|instances|screenshot|click|input|input-log|assert|node get|node set|node call|qa)

@@ -1,0 +1,74 @@
+diff --git a/addons/hera_agent_godot/README.md b/addons/hera_agent_godot/README.md
+index 45ee809..43e9130 100644
+--- a/addons/hera_agent_godot/README.md
++++ b/addons/hera_agent_godot/README.md
+@@ -40,3 +40,23 @@ and requirement-covered QA scenarios.
+ 
+ The entry script uses `@tool`, so it runs inside the editor. Full design and CLI
+ docs: <https://github.com/NotNull92/hera-agent-godot>.
++
++## External runtime targeting
++
++Game requests may include a positive integral `pid` in their params. A fresh
++matching runtime heartbeat is required; without `pid`, the existing editor-play
++selection and ambiguity checks are unchanged. CLI integration is one field:
++`hera game --pid <PID> ...` must send `{"tool":"game","params":{"pid":PID,...}}`.
++
++For portrait runtimes taller than macOS permits for a titled window, launch the
++bounded borderless runner with the installed Godot binary:
++
++```bash
++Godot --display-driver macos --audio-driver Dummy --rendering-method gl_compatibility \
++  --path /path/to/project --resolution 1080x1920 --fixed-fps 60 --disable-vsync \
++  --script res://addons/hera_agent_godot/runtime/external_launcher.gd -- \
++  res://game/Main.tscn 1080 1920 1900 20
++```
++
++The five runner arguments are scene, width, height, x, and y. The scene must be
++a `res://` `.tscn`; dimensions are limited to 64–4096 and positions to ±8192.
+diff --git a/addons/hera_agent_godot/tools/game_tool.gd b/addons/hera_agent_godot/tools/game_tool.gd
+index d3852f7..71ebaa1 100644
+--- a/addons/hera_agent_godot/tools/game_tool.gd
++++ b/addons/hera_agent_godot/tools/game_tool.gd
+@@ -26,9 +26,7 @@ func execute_async(params: Dictionary) -> Dictionary:
+ 		return ToolResponse.failure("game host not set")
+ 	if String(params.get("action", "")) == "instances":
+ 		return ToolResponse.success({ "instances": _game_instances() })
+-	if not EditorInterface.is_playing_scene():
+-		return ToolResponse.failure("no game is running; start one with `hera run --current --wait`")
+-	var target := _target_game()
++	var target := _select_target(_game_instances(), params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
+ 	if target.has("error"):
+ 		return ToolResponse.failure(String(target["error"]))
+ 	var request_id := _new_request_id()
+@@ -115,16 +113,26 @@ func _request_path(game_pid: int, request_id: String) -> String:
+ func _response_path(game_pid: int, request_id: String) -> String:
+ 	return "%s/%s.json" % [_response_dir(game_pid), request_id]
+ 
+-func _target_game() -> Dictionary:
+-	var scene := EditorInterface.get_playing_scene()
++func _select_target(instances: Array, params: Dictionary, scene: String, editor_playing: bool) -> Dictionary:
++	if params.has("pid"):
++		var raw_pid: Variant = params["pid"]
++		if (typeof(raw_pid) != TYPE_INT and typeof(raw_pid) != TYPE_FLOAT) or float(raw_pid) != floorf(float(raw_pid)) or int(raw_pid) <= 0:
++			return { "error": "game pid must be a positive integer" }
++		var requested_pid := int(params["pid"])
++		for inst in instances:
++			if int(inst.get("pid", 0)) == requested_pid:
++				return inst
++		return { "error": "no live Hera game process found for pid %d" % requested_pid }
++	if not editor_playing:
++		return { "error": "no game is running; start one with `hera run --current --wait` or pass --pid" }
+ 	var matches := []
+-	for inst in _game_instances():
++	for inst in instances:
+ 		if scene == "" or String(inst.get("scene", "")) == scene:
+ 			matches.append(inst)
+ 	if matches.is_empty():
+ 		return { "error": "no Hera game process found for scene %s; wait a moment or restart the play session" % scene }
+ 	if matches.size() > 1:
+-		return { "error": "multiple Hera game processes found for scene %s (%s); stop stale Godot game processes and retry" % [scene, _pids(matches)] }
++		return { "error": "multiple Hera game processes found for scene %s (%s); pass --pid" % [scene, _pids(matches)] }
+ 	return matches[0]
+ 
+ func _game_instances() -> Array:

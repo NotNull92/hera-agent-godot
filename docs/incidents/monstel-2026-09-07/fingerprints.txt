@@ -1,0 +1,23 @@
+Snapshot 2026-09-07. SHA-256; source paths are local checkout files. Evidence is historical where named.
+e94552b67cd8f79645a1074f7805cc7232ab3e59bc8f4bb809dfda9da3c36a57  /Users/admin/Desktop/Cowork/hera-agent-godot/addons/hera_agent_godot/tools/game_tool.gd
+5679693de82049cf67da79bb4232fa67df274559da009679008fcfbd08291f06  /Users/admin/Desktop/Cowork/hera-agent-godot/addons/hera_agent_godot/hera_agent_plugin.gd
+2dc12630a9a7359c6813f567a5787f20ef7a21cc1c670703d3b181fbe36e7fec  /Users/admin/Desktop/Cowork/hera-agent-godot/cmd/game.go
+de8e7c1cf9393e5bb759bbad3aff34b9c97c27ed7ebe60d504fb45690d7148b9  /Users/admin/Desktop/Cowork/hera-agent-godot/internal/discovery/discovery.go
+e62dde69d58a950cdc7dc8247b1c762657f8dec8e4ac85d7bfdec05960d04aa4  /Users/admin/.local/bin/hera
+487cdaac66268180b6441baa5cd82420a6288db17a9fcdf11da6300a2114a907  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/historical-partial.patch
+d756d3941d040e6a21d14dd064c0317896b993650bcd99f889a138629382d580  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/embedded-screenshot.json
+346d3529ba2cf530668adaab5b8ae335e33c4ffccc479163f89a9a08820bdb0e  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/historical-full.patch
+3dba16902d36a55b547a74a63fe6c1026bb0117b395e5423be217c7ec82e155f  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/editor-stall-session.txt
+948a7e4b87fd52781b7313e294e7ab8b57783dcec64340ef31a412aaa274f078  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/historical-pid-success.txt
+1e4de2b593386b23215e123666b7f9704da599a535d12ad371046f81b4948c07  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/export-tail.log
+8ba1896e386bdec780e89482c738b39544eb79a8185ba07dc8b64050b677abd2  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/test_external_launcher_args.gd
+d9d20cf3f56e9f4e3816df1678ae00c14b4ef53fca15dfa247de6725e461e2bd  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/cli-pid-unsupported.txt
+c674fe383d33c84ff0d44bd2a77cd571435ade22f6bf9a547d9b730759ea130e  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/external-instances.json
+e2663bc3f3a04d54d9dc4cb936cf3b78ac6aaa35e13dc043ebc102638efa7563  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/shared-save-observation.txt
+eb2b6389bb2494ee6dcd6dfae0b0e43163ab764f367bcabebbbd4ae2ea01b430  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/android-startup.log
+3038df56eb8c3aeadec3c101f623cc49e4c93e6c07a263aefe6de5cf02861aac  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/external-screenshot-failure.txt
+f2da3981076fd8d140f569a8ea4884e2c33b4b59f82e35144266992e67c03cbc  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/ambiguous-target.txt
+3060fd35fd345b0e26074def9e1acf2e5c388e35a81a3e7eaa46b285d9e610a8  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/historical-timeout.txt
+05bd5ae64eac9c7201ca9f63437b1a434843382735c2a01c09c4e64c2cc6594e  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/historical-repair-report.md
+7e470c2e1496f1816c5739aec0615047a949ddeb97a41898512a9132e5a5f975  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/historical-edge-summary.txt
+48321d4ecab77770e36afea86d1b28ca28124447a88717f4170c64010b303b1f  /Users/admin/Desktop/Cowork/hera-agent-godot/docs/incidents/monstel-2026-09-07/evidence/test_game_target_selection.gd
