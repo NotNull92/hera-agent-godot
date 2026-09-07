@@ -6,6 +6,7 @@ const GameTreeInspector = preload("res://addons/hera_agent_godot/runtime/game_tr
 const GameUIInspector = preload("res://addons/hera_agent_godot/runtime/game_ui_inspector.gd")
 const GameUIAuditor = preload("res://addons/hera_agent_godot/runtime/game_ui_auditor.gd")
 const GameViewportActions = preload("res://addons/hera_agent_godot/runtime/game_viewport_actions.gd")
+const GameInputSequence = preload("res://addons/hera_agent_godot/runtime/game_input_sequence.gd")
 
 const INSTANCE_DIR := "user://hera_game_instances"
 const REQUEST_ROOT := "user://hera_game_requests"
@@ -21,6 +22,7 @@ var _input_log: Array[Dictionary] = []
 var _mouse_presses := {}
 var _active_keys := {}
 var _active_mouse_buttons := {}
+var _temporal_busy := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -79,6 +81,9 @@ func _handle_file(path: String, response_path: String) -> void:
 		_write(response_path, { "ok": false, "error": "invalid game request" })
 		return
 	if int(request.get("target_pid", _pid)) != _pid:
+		return
+	if String(request.get("action", "")) == "input" and String(request.get("kind", "")) == "sequence":
+		_write(response_path, await _input_sequence(request))
 		return
 	if String(request.get("action", "")) == "clock" and bool(request.get("step", false)):
 		_write(response_path, await _clock_step(request))
@@ -232,6 +237,8 @@ func _qa_discover(request: Dictionary) -> Dictionary:
 	})
 
 func _click_viewport(request: Dictionary) -> Dictionary:
+	if _temporal_busy:
+		return _response(request, false, { "error": "clock step or input sequence is active" })
 	var target := GameUIInspector.click_target(get_tree().root, get_tree().current_scene, request)
 	if not bool(target.get("ok", false)):
 		return _response(request, false, { "error": String(target.get("error", "invalid click target")) })
@@ -253,6 +260,11 @@ func _click_viewport(request: Dictionary) -> Dictionary:
 	return _response(request, true, data)
 
 func _input_viewport(request: Dictionary) -> Dictionary:
+	if _temporal_busy:
+		return _response(request, false, { "error": "clock step or input sequence is active" })
+	return _inject_input(request)
+
+func _inject_input(request: Dictionary) -> Dictionary:
 	var result := GameViewportActions.input(get_viewport(), request)
 	if not bool(result.get("ok", false)):
 		return _response(request, false, { "error": String(result.get("error", "runtime input failed")) })
@@ -265,6 +277,20 @@ func _input_viewport(request: Dictionary) -> Dictionary:
 	data["pid"] = _pid
 	data["log_count"] = _input_log.size()
 	return _response(request, true, data)
+
+func _input_sequence(request: Dictionary) -> Dictionary:
+	if _temporal_busy:
+		return _response(request, false, { "error": "clock step or input sequence is active" })
+	var sequence := GameInputSequence.new()
+	add_child(sequence)
+	_temporal_busy = true
+	var result: Dictionary = await sequence.run(request, _inject_input)
+	_temporal_busy = false
+	sequence.queue_free()
+	var success := bool(result.get("ok", false))
+	result.erase("ok")
+	result["pid"] = _pid
+	return _response(request, success, result)
 
 func _input_log_response(request: Dictionary) -> Dictionary:
 	var limit := int(request.get("limit", 20))
@@ -282,6 +308,8 @@ func _input_log_response(request: Dictionary) -> Dictionary:
 	})
 
 func _clock(request: Dictionary) -> Dictionary:
+	if _temporal_busy and (request.has("paused") or request.has("time_scale")):
+		return _response(request, false, { "error": "clock step or input sequence is active" })
 	var scale_err := _apply_time_scale(request)
 	if scale_err != "":
 		return _response(request, false, { "error": scale_err })
@@ -293,6 +321,8 @@ func _clock(request: Dictionary) -> Dictionary:
 	return _response(request, true, _clock_snapshot())
 
 func _clock_step(request: Dictionary) -> Dictionary:
+	if _temporal_busy:
+		return _response(request, false, { "error": "clock step or input sequence is active" })
 	var scale_err := _apply_time_scale(request)
 	if scale_err != "":
 		return _response(request, false, { "error": scale_err })
@@ -300,12 +330,17 @@ func _clock_step(request: Dictionary) -> Dictionary:
 	if tree == null:
 		return _response(request, false, { "error": "no scene tree" })
 	var physics := bool(request.get("physics", false))
-	tree.paused = false
+	_temporal_busy = true
+	tree.paused = true
 	if physics:
 		await tree.physics_frame
 	else:
 		await tree.process_frame
+	tree.paused = false
+	# SceneTreeTimer runs after the selected phase's node callbacks.
+	await tree.create_timer(0.0, true, physics, true).timeout
 	tree.paused = true
+	_temporal_busy = false
 	var data := _clock_snapshot()
 	data["stepped"] = "physics" if physics else "process"
 	return _response(request, true, data)
@@ -314,7 +349,7 @@ func _apply_time_scale(request: Dictionary) -> String:
 	if not request.has("time_scale"):
 		return ""
 	var scale := float(request.get("time_scale", 1.0))
-	if scale <= 0.0:
+	if not is_finite(scale) or scale <= 0.0:
 		return "time_scale must be greater than 0; pause the tree to stop the clock"
 	Engine.time_scale = scale
 	return ""

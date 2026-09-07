@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -28,7 +29,7 @@ func parseGameClockArgs(args []string) (map[string]any, error) {
 			}
 			i++
 			scale, err := strconv.ParseFloat(args[i], 64)
-			if err != nil || scale <= 0 || scale != scale {
+			if err != nil || scale <= 0 || math.IsNaN(scale) || math.IsInf(scale, 0) {
 				return nil, fmt.Errorf("invalid --time-scale %q (want a number greater than 0)", args[i])
 			}
 			params["time_scale"] = scale

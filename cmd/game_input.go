@@ -8,9 +8,11 @@ import (
 
 func parseGameInputArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: game input <mouse|key|action|text|joypad|axis> ...")
+		return nil, fmt.Errorf("usage: game input <mouse|key|action|text|joypad|axis|sequence> ...")
 	}
 	switch args[0] {
+	case "sequence":
+		return parseGameInputSequenceArgs(args[1:])
 	case "mouse":
 		return parseGameInputMouseArgs(args[1:])
 	case "key":
@@ -24,7 +26,7 @@ func parseGameInputArgs(args []string) (map[string]any, error) {
 	case "axis":
 		return parseGameInputAxisArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown game input kind %q (want mouse|key|action|text|joypad|axis)", args[0])
+		return nil, fmt.Errorf("unknown game input kind %q (want mouse|key|action|text|joypad|axis|sequence)", args[0])
 	}
 }
 
