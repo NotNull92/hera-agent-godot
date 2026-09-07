@@ -8,7 +8,7 @@ import (
 
 func parseGameInputArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: game input <mouse|key|action|text> ...")
+		return nil, fmt.Errorf("usage: game input <mouse|key|action|text|joypad|axis> ...")
 	}
 	switch args[0] {
 	case "mouse":
@@ -19,8 +19,12 @@ func parseGameInputArgs(args []string) (map[string]any, error) {
 		return parseGameInputActionArgs(args[1:])
 	case "text":
 		return parseGameInputTextArgs(args[1:])
+	case "joypad":
+		return parseGameInputJoypadArgs(args[1:])
+	case "axis":
+		return parseGameInputAxisArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown game input kind %q (want mouse|key|action|text)", args[0])
+		return nil, fmt.Errorf("unknown game input kind %q (want mouse|key|action|text|joypad|axis)", args[0])
 	}
 }
 
@@ -207,6 +211,94 @@ func parseGameInputTextArgs(args []string) (map[string]any, error) {
 		return nil, fmt.Errorf("usage: game input text <text>")
 	}
 	return map[string]any{"action": "input", "kind": "text", "text": args[0]}, nil
+}
+
+func parseGameInputJoypadArgs(args []string) (map[string]any, error) {
+	params := map[string]any{"action": "input", "kind": "joypad"}
+	mode := ""
+	hasButton := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--button":
+			if i+1 >= len(args) || args[i+1] == "" {
+				return nil, fmt.Errorf("--button requires a value")
+			}
+			i++
+			params["button"] = args[i]
+			hasButton = true
+		case "--press", "--release":
+			nextMode := strings.TrimPrefix(args[i], "--")
+			if mode != "" {
+				return nil, fmt.Errorf("game input joypad accepts exactly one of --press or --release")
+			}
+			mode = nextMode
+			params["mode"] = nextMode
+		case "--device":
+			value, err := parseRequiredInt(args, &i, "--device")
+			if err != nil {
+				return nil, err
+			}
+			if value < 0 {
+				return nil, fmt.Errorf("--device must be non-negative")
+			}
+			params["device"] = value
+		default:
+			return nil, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if !hasButton {
+		return nil, fmt.Errorf("game input joypad requires --button")
+	}
+	if mode == "" {
+		return nil, fmt.Errorf("game input joypad requires --press or --release")
+	}
+	return params, nil
+}
+
+func parseGameInputAxisArgs(args []string) (map[string]any, error) {
+	params := map[string]any{"action": "input", "kind": "axis"}
+	hasAxis := false
+	hasValue := false
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--axis":
+			if i+1 >= len(args) || args[i+1] == "" {
+				return nil, fmt.Errorf("--axis requires a value")
+			}
+			i++
+			params["axis"] = args[i]
+			hasAxis = true
+		case "--value":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--value requires a value")
+			}
+			i++
+			value, err := strconv.ParseFloat(args[i], 64)
+			if err != nil || value < -1.0 || value > 1.0 || value != value {
+				return nil, fmt.Errorf("invalid --value %q (want -1..1)", args[i])
+			}
+			params["value"] = value
+			hasValue = true
+		case "--device":
+			dev, err := parseRequiredInt(args, &i, "--device")
+			if err != nil {
+				return nil, err
+			}
+			if dev < 0 {
+				return nil, fmt.Errorf("--device must be non-negative")
+			}
+			params["device"] = dev
+		default:
+			return nil, fmt.Errorf("unknown flag %q", args[i])
+		}
+	}
+	if !hasAxis {
+		return nil, fmt.Errorf("game input axis requires --axis")
+	}
+	if !hasValue {
+		return nil, fmt.Errorf("game input axis requires --value")
+	}
+	return params, nil
 }
 
 func parseGameInputLogArgs(args []string) (map[string]any, error) {

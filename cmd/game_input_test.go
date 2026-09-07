@@ -45,6 +45,32 @@ func TestParseGameArgs_returnsActionInputParams(t *testing.T) {
 	}
 }
 
+func TestParseGameArgs_returnsJoypadInputParams(t *testing.T) {
+	got, err := parseGameArgs([]string{"input", "joypad", "--button", "A", "--press", "--device", "0"})
+	if err != nil {
+		t.Fatalf("parseGameArgs error: %v", err)
+	}
+	if got["action"] != "input" || got["kind"] != "joypad" {
+		t.Fatalf("input action/kind = %v/%v, want input/joypad", got["action"], got["kind"])
+	}
+	if got["button"] != "A" || got["mode"] != "press" || got["device"] != 0 {
+		t.Fatalf("joypad input params = %v", got)
+	}
+}
+
+func TestParseGameArgs_returnsAxisInputParams(t *testing.T) {
+	got, err := parseGameArgs([]string{"input", "axis", "--axis", "LEFT_X", "--value", "-0.5"})
+	if err != nil {
+		t.Fatalf("parseGameArgs error: %v", err)
+	}
+	if got["action"] != "input" || got["kind"] != "axis" || got["axis"] != "LEFT_X" {
+		t.Fatalf("axis input params = %v", got)
+	}
+	if got["value"] != -0.5 {
+		t.Fatalf("value = %v, want -0.5", got["value"])
+	}
+}
+
 func TestParseGameArgs_returnsTextInputParams(t *testing.T) {
 	got, err := parseGameArgs([]string{"input", "text", "hello"})
 	if err != nil {
@@ -78,6 +104,10 @@ func TestParseGameArgs_rejectsInvalidInputArgs(t *testing.T) {
 		{name: "key missing mode", args: []string{"input", "key", "--key", "KEY_W"}},
 		{name: "action missing mode", args: []string{"input", "action", "jump"}},
 		{name: "action bad strength", args: []string{"input", "action", "jump", "--press", "--strength", "2"}},
+		{name: "joypad missing mode", args: []string{"input", "joypad", "--button", "A"}},
+		{name: "joypad missing button", args: []string{"input", "joypad", "--press"}},
+		{name: "axis missing value", args: []string{"input", "axis", "--axis", "LEFT_X"}},
+		{name: "axis value out of range", args: []string{"input", "axis", "--axis", "LEFT_X", "--value", "1.5"}},
 		{name: "bad modifier", args: []string{"input", "mouse", "--x", "1", "--y", "2", "--click", "--modifiers", "super"}},
 	}
 	for _, tt := range tests {

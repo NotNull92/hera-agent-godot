@@ -28,6 +28,12 @@ func gameInputParamsFromQAStep(step gameQAStep) map[string]any {
 	return params
 }
 
+func gameClockParamsFromQAStep(step gameQAStep) map[string]any {
+	params := cloneJSONMap(step.Params)
+	params["action"] = "clock"
+	return params
+}
+
 func gameInputLogParamsFromQAStep(step gameQAStep) map[string]any {
 	params := cloneJSONMap(step.Params)
 	params["action"] = "input_log"

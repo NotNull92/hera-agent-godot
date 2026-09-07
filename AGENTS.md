@@ -112,6 +112,7 @@ hera node add <type> [--parent p] [--name n] # add a node (undoable)
 hera node instance <res://scene.tscn> [--parent p] [--name n] # instance a PackedScene (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
 hera node remove <path>                      # remove a node (undoable)
+hera node reparent <path> --parent p         # move a node (undoable; keeps global transform)
 hera node attach-script <path> <res://script.gd> # attach a script (undoable; returns dependency diagnostics)
 hera node detach-script <path>               # clear a node script (undoable)
 hera signal list <node>                      # signals a node exposes + connections
@@ -130,6 +131,8 @@ hera game screenshot [--path p] [--analyze]  # capture/analyze running game view
 hera game click --x N --y N                  # click the running game viewport
 hera game click --node /root/Main/Button     # click the center of a live Control
 hera game click --text Restart               # click the center of a visible Control by text
+hera game clock [--pause|--resume] [--time-scale N] [--step] [--physics] # SceneTree.paused / Engine.time_scale / one frame
+hera game input joypad --button A --press    # InputEventJoypadButton; axis: game input axis --axis LEFT_X --value 1
 hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
@@ -173,14 +176,15 @@ default 5000). Default output is compact JSON.
   UI around Game Feel: immediate input feedback, expressive state changes,
   satisfying bounded motion, and runtime visual QA for those effects.
 - **Mutations are undoable where Godot exposes editor undo.**
-  `node add/instance/set/remove`, `node attach-script/detach-script`, and
+  `node add/instance/set/remove/reparent`, `node attach-script/detach-script`, and
   `signal connect/disconnect` register with the editor's undo history, so the
   user can Ctrl+Z those changes.
 - **Run one live editor per project.** Hera is designed for a single active
-  Godot editor. Mutation-capable commands (`node add/instance/set/remove`,
+  Godot editor. Mutation-capable commands (`node add/instance/set/remove/reparent`,
   `node attach-script/detach-script`, `signal connect/disconnect`,
   `scene open/reload/save/create/save-as`, `editor select/clear-selection`, `script open/create`, `resource set/create`, `project mkdir/scan/reimport`,
-  `project set-main-scene`, `eval`, `game node set/call`, `smoke --run-game`,
+  `project set-main-scene`, `eval`, `game node set/call`, `game clock` (except a
+  snapshot with no flags), `game input`, `smoke --run-game`,
   and `batch`) enforce that by
   refusing to run when several editors are live unless `--instance <pid>` is
   passed explicitly.
@@ -212,8 +216,8 @@ default 5000). Default output is compact JSON.
   - After any GDScript edit, run `godot --headless --path . --check-only` on the
     affected scene or script before calling the work done. If `godot` is not
     available, use Hera diagnostics/run/output as described in the guide.
-- **`game node set/call` and `game click` are runtime-only.** They change the running game process,
-  is not registered with undo, and is lost when the play session stops.
+- **`game node set/call`, `game click`, `game input`, and `game clock` are runtime-only.** They change the running game process,
+  are not registered with undo, and are lost when the play session stops. `game clock --pause` sets `SceneTree.paused`; `--step` leaves the tree paused. The runtime inspector keeps processing while paused.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
   are still alive, `game instances` shows them and mutation/read requests refuse
   ambiguous targets instead of accepting an old response. Use `game --pid N ...`

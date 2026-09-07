@@ -16,27 +16,29 @@ const MAX_INPUT_LOG := 200
 const LONG_CLICK_MS := 500
 
 var _pid := 0
-var _heartbeat_accum := 0.0
+var _last_heartbeat_ms := 0
 var _input_log: Array[Dictionary] = []
 var _mouse_presses := {}
 var _active_keys := {}
 var _active_mouse_buttons := {}
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_pid = OS.get_process_id()
 	_ensure_dirs()
 	_write_heartbeat()
+	_last_heartbeat_ms = Time.get_ticks_msec()
 
 func _exit_tree() -> void:
 	if _pid != 0:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(_instance_path()))
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not OS.has_feature("editor"):
 		return
-	_heartbeat_accum += delta
-	if _heartbeat_accum >= HEARTBEAT_INTERVAL_SEC:
-		_heartbeat_accum = 0.0
+	var now := Time.get_ticks_msec()
+	if now - _last_heartbeat_ms >= int(HEARTBEAT_INTERVAL_SEC * 1000.0):
+		_last_heartbeat_ms = now
 		_write_heartbeat()
 	var dir := DirAccess.open(_request_dir())
 	if dir == null:
@@ -78,6 +80,9 @@ func _handle_file(path: String, response_path: String) -> void:
 		return
 	if int(request.get("target_pid", _pid)) != _pid:
 		return
+	if String(request.get("action", "")) == "clock" and bool(request.get("step", false)):
+		_write(response_path, await _clock_step(request))
+		return
 	_write(response_path, _handle(request))
 
 func _handle(request: Dictionary) -> Dictionary:
@@ -107,8 +112,10 @@ func _handle(request: Dictionary) -> Dictionary:
 			return _input_log_response(request)
 		"screenshot":
 			return _screenshot(request)
+		"clock":
+			return _clock(request)
 		_:
-			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|ui_audit|get|set|assert|call|qa_discover|click|input|input_log|screenshot)" % action })
+			return _response(request, false, { "error": "unknown game action: %s (want tree|ui_tree|ui_audit|get|set|assert|call|qa_discover|click|input|input_log|screenshot|clock)" % action })
 
 func _tree(request: Dictionary) -> Dictionary:
 	var result := GameTreeInspector.tree(get_tree().root, MAX_NODES)
@@ -274,6 +281,53 @@ func _input_log_response(request: Dictionary) -> Dictionary:
 		"events": events,
 	})
 
+func _clock(request: Dictionary) -> Dictionary:
+	var scale_err := _apply_time_scale(request)
+	if scale_err != "":
+		return _response(request, false, { "error": scale_err })
+	var tree := get_tree()
+	if tree == null:
+		return _response(request, false, { "error": "no scene tree" })
+	if request.has("paused"):
+		tree.paused = bool(request.get("paused", false))
+	return _response(request, true, _clock_snapshot())
+
+func _clock_step(request: Dictionary) -> Dictionary:
+	var scale_err := _apply_time_scale(request)
+	if scale_err != "":
+		return _response(request, false, { "error": scale_err })
+	var tree := get_tree()
+	if tree == null:
+		return _response(request, false, { "error": "no scene tree" })
+	var physics := bool(request.get("physics", false))
+	tree.paused = false
+	if physics:
+		await tree.physics_frame
+	else:
+		await tree.process_frame
+	tree.paused = true
+	var data := _clock_snapshot()
+	data["stepped"] = "physics" if physics else "process"
+	return _response(request, true, data)
+
+func _apply_time_scale(request: Dictionary) -> String:
+	if not request.has("time_scale"):
+		return ""
+	var scale := float(request.get("time_scale", 1.0))
+	if scale <= 0.0:
+		return "time_scale must be greater than 0; pause the tree to stop the clock"
+	Engine.time_scale = scale
+	return ""
+
+func _clock_snapshot() -> Dictionary:
+	var tree := get_tree()
+	return {
+		"paused": tree.paused if tree != null else false,
+		"time_scale": Engine.time_scale,
+		"process_frames": Engine.get_process_frames(),
+		"physics_frames": Engine.get_physics_frames(),
+	}
+
 func _screenshot(request: Dictionary) -> Dictionary:
 	var result := GameViewportActions.screenshot(get_viewport(), request, _current_scene_path(), _pid)
 	if not bool(result.get("ok", false)):
@@ -347,6 +401,10 @@ func _record_input_event(event: InputEvent, source: String) -> void:
 		_record_key(event as InputEventKey, source)
 	elif event is InputEventAction:
 		_record_action(event as InputEventAction, source)
+	elif event is InputEventJoypadButton:
+		_record_joypad_button(event as InputEventJoypadButton, source)
+	elif event is InputEventJoypadMotion:
+		_record_joypad_motion(event as InputEventJoypadMotion, source)
 
 func _record_mouse_button(event: InputEventMouseButton, source: String) -> void:
 	var now := Time.get_ticks_msec()
@@ -415,6 +473,22 @@ func _record_action(event: InputEventAction, source: String) -> void:
 	entry["strength"] = event.strength
 	entry["active_keys"] = _active_key_names()
 	entry["active_mouse_buttons"] = _active_mouse_button_names()
+	_append_input_log(entry)
+
+func _record_joypad_button(event: InputEventJoypadButton, source: String) -> void:
+	var entry := _base_input_entry("joypad_button", source)
+	entry["button"] = GameViewportActions.joy_button_name(event.button_index)
+	entry["button_index"] = int(event.button_index)
+	entry["pressed"] = event.pressed
+	entry["device"] = int(event.device)
+	_append_input_log(entry)
+
+func _record_joypad_motion(event: InputEventJoypadMotion, source: String) -> void:
+	var entry := _base_input_entry("joypad_motion", source)
+	entry["axis"] = GameViewportActions.joy_axis_name(event.axis)
+	entry["axis_index"] = int(event.axis)
+	entry["value"] = event.axis_value
+	entry["device"] = int(event.device)
 	_append_input_log(entry)
 
 func _record_text_input(text: String, source: String) -> void:

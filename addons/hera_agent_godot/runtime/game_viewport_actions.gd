@@ -19,8 +19,12 @@ static func input(viewport: Viewport, request: Dictionary) -> Dictionary:
 			return _action_input(request)
 		"text":
 			return _text_input(viewport, request)
+		"joypad":
+			return _joypad_input(request)
+		"axis":
+			return _axis_input(request)
 		_:
-			return { "ok": false, "error": "unknown input kind: %s (want mouse|key|action|text)" % kind }
+			return { "ok": false, "error": "unknown input kind: %s (want mouse|key|action|text|joypad|axis)" % kind }
 
 static func sizes_match(width: int, height: int, project_width: int, project_height: int) -> bool:
 	return project_width > 0 and project_height > 0 and width == project_width and height == project_height
@@ -181,6 +185,176 @@ static func _text_input(viewport: Viewport, request: Dictionary) -> Dictionary:
 			"text": text,
 		},
 	}
+
+static func _joypad_input(request: Dictionary) -> Dictionary:
+	var mode := String(request.get("mode", ""))
+	if mode != "press" and mode != "release":
+		return { "ok": false, "error": "joypad input requires mode press or release" }
+	var button := _joy_button_index(request.get("button", ""))
+	if button < 0:
+		return { "ok": false, "error": "unknown joypad button: %s" % String(request.get("button", "")) }
+	var event := InputEventJoypadButton.new()
+	event.device = int(request.get("device", HERA_INPUT_DEVICE_ID))
+	event.button_index = button
+	event.pressed = mode == "press"
+	Input.parse_input_event(event)
+	return {
+		"ok": true,
+		"events": [event],
+		"data": {
+			"kind": "joypad",
+			"mode": mode,
+			"button": joy_button_name(button),
+			"button_index": button,
+			"device": event.device,
+		},
+	}
+
+static func _axis_input(request: Dictionary) -> Dictionary:
+	var axis := _joy_axis_index(request.get("axis", ""))
+	if axis < 0:
+		return { "ok": false, "error": "unknown joypad axis: %s" % String(request.get("axis", "")) }
+	if not request.has("value"):
+		return { "ok": false, "error": "axis input requires value" }
+	var value := float(request.get("value", 0.0))
+	if value < -1.0 or value > 1.0:
+		return { "ok": false, "error": "axis value must be between -1 and 1" }
+	var event := InputEventJoypadMotion.new()
+	event.device = int(request.get("device", HERA_INPUT_DEVICE_ID))
+	event.axis = axis
+	event.axis_value = value
+	Input.parse_input_event(event)
+	return {
+		"ok": true,
+		"events": [event],
+		"data": {
+			"kind": "axis",
+			"axis": joy_axis_name(axis),
+			"axis_index": axis,
+			"value": value,
+			"device": event.device,
+		},
+	}
+
+static func _joy_button_index(raw: Variant) -> int:
+	if typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT:
+		var index := int(raw)
+		return index if index >= 0 else -1
+	var name := String(raw).strip_edges().to_upper().replace("-", "_")
+	if name.is_valid_int():
+		return int(name)
+	if name.begins_with("JOY_BUTTON_"):
+		name = name.substr(11)
+	match name:
+		"A":
+			return JOY_BUTTON_A
+		"B":
+			return JOY_BUTTON_B
+		"X":
+			return JOY_BUTTON_X
+		"Y":
+			return JOY_BUTTON_Y
+		"BACK":
+			return JOY_BUTTON_BACK
+		"GUIDE":
+			return JOY_BUTTON_GUIDE
+		"START":
+			return JOY_BUTTON_START
+		"LEFT_STICK":
+			return JOY_BUTTON_LEFT_STICK
+		"RIGHT_STICK":
+			return JOY_BUTTON_RIGHT_STICK
+		"LEFT_SHOULDER":
+			return JOY_BUTTON_LEFT_SHOULDER
+		"RIGHT_SHOULDER":
+			return JOY_BUTTON_RIGHT_SHOULDER
+		"DPAD_UP":
+			return JOY_BUTTON_DPAD_UP
+		"DPAD_DOWN":
+			return JOY_BUTTON_DPAD_DOWN
+		"DPAD_LEFT":
+			return JOY_BUTTON_DPAD_LEFT
+		"DPAD_RIGHT":
+			return JOY_BUTTON_DPAD_RIGHT
+		_:
+			return -1
+
+static func joy_button_name(index: int) -> String:
+	match index:
+		JOY_BUTTON_A:
+			return "A"
+		JOY_BUTTON_B:
+			return "B"
+		JOY_BUTTON_X:
+			return "X"
+		JOY_BUTTON_Y:
+			return "Y"
+		JOY_BUTTON_BACK:
+			return "BACK"
+		JOY_BUTTON_GUIDE:
+			return "GUIDE"
+		JOY_BUTTON_START:
+			return "START"
+		JOY_BUTTON_LEFT_STICK:
+			return "LEFT_STICK"
+		JOY_BUTTON_RIGHT_STICK:
+			return "RIGHT_STICK"
+		JOY_BUTTON_LEFT_SHOULDER:
+			return "LEFT_SHOULDER"
+		JOY_BUTTON_RIGHT_SHOULDER:
+			return "RIGHT_SHOULDER"
+		JOY_BUTTON_DPAD_UP:
+			return "DPAD_UP"
+		JOY_BUTTON_DPAD_DOWN:
+			return "DPAD_DOWN"
+		JOY_BUTTON_DPAD_LEFT:
+			return "DPAD_LEFT"
+		JOY_BUTTON_DPAD_RIGHT:
+			return "DPAD_RIGHT"
+		_:
+			return str(index)
+
+static func _joy_axis_index(raw: Variant) -> int:
+	if typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT:
+		var index := int(raw)
+		return index if index >= 0 else -1
+	var name := String(raw).strip_edges().to_upper().replace("-", "_")
+	if name.is_valid_int():
+		return int(name)
+	if name.begins_with("JOY_AXIS_"):
+		name = name.substr(9)
+	match name:
+		"LEFT_X":
+			return JOY_AXIS_LEFT_X
+		"LEFT_Y":
+			return JOY_AXIS_LEFT_Y
+		"RIGHT_X":
+			return JOY_AXIS_RIGHT_X
+		"RIGHT_Y":
+			return JOY_AXIS_RIGHT_Y
+		"TRIGGER_LEFT":
+			return JOY_AXIS_TRIGGER_LEFT
+		"TRIGGER_RIGHT":
+			return JOY_AXIS_TRIGGER_RIGHT
+		_:
+			return -1
+
+static func joy_axis_name(index: int) -> String:
+	match index:
+		JOY_AXIS_LEFT_X:
+			return "LEFT_X"
+		JOY_AXIS_LEFT_Y:
+			return "LEFT_Y"
+		JOY_AXIS_RIGHT_X:
+			return "RIGHT_X"
+		JOY_AXIS_RIGHT_Y:
+			return "RIGHT_Y"
+		JOY_AXIS_TRIGGER_LEFT:
+			return "TRIGGER_LEFT"
+		JOY_AXIS_TRIGGER_RIGHT:
+			return "TRIGGER_RIGHT"
+		_:
+			return str(index)
 
 static func _mouse_button_event(position: Vector2, button: int, pressed: bool, request: Dictionary) -> InputEventMouseButton:
 	var event := InputEventMouseButton.new()

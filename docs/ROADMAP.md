@@ -10,6 +10,17 @@ standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
+## Unreleased: play-clock, reparent, joypad input (2026-09-07)
+
+- [x] `game clock`: `SceneTree.paused`, `Engine.time_scale`, and one-frame
+  `--step` / `--physics` through the runtime inspector (`PROCESS_MODE_ALWAYS`,
+  wall-clock heartbeats so scaled time does not starve discovery).
+- [x] `node reparent`: undoable `Node.reparent` with optional
+  `--no-keep-global-transform`.
+- [x] `game input joypad` / `game input axis`: `InputEventJoypadButton` and
+  `InputEventJoypadMotion` via `Input.parse_input_event`.
+- No MCP server. Editor spawn and DAP remain unbuilt.
+
 ## Unreleased: GDScript and C# selection (2026-09-07)
 
 - [x] Select `.gd` or `.cs` by filename; optional `script create --lang`

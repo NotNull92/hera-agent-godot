@@ -145,6 +145,8 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		return c.Post("game", targetGameParams(gameClickParamsFromQAStep(step), step.targetPID))
 	case "game.input":
 		return c.Post("game", targetGameParams(gameInputParamsFromQAStep(step), step.targetPID))
+	case "game.clock":
+		return c.Post("game", targetGameParams(gameClockParamsFromQAStep(step), step.targetPID))
 	case "game.input_log":
 		return c.Post("game", targetGameParams(gameInputLogParamsFromQAStep(step), step.targetPID))
 	case "game.ui.tree":

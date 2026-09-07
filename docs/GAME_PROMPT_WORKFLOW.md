@@ -53,6 +53,12 @@ func qa_step(seconds: float = 0.0) -> void
 func qa_restart() -> void
 ```
 
+For pause and one-frame advance, prefer `hera game clock --pause`,
+`hera game clock --resume`, and `hera game clock --step` (or `--step --physics`).
+Those set `SceneTree.paused` and wait one `SceneTree` frame; they do not need
+project helpers. Keep `qa_pause` / `qa_step` when the game must freeze extra
+systems the tree pause does not stop.
+
 Add domain-specific helpers only when they remove real flake:
 
 ```gdscript

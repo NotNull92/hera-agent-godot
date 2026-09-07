@@ -31,7 +31,7 @@ func runGame(args []string) int {
 	if params["action"] == "ui_audit" {
 		return runGameUIAudit(params)
 	}
-	if gameActionMutates(params["action"]) {
+	if gameActionMutates(params["action"]) || (params["action"] == "clock" && gameClockMutates(params)) {
 		return dialMutationPostPrint("game", params, "game")
 	}
 	return dialPostPrint("game", params, "game")
@@ -39,7 +39,7 @@ func runGame(args []string) int {
 
 func parseGameArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: game <tree|ui tree|instances|screenshot|click|input|input-log|assert|node get|node set|node call|qa> ...")
+		return nil, fmt.Errorf("usage: game <tree|ui tree|instances|screenshot|click|input|input-log|clock|assert|node get|node set|node call|qa> ...")
 	}
 	switch args[0] {
 	case "tree":
@@ -62,12 +62,14 @@ func parseGameArgs(args []string) (map[string]any, error) {
 		return parseGameInputArgs(args[1:])
 	case "input-log":
 		return parseGameInputLogArgs(args[1:])
+	case "clock":
+		return parseGameClockArgs(args[1:])
 	case "assert":
 		return parseGameAssertArgs(args[1:])
 	case "node":
 		return parseGameNodeArgs(args[1:])
 	default:
-		return nil, fmt.Errorf("unknown game subcommand %q (want tree|ui tree|instances|screenshot|click|input|input-log|assert|node get|node set|node call|qa)", args[0])
+		return nil, fmt.Errorf("unknown game subcommand %q (want tree|ui tree|instances|screenshot|click|input|input-log|clock|assert|node get|node set|node call|qa)", args[0])
 	}
 }
 

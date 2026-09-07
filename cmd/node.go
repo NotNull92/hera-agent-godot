@@ -13,6 +13,7 @@ import (
 //	add <type> [--parent <path>] [--name n]  add a node under a parent
 //	set <path> --prop <name> --value <v>     set a node property
 //	remove <path>                            remove a node
+//	reparent <path> --parent <path>          move a node to a new parent
 func runNode(args []string) int {
 	params, err := parseNodeArgs(args)
 	if err != nil {
@@ -27,7 +28,7 @@ func runNode(args []string) int {
 
 func nodeActionMutates(action any) bool {
 	switch action {
-	case "add", "instance", "set", "set_resource", "remove", "attach_script", "detach_script":
+	case "add", "instance", "set", "set_resource", "remove", "reparent", "attach_script", "detach_script":
 		return true
 	default:
 		return false
@@ -36,7 +37,7 @@ func nodeActionMutates(action any) bool {
 
 func parseNodeArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: node <find|get|add|instance|set|remove> ...")
+		return nil, fmt.Errorf("usage: node <find|get|add|instance|set|remove|reparent> ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -214,6 +215,30 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		return map[string]any{"action": "remove", "path": rest[0]}, nil
 
+	case "reparent":
+		if len(rest) == 0 {
+			return nil, fmt.Errorf("usage: node reparent <path> --parent <path> [--no-keep-global-transform]")
+		}
+		params := map[string]any{"action": "reparent", "path": rest[0], "keep_global_transform": true}
+		for i := 1; i < len(rest); i++ {
+			switch rest[i] {
+			case "--parent":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--parent requires a value")
+				}
+				i++
+				params["parent"] = rest[i]
+			case "--no-keep-global-transform":
+				params["keep_global_transform"] = false
+			default:
+				return nil, fmt.Errorf("unknown flag %q", rest[i])
+			}
+		}
+		if _, ok := params["parent"]; !ok {
+			return nil, fmt.Errorf("node reparent requires --parent")
+		}
+		return params, nil
+
 	case "attach-script":
 		if len(rest) != 2 {
 			return nil, fmt.Errorf("usage: node attach-script <path> <res://script.gd>")
@@ -227,6 +252,6 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		return map[string]any{"action": "detach_script", "path": rest[0]}, nil
 
 	default:
-		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|instance|set|set-resource|remove|attach-script|detach-script)", sub)
+		return nil, fmt.Errorf("unknown node subcommand %q (want find|get|add|instance|set|set-resource|remove|reparent|attach-script|detach-script)", sub)
 	}
 }

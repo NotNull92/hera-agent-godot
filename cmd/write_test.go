@@ -45,6 +45,13 @@ func TestParseNodeArgs_Write(t *testing.T) {
 		{name: "remove no path", args: []string{"remove"}, wantErr: true},
 		{name: "remove extra", args: []string{"remove", "a", "b"}, wantErr: true},
 
+		{name: "reparent", args: []string{"reparent", "Hero", "--parent", "World"},
+			wantAction: "reparent", want: map[string]any{"path": "Hero", "parent": "World", "keep_global_transform": true}},
+		{name: "reparent no keep transform", args: []string{"reparent", "Hero", "--parent", "World", "--no-keep-global-transform"},
+			wantAction: "reparent", want: map[string]any{"path": "Hero", "parent": "World", "keep_global_transform": false}},
+		{name: "reparent missing parent", args: []string{"reparent", "Hero"}, wantErr: true},
+		{name: "reparent no path", args: []string{"reparent"}, wantErr: true},
+
 		{name: "attach script", args: []string{"attach-script", "Hero", "res://scripts/hero.gd"},
 			wantAction: "attach_script", want: map[string]any{"path": "Hero", "script": "res://scripts/hero.gd"}},
 		{name: "attach script no path", args: []string{"attach-script"}, wantErr: true},
@@ -80,6 +87,9 @@ func TestParseNodeArgs_Write(t *testing.T) {
 func TestNodeActionMutates_Instance(t *testing.T) {
 	if !nodeActionMutates("instance") {
 		t.Fatalf("node instance should require the mutation path")
+	}
+	if !nodeActionMutates("reparent") {
+		t.Fatalf("node reparent should require the mutation path")
 	}
 }
 

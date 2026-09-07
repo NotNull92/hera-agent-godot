@@ -51,12 +51,14 @@ func execute(params: Dictionary) -> Dictionary:
 			return _set_resource_property(root, params)
 		"remove":
 			return _remove_node(root, params)
+		"reparent":
+			return _reparent_node(root, params)
 		"attach_script":
 			return _attach_script(root, params)
 		"detach_script":
 			return _detach_script(root, params)
 		_:
-			return ToolResponse.failure("unknown node action: %s (want find|get|add|instance|set|set_resource|remove|attach_script|detach_script)" % action)
+			return ToolResponse.failure("unknown node action: %s (want find|get|add|instance|set|set_resource|remove|reparent|attach_script|detach_script)" % action)
 
 func _find(root: Node, params: Dictionary) -> Dictionary:
 	var query := String(params.get("query", "")).to_lower()
@@ -220,6 +222,48 @@ func _remove_node(root: Node, params: Dictionary) -> Dictionary:
 		node.queue_free()
 
 	return ToolResponse.success({ "removed": path })
+
+func _reparent_node(root: Node, params: Dictionary) -> Dictionary:
+	var path := String(params.get("path", ""))
+	if path == "" or path == ".":
+		return ToolResponse.failure("cannot reparent the scene root")
+	var node := root.get_node_or_null(path)
+	if node == null:
+		return ToolResponse.failure("node not found: %s" % path)
+	if node == root:
+		return ToolResponse.failure("cannot reparent the scene root")
+	var old_parent := node.get_parent()
+	if old_parent == null:
+		return ToolResponse.failure("node has no parent: %s" % path)
+	var parent_path := String(params.get("parent", ""))
+	if parent_path == "":
+		return ToolResponse.failure("reparent requires a parent")
+	var new_parent := _resolve(root, parent_path)
+	if new_parent == null:
+		return ToolResponse.failure("parent not found: %s" % parent_path)
+	if new_parent == node:
+		return ToolResponse.failure("cannot reparent a node under itself")
+	if node.is_ancestor_of(new_parent):
+		return ToolResponse.failure("cannot reparent a node under its own descendant")
+	var keep := bool(params.get("keep_global_transform", true))
+	var old_index := node.get_index()
+	var old_owner := node.owner
+	if _undo_redo != null:
+		_undo_redo.create_action("Hera: reparent %s" % String(node.name))
+		_undo_redo.add_do_method(node, "reparent", new_parent, keep)
+		_undo_redo.add_undo_method(node, "reparent", old_parent, keep)
+		_undo_redo.add_undo_method(old_parent, "move_child", node, old_index)
+		_undo_redo.add_undo_method(node, "set_owner", old_owner)
+		_undo_redo.commit_action()
+	else:
+		node.reparent(new_parent, keep)
+	if node.has_method("reset_physics_interpolation"):
+		node.reset_physics_interpolation()
+	return ToolResponse.success({
+		"path": String(root.get_path_to(node)),
+		"parent": String(root.get_path_to(new_parent)),
+		"keep_global_transform": keep,
+	})
 
 func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
