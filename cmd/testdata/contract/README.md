@@ -9,6 +9,7 @@ these tests pin).
   (capturing them would require a real play session).
 - `*.golden` — the expected CLI stdout, byte-for-byte (trailing newline
   included). `instances.golden` stores `port`/`ts` normalized to `8770`/`0`.
+  `instances_stale.golden` also pins `age_sec` to `60`.
 - `batch_input.json` — the `--file` input used by the `batch` case.
 
 Regenerate goldens after an **intentional** contract change with:

@@ -142,7 +142,7 @@ func TestSelectEditor_rejectsMultipleInstancesForMutation(t *testing.T) {
 		{PID: 2, Port: 8771},
 	}
 
-	_, err := selectEditor(instances, true, 0)
+	_, err := selectEditor(liveScan(instances), true, 0)
 
 	if err == nil {
 		t.Fatalf("expected error")
@@ -158,7 +158,7 @@ func TestSelectEditor_allowsMultipleInstancesForReadOnly(t *testing.T) {
 		{PID: 2, Port: 8771},
 	}
 
-	got, err := selectEditor(instances, false, 0)
+	got, err := selectEditor(liveScan(instances), false, 0)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -175,7 +175,7 @@ func TestSelectEditor_targetPIDOverridesMutationGuard(t *testing.T) {
 	}
 
 	// --instance picks the second editor even for a mutation (requireSingle).
-	got, err := selectEditor(instances, true, 2)
+	got, err := selectEditor(liveScan(instances), true, 2)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -191,7 +191,7 @@ func TestSelectEditor_targetPIDNotFound(t *testing.T) {
 		{PID: 2, Port: 8771},
 	}
 
-	_, err := selectEditor(instances, false, 99)
+	_, err := selectEditor(liveScan(instances), false, 99)
 
 	if err == nil {
 		t.Fatalf("expected error")

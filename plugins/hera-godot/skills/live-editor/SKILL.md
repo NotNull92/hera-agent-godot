@@ -22,6 +22,11 @@ Editor and game PIDs are separate. Use global `--instance <editor-pid>` for the
 editor, then `game --pid <game-pid> ...` to select a fresh entry from
 `game instances`, including externally launched games. Keep the game PID on QA
 commands and scenarios. Never fall back to a different runtime when it expires.
+`--instance`/`--pid` do not isolate `user://`; if `shared_user_data` is set,
+split user data directories before parallel QA. Runtime screenshot sizes are
+the live viewport; do not assume the project resolution or upscale. If `hera
+instances` shows `stale`, the editor process may still be running with an
+expired heartbeat — that is not the same as no editor.
 
 ## Keep reads small and writes safe
 

@@ -60,6 +60,24 @@ func TestEvaluateGameQADiagnostics_staysQuietWhenAvailabilityIsUnreported(t *tes
 	}
 }
 
+func TestEvaluateGameQAScreenshot_reportsSizeMismatchWithoutFailing(t *testing.T) {
+	data := map[string]any{
+		"width":                float64(927),
+		"height":               float64(1649),
+		"size_matches_project": false,
+		"analysis":             map[string]any{"nonblank": true, "low_detail": false, "possible_clipping": false},
+	}
+
+	check, issues := evaluateGameQAScreenshot(data)
+
+	if check["ok"] != true || len(issues) != 0 {
+		t.Fatalf("check=%v issues=%v, want a pass that still reports the captured size", check, issues)
+	}
+	if check["width"] != 927 || check["height"] != 1649 || check["size_matches_project"] != false {
+		t.Fatalf("check=%v, want captured size and size_matches_project=false", check)
+	}
+}
+
 func TestEvaluateGameQAInstancesAcceptsSelectedRuntimeAmongSeveral(t *testing.T) {
 	data := map[string]any{"instances": []any{
 		map[string]any{"pid": float64(101)},

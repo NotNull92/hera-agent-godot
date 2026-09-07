@@ -39,6 +39,35 @@ func TestDiscoverIn_returnsFreshInstancesMostRecentFirst(t *testing.T) {
 	}
 }
 
+func TestScanIn_keepsExpiredHeartbeatsSeparateFromLive(t *testing.T) {
+	dir := t.TempDir()
+	now := time.Unix(1_000_000, 0)
+	instances := map[string]Instance{
+		"1.json": {PID: 1, Port: 8770, TS: now.Unix()},
+		"3.json": {PID: 3, Port: 8772, TS: now.Add(-54 * time.Second).Unix()},
+	}
+	for name, inst := range instances {
+		b, err := json.Marshal(inst)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), b, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	scan, err := scanIn(dir, now)
+	if err != nil {
+		t.Fatalf("scanIn error: %v", err)
+	}
+	if len(scan.Live) != 1 || scan.Live[0].PID != 1 {
+		t.Fatalf("live = %#v, want pid 1", scan.Live)
+	}
+	if len(scan.Stale) != 1 || scan.Stale[0].PID != 3 || scan.Stale[0].AgeSec != 54 {
+		t.Fatalf("stale = %#v, want pid 3 age 54s", scan.Stale)
+	}
+}
+
 func TestDiscoverRetrying_rescansWhenHeartbeatIsMidSwap(t *testing.T) {
 	dir := t.TempDir()
 	now := time.Unix(1_000_000, 0)

@@ -36,6 +36,14 @@ func evaluateGameQAInstances(data map[string]any, targetPID int) (map[string]any
 		return gameQADiagnoseFailure("runtime_instances", fmt.Errorf("missing instances")), []string{"runtime instance response is incomplete"}
 	}
 	check := map[string]any{"name": "runtime_instances", "ok": len(instances) == 1, "count": len(instances)}
+	for _, raw := range instances {
+		instance, instanceOK := raw.(map[string]any)
+		if instanceOK {
+			if shared, ok := instance["shared_user_data"].(bool); ok && shared {
+				check["shared_user_data"] = true
+			}
+		}
+	}
 	if targetPID > 0 {
 		check["selected_pid"] = targetPID
 		for _, raw := range instances {
@@ -101,6 +109,15 @@ func evaluateGameQAScreenshot(data map[string]any) (map[string]any, []string) {
 		"nonblank":          nonblank,
 		"low_detail":        lowDetail,
 		"possible_clipping": clipped,
+	}
+	if width, widthOK := numericField(data, "width"); widthOK {
+		check["width"] = width
+	}
+	if height, heightOK := numericField(data, "height"); heightOK {
+		check["height"] = height
+	}
+	if matches, ok := data["size_matches_project"].(bool); ok {
+		check["size_matches_project"] = matches
 	}
 	issues := make([]string, 0, 3)
 	if !nonblank {

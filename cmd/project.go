@@ -131,12 +131,12 @@ func runProjectSetMainScene(params map[string]any) int {
 		fmt.Fprintln(os.Stderr, "project: scene path is required")
 		return 2
 	}
-	instances, err := discovery.Discover()
+	scan, err := discovery.DiscoverScan()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "project: %v\n", err)
 		return 1
 	}
-	inst, err := selectEditor(instances, true, targetPID)
+	inst, err := selectEditor(scan, true, targetPID)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "project: %v\n", err)
 		return 1

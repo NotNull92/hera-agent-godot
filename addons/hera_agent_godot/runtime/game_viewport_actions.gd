@@ -22,6 +22,28 @@ static func input(viewport: Viewport, request: Dictionary) -> Dictionary:
 		_:
 			return { "ok": false, "error": "unknown input kind: %s (want mouse|key|action|text)" % kind }
 
+static func sizes_match(width: int, height: int, project_width: int, project_height: int) -> bool:
+	return project_width > 0 and project_height > 0 and width == project_width and height == project_height
+
+static func geometry(viewport: Viewport) -> Dictionary:
+	var visible := Vector2.ZERO
+	if viewport != null:
+		visible = viewport.get_visible_rect().size
+	var window := DisplayServer.window_get_size()
+	var project_width := int(ProjectSettings.get_setting("display/window/size/viewport_width", 0))
+	var project_height := int(ProjectSettings.get_setting("display/window/size/viewport_height", 0))
+	var visible_width := int(visible.x)
+	var visible_height := int(visible.y)
+	return {
+		"window_width": int(window.x),
+		"window_height": int(window.y),
+		"visible_width": visible_width,
+		"visible_height": visible_height,
+		"project_width": project_width,
+		"project_height": project_height,
+		"size_matches_project": sizes_match(visible_width, visible_height, project_width, project_height),
+	}
+
 static func screenshot(viewport: Viewport, request: Dictionary, scene_path: String, pid: int) -> Dictionary:
 	var image := viewport.get_texture().get_image()
 	if image == null or image.is_empty():
@@ -32,13 +54,15 @@ static func screenshot(viewport: Viewport, request: Dictionary, scene_path: Stri
 	var err := image.save_png(out_path)
 	if err != OK:
 		return { "ok": false, "error": "save failed: %s" % error_string(err) }
-	var data := {
-		"path": abs_path,
-		"width": image.get_width(),
-		"height": image.get_height(),
-		"pid": pid,
-		"scene": scene_path,
-	}
+	var data := geometry(viewport)
+	var width := image.get_width()
+	var height := image.get_height()
+	data["path"] = abs_path
+	data["width"] = width
+	data["height"] = height
+	data["pid"] = pid
+	data["scene"] = scene_path
+	data["size_matches_project"] = sizes_match(width, height, int(data.get("project_width", 0)), int(data.get("project_height", 0)))
 	if bool(request.get("analyze", false)):
 		data["analysis"] = GameImageAnalyzer.analyze(image)
 	return { "ok": true, "data": data }

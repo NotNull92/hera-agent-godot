@@ -70,7 +70,13 @@ Reusable prompt-game QA patterns:
   If more than one process is registered, use `game --pid <game-pid> ...` for
   every read, mutation, screenshot, and QA command. Do not choose or terminate
   a process by age alone. A top-level PID on `game qa --file` applies to every
-  game step in that scenario.
+  game step in that scenario. If two live processes share `user_data_dir`,
+  treat their saves as one file: isolate `HOME`/`USERPROFILE` (or Godot's user
+  data directory) before parallel QA. `--instance` does not split `user://`.
+- Runtime screenshot `width`/`height` are the live viewport, not the project
+  window setting. Use those pixels for clicks and image checks. Do not treat
+  `possible_clipping=false` or a smaller embedded capture as proof of the
+  designed resolution.
 - If live runtime registration is empty while editor diagnostics are clean, run
   a direct affected-scene load before changing autoloads or adding runtime
   workarounds. Warning-as-error parse failures are the first branch to rule out.

@@ -16,7 +16,7 @@ commands:
   theme      get <res://t.tres> [--type T] | set <res://t.tres> --type T --color|--constant|--font-size name=value
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
   game       [--pid N] tree | ui tree|audit | instances | screenshot | click | assert | qa discover|diagnose|--file | node get|set|call
-  instances  list live Hera-enabled Godot editors
+  instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel
   game_feel  list bundled Game Feel topics, or query one topic

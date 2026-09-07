@@ -35,6 +35,7 @@ type contractCase struct {
 	args             []string
 	responses        map[string]string // "tool" or "tool:action" → raw /rpc response body
 	noEditor         bool              // plant no heartbeat: "no live editor" path
+	staleEditor      bool              // plant an expired heartbeat: stalled-editor path
 	wantExit         int
 	wantStderrPrefix string
 	golden           string // golden file name; "" asserts empty stdout
@@ -51,6 +52,13 @@ var (
 func normalizeInstances(s string) string {
 	s = contractPortRE.ReplaceAllString(s, `"port":8770`)
 	return contractTSRE.ReplaceAllString(s, `"ts":0`)
+}
+
+var contractAgeRE = regexp.MustCompile(`"age_sec":\d+`)
+
+func normalizeStaleInstances(s string) string {
+	s = normalizeInstances(s)
+	return contractAgeRE.ReplaceAllString(s, `"age_sec":60`)
 }
 
 func contractCases() []contractCase {
@@ -138,6 +146,8 @@ func contractCases() []contractCase {
 		{name: "game_assert_fail", args: []string{"game", "assert", "/root/Main", "visible", "eq", "true"}, responses: map[string]string{"game": `{"ok":false,"error":"assert failed: visible eq true (actual: false)"}`}, wantExit: 1, wantStderrPrefix: "game: assert failed"},
 		{name: "tool_error", args: []string{"node", "get", "/nonexistent"}, responses: map[string]string{"node": `{"ok":false,"error":"node not found: /nonexistent"}`}, wantExit: 1, wantStderrPrefix: "node: "},
 		{name: "no_editor", args: []string{"status"}, noEditor: true, wantExit: 1, wantStderrPrefix: "status: "},
+		{name: "stale_editor", args: []string{"status"}, staleEditor: true, wantExit: 1, wantStderrPrefix: "status: no live Godot editor found; stale heartbeat"},
+		{name: "instances_stale", args: []string{"instances"}, staleEditor: true, golden: "instances_stale", normalize: normalizeStaleInstances},
 		{name: "unknown_command", args: []string{"bogus"}, noEditor: true, wantExit: 2, wantStderrPrefix: "unknown command"},
 		{name: "invalid_instance", args: []string{"--instance", "abc", "status"}, noEditor: true, wantExit: 2, wantStderrPrefix: "--instance: invalid pid"},
 		{name: "invalid_timeout", args: []string{"--timeout", "abc", "status"}, noEditor: true, wantExit: 2, wantStderrPrefix: "--timeout: invalid milliseconds"},
@@ -158,7 +168,11 @@ func TestContract_goldenOutputs(t *testing.T) {
 			}
 			srv := startContractEditor(t, responses)
 			t.Cleanup(srv.Close)
-			installContractHome(t, contractServerPort(t, srv), !tc.noEditor)
+			if tc.staleEditor {
+				installContractHomeAt(t, contractServerPort(t, srv), true, time.Now().Add(-60*time.Second).Unix())
+			} else {
+				installContractHome(t, contractServerPort(t, srv), !tc.noEditor)
+			}
 
 			stdout, stderr, code := captureContractRun(tc.args)
 
@@ -239,6 +253,11 @@ func startContractEditor(t *testing.T, responses map[string]string) *httptest.Se
 // it plants one fresh instance file advertising the given port.
 func installContractHome(t *testing.T, port int, heartbeat bool) {
 	t.Helper()
+	installContractHomeAt(t, port, heartbeat, time.Now().Unix())
+}
+
+func installContractHomeAt(t *testing.T, port int, heartbeat bool, ts int64) {
+	t.Helper()
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 	t.Setenv("USERPROFILE", home)
@@ -252,7 +271,7 @@ func installContractHome(t *testing.T, port int, heartbeat bool) {
 	}
 	entry := fmt.Sprintf(
 		`{"pid":49928,"port":%d,"project_path":"C:/Users/PC/Desktop/Cowork/hera-agent-godot/","godot_version":"4.7-stable (official)","scene":"res://scenes/Main.tscn","ts":%d}`,
-		port, time.Now().Unix())
+		port, ts)
 	if err := os.WriteFile(filepath.Join(dir, "49928.json"), []byte(entry), 0o644); err != nil {
 		t.Fatalf("write heartbeat: %v", err)
 	}

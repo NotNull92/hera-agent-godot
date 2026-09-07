@@ -106,7 +106,7 @@ need a duplicate `LICENSE` at the ZIP download root.
 | Component | Responsibility |
 |-----------|----------------|
 | `cmd/*` | Parse command flags, build requests, run local helper commands (`instances`, `smoke`), and format responses. |
-| `internal/discovery` | Scan `~/.hera-agent-godot/instances/` and return fresh editor instances. |
+| `internal/discovery` | Scan `~/.hera-agent-godot/instances/` and return fresh editor instances, keeping expired heartbeat files separate so a stalled editor is not reported as missing. |
 | `internal/client` | POST one request to one editor instance with timeout and retry. |
 | `internal/protocol` | Request / response JSON contract. |
 
@@ -121,7 +121,7 @@ need a duplicate `LICENSE` at the ZIP download root.
 | `core/tool_registry.gd` | Explicit tool name to handler mapping. |
 | `core/tool_response.gd` | Compact `{ ok, data/error }` response helpers. |
 | `tools/*_tool.gd` | One handler per capability: status, run, scene, node, signal, resource, eval, guidance, output, diagnostics, screenshot, batch, and game bridge. |
-| `runtime/game_inspector.gd` | Runtime autoload used by `game tree`, `game ui tree`, `game ui audit`, `game instances`, `game screenshot`, `game click`, `game node get`, `game node set`, `game node call`, and `game assert` while a play session is running. It writes per-process heartbeats and request/response files so stale game processes cannot answer current requests; `game --pid N` selects one fresh process explicitly. |
+| `runtime/game_inspector.gd` | Runtime autoload used by `game tree`, `game ui tree`, `game ui audit`, `game instances`, `game screenshot`, `game click`, `game node get`, `game node set`, `game node call`, and `game assert` while a play session is running. It writes per-process heartbeats and request/response files so stale game processes cannot answer current requests; `game --pid N` selects one fresh process explicitly. Heartbeats include `user_data_dir` and live viewport sizes because Godot's `user://` is per user-data directory, not per process. |
 | `runtime/game_inspector_export_guard.gd` | Temporarily removes Hera's owned runtime autoload while Godot collects export dependencies and project settings, then restores it for editor play. |
 | `runtime/game_ui_auditor.gd` / `runtime/game_ui_audit_checks.gd` | Bounded runtime UI traversal, verdict assembly, and generic Godot `Control` defect checks. Rules derive from live rectangles, clipping, input/focus behavior, minimum sizes, mouse filtering, and sibling geometry. |
 | `runtime/game_value_codec.gd` | Runtime value serialization and argument/property coercion shared by live `game node get/set/call`. |
@@ -148,8 +148,9 @@ need a duplicate `LICENSE` at the ZIP download root.
 ```
 
 The CLI treats an instance as live only if `now - ts` is within the freshness
-window. Stale files from crashed editors are ignored and may be cleaned
-opportunistically.
+window. Expired files stay visible as `stale` on `hera instances` so a process
+that stopped publishing is distinct from a missing advertisement. They are not
+targeted unless a later heartbeat becomes fresh again.
 
 The addon republishes the file by staging it under a temp name and swapping it
 in with `DirAccess.rename_absolute`. That swap is atomic on POSIX but **not on

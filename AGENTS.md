@@ -124,7 +124,7 @@ hera resource create <Class> <res://out.tres> [--force] [--prop name=value]
 hera game tree                               # running game node tree
 hera game ui tree [--path p] [--depth N] [--fields a,b] [--type Class] [--text t] # running Control nodes, optionally scoped
 hera game ui audit [--path p] [--severity error|warning|all] [--rule id] [--strict] [--limit N] # generic runtime UI defects
-hera game instances                          # running game process heartbeats
+hera game instances                          # running game process heartbeats; shared user:// is flagged
 hera game --pid N tree                       # target one listed runtime, including externally launched games
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
 hera game click --x N --y N                  # click the running game viewport
@@ -141,9 +141,9 @@ hera eval "<expression>"                     # evaluate one GDScript expression
 hera guidance ui                             # UI guidance; reads Game Feel UI Mode
 hera output [--type log|error|warning|all] [--lines N]
 hera diagnostics [--lines N]                 # summarize project log errors/warnings
-hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or runtime viewport
+hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or capture the live viewport as-is
 hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
-hera instances                               # list live Hera-enabled editors
+hera instances                               # list live Hera-enabled editors; expired heartbeats are stale
 hera smoke [--run-game|--skip-game]          # quick live editor smoke check; run-game includes runtime screenshot analysis
 ```
 
@@ -219,6 +219,18 @@ default 5000). Default output is compact JSON.
   ambiguous targets instead of accepting an old response. Use `game --pid N ...`
   to select a fresh heartbeat explicitly; `--instance` continues to select the
   editor. A missing or expired PID fails instead of falling back to another game.
+  Parallel games that share `user://` are flagged with `shared_user_data`;
+  `--instance` / `--pid` do not isolate save files. Use a separate user data
+  directory (isolated `HOME`/`USERPROFILE`, per [DEV_MACHINE.md](docs/DEV_MACHINE.md))
+  for concurrent QA.
+- **Runtime captures report the live viewport.** `game screenshot` and
+  `screenshot --runtime` return the PNG as captured (`width`/`height`) plus
+  window, visible-rect, and project viewport sizes. They do not upscale a
+  smaller embedded window to the project resolution. Input coordinates are in
+  that actual viewport. `possible_clipping` is not a resolution check.
+- **Expired editor heartbeats are not the same as a missing editor.** `hera
+  instances` lists stale files separately. `--instance <pid>` against an expired
+  heartbeat says so instead of reporting "no live Godot editor found".
 - **The runtime inspector is excluded from exports.** The editor plugin removes
   its owned autoload while Godot assembles exported project settings, then
   restores it for editor play. Disabling Hera removes an owned persisted
@@ -228,7 +240,9 @@ default 5000). Default output is compact JSON.
   `game qa --file` before dumping full node properties during automated QA.
   Runtime screenshot analysis
   reports per-edge content ratios and `possible_clipping` so layouts that only
-  fail at the viewport boundary are easier to catch.
+  fail at the viewport boundary are easier to catch. Compare `width`/`height`
+  with `project_width`/`project_height` before treating a capture as the
+  designed resolution.
 - **Tie QA to the user's requirements.** For prompt implementation QA, prefer a
   `game qa --file` object with top-level `requirements` and per-step `covers`
   entries so missing requested behavior fails the scenario instead of being

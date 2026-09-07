@@ -191,3 +191,16 @@ Go CLI·GDScript addon·계약/문서를 함께 수정하라. 에디터 PID와 �
 ```
 
 이번 산출물은 문서와 증거 사본이다. 게임 코드·Hera 코드·설치 CLI를 수정하거나 커밋/푸시하지 않았다.
+
+## 후속 수정 (hera-agent-godot, 2026-09-07)
+
+이 핸드오프 이후 로컬 레포에서 한 일. 역사적 관측은 그대로 두고, 현재 코드의 완료 범위만 적는다.
+
+| ID | 상태 | 레포에 반영한 것 |
+|---|---|---|
+| H01 / H02 | 완료 (`699e8ea`) | `game --pid`로 에디터 PID와 게임 PID를 구분. 명시 PID가 없거나 만료되면 대체하지 않음. |
+| H05 | 완료 (`699e8ea`) | export 중 소유 오토로드 제거 후 복구. disable 시 소유 항목만 정리. |
+| H03 | 보고 계약 | 런타임 스크린샷은 PNG를 확대하지 않는다. `width`/`height`(PNG), window/visible/project 크기, `size_matches_project`를 함께 돌려준다. `possible_clipping=false`를 해상도 충족으로 쓰지 말 것. 입력 좌표는 실제 뷰포트 기준. embedded 창이 프로젝트 해상도보다 작은 엔진/OS 제약은 그대로이며, Hera가 1080×1920을 강제하지 않는다. |
+| H04 | 진단 구분 | `hera instances`는 만료 heartbeat를 `stale`( `age_sec` )로 남긴다. `--instance <pid>`가 만료 파일을 가리키면 "no live Godot editor found" 대신 만료를 말한다. RPC가 멈춘 원인(캐시/헤드리스 충돌)은 여전히 미확정. |
+| H06 | 운영 신호 | 게임 heartbeat에 `user_data_dir`을 넣고, 같은 경로를 쓰는 병렬 런타임에 `shared_user_data`를 표시한다. `--instance`/`--pid`는 세이브를 나누지 않는다. 병렬 QA는 격리된 `HOME`/`USERPROFILE`(또는 확인된 user data 경로)을 쓴다. |
+| H07 | 원인 분리 | `export/android/shutdown_adb_on_exit`는 Hera 설정이 아니다. Godot Android exporter의 변경 감시 스레드가 종료 시 `EDITOR_GET`으로 그 키를 읽는데, 시작 경로만 EditorSettings 싱글톤을 검사하고 종료 경로는 검사하지 않는다 (`platform/android/export/export_plugin.cpp`). Hera는 shutdown 이후 EditorSettings/owner가 없으면 설정 접근과 export-guard 작업을 건너뛴다. ObjectDB/리소스 누수는 Hera 있음/없음 비교 없이는 Hera 결함으로 적지 않는다. |

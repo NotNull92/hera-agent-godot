@@ -26,7 +26,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("game host not set")
 	var action := String(params.get("action", ""))
 	if action == "instances":
-		return ToolResponse.success({ "instances": _game_instances() })
+		return ToolResponse.success(_instances_payload())
 	var target := _select_target(_game_instances(), params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
 	if target.has("error"):
 		return ToolResponse.failure(String(target["error"]))
@@ -142,23 +142,57 @@ func _select_target(instances: Array, params: Dictionary, scene: String, editor_
 		return { "error": "multiple Hera game processes found for scene %s (%s); pass --pid" % [scene, _pids(matches)] }
 	return matches[0]
 
+func _instances_payload() -> Dictionary:
+	var records := _collect_game_heartbeats()
+	var live: Array = records["live"]
+	_mark_shared_user_data(live)
+	var data := { "instances": live }
+	var stale: Array = records["stale"]
+	if not stale.is_empty():
+		data["stale"] = stale
+	return data
+
 func _game_instances() -> Array:
-	var out := []
+	return _collect_game_heartbeats()["live"]
+
+func _collect_game_heartbeats() -> Dictionary:
+	var live := []
+	var stale := []
 	var dir := DirAccess.open(INSTANCE_DIR)
 	if dir == null:
-		return out
+		return { "live": live, "stale": stale }
 	var now := Time.get_unix_time_from_system()
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".json"):
 			var inst := _read_instance("%s/%s" % [INSTANCE_DIR, file_name])
-			if not inst.is_empty() and now - float(inst.get("ts", 0.0)) <= FRESHNESS_SEC:
-				out.append(inst)
+			if not inst.is_empty():
+				var age := now - float(inst.get("ts", 0.0))
+				if age <= FRESHNESS_SEC:
+					live.append(inst)
+				else:
+					inst["age_sec"] = int(age)
+					stale.append(inst)
 		file_name = dir.get_next()
 	dir.list_dir_end()
-	out.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.get("ts", 0.0)) > float(b.get("ts", 0.0)))
-	return out
+	live.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.get("ts", 0.0)) > float(b.get("ts", 0.0)))
+	stale.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a.get("ts", 0.0)) > float(b.get("ts", 0.0)))
+	return { "live": live, "stale": stale }
+
+func _mark_shared_user_data(instances: Array) -> void:
+	var counts := {}
+	for inst in instances:
+		var dir := String(inst.get("user_data_dir", ""))
+		if dir == "":
+			continue
+		counts[dir] = int(counts.get(dir, 0)) + 1
+	for i in range(instances.size()):
+		var inst: Dictionary = instances[i]
+		var dir := String(inst.get("user_data_dir", ""))
+		if dir != "" and int(counts.get(dir, 0)) > 1:
+			inst["shared_user_data"] = true
+			instances[i] = inst
 
 func _read_instance(path: String) -> Dictionary:
 	var file := FileAccess.open(path, FileAccess.READ)

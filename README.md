@@ -120,8 +120,12 @@ Externally launched and parallel game processes can be selected independently
 from the editor: list them with `hera game instances`, then use
 `hera --instance <EDITOR_PID> game --pid <GAME_PID> tree` (or any other game/QA
 subcommand). Without `--pid`, editor-play selection remains the default and
-ambiguous targets still fail. The Hera runtime inspector stays available for
-editor play but is removed from exported project settings.
+ambiguous targets still fail. `--instance` and `--pid` select processes; they
+do not isolate `user://` save files. Runtime screenshots report the live
+viewport size and are not upscaled to the project resolution. Expired editor
+heartbeats show up as `stale` on `hera instances` instead of looking like a
+missing editor. The Hera runtime inspector stays available for editor play but
+is removed from exported project settings.
 
 ## Install
 

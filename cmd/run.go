@@ -139,11 +139,11 @@ func resolveMainSceneRunParams(params map[string]any) error {
 	if params["action"] != "play_main" {
 		return nil
 	}
-	instances, err := discovery.Discover()
+	scan, err := discovery.DiscoverScan()
 	if err != nil {
 		return err
 	}
-	inst, err := selectEditor(instances, true, targetPID)
+	inst, err := selectEditor(scan, true, targetPID)
 	if err != nil {
 		return err
 	}

@@ -7,7 +7,8 @@ QA. Do not infer those facts from project files. Hera is verified on Godot
 
 1. Start with `hera status`. If no editor is found, ask the user to enable the
    addon under **Project Settings → Plugins**. If multiple editors are present,
-   run `hera instances` and add `--instance <pid>` to mutations.
+   run `hera instances` and add `--instance <pid>` to mutations. A `stale`
+   heartbeat is an expired advertisement, not proof that no editor exists.
 2. Before UI work, run `hera guidance ui`. Keep reads small: use compact output,
    `hera --ids scene tree`, selected `node get --prop/--props`, scoped
    `game ui tree`, and `game qa discover` before full dumps.
@@ -18,7 +19,8 @@ QA. Do not infer those facts from project files. Hera is verified on Godot
 4. Confirm each edit with `node get` or `scene tree`; after a run, read
    `hera output --type error` or `hera diagnostics`. For visual/UI work, use
    `game ui tree`, semantic `game click`, and
-   `hera screenshot --runtime --analyze`. For prompt requirements, prefer a
+   `hera screenshot --runtime --analyze` using the live capture size, not the
+   project resolution. `--instance`/`--pid` do not isolate `user://`. For prompt requirements, prefer a
    `game qa --file` scenario with `requirements` and per-step `covers`.
 5. After GDScript changes, run the project's headless `--check-only` gate when
    available, then re-check diagnostics. Never print or commit

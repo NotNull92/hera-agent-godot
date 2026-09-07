@@ -45,7 +45,15 @@ type Instance struct {
 	ProjectPath  string `json:"project_path"`
 	GodotVersion string `json:"godot_version"`
 	Scene        string `json:"scene"`
-	TS           int64  `json:"ts"` // unix seconds of last heartbeat
+	TS           int64  `json:"ts"`                // unix seconds of last heartbeat
+	AgeSec       int64  `json:"age_sec,omitempty"` // set on stale entries only
+}
+
+// Scan is one pass over the instance directory, split into live heartbeats and
+// files that are present but too old to target.
+type Scan struct {
+	Live  []Instance
+	Stale []Instance
 }
 
 // Discover scans the instances directory under the user's home and returns
@@ -56,44 +64,72 @@ type Instance struct {
 // running. A genuinely empty directory pays those delays once and then reports
 // nothing, which is fine: that path already ends in an error.
 func Discover() ([]Instance, error) {
-	home, err := os.UserHomeDir()
+	scan, err := DiscoverScan()
 	if err != nil {
 		return nil, err
 	}
+	return scan.Live, nil
+}
+
+// DiscoverScan is Discover plus expired heartbeat files that are still on disk.
+// A stalled editor can leave a process running after its heartbeat ages out;
+// callers use Stale to distinguish that from "no editor advertised".
+func DiscoverScan() (Scan, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return Scan{}, err
+	}
 	dir := filepath.Join(home, dirName, "instances")
-	return discoverRetrying(dir, time.Now, time.Sleep)
+	return scanRetrying(dir, time.Now, time.Sleep)
 }
 
 // discoverRetrying is the testable core of Discover's retry: an empty result may
 // just be the heartbeat mid-swap rather than an absent editor, so it rescans a
 // few times over growing delays before believing it.
 func discoverRetrying(dir string, now func() time.Time, sleep func(time.Duration)) ([]Instance, error) {
-	live, err := discoverIn(dir, now())
-	if err != nil || len(live) > 0 {
-		return live, err
+	scan, err := scanRetrying(dir, now, sleep)
+	if err != nil {
+		return nil, err
+	}
+	return scan.Live, nil
+}
+
+func scanRetrying(dir string, now func() time.Time, sleep func(time.Duration)) (Scan, error) {
+	scan, err := scanIn(dir, now())
+	if err != nil || len(scan.Live) > 0 {
+		return scan, err
 	}
 	for attempt := 1; attempt <= rescanDelays; attempt++ {
 		sleep(rescanDelayFor(attempt))
-		live, err = discoverIn(dir, now())
-		if err != nil || len(live) > 0 {
-			return live, err
+		scan, err = scanIn(dir, now())
+		if err != nil || len(scan.Live) > 0 {
+			return scan, err
 		}
 	}
-	return live, err
+	return scan, err
 }
 
 // discoverIn is the testable core of Discover: it scans dir and drops stale
 // entries relative to now.
 func discoverIn(dir string, now time.Time) ([]Instance, error) {
+	scan, err := scanIn(dir, now)
+	if err != nil {
+		return nil, err
+	}
+	return scan.Live, nil
+}
+
+// scanIn is the testable core of DiscoverScan: live vs expired files.
+func scanIn(dir string, now time.Time) (Scan, error) {
+	scan := Scan{Live: []Instance{}, Stale: []Instance{}}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil // no editor has ever advertised — not an error
+			return scan, nil // no editor has ever advertised — not an error
 		}
-		return nil, err
+		return Scan{}, err
 	}
 
-	var live []Instance
 	for _, e := range entries {
 		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
 			continue
@@ -109,12 +145,16 @@ func discoverIn(dir string, now time.Time) ([]Instance, error) {
 		if inst.Port == 0 {
 			continue
 		}
-		if now.Sub(time.Unix(inst.TS, 0)) > freshness {
-			continue // stale: crashed or closed editor
+		age := now.Sub(time.Unix(inst.TS, 0))
+		if age > freshness {
+			inst.AgeSec = int64(age.Seconds())
+			scan.Stale = append(scan.Stale, inst)
+			continue
 		}
-		live = append(live, inst)
+		scan.Live = append(scan.Live, inst)
 	}
 
-	sort.Slice(live, func(i, j int) bool { return live[i].TS > live[j].TS })
-	return live, nil
+	sort.Slice(scan.Live, func(i, j int) bool { return scan.Live[i].TS > scan.Live[j].TS })
+	sort.Slice(scan.Stale, func(i, j int) bool { return scan.Stale[i].TS > scan.Stale[j].TS })
+	return scan, nil
 }

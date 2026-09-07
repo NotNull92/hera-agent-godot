@@ -578,11 +578,16 @@ func _write_heartbeat() -> void:
 	var file := FileAccess.open(_instance_path(), FileAccess.WRITE)
 	if file == null:
 		return
-	file.store_string(JSON.stringify({
+	var data := {
 		"pid": _pid,
 		"scene": _current_scene_path(),
 		"ts": Time.get_unix_time_from_system(),
-	}))
+		"user_data_dir": OS.get_user_data_dir(),
+	}
+	var viewport := get_viewport()
+	if viewport != null:
+		data.merge(GameViewportActions.geometry(viewport))
+	file.store_string(JSON.stringify(data))
 	file.close()
 
 func _current_scene_path() -> String:

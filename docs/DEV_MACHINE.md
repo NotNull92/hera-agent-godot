@@ -32,7 +32,12 @@ To smoke the addon end-to-end without touching the user's editor:
    [SUPPORT_MATRIX.md](./SUPPORT_MATRIX.md) were verified.
 2. Run Godot with a **separate `USERPROFILE`/`HOME`** so its heartbeat writes
    to an isolated `~/.hera-agent-godot/instances/` (CLI discovery uses the
-   home dir, so this fully isolates discovery).
+   home dir, so this fully isolates discovery). The same split is what isolates
+   `user://` saves: `--instance` and `game --pid` select processes, they do
+   not give each runtime its own save file. On Windows the user data directory
+   lives under `%APPDATA%\Godot\app_userdata\<app>`; on macOS under
+   `~/Library/Application Support/Godot/app_userdata/<app>`. Confirm the path
+   from `game instances[].user_data_dir` rather than assuming the OS default.
 3. Launch `--editor --headless --path <tempcopy>`, wait for the heartbeat
    JSON, and read the isolated editor's pid from the filename.
 4. Drive it with `hera --instance <pid>`, running the CLI under the same
@@ -142,9 +147,12 @@ a Galaxy Z Flip7 / Android 16. These facts do not replace the Windows setup abov
 [Monstel incident handoff](incidents/monstel-2026-09-07/README.md) records external
 runtime targeting failures, ambiguous game processes, embedded viewport sizing,
 an editor heartbeat stall, Android autoload/export errors, and shared-save risks.
-It includes historical patches and raw evidence; no fix was applied by that
-handoff. The same-project editor/headless stall is observed but its cause is
-unconfirmed. Reproduce on isolated project copies and isolated user data.
+H01/H02/H05 shipped as runtime PID selection and export autoload exclusion.
+H03/H04/H06/H07 follow-up reports live viewport sizes without upscaling,
+distinguishes expired vs missing editor heartbeats, flags shared `user://`,
+and treats export-exit `EditorSettings` / ObjectDB messages as engine teardown
+unless a with/without-Hera comparison shows a delta. Reproduce remaining
+environment-specific questions on isolated project copies and isolated user data.
 
 ## C# support verification on macOS (2026-09-07)
 

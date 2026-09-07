@@ -21,11 +21,11 @@ func dialMutationEditor() (*client.Client, error) {
 }
 
 func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
-	instances, err := discovery.Discover()
+	scan, err := discovery.DiscoverScan()
 	if err != nil {
 		return nil, err
 	}
-	inst, err := selectEditor(instances, requireSingle, targetPID)
+	inst, err := selectEditor(scan, requireSingle, targetPID)
 	if err != nil {
 		return nil, err
 	}

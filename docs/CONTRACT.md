@@ -139,7 +139,7 @@ contract tests (see [Contract tests](#contract-tests)).
 | Command | Tier | Key fields |
 |---------|------|-----------|
 | `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. (`game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` are experimental fields inside a stable response; the last reports editor build capability, not SDK availability.) |
-| `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` |
+| `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain |
 | `version` | stable | bare string (linker-injected; `dev` for source builds) |
 | `run` / `stop` | stable | ✓ state shape `{playing, scene}` |
 
@@ -219,11 +219,11 @@ without fallback.
 | `game tree` | stable | `scene` + compact node list |
 | `game node get/set/call` | stable | `get` mirrors `node get` (stringified values); `call` returns a stringified result |
 | `game assert` | stable | ✓ pass: `{prop, op, actual, expected}`; fail: stderr + exit 1 |
-| `game instances` | experimental | `instances[]` with pid, scene, heartbeat age |
+| `game instances` | experimental | `instances[]` with pid, scene, heartbeat age, `user_data_dir`, viewport sizes; optional `stale[]`; `shared_user_data` when live processes share `user://` |
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
 | `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` |
-| `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface) |
-| `game screenshot` | experimental | capture path; `--analyze` metrics evolve with QA guidance |
+| `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface); click/input coordinates are live viewport pixels, not the project window setting |
+| `game screenshot` | experimental | capture path and live PNG size; window/visible/project sizes and `size_matches_project`; `--analyze` metrics evolve with QA guidance. Captures are not upscaled. |
 | `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |

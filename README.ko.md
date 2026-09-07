@@ -115,8 +115,12 @@ GDScript로 유지되며 `eval`은 두 언어의 프로젝트 모두에서 GDScr
 `hera game instances`로 목록을 읽고
 `hera --instance <EDITOR_PID> game --pid <GAME_PID> tree`처럼 모든 game/QA
 하위 명령에 게임 PID를 지정합니다. `--pid`가 없으면 기존 editor-play 선택을
-사용하며 대상이 모호하면 계속 실패합니다. Hera 런타임 inspector는 에디터 재생에는
-유지되지만 export된 프로젝트 설정에서는 제거됩니다.
+사용하며 대상이 모호하면 계속 실패합니다. `--instance`와 `--pid`는 프로세스를
+고를 뿐 `user://` 세이브는 나누지 않습니다. 런타임 스크린샷은 실제 뷰포트
+크기를 보고하며 프로젝트 해상도로 확대하지 않습니다. 만료된 에디터 heartbeat는
+`hera instances`의 `stale`로 보이며, 에디터가 없다고 뭉개지 않습니다. Hera
+런타임 inspector는 에디터 재생에는 유지되지만 export된 프로젝트 설정에서는
+제거됩니다.
 
 ## 설치
 
