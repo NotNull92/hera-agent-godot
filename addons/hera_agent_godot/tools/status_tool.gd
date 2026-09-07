@@ -23,4 +23,5 @@ func execute(_params: Dictionary) -> Dictionary:
 		"pid": OS.get_process_id(),
 		"game_feel_ui_mode": game_feel_ui_enabled,
 		"game_feel_mode": game_feel_enabled,
+		"csharp_supported": ClassDB.class_exists("CSharpScript"),
 	})

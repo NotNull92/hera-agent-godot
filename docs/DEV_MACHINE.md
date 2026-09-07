@@ -131,3 +131,26 @@ buffering.
   direct `plugins/<name>` path as the submission target — which is why the
   Codex plugin lives at `plugins/hera-godot/` instead of under
   `integrations/`.
+
+## C# support verification on macOS (2026-09-07)
+
+- The installed .NET SDK is `10.0.201` (`dotnet` on PATH). The existing
+  `Godot_v4.7.2-stable_mono_macos.universal.zip` in Downloads was extracted to
+  a temporary directory for isolated smoke checks. Standard Godot 4.7.2 and
+  4.2 were also checked; do not assume these temporary binaries remain.
+- Godot's .NET archive includes a local NuGet feed under
+  `Contents/Resources/GodotSharp/Tools/nupkgs`; use a temporary NuGet config
+  to consume matching engine packages without changing the user's feeds.
+- Resolve macOS project paths with `pwd -P` before building. Building the
+  same fixture as `/tmp/...` produced a script path attribute containing
+  `res://../../private/tmp/...`; rebuilding as `/private/tmp/...` produced
+  `res://Player.cs` and made the loaded class visible to Godot. The live
+  smoke runner canonicalizes its temporary project path for this reason.
+- This run kept HOME unchanged, used unique temporary projects and explicit
+  `--instance` PIDs, and stopped only processes it started. Both headless
+  editor-spawned play and GUI play worked on 4.7.2. An earlier manual
+  headless scene save emitted the dummy-renderer `texture_2d_get` null-texture
+  error; the GUI play session had no runtime errors. These checks do not
+  expand the cross-platform headless support contract.
+- `go test -race` passed here. `gopls` is absent and its installation had
+  previously been declined; Go build/vet/tests supplied the Go checks.

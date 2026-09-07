@@ -10,6 +10,18 @@ standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
+## Unreleased: GDScript and C# selection (2026-09-07)
+
+- [x] Select `.gd` or `.cs` by filename; optional `script create --lang`
+  validates agreement without changing defaults in mixed projects.
+- [x] C# templates, .NET editor capability reporting, assembly-based
+  inspection/opening, attachment build guidance, and `Qa*` discovery.
+- [x] Go gates and real Godot 4.7.2 standard/.NET editor checks; generated C#
+  compiled and its runtime QA method returned true. Godot 4.2 static checks
+  and language/template tests also passed.
+- No release/version bump. Setup, limitations, and reproducible checks:
+  [C# support](CSHARP_SUPPORT.md).
+
 ## Phase 0 — Skeleton (this commit)
 
 - [x] Architecture decided and documented ([ARCHITECTURE.md](./ARCHITECTURE.md)).

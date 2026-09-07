@@ -9,6 +9,13 @@ based on the official Godot stable documentation:
 Read this before generating or editing `.gd` code. Do not rely on syntax from
 JavaScript, C#, Python, or memory when Godot's syntax differs.
 
+This guide applies to `.gd` files, including Hera's addon. For `.cs` project
+scripts, follow [C# support](CSHARP_SUPPORT.md): use Godot .NET, build and reload
+the assembly before attachment, and verify runtime behavior. GDScript
+`--check-only` does not validate C# compilation. Choose the language by the file
+extension; Hera does not change the default based on project detection. `eval`
+always accepts a GDScript expression, including in C# projects.
+
 ## Core Rule
 
 When uncertain about syntax, stop and check the official Godot docs or an

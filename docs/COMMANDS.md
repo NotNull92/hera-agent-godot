@@ -8,7 +8,7 @@ selected editor instance.
 
 | Command | Tool | Status | Description |
 |---------|------|--------|-------------|
-| `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, Game Feel UI Mode state, and Game Feel Mode state. |
+| `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, `csharp_supported` editor capability (not SDK availability), Game Feel UI Mode state, and Game Feel Mode state. |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the **running project's** log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Editor-console output is not in it (see ARCHITECTURE §6). Needs `debug/file_logging` enabled, or `--log-file <path>` on the editor; without a readable log the response reports `available:false` and a `hint` rather than an empty tail. |
@@ -24,10 +24,10 @@ selected editor instance.
 | `editor selected` | `editor` | ☑ | Return the current editor node selection with scene-relative paths when possible. |
 | `editor select <node> [--add]` | `editor` | ☑ | Select a node in the edited scene; clears the previous selection unless `--add` is passed. Editor-state mutation only. |
 | `editor clear-selection` | `editor` | ☑ | Clear the editor node selection. Editor-state mutation only. |
-| `script current` | `script` | ☑ | Inspect the currently focused script in the Godot script editor when it is a readable `.gd` file; otherwise return compact script metadata. |
-| `script inspect <res://script.gd>` | `script` | ☑ | Read a GDScript file and return low-token metadata: class name, extends, functions, signals, exports, and line count. |
-| `script open <res://script.gd> [--line N] [--column N]` | `script` | ☑ | Open a GDScript resource in the Godot script editor, optionally at a 1-based line/column. Editor-state mutation only. |
-| `script create <res://script.gd> [--extends <Class>] [--class-name <Name>] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal <name> ...] [--export <name:type[=value]> ...]` | `script` | ☑ | Create a GDScript file and refresh the editor filesystem; optional flags add `@tool`, lifecycle stubs, signal declarations, and typed exported variables. |
+| `script current` | `script` | ☑ | Inspect the Godot-focused script resource: `.gd` source metadata or `.cs` loaded-assembly metadata. External IDE focus is not observable. |
+| `script inspect <res://script.gd\|res://Script.cs>` | `script` | ☑ | Return low-token metadata: `.gd` is source-based; `.cs` uses loaded-assembly metadata, which may be unavailable or stale (see language notes below). |
+| `script open <res://script.gd\|res://Script.cs> [--line N] [--column N]` | `script` | ☑ | Open a script through Godot and its external-editor configuration, optionally at a 1-based line/column. C# requires Godot .NET. Editor-state mutation only. |
+| `script create <res://script.gd\|res://Script.cs> [--lang gdscript\|csharp] [--extends <Class>] [--class-name <Name>] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal <name> ...] [--export <name:type[=value]> ...]` | `script` | ☑ | Create a script and refresh the editor filesystem. The extension selects the language; `--lang` must match. Flags generate language-appropriate tool annotations, lifecycle stubs, signals, and exports. C# requires Godot .NET and a filename-matching class; build/reload before attachment. |
 | `project info` | `project` | ☑ | Show project name, root path, Godot version, current scene, and file counts by type. |
 | `project list-files [--type all\|scene\|script\|resource\|asset\|shader] [--pattern <p>] [--limit N]` | `project` | ☑ | List project files from `res://`, with compact type tags and optional filtering. |
 | `project scan` | `project` | ☑ | Request a Godot editor resource filesystem scan so newly written files are visible to editor tools. Editor filesystem mutation only. |
@@ -41,7 +41,7 @@ selected editor instance.
 | `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
 | `node set-resource <path> --prop <name> --resource <res://...>` | `node` | ☑ | Set an object/resource property from a Resource file, with path and type compatibility checks (undoable). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
-| `node attach-script <path> <res://script.gd>` | `node` | ☑ | Attach a script resource to a node after validating the path, script base type, and obvious `preload("res://...")` dependencies; success responses include compact script dependency diagnostics (undoable). |
+| `node attach-script <path> <res://script.gd\|res://Script.cs>` | `node` | ☑ | Attach a script after validating path and base type (undoable). GDScript checks obvious `preload("res://...")` dependencies. C# requires Godot .NET and a loaded class; build/reload first. C# diagnostics carry a build warning, not C# compiler diagnostics. |
 | `node detach-script <path>` | `node` | ☑ | Clear a node's script (undoable). |
 | `signal list <node>` | `signal` | ☑ | List the signals a node exposes (name + arg names) and scene-local connections; editor-internal targets are counted as `external_connections`. |
 | `signal connect <from> <sig> <to> <method>` | `signal` | ☑ | Connect a node's signal to a method on another node (undoable; persistent, saved with the scene). |
@@ -76,13 +76,13 @@ selected editor instance.
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
 | `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified result. Runtime-only and may have side effects. |
 | `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
-| `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helper methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
+| `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helpers and `Qa` followed by an uppercase letter (e.g. `QaReady`); method names are case-sensitive. Discover methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
 | `game qa diagnose [--lines N] [--max-errors N] [--max-warnings N] [--path user://capture.png]` | local + tools | ☑ | Run a read-only, project-agnostic runtime health check. It reports editor diagnostic counts, live game-process ambiguity, runtime/UI tree truncation, and screenshot blankness, low detail, or likely clipping. It does not assume nodes, controls, rules, or QA helper names. |
 | `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.qa.discover`, `game.ui.tree`, `game.ui.audit`, `game.click`, `game.input`, `game.input_log`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps. `game.ui.audit` accepts its CLI filters in `params`; failed audit evidence is retained in the step result and does not satisfy `covers`. The file may be a legacy step array or an object with `requirements` plus `steps`; each step may declare `covers`, and missing or failed requirement coverage makes the scenario fail. |
 | `guidance ui` | `guidance` | ☑ | Read the live editor's Game Feel UI Mode setting and return agent-facing UI implementation guidance. When enabled, UI work should favor snappy feedback, expressive state changes, satisfying motion, and runtime visual QA. |
 | `guidance game-feel` | `guidance` | ☑ | Read the live editor's Game Feel Mode setting and return gameplay-wide feel guidance: control feel, camera, hit stop, screen shake, sound, particles, rewards, Honest Juice, accessibility, runtime QA, and compact `game_qa_patterns` for reusable prompt-game checks such as ordered QA, primary input, stable inspection, visible state sync, live viewport layout, deterministic helpers, shared route geometry, typed collections, and observable feedback evidence. |
 | `game_feel [topic]` | `game_feel` | ☑ | Query the bundled Game Feel knowledge base. No topic or `list` returns the topic index; a topic such as `screen_shake`, `control_feel`, `camera`, `ui_bar`, or `ethics_checklist` returns concrete parameters and constraints. |
-| `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression (`Expression` class, scene root as base) and return the result. |
+| `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression in either project language (`Expression` class, scene root as base) and return the result. |
 | `instances` | local | ☑ | List all live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. |
 | `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--analyze` is supported for runtime captures and returns generic image/layout metrics, including per-edge content ratios and possible clipping. |
 | `screenshot diff <before.png> <after.png> [--threshold N]` | local | ☐ | Compare two captures and report `changed_pixels`, `changed_ratio`, `max_delta` and a `changed_bounds` box locating the change. Runs entirely locally on files already on disk — **no editor needed**. `--threshold` (default 4, per channel 0..255) absorbs anti-aliasing wobble between captures; the two frames must share dimensions. |
@@ -111,6 +111,34 @@ selected editor instance.
 > running game process, so it is not undoable and its effects disappear when play
 > stops. Hera assumes one live editor per project; mutation commands enforce that
 > precondition unless `--instance <pid>` is passed explicitly.
+
+## Script languages
+
+The `.gd` or `.cs` extension is required and selects the language; Hera never
+switches it based on project detection. Optional `--lang gdscript|csharp` must
+agree. See [C# support](CSHARP_SUPPORT.md) for setup.
+
+C# templates derive the `partial` class name from the filename; an explicit
+`--class-name` must match. Lifecycle flags generate C# overrides (`_Ready()`,
+`_Process(double delta)`, and the corresponding input/physics callbacks).
+`--signal Hit` generates `[Signal] public delegate void HitEventHandler();`.
+`--export Speed:float=3.5f` uses a C# type and initializer expression, not Godot
+Variant text. `--tool` generates `[Tool]`.
+
+C# creation returns `language: "csharp"`, `build_required: true`, and
+`build_warning`. Hera does not generate `.csproj`/solution files or run builds.
+Build and reload the assembly before attachment; an unloaded class is rejected.
+Successful C# attachment adds `language` and `build_warning` to
+`script_diagnostics`; its existing preload arrays are not C# diagnostics.
+
+C# inspect/current returns `metadata_source: "assembly"`, `assembly_loaded`,
+`csharp_supported`, and `build_warning`. `class_name` derives from the filename;
+`base_type`/`extends` describe the engine-native base when available. Functions,
+signals, and exports are empty before the assembly is loaded. Loaded metadata
+can still be stale relative to source. Inspect is available on standard Godot
+with unavailable assembly metadata; create/open/attach require Godot .NET.
+`script current` sees only Godot's focused script resource, not an external IDE.
+Existing GDScript responses remain unchanged.
 
 ## Global flags
 

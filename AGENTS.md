@@ -101,6 +101,7 @@ hera script current                          # inspect focused script
 hera script inspect res://scripts/foo.gd     # script metadata
 hera script open res://scripts/foo.gd [--line N] [--column N] # open in script editor
 hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal name] [--export name:type=value]
+hera script create res://Player.cs --lang csharp --ready --export Speed:float=3.5f # Godot .NET; build/reload before attach
 hera project mkdir res://scripts
 hera project scan                            # refresh Godot's resource filesystem
 hera project reimport res://icon.svg         # reimport one or more project files
@@ -132,7 +133,7 @@ hera game node get <path> [--prop p|--props a,b] # running game node properties
 hera game node set <path> --prop p --value v # set a running game property (not undoable)
 hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
 hera game assert <path> <prop> <op> [value]  # assert runtime property for QA
-hera game qa discover [path]                 # list callable runtime qa_* helpers
+hera game qa discover [path]                 # list callable runtime qa_* or QaReady-style helpers
 hera game qa --file scenario.json            # run generic QA scenario, optionally with requirements/covers
 hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
 hera eval "<expression>"                     # evaluate one GDScript expression
@@ -152,6 +153,18 @@ default 5000). Default output is compact JSON.
 
 ## Conventions & safety
 
+- **Choose script language by extension.** `script create` accepts `.gd` or
+  `.cs`; optional `--lang gdscript|csharp` must match. C# create/open/attach
+  require Godot .NET (`status.csharp_supported` reports editor capability, not
+  SDK installation). C# templates use a filename-matching partial class;
+  `--class-name`, if supplied, must match that filename. Build and reload the
+  assembly before attachment; Hera does not build or generate solution files.
+  C# inspect/current metadata comes from the loaded assembly and may be stale;
+  empty metadata with `assembly_loaded: false` is not proof of an empty script.
+  `script current` cannot observe an external IDE's focused document. Runtime
+  QA discovery accepts `qa_*` and `Qa` followed by an uppercase letter, such as
+  `QaReady`; call C# methods with their exact case. `eval` stays a GDScript
+  expression in both project languages. See [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
 - **UI work reads the live guidance mode first.** Before agent-driven UI work,

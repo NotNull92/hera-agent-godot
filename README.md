@@ -106,6 +106,16 @@ screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screensh
 [docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Store
 packaging status.
 
+Choose GDScript or C# by the script filename: `hera script create res://Player.gd`
+or `hera script create res://Player.cs --ready --export Speed:float=3.5f`.
+Optional `--lang gdscript|csharp` must agree with the extension. C# creation,
+opening, and attachment require Godot .NET; `status.csharp_supported` reports
+editor support, not whether the .NET SDK is installed. Build and reload the C#
+assembly before attaching a new script. Hera does not build or generate solution
+files, and C# inspection reflects the loaded assembly, which may be stale.
+The addon stays GDScript, and `eval` uses GDScript expressions in either project.
+See [C# support](docs/CSHARP_SUPPORT.md) for setup and limitations.
+
 ## Install
 
 **CLI** — via a package manager:

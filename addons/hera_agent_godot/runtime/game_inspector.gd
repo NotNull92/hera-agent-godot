@@ -317,7 +317,9 @@ func _qa_methods(node: Node) -> Array[Dictionary]:
 	for method_info in node.get_method_list():
 		var method := method_info as Dictionary
 		var method_name := String(method.get("name", ""))
-		if not method_name.begins_with("qa_") or not node.has_method(method_name):
+		var initial := method_name.substr(2, 1)
+		var csharp_qa := method_name.begins_with("Qa") and initial >= "A" and initial <= "Z"
+		if not (method_name.begins_with("qa_") or csharp_qa) or not node.has_method(method_name):
 			continue
 		var entry := {
 			"name": method_name,

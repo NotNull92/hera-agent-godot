@@ -53,3 +53,30 @@ func TestScriptOpenActionMutates(t *testing.T) {
 		t.Fatal("scriptActionMutates(open) = false, want true")
 	}
 }
+
+func TestScriptCreateLanguage(t *testing.T) {
+	for _, tc := range []struct {
+		path, lang string
+		wantErr    bool
+	}{
+		{"res://Player.cs", "csharp", false},
+		{"res://player.gd", "gdscript", false},
+		{"res://Player.cs", "gdscript", true},
+		{"res://player.gd", "csharp", true},
+		{"res://Player.cs", "python", true},
+		{"res://Player.cs", "", true},
+	} {
+		t.Run(tc.path+"/"+tc.lang, func(t *testing.T) {
+			params, err := parseScriptArgs([]string{"create", tc.path, "--lang", tc.lang})
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("params=%v error=%v, wantErr=%v", params, err, tc.wantErr)
+			}
+			if !tc.wantErr && params["lang"] != tc.lang {
+				t.Fatalf("language=%v, want %s", params["lang"], tc.lang)
+			}
+		})
+	}
+	if _, err := parseScriptArgs([]string{"create", "res://Player.cs", "--lang"}); err == nil {
+		t.Fatal("missing language accepted")
+	}
+}

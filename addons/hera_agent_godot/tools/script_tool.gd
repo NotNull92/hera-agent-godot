@@ -3,6 +3,8 @@ extends RefCounted
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const ScriptInspector = preload("res://addons/hera_agent_godot/tools/script_inspector.gd")
 const ScriptTemplate = preload("res://addons/hera_agent_godot/tools/script_template.gd")
+const CSharpTemplate = preload("res://addons/hera_agent_godot/tools/script_template_csharp.gd")
+const CSharpSupport = preload("res://addons/hera_agent_godot/tools/csharp_script_support.gd")
 
 var _inspector: RefCounted
 var _template: RefCounted
@@ -37,7 +39,7 @@ func _current() -> Dictionary:
 	if script == null:
 		return ToolResponse.success({ "found": false, "path": "" })
 	var path := script.resource_path
-	if path != "" and path.ends_with(".gd") and FileAccess.file_exists(path):
+	if path != "" and (path.ends_with(".gd") or path.ends_with(".cs")) and FileAccess.file_exists(path):
 		return _inspect_path(path)
 	return ToolResponse.success({
 		"found": true,
@@ -60,6 +62,8 @@ func _open(params: Dictionary) -> Dictionary:
 	var guard := _guard_readable_script_path(path)
 	if guard != "":
 		return ToolResponse.failure(guard)
+	if path.ends_with(".cs") and not CSharpSupport.available():
+		return ToolResponse.failure("C# scripts require the Godot .NET editor")
 	var loaded := ResourceLoader.load(path)
 	if not (loaded is Script):
 		return ToolResponse.failure("not a script resource: %s" % path)
@@ -68,12 +72,16 @@ func _open(params: Dictionary) -> Dictionary:
 	var line := int(params.get("line", 1))
 	var column := int(params.get("column", 1))
 	EditorInterface.call("edit_script", loaded, max(0, line - 1), max(0, column - 1), true)
-	return ToolResponse.success({
+	var data := {
 		"opened": path,
 		"line": line,
 		"column": column,
 		"base_type": (loaded as Script).get_instance_base_type(),
-	})
+	}
+	if path.ends_with(".cs"):
+		data["language"] = "csharp"
+		data["build_warning"] = CSharpSupport.BUILD_WARNING
+	return ToolResponse.success(data)
 
 
 func _inspect_path(path: String) -> Dictionary:
@@ -82,11 +90,17 @@ func _inspect_path(path: String) -> Dictionary:
 		return ToolResponse.failure("could not read script: %s" % path)
 	var source := file.get_as_text()
 	file.close()
-	var metadata: Dictionary = _inspector.inspect(source)
+	var loaded_res: Resource = null
+	if path.ends_with(".gd") or CSharpSupport.available():
+		loaded_res = ResourceLoader.load(path)
+	var metadata: Dictionary
+	if path.ends_with(".cs"):
+		metadata = CSharpSupport.inspect(path, loaded_res as Script)
+	else:
+		metadata = _inspector.inspect(source)
 	metadata["found"] = true
 	metadata["path"] = path
 	metadata["lines"] = source.split("\n", false).size()
-	var loaded_res := ResourceLoader.load(path)
 	if loaded_res is Script:
 		var loaded: Script = loaded_res as Script
 		metadata["base_type"] = loaded.get_instance_base_type()
@@ -98,7 +112,12 @@ func _create(params: Dictionary) -> Dictionary:
 	var guard := _guard_script_path(path, bool(params.get("force", false)))
 	if not guard.is_empty():
 		return guard
-	var template_result: Dictionary = _template.build(params)
+	var language := "csharp" if path.ends_with(".cs") else "gdscript"
+	if params.has("lang") and String(params["lang"]) != language:
+		return ToolResponse.failure("lang must match the script extension: %s" % language)
+	if language == "csharp" and not CSharpSupport.available():
+		return ToolResponse.failure("C# script creation requires the Godot .NET editor")
+	var template_result: Dictionary = CSharpTemplate.new().build(params) if language == "csharp" else _template.build(params)
 	if not bool(template_result.get("ok", false)):
 		return ToolResponse.failure(String(template_result.get("error", "invalid script template")))
 	var dir_err := _ensure_parent_dir(path)
@@ -110,14 +129,19 @@ func _create(params: Dictionary) -> Dictionary:
 	file.store_string(String(template_result.get("text", "")))
 	file.close()
 	_refresh_filesystem()
-	return ToolResponse.success({
+	var data := {
 		"created": path,
 		"extends": String(template_result.get("extends", "")),
 		"class_name": String(template_result.get("class_name", "")),
 		"tool": bool(template_result.get("tool", false)),
 		"signals": template_result.get("signals", []),
 		"exports": int(template_result.get("exports", 0)),
-	})
+	}
+	if language == "csharp":
+		data["language"] = language
+		data["build_required"] = true
+		data["build_warning"] = CSharpSupport.BUILD_WARNING
+	return ToolResponse.success(data)
 
 
 func _current_script() -> Script:
@@ -137,8 +161,8 @@ func _guard_readable_script_path(path: String) -> String:
 		return "script path is required"
 	if not path.begins_with("res://"):
 		return "script path must start with res://"
-	if not path.ends_with(".gd"):
-		return "script path must end with .gd"
+	if not (path.ends_with(".gd") or path.ends_with(".cs")):
+		return "script path must end with .gd or .cs"
 	if not _is_safe_res_path(path):
 		return "script path must stay inside res://"
 	if not FileAccess.file_exists(path):
@@ -160,8 +184,8 @@ func _guard_readable_script_parent(path: String) -> String:
 		return "script path is required"
 	if not path.begins_with("res://"):
 		return "script path must start with res://"
-	if not path.ends_with(".gd"):
-		return "script path must end with .gd"
+	if not (path.ends_with(".gd") or path.ends_with(".cs")):
+		return "script path must end with .gd or .cs"
 	if not _is_safe_res_path(path):
 		return "script path must stay inside res://"
 	return ""

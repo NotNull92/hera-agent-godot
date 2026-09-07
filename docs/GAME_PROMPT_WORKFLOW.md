@@ -41,6 +41,11 @@ deterministic helpers on the scene root.
 
 Recommended names:
 
+The examples below use GDScript. For C#, use public instance methods such as
+`QaState`, `QaPause`, `QaStep`, and `QaRestart`, then build/reload the assembly.
+`game qa discover` accepts both conventions; pass the exact method name to
+`game node call`. See [C# support](CSHARP_SUPPORT.md).
+
 ```gdscript
 func qa_state() -> Dictionary
 func qa_pause(paused: bool) -> void

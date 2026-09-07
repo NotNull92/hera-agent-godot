@@ -9,7 +9,7 @@ commands:
   scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
   editor     state | selected | select <node> [--add] | clear-selection
   node       find|get|add|instance|set|set-resource|remove|attach-script|detach-script
-  script     current | inspect|open <res://script.gd> | create <res://script.gd> [--tool]
+  script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library

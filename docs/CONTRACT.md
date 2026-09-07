@@ -138,7 +138,7 @@ contract tests (see [Contract tests](#contract-tests)).
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
-| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. (`game_feel_mode`, `game_feel_ui_mode` are experimental fields inside a stable response.) |
+| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. (`game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` are experimental fields inside a stable response; the last reports editor build capability, not SDK availability.) |
 | `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` |
 | `version` | stable | bare string (linker-injected; `dev` for source builds) |
 | `run` / `stop` | stable | ✓ state shape `{playing, scene}` |
@@ -164,7 +164,27 @@ contract tests (see [Contract tests](#contract-tests)).
 | `resource list` | stable | resource entries with class + path |
 | `output` | stable | ✓ `available`, `log_path`, `type`, `total`, `lines[]` |
 | `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. `available` is false whenever the log cannot be read, and `clean` is false there too since cleanliness cannot be asserted without a readable log. `file_logging_enabled` is the *effective* value (`get_setting_with_override`), because file logging defaults to true on desktop through the `.pc` feature tag while the untagged default is false |
-| `script current` / `script inspect` | experimental | compact script metadata (class name, extends, functions, signals, exports, line count) |
+| `script current` / `script inspect` | experimental | compact script metadata; GDScript source response unchanged, C# loaded-assembly metadata as specified below |
+
+### C# script metadata and build boundary
+
+C# script inspection is experimental and reads Godot's loaded assembly, not a
+C# source parser. Its additional fields are `language: "csharp"`,
+`metadata_source: "assembly"`, `assembly_loaded` (boolean), `csharp_supported`
+(boolean), and `build_warning`. `class_name` derives from the filename;
+`base_type`/`extends` report the engine-native base when available. `functions`,
+`signals`, and `exports` are empty when the assembly is unavailable. A loaded
+assembly can be stale relative to the source; `assembly_loaded` does not prove
+that the latest source was built. Standard Godot can inspect `.cs` and report
+unavailable assembly metadata. `script current` reflects only Godot's focused
+resource, not external IDE focus. GDScript response shapes remain unchanged.
+
+C# create/open/attach require Godot .NET. Create uses a filename-matching partial
+class, rejects a conflicting `--class-name`, and returns `build_required: true`
+with a build warning. Attach rejects an unloaded C# class until build/reload;
+success includes `language` and `build_warning` in `script_diagnostics`, whose
+preload arrays remain GDScript-only diagnostics. Hera does not create `.csproj`/solution files or automatically build. `eval` remains a GDScript expression in
+either project language. See [C# support](CSHARP_SUPPORT.md).
 
 ### Editor mutations
 
@@ -178,10 +198,10 @@ refusal is exit `1`.
 | `scene open` / `scene save` | stable | |
 | `eval` | stable | stringified expression result |
 | `batch` | stable | sequential results array; `--continue` keeps going past failures |
-| `node instance` / `node set-resource` / `node attach-script` / `node detach-script` | experimental | attach-script responses include dependency diagnostics whose shape may evolve |
+| `node instance` / `node set-resource` / `node attach-script` / `node detach-script` | experimental | attach-script responses include dependency diagnostics whose shape may evolve; C# requires .NET and a loaded class, and adds `language`/`build_warning` inside `script_diagnostics` |
 | `scene create` / `scene save-as` / `scene reload` | experimental | persistent filesystem changes |
 | `editor select` / `editor clear-selection` | experimental | editor-state mutation only |
-| `script open` / `script create` | experimental | |
+| `script open` / `script create` | experimental | `.gd` or `.cs`; C# requires Godot .NET. Create selects by extension; optional `--lang` must match. C# creation adds `language`, `build_required`, `build_warning` |
 | `project mkdir` / `project scan` / `project reimport` / `project set-main-scene` | experimental | persistent project changes |
 | `resource set` / `resource create` / `resource resave` / `resource update-uids` / `resource export-mesh-library` | experimental | persistent filesystem changes |
 | `screenshot` | stable (base) | ✓-adjacent base fields `path`, `width`, `height`; the `--analyze` metrics block is **experimental** |
@@ -200,7 +220,7 @@ Requires a play session plus the `HeraGameInspector` autoload; not undoable.
 | `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` |
 | `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface) |
 | `game screenshot` | experimental | capture path; `--analyze` metrics evolve with QA guidance |
-| `game qa discover` | experimental | callable `qa_*` helpers |
+| `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |
 

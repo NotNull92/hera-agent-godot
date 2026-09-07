@@ -1,5 +1,7 @@
 extends RefCounted
 
+const CSharpSupport = preload("res://addons/hera_agent_godot/tools/csharp_script_support.gd")
+
 # `node` — read and mutate nodes in the edited scene.
 #   find    -> match by name substring (query) and/or class (type)
 #   get     -> dump a node's editor-visible properties (values stringified)
@@ -233,6 +235,8 @@ func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("script path must end with .gd or .cs")
 	if not FileAccess.file_exists(script_path):
 		return ToolResponse.failure("script not found: %s" % script_path)
+	if script_path.ends_with(".cs") and not CSharpSupport.available():
+		return ToolResponse.failure("C# scripts require the Godot .NET editor")
 	_scan_editor_filesystem()
 	var diagnostics := ScriptDependencyDiagnostics.analyze(script_path)
 	var missing_preloads: Array = diagnostics.get("missing_preloads", [])
@@ -243,6 +247,11 @@ func _attach_script(root: Node, params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("not a script resource: %s" % script_path)
 	var loaded: Script = loaded_res as Script
 	var base_type := loaded.get_instance_base_type()
+	if script_path.ends_with(".cs"):
+		if base_type == "":
+			return ToolResponse.failure("C# class is not loaded; build the .NET project and reload its assembly before attaching: %s" % script_path)
+		diagnostics["language"] = "csharp"
+		diagnostics["build_warning"] = CSharpSupport.BUILD_WARNING
 	if base_type != "" and not node.is_class(base_type):
 		return ToolResponse.failure("script base type %s is not compatible with node type %s" % [base_type, node.get_class()])
 

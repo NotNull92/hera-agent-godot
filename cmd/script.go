@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"strconv"
 )
 
@@ -40,7 +41,7 @@ func parseScriptArgs(args []string) (map[string]any, error) {
 		return map[string]any{"action": "current"}, nil
 	case "inspect":
 		if len(rest) != 1 {
-			return nil, fmt.Errorf("usage: script inspect <res://script.gd>")
+			return nil, fmt.Errorf("usage: script inspect <res://script.gd|.cs>")
 		}
 		return map[string]any{"action": "inspect", "path": rest[0]}, nil
 	case "open":
@@ -54,7 +55,7 @@ func parseScriptArgs(args []string) (map[string]any, error) {
 
 func parseScriptOpenArgs(args []string) (map[string]any, error) {
 	if len(args) < 1 {
-		return nil, fmt.Errorf("usage: script open <res://script.gd> [--line N] [--column N]")
+		return nil, fmt.Errorf("usage: script open <res://script.gd|.cs> [--line N] [--column N]")
 	}
 	params := map[string]any{"action": "open", "path": args[0]}
 	for i := 1; i < len(args); i++ {
@@ -88,13 +89,27 @@ func parseScriptOpenArgs(args []string) (map[string]any, error) {
 
 func parseScriptCreateArgs(args []string) (map[string]any, error) {
 	if len(args) < 1 {
-		return nil, fmt.Errorf("usage: script create <res://script.gd> [--extends <Class>] [--class-name <Name>] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal <name> ...] [--export <name:type[=value]> ...]")
+		return nil, fmt.Errorf("usage: script create <res://script.gd|.cs> [--lang gdscript|csharp] [--extends <Class>] [--class-name <Name>] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal <name> ...] [--export <name:type[=value]> ...]")
 	}
 	params := map[string]any{"action": "create", "path": args[0]}
 	var signals []string
 	var exports []string
 	for i := 1; i < len(args); i++ {
 		switch args[i] {
+		case "--lang":
+			if i+1 >= len(args) {
+				return nil, fmt.Errorf("--lang requires gdscript or csharp")
+			}
+			i++
+			lang := args[i]
+			ext := path.Ext(args[0])
+			if lang != "gdscript" && lang != "csharp" {
+				return nil, fmt.Errorf("--lang must be gdscript or csharp")
+			}
+			if (lang == "gdscript" && ext != ".gd") || (lang == "csharp" && ext != ".cs") {
+				return nil, fmt.Errorf("--lang %s conflicts with script extension %q", lang, ext)
+			}
+			params["lang"] = lang
 		case "--extends":
 			if i+1 >= len(args) {
 				return nil, fmt.Errorf("--extends requires a value")

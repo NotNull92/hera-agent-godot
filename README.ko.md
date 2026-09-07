@@ -100,6 +100,17 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 [docs/COMMANDS.md](docs/COMMANDS.md), 릴리스와 Asset Store 패키징 상태는
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.
 
+스크립트 확장자로 GDScript 또는 C#을 선택합니다:
+`hera script create res://Player.gd` 또는
+`hera script create res://Player.cs --ready --export Speed:float=3.5f`.
+선택 옵션 `--lang gdscript|csharp`는 확장자와 일치해야 합니다. C# 생성·열기·연결은
+Godot .NET이 필요하며, `status.csharp_supported`는 에디터 지원 여부를 나타냅니다
+(.NET SDK 설치 여부는 검사하지 않습니다). 새 스크립트를 연결하기 전에 C# 어셈블리를
+빌드하고 다시 로드하세요. Hera는 빌드나 솔루션 파일 생성을 자동으로 실행하지 않습니다.
+C# 조회는 로드된 어셈블리 기준이므로 최신 소스와 다를 수 있습니다. 애드온은
+GDScript로 유지되며 `eval`은 두 언어의 프로젝트 모두에서 GDScript 표현식을 사용합니다.
+설정과 제한은 [C# 지원 가이드](docs/CSHARP_SUPPORT.md)를 참고하세요.
+
 ## 설치
 
 **CLI** — 패키지 매니저로 설치:
