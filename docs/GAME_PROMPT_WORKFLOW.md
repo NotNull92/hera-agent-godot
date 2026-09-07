@@ -67,9 +67,10 @@ Reusable prompt-game QA patterns:
   semantic clicks, `game input`, `game node call qa_*`, or other state-mutating
   runtime commands against the same live game process.
 - Before capture-heavy or state-changing runtime QA, run `game instances`.
-  If more than one process is registered, stop only the intended test session
-  and establish one fresh runtime instance before continuing. Do not choose or
-  terminate a process by age alone.
+  If more than one process is registered, use `game --pid <game-pid> ...` for
+  every read, mutation, screenshot, and QA command. Do not choose or terminate
+  a process by age alone. A top-level PID on `game qa --file` applies to every
+  game step in that scenario.
 - If live runtime registration is empty while editor diagnostics are clean, run
   a direct affected-scene load before changing autoloads or adding runtime
   workarounds. Warning-as-error parse failures are the first branch to rule out.

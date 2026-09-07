@@ -40,3 +40,10 @@ and requirement-covered QA scenarios.
 
 The entry script uses `@tool`, so it runs inside the editor. Full design and CLI
 docs: <https://github.com/NotNull92/hera-agent-godot>.
+
+`game instances` lists fresh runtime heartbeats. Use
+`hera --instance <EDITOR_PID> game --pid <GAME_PID> ...` to target an external
+or parallel runtime; unqualified requests retain editor-play matching and
+ambiguity refusal. The plugin temporarily removes its owned runtime inspector
+autoload during export, so exported project settings do not reference the
+development bridge. It restores the autoload for editor play afterward.

@@ -111,6 +111,13 @@ C# 조회는 로드된 어셈블리 기준이므로 최신 소스와 다를 수 
 GDScript로 유지되며 `eval`은 두 언어의 프로젝트 모두에서 GDScript 표현식을 사용합니다.
 설정과 제한은 [C# 지원 가이드](docs/CSHARP_SUPPORT.md)를 참고하세요.
 
+외부 실행 또는 병렬 실행 중인 게임은 에디터와 별도로 선택할 수 있습니다.
+`hera game instances`로 목록을 읽고
+`hera --instance <EDITOR_PID> game --pid <GAME_PID> tree`처럼 모든 game/QA
+하위 명령에 게임 PID를 지정합니다. `--pid`가 없으면 기존 editor-play 선택을
+사용하며 대상이 모호하면 계속 실패합니다. Hera 런타임 inspector는 에디터 재생에는
+유지되지만 export된 프로젝트 설정에서는 제거됩니다.
+
 ## 설치
 
 **CLI** — 패키지 매니저로 설치:

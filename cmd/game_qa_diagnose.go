@@ -19,14 +19,16 @@ type gameQADiagnoseOptions struct {
 	maxErrors      int
 	maxWarnings    int
 	screenshotPath string
+	targetPID      int
 }
 
-func runGameQADiagnose(args []string) int {
+func runGameQADiagnose(args []string, targetPID int) int {
 	options, err := parseGameQADiagnoseArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa diagnose: %v\n", err)
 		return 2
 	}
+	options.targetPID = targetPID
 	c, err := dialEditor()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa diagnose: %v\n", err)
@@ -123,12 +125,12 @@ func executeGameQADiagnosis(c *client.Client, options gameQADiagnoseOptions) (ma
 		checks = append(checks, gameQADiagnoseFailure("runtime_instances", err))
 		issues = append(issues, fmt.Sprintf("runtime instances unavailable: %v", err))
 	} else {
-		check, findings := evaluateGameQAInstances(instances)
+		check, findings := evaluateGameQAInstances(instances, options.targetPID)
 		checks = append(checks, check)
 		issues = append(issues, findings...)
 	}
 
-	tree, err := gameQADiagnoseData(c, "game", map[string]any{"action": "tree"})
+	tree, err := gameQADiagnoseData(c, "game", targetGameParams(map[string]any{"action": "tree"}, options.targetPID))
 	if err != nil {
 		checks = append(checks, gameQADiagnoseFailure("runtime_tree", err))
 		issues = append(issues, fmt.Sprintf("runtime tree unavailable: %v", err))
@@ -138,7 +140,7 @@ func executeGameQADiagnosis(c *client.Client, options gameQADiagnoseOptions) (ma
 		issues = append(issues, findings...)
 	}
 
-	ui, err := gameQADiagnoseData(c, "game", map[string]any{"action": "ui_tree"})
+	ui, err := gameQADiagnoseData(c, "game", targetGameParams(map[string]any{"action": "ui_tree"}, options.targetPID))
 	if err != nil {
 		checks = append(checks, gameQADiagnoseFailure("runtime_ui", err))
 		issues = append(issues, fmt.Sprintf("runtime UI tree unavailable: %v", err))
@@ -152,6 +154,7 @@ func executeGameQADiagnosis(c *client.Client, options gameQADiagnoseOptions) (ma
 	if options.screenshotPath != "" {
 		screenshotParams["path"] = options.screenshotPath
 	}
+	screenshotParams = targetGameParams(screenshotParams, options.targetPID)
 	screenshot, err := gameQADiagnoseData(c, "game", screenshotParams)
 	if err != nil {
 		checks = append(checks, gameQADiagnoseFailure("runtime_screenshot", err))

@@ -8,20 +8,26 @@ import (
 )
 
 func runGame(args []string) int {
+	targetPID, args, err := parseGameInvocation(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "game: %v\n", err)
+		return 2
+	}
 	if len(args) > 0 && args[0] == "qa" {
 		if len(args) > 1 && args[1] == "discover" {
-			return runGameQADiscover(args[2:])
+			return runGameQADiscover(args[2:], targetPID)
 		}
 		if len(args) > 1 && args[1] == "diagnose" {
-			return runGameQADiagnose(args[2:])
+			return runGameQADiagnose(args[2:], targetPID)
 		}
-		return runGameQA(args[1:])
+		return runGameQA(args[1:], targetPID)
 	}
 	params, err := parseGameArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game: %v\n", err)
 		return 2
 	}
+	params = targetGameParams(params, targetPID)
 	if params["action"] == "ui_audit" {
 		return runGameUIAudit(params)
 	}

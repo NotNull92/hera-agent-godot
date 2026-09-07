@@ -60,6 +60,19 @@ func TestEvaluateGameQADiagnostics_staysQuietWhenAvailabilityIsUnreported(t *tes
 	}
 }
 
+func TestEvaluateGameQAInstancesAcceptsSelectedRuntimeAmongSeveral(t *testing.T) {
+	data := map[string]any{"instances": []any{
+		map[string]any{"pid": float64(101)},
+		map[string]any{"pid": float64(202)},
+	}}
+
+	check, issues := evaluateGameQAInstances(data, 202)
+
+	if check["ok"] != true || len(issues) != 0 || check["selected_pid"] != 202 {
+		t.Fatalf("check=%v issues=%v, want selected runtime success", check, issues)
+	}
+}
+
 func TestExecuteGameQADiagnosis_passesWhenGenericRuntimeSignalsAreHealthy(t *testing.T) {
 	// Given
 	srv := newGameQADiagnoseServer(t, map[string]protocol.Response{

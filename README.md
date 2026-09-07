@@ -116,6 +116,13 @@ files, and C# inspection reflects the loaded assembly, which may be stale.
 The addon stays GDScript, and `eval` uses GDScript expressions in either project.
 See [C# support](docs/CSHARP_SUPPORT.md) for setup and limitations.
 
+Externally launched and parallel game processes can be selected independently
+from the editor: list them with `hera game instances`, then use
+`hera --instance <EDITOR_PID> game --pid <GAME_PID> tree` (or any other game/QA
+subcommand). Without `--pid`, editor-play selection remains the default and
+ambiguous targets still fail. The Hera runtime inspector stays available for
+editor play but is removed from exported project settings.
+
 ## Install
 
 **CLI** — via a package manager:

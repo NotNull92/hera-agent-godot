@@ -36,6 +36,7 @@ type gameQAStep struct {
 	DurationMS  int            `json:"duration_ms"`
 	Covers      []string       `json:"covers"`
 	Params      map[string]any `json:"params"`
+	targetPID   int
 }
 
 type gameQAResult struct {

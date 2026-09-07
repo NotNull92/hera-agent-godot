@@ -63,7 +63,7 @@ selected editor instance.
 | `classdb constants <Class> [--own]` | `classdb` | ☑ | List ClassDB integer constants with values and enum membership when available. Includes inherited constants by default; `--own` limits output to the class itself. |
 | `classdb enums <Class> [--own]` | `classdb` | ☑ | List ClassDB enums and their integer constants. Includes inherited enums by default; `--own` limits output to the class itself. |
 | `classdb inherits <Class> <BaseClass>` | `classdb` | ☑ | Check inheritance using Godot ClassDB. |
-| `game tree` | `game` | ☑ | Print the running game's live node tree. Requires a play session and the Hera runtime autoload; requests are isolated to the matching game process. |
+| `game [--pid <game-pid>] tree` | `game` | ☑ | Print a live game node tree. Without `--pid`, use the editor-play process; an explicit fresh PID from `game instances` also targets externally launched games. |
 | `game ui tree [--path <node>] [--depth N] [--fields <a,b>] [--type <Class>] [--text <label>]` | `game` | ☑ | Print live `Control` nodes. Scope by subtree, depth, class, exact text, and returned fields (`name,path,type,visible,rect,text,disabled,pressed`) for low-token UI QA before semantic clicks. |
 | `game ui audit [--path <node>] [--severity error\|warning\|all] [--rule <id>] [--strict] [--limit N]` | `game` | ☑ | Audit visible runtime `Control` nodes for generic UI defects: empty interactive rectangles, interactive controls outside the viewport or fully clipped, full-viewport mouse blockers, minimum sizes that cannot fit their parent, and overlapping interactive siblings. Errors fail the command; warnings fail only with `--strict`. `--limit` defaults to 50 and accepts 1–500 findings. |
 | `game instances` | `game` | ☑ | List Hera runtime game processes seen by the editor, including pid, scene, and heartbeat age. Useful for stale process diagnosis. |
@@ -139,6 +139,24 @@ can still be stale relative to source. Inspect is available on standard Godot
 with unavailable assembly metadata; create/open/attach require Godot .NET.
 `script current` sees only Godot's focused script resource, not an external IDE.
 Existing GDScript responses remain unchanged.
+
+## Runtime process selection
+
+Place `--pid <game-pid>` immediately after `game` to target any game or QA
+subcommand, including `qa discover`, `qa diagnose`, and scenario game steps.
+This PID comes from `game instances`; global `--instance <editor-pid>` still
+selects the editor that transports the request. Positive integers are accepted.
+A missing, expired, malformed, zero, or negative PID fails without selecting a
+different runtime. Unqualified requests retain editor-play scene matching and
+refuse multiple matching processes. Explicitly targeted responses add
+`game_pid` and `game_scene`, so callers can verify the selected process.
+
+The `HeraGameInspector` autoload is an editor-play aid. Hera removes its own
+autoload before Godot collects export dependencies and serializes exported
+project settings, then restores it after export. Exported games therefore do
+not reference the inspector; the export preset still decides whether unrelated
+addon files are packaged. Disabling the plugin also removes a persisted
+Hera-owned autoload; a same-named autoload pointing elsewhere is preserved.
 
 ## Global flags
 

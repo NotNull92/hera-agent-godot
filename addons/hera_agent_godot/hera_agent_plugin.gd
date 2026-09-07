@@ -27,6 +27,7 @@ const DiagnosticsTool = preload("res://addons/hera_agent_godot/tools/diagnostics
 const GameTool = preload("res://addons/hera_agent_godot/tools/game_tool.gd")
 const ScreenshotTool = preload("res://addons/hera_agent_godot/tools/screenshot_tool.gd")
 const BatchTool = preload("res://addons/hera_agent_godot/tools/batch_tool.gd")
+const GameInspectorExportGuard = preload("res://addons/hera_agent_godot/runtime/game_inspector_export_guard.gd")
 
 const HEARTBEAT_INTERVAL := 0.5
 const GAME_AUTOLOAD_NAME := "HeraGameInspector"
@@ -39,6 +40,8 @@ var _queue: RefCounted
 var _heartbeat: RefCounted
 var _heartbeat_accum := 0.0
 var _game_autoload_injected := false
+var _game_autoload_suspended := false
+var _game_export_guard: EditorExportPlugin
 var _main_panel: Control
 var _main_status_label: Label
 var _main_status_dot: PanelContainer
@@ -49,6 +52,9 @@ func _enter_tree() -> void:
 	set_process(true)
 	_create_main_screen()
 	_ensure_game_autoload()
+	_game_export_guard = GameInspectorExportGuard.new()
+	_game_export_guard.setup(self)
+	add_export_plugin(_game_export_guard)
 	_registry = ToolRegistry.new()
 	_registry.register(StatusTool.new())
 	_registry.register(RunTool.new())
@@ -110,6 +116,9 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	set_process(false)
+	if _game_export_guard != null:
+		remove_export_plugin(_game_export_guard)
+		_game_export_guard = null
 	if _heartbeat != null:
 		_heartbeat.stop()
 		_heartbeat = null
@@ -118,9 +127,6 @@ func _exit_tree() -> void:
 		_server = null
 	_queue = null
 	_registry = null
-	if _game_autoload_injected:
-		remove_autoload_singleton(GAME_AUTOLOAD_NAME)
-		_game_autoload_injected = false
 	if _main_panel != null:
 		_main_panel.queue_free()
 		_main_panel = null
@@ -129,6 +135,14 @@ func _exit_tree() -> void:
 		_ui_juicy_mode_toggle = null
 		_game_feel_mode_toggle = null
 	print("[hera] Hera Agent Godot exited")
+
+func _enable_plugin() -> void:
+	_ensure_game_autoload()
+
+func _disable_plugin() -> void:
+	_game_autoload_suspended = false
+	if _remove_owned_game_autoload() and ProjectSettings.save() != OK:
+		push_error("[hera] could not persist runtime autoload removal")
 
 func _has_main_screen() -> bool:
 	return true
@@ -146,9 +160,51 @@ func _get_plugin_icon() -> Texture2D:
 func _ensure_game_autoload() -> void:
 	var key := "autoload/%s" % GAME_AUTOLOAD_NAME
 	if ProjectSettings.has_setting(key):
+		_game_autoload_injected = _owns_game_autoload(ProjectSettings.get_setting(key))
 		return
 	add_autoload_singleton(GAME_AUTOLOAD_NAME, GAME_AUTOLOAD_PATH)
 	_game_autoload_injected = true
+	if ProjectSettings.save() != OK:
+		push_error("[hera] could not persist runtime autoload registration")
+
+func _owns_game_autoload(value: Variant) -> bool:
+	var path := String(value)
+	if path.begins_with("*"):
+		path = path.substr(1)
+	if path == GAME_AUTOLOAD_PATH:
+		return true
+	if not path.begins_with("uid://"):
+		return false
+	var declared_uid := FileAccess.get_file_as_string(GAME_AUTOLOAD_PATH + ".uid").strip_edges()
+	if path == declared_uid:
+		return true
+	var uid := ResourceUID.text_to_id(path)
+	return ResourceUID.has_id(uid) and ResourceUID.get_id_path(uid) == GAME_AUTOLOAD_PATH
+
+func _remove_owned_game_autoload() -> bool:
+	var key := "autoload/%s" % GAME_AUTOLOAD_NAME
+	if not ProjectSettings.has_setting(key) or not _owns_game_autoload(ProjectSettings.get_setting(key)):
+		_game_autoload_injected = false
+		return false
+	remove_autoload_singleton(GAME_AUTOLOAD_NAME)
+	_game_autoload_injected = false
+	return true
+
+func suspend_game_autoload_for_export() -> void:
+	var key := "autoload/%s" % GAME_AUTOLOAD_NAME
+	if not _game_autoload_injected or not ProjectSettings.has_setting(key) or not _owns_game_autoload(ProjectSettings.get_setting(key)):
+		return
+	remove_autoload_singleton(GAME_AUTOLOAD_NAME)
+	_game_autoload_suspended = true
+
+func restore_game_autoload_after_export() -> void:
+	if not _game_autoload_suspended:
+		return
+	_game_autoload_suspended = false
+	var key := "autoload/%s" % GAME_AUTOLOAD_NAME
+	if not ProjectSettings.has_setting(key):
+		add_autoload_singleton(GAME_AUTOLOAD_NAME, GAME_AUTOLOAD_PATH)
+		_game_autoload_injected = true
 
 func _handle(item: Dictionary) -> void:
 	var request: Dictionary = item["request"]

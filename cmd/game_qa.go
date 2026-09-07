@@ -9,7 +9,7 @@ import (
 	"github.com/NotNull92/hera-agent-godot/internal/protocol"
 )
 
-func runGameQA(args []string) int {
+func runGameQA(args []string, targetPID int) int {
 	file, keepGoing, err := parseGameQAFlags(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa: %v\n", err)
@@ -19,6 +19,9 @@ func runGameQA(args []string) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa: %v\n", err)
 		return 2
+	}
+	for index := range scenario.Steps {
+		scenario.Steps[index].targetPID = targetPID
 	}
 	c, err := dialMutationEditor()
 	if err != nil {
@@ -131,27 +134,27 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		}
 		return resp, pollGameInstancesStopped(c, waitTimeout)
 	case "game.node.get":
-		return c.Post("game", gameNodeGetParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(gameNodeGetParamsFromQAStep(step), step.targetPID))
 	case "game.node.set":
-		return c.Post("game", map[string]any{"action": "set", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "value": step.Value})
+		return c.Post("game", targetGameParams(map[string]any{"action": "set", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "value": step.Value}, step.targetPID))
 	case "game.node.call":
-		return c.Post("game", map[string]any{"action": "call", "path": normalizeGameNodePath(step.Path), "method": step.Method, "args": step.Args})
+		return c.Post("game", targetGameParams(map[string]any{"action": "call", "path": normalizeGameNodePath(step.Path), "method": step.Method, "args": step.Args}, step.targetPID))
 	case "game.qa.discover":
-		return c.Post("game", qaDiscoverParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(qaDiscoverParamsFromQAStep(step), step.targetPID))
 	case "game.click":
-		return c.Post("game", gameClickParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(gameClickParamsFromQAStep(step), step.targetPID))
 	case "game.input":
-		return c.Post("game", gameInputParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(gameInputParamsFromQAStep(step), step.targetPID))
 	case "game.input_log":
-		return c.Post("game", gameInputLogParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(gameInputLogParamsFromQAStep(step), step.targetPID))
 	case "game.ui.tree":
-		return c.Post("game", gameUITreeParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(gameUITreeParamsFromQAStep(step), step.targetPID))
 	case "game.ui.audit":
-		return c.Post("game", gameUIAuditParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(gameUIAuditParamsFromQAStep(step), step.targetPID))
 	case "game.assert":
-		return c.Post("game", map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value})
+		return c.Post("game", targetGameParams(map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value}, step.targetPID))
 	case "screenshot.runtime":
-		return c.Post("game", screenshotParamsFromQAStep(step))
+		return c.Post("game", targetGameParams(screenshotParamsFromQAStep(step), step.targetPID))
 	case "diagnostics":
 		resp, err := c.Post("diagnostics", diagnosticsParamsFromQAStep(step))
 		if err != nil || !resp.OK {

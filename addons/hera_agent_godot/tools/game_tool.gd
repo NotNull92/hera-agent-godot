@@ -27,9 +27,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 	var action := String(params.get("action", ""))
 	if action == "instances":
 		return ToolResponse.success({ "instances": _game_instances() })
-	if not EditorInterface.is_playing_scene():
-		return ToolResponse.failure("no game is running; start one with `hera run --current --wait`")
-	var target := _target_game()
+	var target := _select_target(_game_instances(), params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
 	if target.has("error"):
 		return ToolResponse.failure(String(target["error"]))
 	var request_id := _new_request_id()
@@ -47,6 +45,9 @@ func execute_async(params: Dictionary) -> Dictionary:
 			if bool(response.get("ok", false)):
 				response.erase("ok")
 				response.erase("id")
+				if params.has("pid"):
+					response["game_pid"] = int(target["pid"])
+					response["game_scene"] = String(target["scene"])
 				if action == "ui_audit":
 					response["ok"] = bool(response.get("passed", false))
 					response.erase("passed")
@@ -119,16 +120,26 @@ func _request_path(game_pid: int, request_id: String) -> String:
 func _response_path(game_pid: int, request_id: String) -> String:
 	return "%s/%s.json" % [_response_dir(game_pid), request_id]
 
-func _target_game() -> Dictionary:
-	var scene := EditorInterface.get_playing_scene()
+func _select_target(instances: Array, params: Dictionary, scene: String, editor_playing: bool) -> Dictionary:
+	if params.has("pid"):
+		var raw_pid: Variant = params["pid"]
+		if (typeof(raw_pid) != TYPE_INT and typeof(raw_pid) != TYPE_FLOAT) or float(raw_pid) != floorf(float(raw_pid)) or int(raw_pid) <= 0:
+			return { "error": "game pid must be a positive integer" }
+		var requested_pid := int(raw_pid)
+		for instance in instances:
+			if int(instance.get("pid", 0)) == requested_pid:
+				return instance
+		return { "error": "no live Hera game process found for pid %d" % requested_pid }
+	if not editor_playing:
+		return { "error": "no game is running; start one with `hera run --current --wait` or pass --pid" }
 	var matches := []
-	for inst in _game_instances():
+	for inst in instances:
 		if scene == "" or String(inst.get("scene", "")) == scene:
 			matches.append(inst)
 	if matches.is_empty():
 		return { "error": "no Hera game process found for scene %s; wait a moment or restart the play session" % scene }
 	if matches.size() > 1:
-		return { "error": "multiple Hera game processes found for scene %s (%s); stop stale Godot game processes and retry" % [scene, _pids(matches)] }
+		return { "error": "multiple Hera game processes found for scene %s (%s); pass --pid" % [scene, _pids(matches)] }
 	return matches[0]
 
 func _game_instances() -> Array:

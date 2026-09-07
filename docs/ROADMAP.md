@@ -303,6 +303,18 @@ Goal: declare the contract stable and make depending on Hera boring.
 - [ ] Announcement posts (Godot forums, Discord, sibling Unity repo
       cross-link).
 
+## Unreleased runtime isolation fixes (2026-09-07)
+
+- [x] Distinguish editor selection (`--instance`) from explicit live game
+  selection (`game --pid`), including external runtimes, QA discovery,
+  diagnosis, and requirement scenarios. Missing/expired targets do not fall
+  back; default multi-process ambiguity remains an error.
+- [x] Exclude the Hera runtime inspector autoload from exported dependencies
+  and project settings, restore it after export, clean persisted owned state on
+  plugin disable, and preserve a same-named user autoload at another path.
+- [x] Reproduced both failures, added Go/GDScript regression checks, and drove
+  two external processes plus an excluded-addons PCK through Godot 4.7.2.
+
 ## Open questions to revisit
 
 - Reflection vs explicit tool registry as the surface grows (currently explicit).

@@ -125,6 +125,7 @@ hera game tree                               # running game node tree
 hera game ui tree [--path p] [--depth N] [--fields a,b] [--type Class] [--text t] # running Control nodes, optionally scoped
 hera game ui audit [--path p] [--severity error|warning|all] [--rule id] [--strict] [--limit N] # generic runtime UI defects
 hera game instances                          # running game process heartbeats
+hera game --pid N tree                       # target one listed runtime, including externally launched games
 hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
 hera game click --x N --y N                  # click the running game viewport
 hera game click --node /root/Main/Button     # click the center of a live Control
@@ -215,7 +216,13 @@ default 5000). Default output is compact JSON.
   is not registered with undo, and is lost when the play session stops.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
   are still alive, `game instances` shows them and mutation/read requests refuse
-  ambiguous targets instead of accepting an old response.
+  ambiguous targets instead of accepting an old response. Use `game --pid N ...`
+  to select a fresh heartbeat explicitly; `--instance` continues to select the
+  editor. A missing or expired PID fails instead of falling back to another game.
+- **The runtime inspector is excluded from exports.** The editor plugin removes
+  its owned autoload while Godot assembles exported project settings, then
+  restores it for editor play. Disabling Hera removes an owned persisted
+  autoload, while a same-named user autoload at another path is left alone.
 - **Prefer low-token QA reads.** Use `game ui audit`, `game ui tree`, `game node get --prop/--props`,
   `game assert`, `game qa discover`, `screenshot --runtime --analyze`, and
   `game qa --file` before dumping full node properties during automated QA.

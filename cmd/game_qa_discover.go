@@ -5,13 +5,13 @@ import (
 	"os"
 )
 
-func runGameQADiscover(args []string) int {
+func runGameQADiscover(args []string, targetPID int) int {
 	params, err := parseGameQADiscoverArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "game qa discover: %v\n", err)
 		return 2
 	}
-	return dialPostPrint("game", params, "game qa discover")
+	return dialPostPrint("game", targetGameParams(params, targetPID), "game qa discover")
 }
 
 func parseGameQADiscoverArgs(args []string) (map[string]any, error) {

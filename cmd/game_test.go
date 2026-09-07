@@ -86,6 +86,38 @@ func TestParseGameArgs(t *testing.T) {
 	}
 }
 
+func TestParseGameInvocationTargetsRuntimePID(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    []string
+		wantPID int
+		wantSub []string
+		wantErr bool
+	}{
+		{name: "explicit runtime", args: []string{"--pid", "202", "screenshot"}, wantPID: 202, wantSub: []string{"screenshot"}},
+		{name: "default editor play", args: []string{"tree"}, wantSub: []string{"tree"}},
+		{name: "missing value", args: []string{"--pid"}, wantErr: true},
+		{name: "zero", args: []string{"--pid", "0", "tree"}, wantErr: true},
+		{name: "negative", args: []string{"--pid", "-1", "tree"}, wantErr: true},
+		{name: "fraction", args: []string{"--pid", "2.5", "tree"}, wantErr: true},
+		{name: "string", args: []string{"--pid", "oops", "tree"}, wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			pid, subcommand, err := parseGameInvocation(tt.args)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("parseGameInvocation() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr {
+				return
+			}
+			if pid != tt.wantPID || fmt.Sprint(subcommand) != fmt.Sprint(tt.wantSub) {
+				t.Fatalf("parseGameInvocation() = pid %d, args %v; want pid %d, args %v", pid, subcommand, tt.wantPID, tt.wantSub)
+			}
+		})
+	}
+}
+
 func TestGameActionMutates(t *testing.T) {
 	tests := []struct {
 		action any

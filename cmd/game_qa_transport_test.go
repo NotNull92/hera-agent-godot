@@ -56,6 +56,27 @@ func TestPostGameQAStep_rejectsOverflowingWaitDuration(t *testing.T) {
 	}
 }
 
+func TestPostGameQAStepTargetsSelectedRuntime(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var request protocol.Request
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			t.Fatalf("decode request: %v", err)
+		}
+		if request.Params["pid"] != float64(202) {
+			t.Errorf("pid = %v, want 202", request.Params["pid"])
+		}
+		if err := json.NewEncoder(w).Encode(protocol.Response{OK: true}); err != nil {
+			t.Fatalf("encode response: %v", err)
+		}
+	}))
+	t.Cleanup(server.Close)
+
+	_, err := postGameQAStep(client.New(server.URL), gameQAStep{Tool: "game.node.get", Path: "/root/Main", targetPID: 202})
+	if err != nil {
+		t.Fatalf("postGameQAStep() error = %v", err)
+	}
+}
+
 func TestPostGameQAStep_waitsForRuntimeInstancesAfterStop(t *testing.T) {
 	expected := []struct {
 		tool   string

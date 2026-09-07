@@ -18,6 +18,11 @@ of truth for live editor and runtime state.
    `hera --instance <pid>` for any mutation.
 3. Before UI work, run `hera guidance ui` and follow its returned mode.
 
+Editor and game PIDs are separate. Use global `--instance <editor-pid>` for the
+editor, then `game --pid <game-pid> ...` to select a fresh entry from
+`game instances`, including externally launched games. Keep the game PID on QA
+commands and scenarios. Never fall back to a different runtime when it expires.
+
 ## Keep reads small and writes safe
 
 - Default output is compact. Prefer `hera --ids scene tree`, selected
@@ -31,6 +36,8 @@ of truth for live editor and runtime state.
   running game and disappear when it stops.
 - Keep one editor per project. After direct `.tscn` edits, stop the game,
   `hera scene reload`, then save through the editor.
+- The Hera runtime autoload is excluded from exports and restored afterward;
+  do not persist a separate production autoload for the inspector.
 
 ## Choose the script language
 

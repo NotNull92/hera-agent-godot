@@ -30,12 +30,25 @@ func evaluateGameQADiagnostics(data map[string]any, options gameQADiagnoseOption
 	return check, issues
 }
 
-func evaluateGameQAInstances(data map[string]any) (map[string]any, []string) {
+func evaluateGameQAInstances(data map[string]any, targetPID int) (map[string]any, []string) {
 	instances, ok := data["instances"].([]any)
 	if !ok {
 		return gameQADiagnoseFailure("runtime_instances", fmt.Errorf("missing instances")), []string{"runtime instance response is incomplete"}
 	}
 	check := map[string]any{"name": "runtime_instances", "ok": len(instances) == 1, "count": len(instances)}
+	if targetPID > 0 {
+		check["selected_pid"] = targetPID
+		for _, raw := range instances {
+			instance, instanceOK := raw.(map[string]any)
+			pid, pidOK := numericField(instance, "pid")
+			if instanceOK && pidOK && pid == targetPID {
+				check["ok"] = true
+				return check, nil
+			}
+		}
+		check["ok"] = false
+		return check, []string{fmt.Sprintf("selected game process %d is not live", targetPID)}
+	}
 	if len(instances) == 1 {
 		return check, nil
 	}

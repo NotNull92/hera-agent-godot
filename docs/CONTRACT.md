@@ -208,7 +208,11 @@ refusal is exit `1`.
 
 ### Runtime (game) surface
 
-Requires a play session plus the `HeraGameInspector` autoload; not undoable.
+Uses the `HeraGameInspector` autoload; not undoable. The default targets the
+editor-play process. `game --pid N ...` selects a fresh runtime heartbeat,
+including an externally launched game. `--instance` and `--pid` identify the
+editor and game respectively. Invalid, missing, or expired explicit PIDs fail
+without fallback.
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
@@ -223,6 +227,12 @@ Requires a play session plus the `HeraGameInspector` autoload; not undoable.
 | `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |
+
+Explicitly targeted successful responses add experimental `game_pid` and
+`game_scene` fields. `game qa diagnose` accepts multiple live processes when
+its selected PID is present and reports `selected_pid` in the instance check.
+The runtime inspector autoload is excluded from exported project settings and
+dependencies, then restored to the editor after export.
 
 ### Guidance & content
 
