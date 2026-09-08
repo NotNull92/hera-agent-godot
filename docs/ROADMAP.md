@@ -10,6 +10,18 @@ standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
+## Unreleased: review corrections (2026-09-08)
+
+- [x] Preserve descendant ownership on removal undo and reject resolved root aliases.
+- [x] Validate resource/theme property batches before mutation.
+- [x] Poll bounded HTTP response writes and refuse startup when a configured token cannot be read.
+- [x] Publish runtime requests atomically, retain self-free call response paths, and share viewport geometry.
+- [x] Preflight QA scenarios and reject unavailable/invalid diagnostic evidence.
+- [x] Share project-path checks, variant syntax hints, and runtime input-name parsing.
+- [x] Set main scenes through the editor; remove the duplicate Go project-file writer/default-run reread.
+- [x] Wire standalone Godot behavioral regressions into the 4.7 CI row.
+- Validation and remaining boundaries: [implementation evidence](reviews/2026-09-08-review-fixes.md).
+
 ## Unreleased: play-clock, reparent, joypad input (2026-09-07)
 
 CLI follow-up work in this working tree:

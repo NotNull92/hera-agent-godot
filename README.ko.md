@@ -252,10 +252,17 @@ integrations/             간결한 Claude Code, Cursor, AGENTS.md 하네스 킷
 
 ## 보안
 
+노드 삭제 Undo는 자손의 씬 소유권까지 복원합니다. 리소스·테마 수정은 요청한
+값 전체를 검증한 뒤 적용합니다. 런타임 UI 클릭과 감사는 캔버스·카메라 변환을
+반영한 Viewport 좌표를 사용합니다. 시나리오 QA는 읽을 수 없는 진단을 실패로
+처리하며, `max_warnings` 생략은 경고 제한 없음, 명시한 `0`은 경고 없음입니다.
+
 브리지는 `127.0.0.1`에만 바인딩되고 브라우저 오리진 요청을 거부합니다.
 옵트인 공유 토큰 인증(`~/.hera-agent-godot/token` 또는
 `HERA_AGENT_GODOT_TOKEN`)으로 비밀을 아는 클라이언트만 허용할 수 있습니다.
 위협 모델과 설정: [docs/SECURITY.md](docs/SECURITY.md).
+기존 토큰을 읽을 수 없으면 브리지가 시작되지 않습니다. HTTP 응답은 부분
+전송하며, 수신 제한 시간과 별도로 5초의 송신 제한 시간을 적용합니다.
 
 ## 자매 프로젝트: hera-agent-unity
 

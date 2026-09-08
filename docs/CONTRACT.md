@@ -273,3 +273,9 @@ directly. After an **intentional** contract change, regenerate with
 See [COMMANDS.md](./COMMANDS.md) for flags and semantics,
 [ARCHITECTURE.md](./ARCHITECTURE.md) for the request lifecycle, and
 [ROADMAP.md](./ROADMAP.md) for the standardization arc.
+
+## QA validation and mutation corrections (2026-09-08)
+
+Scenario diagnostics require readable evidence and nonnegative integral counts. `available:false`, a non-boolean availability field, or absent/invalid counts cannot satisfy requirement coverage. A missing `available` field remains compatible with legacy count-bearing responses. Omitted `max_warnings` has no warning limit; explicit zero requires zero warnings. Scenario tool names, required node fields, assertion operators, run actions and numeric limits are validated before execution; remaining tool-specific parameters are validated by their owning tool.
+
+`project set-main-scene` persists through the editor and retains `main_scene` and `project_path` output fields. Default `run` uses that editor setting immediately. Resource property validation rejects incompatible native JSON types and fractional/nonfinite/out-of-range values for integer properties; integral JSON numbers remain accepted. A rejected mixed resource/theme property batch applies no setters; this does not promise rollback after a disk save error. Node removal undo preserves original subtree ownership, and resolved root aliases are rejected. Runtime UI rectangles and click centers use viewport coordinates including canvas transforms.

@@ -181,3 +181,7 @@ environment-specific questions on isolated project copies and isolated user data
   expand the cross-platform headless support contract.
 - `go test -race` passed here. `gopls` is absent and its installation had
   previously been declined; Go build/vet/tests supplied the Go checks.
+
+## Live log read sharing (2026-09-08)
+
+An isolated Windows Godot 4.7 editor returned FileAccess open error 12 while reading its running project's logger file, even though a shell could read that same path. Verify actual FileAccess success; file existence and a shell read are not evidence that addon diagnostics can read it. Hera now reports `available:false`, `clean:false` instead of zero counts when open/read fails. Inspect separately captured runtime stdout/stderr when this occurs. A missing final newline in project.godot is safely handled by the editor's ProjectSettings.save; live setter → in-memory setting → default run was verified without restart.

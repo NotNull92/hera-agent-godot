@@ -295,3 +295,7 @@ Batch a change and its check together when it helps, e.g. pipe a JSON array of
 See [docs/COMMANDS.md](docs/COMMANDS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 For prompt-driven game implementation cycles, follow
 [docs/GAME_PROMPT_WORKFLOW.md](docs/GAME_PROMPT_WORKFLOW.md).
+
+## Review correction boundaries
+
+QA scenario diagnostics require readable logs and valid counts; omitted `max_warnings` is unlimited, explicit zero is strict. Node removal undo preserves descendant ownership. Resource/theme batches validate before mutation, but disk-save failure rollback is not guaranteed. `project set-main-scene` updates and persists through the live editor. Standalone behavioral regressions run with `GODOT_BIN=/absolute/direct/godot bash tests/headless/run.sh`; each uses an isolated project and user directories.

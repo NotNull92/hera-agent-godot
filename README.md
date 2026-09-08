@@ -258,10 +258,18 @@ integrations/             compact Claude Code, Cursor, and AGENTS.md harness kit
 
 ## Security
 
+Undoing node removal restores descendant scene ownership. Resource/theme edits
+validate all requested values before applying them. Runtime UI targeting and
+audit use viewport coordinates, including canvas and camera transforms.
+Scenario QA rejects unreadable diagnostics; omitting `max_warnings` allows
+warnings, while an explicit `0` requires none.
+
 The bridge binds `127.0.0.1` only and rejects browser-origin requests.
 Optional shared-token auth locks it to clients that know a secret
 (`~/.hera-agent-godot/token` or `HERA_AGENT_GODOT_TOKEN`). Threat model and
 setup: [docs/SECURITY.md](docs/SECURITY.md).
+An existing token that cannot be read prevents bridge startup. HTTP replies use
+bounded partial writes with a separate five-second write deadline.
 
 ## Sibling: hera-agent-unity
 

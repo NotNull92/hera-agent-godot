@@ -96,7 +96,7 @@ need a duplicate `LICENSE` at the ZIP download root.
 5. addon server reads JSON and enqueues a work item
 6. hera_agent_plugin.gd drains the queue in _process
 7. ToolRegistry resolves the tool and runs it through EditorInterface / SceneTree
-8. addon writes Response{ ok, data/error }
+8. addon queues Response{ ok, data/error }; poll sends bounded partial chunks
 9. CLI prints compact output
 ```
 
@@ -161,8 +161,23 @@ in with `DirAccess.rename_absolute`. That swap is atomic on POSIX but **not on
 Windows**, where Godot's `DirAccess::rename` removes an existing destination
 before `MoveFileW` — so `<pid>.json` is briefly absent on every heartbeat. A CLI
 scan landing in that window would otherwise report "no live Godot editor found"
-while an editor is running, so discovery rescans once after a short delay when
+while an editor is running, so discovery rescans with four growing delays when
 the first pass comes up empty.
+
+HTTP receive and response-write phases each have a five-second deadline.
+Responses advance by at most 64 KiB per connection per poll; a slow reader
+cannot block the editor loop. Queued asynchronous work keeps its own tool
+deadline. Responses arriving after client cleanup are discarded.
+
+Runtime requests are written to a unique temporary file, closed, then renamed
+to their final JSON path. The runtime parses a complete request before removing
+it for dispatch. Process targeting and response IDs remain mandatory; the CLI
+does not automatically retry mutations after a transport failure.
+
+UI summaries, clicks, and viewport-boundary checks share transformed local
+Control geometry. Bounds are viewport-local axis-aligned rectangles; semantic
+clicks reject controls in another Viewport instead of injecting into the wrong
+viewport.
 
 ---
 
