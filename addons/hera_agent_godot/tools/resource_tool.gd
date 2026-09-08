@@ -1,5 +1,7 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const ResourceValueCodec = preload("res://addons/hera_agent_godot/tools/resource_value_codec.gd")
 const MeshLibraryExporter = preload("res://addons/hera_agent_godot/tools/mesh_library_exporter.gd")
@@ -196,7 +198,7 @@ func _properties(res: Resource) -> Dictionary:
 func _guard_loadable_path(path: String) -> String:
 	if not (path.begins_with("res://") or path.begins_with("user://")):
 		return "path must start with res:// or user:// : %s" % path
-	if path.begins_with("res://") and not _is_safe_res_path(path):
+	if path.begins_with("res://") and not ProjectPathSafety.is_safe_res_path(path):
 		return "path must stay inside res://"
 	if not ResourceLoader.exists(path):
 		return "resource not found: %s" % path
@@ -209,7 +211,7 @@ func _guard_save_path(path: String, force: bool) -> String:
 		return "resource path must start with res://"
 	if not (path.ends_with(".tres") or path.ends_with(".res")):
 		return "resource path must end with .tres or .res"
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return "resource path must stay inside res://"
 	if FileAccess.file_exists(path) and not force:
 		return "resource already exists: %s (pass --force to overwrite)" % path
@@ -252,14 +254,3 @@ func _refresh_filesystem() -> void:
 	var fs := EditorInterface.get_resource_filesystem()
 	if fs != null:
 		fs.scan()
-
-func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true

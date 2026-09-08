@@ -1,17 +1,19 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 static func export(params: Dictionary) -> Dictionary:
 	var scene_path := String(params.get("path", ""))
 	if not scene_path.begins_with("res://") or not scene_path.ends_with(".tscn"):
 		return ToolResponse.failure("scene path must be a res:// .tscn file")
-	if not _is_safe_res_path(scene_path) or not ResourceLoader.exists(scene_path, "PackedScene"):
+	if not ProjectPathSafety.is_safe_res_path(scene_path) or not ResourceLoader.exists(scene_path, "PackedScene"):
 		return ToolResponse.failure("scene not found or not safe: %s" % scene_path)
 	var output := String(params.get("output", ""))
 	if not output.begins_with("res://") or not (output.ends_with(".tres") or output.ends_with(".res")):
 		return ToolResponse.failure("output must be a res:// .tres or .res path")
-	if not _is_safe_res_path(output):
+	if not ProjectPathSafety.is_safe_res_path(output):
 		return ToolResponse.failure("output path must stay inside res://")
 	var packed: PackedScene = ResourceLoader.load(scene_path, "PackedScene")
 	if packed == null:
@@ -74,14 +76,3 @@ static func _first_mesh_instance(node: Node) -> MeshInstance3D:
 		if found != null:
 			return found
 	return null
-
-static func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true

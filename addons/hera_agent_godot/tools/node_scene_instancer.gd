@@ -1,12 +1,14 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 static func execute(root: Node, params: Dictionary, undo_redo: Variant) -> Dictionary:
 	var scene_path := String(params.get("scene", ""))
 	if scene_path == "":
 		return ToolResponse.failure("instance requires a scene path")
-	if not scene_path.begins_with("res://") or not _is_safe_res_path(scene_path):
+	if not scene_path.begins_with("res://") or not ProjectPathSafety.is_safe_res_path(scene_path):
 		return ToolResponse.failure("scene path must be a safe res:// path")
 	if not (scene_path.ends_with(".tscn") or scene_path.ends_with(".scn")):
 		return ToolResponse.failure("scene path must end with .tscn or .scn")
@@ -48,14 +50,3 @@ static func execute(root: Node, params: Dictionary, undo_redo: Variant) -> Dicti
 
 static func _resolve(root: Node, path: String) -> Node:
 	return root if path == "." else root.get_node_or_null(path)
-
-static func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true

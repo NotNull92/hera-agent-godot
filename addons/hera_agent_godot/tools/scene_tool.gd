@@ -1,5 +1,7 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 # `scene` — read and manage scenes via EditorInterface.
 #   tree         -> flat node list of the edited scene { path, type, name }
 #   open_scenes  -> open scene paths + the current one
@@ -158,20 +160,9 @@ func _guard_existing_scene_path(path: String) -> Dictionary:
 		return ToolResponse.failure("scene path must start with res://")
 	if not path.ends_with(".tscn"):
 		return ToolResponse.failure("scene path must end with .tscn")
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return ToolResponse.failure("scene path must stay inside res://")
 	return {}
-
-func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true
 
 func _collect(node: Node, root: Node, out: Array) -> void:
 	if out.size() > MAX_NODES:

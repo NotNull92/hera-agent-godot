@@ -1,5 +1,7 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 const MAX_LIST_LIMIT := 500
@@ -77,15 +79,4 @@ func _is_resource_extension(path: String) -> bool:
 func _is_safe_res_container(path: String) -> bool:
 	if path == "res://":
 		return true
-	return _is_safe_res_path(path)
-
-func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true
+	return ProjectPathSafety.is_safe_res_path(path)

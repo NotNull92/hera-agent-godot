@@ -1,5 +1,7 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 static func analyze(script_path: String) -> Dictionary:
 	var diagnostics := {
 		"preloads": [],
@@ -23,7 +25,7 @@ static func _collect_preload_diagnostics(source: String, diagnostics: Dictionary
 	for result in preload_regex.search_all(source):
 		var preload_path := String(result.get_string(1))
 		_append_unique(diagnostics["preloads"], preload_path, 50)
-		if not _is_safe_res_path(preload_path) or not FileAccess.file_exists(preload_path):
+		if not ProjectPathSafety.is_safe_res_path(preload_path) or not FileAccess.file_exists(preload_path):
 			_append_unique(diagnostics["missing_preloads"], preload_path, 50)
 
 static func _collect_global_class_type_hints(source: String, diagnostics: Dictionary) -> void:
@@ -37,14 +39,3 @@ static func _append_unique(values: Array, value: String, limit: int) -> void:
 	if values.size() >= limit or values.has(value):
 		return
 	values.append(value)
-
-static func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true

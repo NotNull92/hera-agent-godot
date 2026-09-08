@@ -1,5 +1,7 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const ScriptInspector = preload("res://addons/hera_agent_godot/tools/script_inspector.gd")
 const ScriptTemplate = preload("res://addons/hera_agent_godot/tools/script_template.gd")
@@ -179,7 +181,7 @@ func _guard_readable_script_path(path: String) -> String:
 		return "script path must start with res://"
 	if not (path.ends_with(".gd") or path.ends_with(".cs")):
 		return "script path must end with .gd or .cs"
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return "script path must stay inside res://"
 	if not FileAccess.file_exists(path):
 		return "script not found: %s" % path
@@ -202,7 +204,7 @@ func _guard_readable_script_parent(path: String) -> String:
 		return "script path must start with res://"
 	if not (path.ends_with(".gd") or path.ends_with(".cs")):
 		return "script path must end with .gd or .cs"
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return "script path must stay inside res://"
 	return ""
 
@@ -213,18 +215,6 @@ func _ensure_parent_dir(path: String) -> String:
 	if err != OK:
 		return "could not create parent directory: %s" % parent
 	return ""
-
-
-func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if ["", ".", ".."].has(part):
-			return false
-	return true
 
 
 func _refresh_filesystem() -> void:
