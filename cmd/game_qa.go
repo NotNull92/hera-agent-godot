@@ -112,29 +112,25 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		}
 		time.Sleep(time.Duration(step.DurationMS) * time.Millisecond)
 		return &protocol.Response{OK: true, Data: map[string]any{"waited_ms": step.DurationMS}}, nil
-	case "run":
+	case "run", "stop":
 		params := runParamsFromQAStep(step)
+		if step.Tool == "stop" {
+			params = map[string]any{"action": "stop"}
+		}
 		resp, err := c.Post("run", params)
-		if err != nil || !step.Wait || !resp.OK {
+		if err != nil || !step.Wait || !resp.OK || params["action"] == "state" {
 			return resp, err
 		}
-		_, waitErr := pollPlaying(c, true, waitTimeout)
+		playing := params["action"] != "stop"
+		_, waitErr := pollPlaying(c, playing, waitTimeout)
 		if waitErr != nil {
 			return resp, waitErr
+		}
+		if !playing {
+			return resp, pollGameInstancesStopped(c, waitTimeout)
 		}
 		_, waitErr = pollGameReady(c, sceneFromResponse(resp), waitTimeout)
 		return resp, waitErr
-	case "stop":
-		params := map[string]any{"action": "stop"}
-		resp, err := c.Post("run", params)
-		if err != nil || !step.Wait || !resp.OK {
-			return resp, err
-		}
-		_, waitErr := pollPlaying(c, false, waitTimeout)
-		if waitErr != nil {
-			return resp, waitErr
-		}
-		return resp, pollGameInstancesStopped(c, waitTimeout)
 	case "game.node.get":
 		return c.Post("game", targetGameParams(gameNodeGetParamsFromQAStep(step), step.targetPID))
 	case "game.node.set":

@@ -121,3 +121,45 @@ func TestPostGameQAStep_waitsForRuntimeInstancesAfterStop(t *testing.T) {
 		t.Fatalf("request count = %d, want %d", requests, len(expected))
 	}
 }
+
+func TestPostGameQAStepWaitsForRequestedLifecycleAction(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		step gameQAStep
+		want []string
+	}{
+		{"stop alias", gameQAStep{Tool: "run", Action: "stop", Wait: true}, []string{"run/stop", "run/state", "game/instances"}},
+		{"state snapshot", gameQAStep{Tool: "run", Action: "state", Wait: true}, []string{"run/state"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			// Given: a stopped editor and no runtime processes.
+			requests := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				var request protocol.Request
+				if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+					t.Error(err)
+					return
+				}
+				action, _ := request.Params["action"].(string)
+				actual := request.Tool + "/" + action
+				if requests >= len(tc.want) || actual != tc.want[requests] {
+					t.Errorf("unexpected lifecycle request %s at index %d", actual, requests)
+					w.WriteHeader(http.StatusBadRequest)
+					return
+				}
+				requests++
+				data := map[string]any{"playing": false, "instances": []any{}}
+				if err := json.NewEncoder(w).Encode(protocol.Response{OK: true, Data: data}); err != nil {
+					t.Error(err)
+				}
+			}))
+			t.Cleanup(server.Close)
+			// When
+			resp, err := postGameQAStep(client.New(server.URL), tc.step)
+			// Then
+			if err != nil || resp == nil || !resp.OK || requests != len(tc.want) {
+				t.Fatalf("response=%v error=%v requests=%d, want %d", resp, err, requests, len(tc.want))
+			}
+		})
+	}
+}
