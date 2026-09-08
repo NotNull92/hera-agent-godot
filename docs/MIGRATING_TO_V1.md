@@ -8,13 +8,14 @@ promise and adopts semantic versioning for future changes.
 
 1. Upgrade the `hera` CLI through GitHub Releases, npm, Homebrew, Scoop, or the
    one-line installer.
-2. Replace `addons/hera_agent_godot/` with the v1.0.0 addon from the same
-   release or the Godot Asset Store.
+2. Replace `addons/hera_agent_godot/` with the matching addon from the same
+   release (currently `v1.1.0`) or the Godot Asset Store.
 3. Fully quit and restart Godot. Toggling the plugin does not reload every
    preloaded addon script from disk.
 4. Run `hera version`, `hera status`, and `hera smoke --skip-game`.
 
 The CLI and addon ship together and should use the same release version.
+`v1.1.0` is a compatible minor upgrade from `v1.0.0` on the same contract.
 Existing project scenes, the opt-in shared token, instance discovery location,
 and `hera-agent-godot` transitional command alias remain compatible.
 

@@ -69,9 +69,12 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 스크린샷, 시각 UI, 렌더러 출력, 창/입력 동작은 이 티어의 범위 밖이며 Godot
 4.2–4.6까지 라이브 런타임 지원을 넓히지 않습니다.
 
-이 티어는 구성되었지만 **GitHub Actions 원격 검증은 아직 대기 중**입니다. 실제로
-권한을 받아 실행한 GitHub Actions가 성공하기 전까지 이 레시피는 원격 런타임 지원의
-증거가 아닙니다.
+원격 GitHub Actions 검증은 2026-07-13에 커밋
+[`5c0ba65`](https://github.com/NotNull92/hera-agent-godot/commit/5c0ba6562961a6a11ab581d0f4eab440d34ce008)에서
+통과했습니다.
+[성공한 실행](https://github.com/NotNull92/hera-agent-godot/actions/runs/29256396824)에는
+비시각 에디터→게임 수명주기와 requirement-covered 런타임 로직 시나리오가
+포함됩니다.
 
 ## 저토큰, 실측
 

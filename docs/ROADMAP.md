@@ -29,7 +29,7 @@ to drive Godot from a shell.
 
 ## Shipped in v1.1.0 — play-clock, reparent, joypad input (2026-09-07)
 
-CLI follow-up work in this working tree:
+Shipped CLI follow-up on `v1.1.0`:
 
 - [x] Restore the original node name on reparent undo after a sibling-name collision.
 - [x] `script validate`: use the selected editor's engine for bounded, fresh
@@ -291,8 +291,8 @@ Goal: put Hera where agents (not just humans) pick their tools, and remove
       `a025f918…f501aa`, 100 entries, embedded manifest `0.9.0`; release
       workflow run 29310410241 with `go test -race`), the store version was
       uploaded on the Versions tab (Min `Godot 4.2` / Max undefined, Stable).
-      The public page still exposed the older v0.8 Summary metadata on
-      2026-07-21, so the v1.0 Settings update must replace it per
+      The public page still exposed older Summary metadata on 2026-07-21;
+      later Settings updates shipped with v1.0.0 and v1.1.0. Record:
       [docs/releases/v0.9.0-asset-store-upload.md](./releases/v0.9.0-asset-store-upload.md).
       The v0.9 scope is Phase 8 itself: agent-side distribution
       (npm `hera-godot@0.9.0`, Homebrew tap, Scoop bucket — all pinned to the

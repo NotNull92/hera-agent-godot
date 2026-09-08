@@ -2,7 +2,7 @@
 
 Hera gives agents eyes, hands, and proof in the live Godot editor.
 
-This folder is the **distributable addon** for the current `v0.9.0` baseline. To
+This folder is the **distributable addon** for the current `v1.1.0` baseline. To
 use it in your own project:
 
 1. Use any **Godot 4.2–4.7** stable build (4.7 recommended — it gets the full
@@ -16,16 +16,11 @@ shared-token auth: put a random string in `~/.hera-agent-godot/token` (or set
 `HERA_AGENT_GODOT_TOKEN`) and reload the plugin — see the repo's
 `docs/SECURITY.md`.
 
-`v0.9.0` adds **value-syntax hints** — when a node/game/resource value can't be
-parsed, the error names the expected Godot variant text (e.g. `Vector2(x, y)` or
-a flat `PackedVector2Array(...)`) — and a steadier `game qa` runtime lifecycle,
-on top of the v0.8.0 baseline: verified Godot **4.2–4.7** support, opt-in
-shared-token auth, a documented CLI output contract backed by golden tests, and
-quieter startup in user projects. The v0.7.0 surface remains: the Hera
-main-screen panel with Game Feel Mode controls, `guidance ui`,
-`guidance game-feel`, bundled `game_feel` topics, scoped runtime UI reads,
-runtime input injection, input diagnostics, deterministic QA helper discovery,
-and requirement-covered QA scenarios.
+`v1.1.0` is a minor cut on the v1 contract: GDScript or C# by filename,
+`node reparent`, `game clock`, joypad/axis input, `game input sequence`,
+`script validate`, isolated `game --pid` targeting, and safer undo/resource
+batches. Upgrade the CLI and addon together and fully restart Godot. The
+verified Godot range remains **4.2–4.7**.
 
 ## Layout
 
@@ -35,8 +30,8 @@ and requirement-covered QA scenarios.
 | `hera_agent_plugin.gd` | `@tool` `EditorPlugin`; owns server, queue, heartbeat, registry. |
 | `core/` | response helpers, settings, `ToolRegistry`, and the Hera main-screen panel. |
 | `server/` | `http_server`, `work_queue`, `heartbeat`. |
-| `tools/` | Handlers for status, guidance, game feel, run, scene, editor, script, project, classdb, node, signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
-| `runtime/` | Runtime autoload for live game inspection/control, UI tree reads, semantic clicks, input injection, input logs, assertions, and screenshot analysis during play sessions. |
+| `tools/` | Handlers for status, guidance, game feel, run, scene, editor, script (including validate), project, classdb, node (including reparent), signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
+| `runtime/` | Runtime autoload for live game inspection/control, play clock, UI tree reads, semantic clicks, keyboard/mouse/joypad input, sequences, input logs, assertions, and screenshot analysis during play sessions. |
 
 The entry script uses `@tool`, so it runs inside the editor. Full design and CLI
 docs: <https://github.com/NotNull92/hera-agent-godot>.
