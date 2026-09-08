@@ -1,9 +1,11 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented. `v1.1.0` is the in-progress minor
-cut on the v1 contract (addon manifest `1.1.0`). `v1.0.0` remains the previous
-GitHub Release (2026-07-21). See
+has the core CLI/addon surface implemented. The `v1.1.0` GitHub Release is
+published 2026-09-08 (addon manifest `1.1.0`). Scoop and npm manifests are
+pinned in-repo; Homebrew Formula merged
+([NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1)).
+Asset Store and `npm publish` remain owner steps:
 [docs/releases/v1.1.0-asset-store-upload.md](./releases/v1.1.0-asset-store-upload.md).
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
