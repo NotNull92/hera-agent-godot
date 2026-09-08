@@ -5,9 +5,9 @@ has the core CLI/addon surface implemented. The `v1.1.0` GitHub Release is
 published 2026-09-08 (addon manifest `1.1.0`). Scoop is pinned in-repo;
 Homebrew Formula merged
 ([NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1));
-the owner submitted the Asset Store version on 2026-09-08.
-`npm publish` of `hera-godot@1.1.0` is still outstanding (registry is `1.0.0`):
-[docs/releases/v1.1.0-asset-store-upload.md](./releases/v1.1.0-asset-store-upload.md).
+the owner submitted the Asset Store version on 2026-09-08;
+`hera-godot@1.1.0` is on npm (published 2026-09-08).
+See [docs/releases/v1.1.0-asset-store-upload.md](./releases/v1.1.0-asset-store-upload.md).
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
@@ -343,8 +343,8 @@ Goal: declare the contract stable and make depending on Hera boring.
       front and center.
 - [x] Asset Store upload `v1.0.0` submitted by the owner on 2026-07-21;
       `v1.1.0` submitted 2026-09-08. GitHub Release assets, Scoop, and
-      Homebrew for `v1.1.0` are published. npm registry still serves
-      `hera-godot@1.0.0` until the owner publishes `1.1.0`.
+      Homebrew for `v1.1.0` are published. `hera-godot@1.1.0` is on npm
+      (2026-09-08).
 - [ ] Announcement posts (Godot forums, Discord, sibling Unity repo
       cross-link).
 

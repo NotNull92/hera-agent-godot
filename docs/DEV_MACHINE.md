@@ -122,11 +122,12 @@ buffering.
   more). `gh pr create` works; `gh pr edit` (GraphQL) fails on missing
   `read:org` — use REST (`gh api -X PATCH .../pulls/N`) instead.
 - **`npm publish` needs the user's own terminal**: the npm account
-  (`notnull92`) has 2FA, publish triggers EOTP, and npm masks the
-  `npmjs.com/auth/cli/<token>` URL as `***` in every non-TTY stream including
-  its own debug log. Ask the user to run `npm publish` in PowerShell (browser
-  auth works there) or to pass `--otp=<code>`. Package + bump steps:
-  [packaging/README.md](../packaging/README.md).
+  (`notnull92`) has 2FA. A stale session shows as `npm whoami` 401 and
+  `npm publish` PUT **404** (not a missing package). Re-login as `notnull92`
+  (`npm logout` then `npm login`) until `whoami` prints that name, then
+  publish from `packaging/npm/`. npm masks the
+  `npmjs.com/auth/cli/<token>` URL as `***` in non-TTY streams. Package + bump
+  steps: [packaging/README.md](../packaging/README.md).
 
 ## Web-form gotchas (external listings & stores)
 

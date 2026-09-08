@@ -1,8 +1,8 @@
 # Release records
 
 Current cut: **[v1.1.0](v1.1.0-asset-store-upload.md)** (GitHub Release 2026-09-08;
-Asset Store submitted 2026-09-08). Store paste, checksums, and remaining
-channel steps live there.
+Asset Store submitted 2026-09-08; `hera-godot@1.1.0` on npm the same day).
+Store paste and checksums live there.
 
 Older Asset Store submissions are short historical records. Full superseded
 store copy is not kept in-tree.
