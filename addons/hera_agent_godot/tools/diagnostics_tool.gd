@@ -24,8 +24,16 @@ func execute(params: Dictionary) -> Dictionary:
 	# `clean` says false rather than true in that state on purpose. It cannot be
 	# asserted, and a false "all clear" is the failure worth preventing; pair it
 	# with `available` and `hint` to tell "cannot see" apart from "saw problems".
-	if not enabled or not FileAccess.file_exists(log_path):
-		var reason := "No log file yet." if enabled else "File logging is disabled."
+	var log_file: FileAccess = FileAccess.open(log_path, FileAccess.READ) if enabled else null
+	var log_bytes := PackedByteArray()
+	var readable := false
+	if log_file != null:
+		var length := log_file.get_length()
+		log_bytes = log_file.get_buffer(length)
+		readable = log_bytes.size() == length and log_file.get_error() in [OK, ERR_FILE_EOF]
+		log_file.close()
+	if not readable:
+		var reason := "Log file is missing or unreadable." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
 			"file_logging_enabled": enabled,
@@ -38,7 +46,7 @@ func execute(params: Dictionary) -> Dictionary:
 			"hint": "%s This log only ever covers the running project — Godot installs no file logger in an editor session, so editor-console messages are never in it. Enable Project Settings > debug/file_logging/enable_file_logging for project runs, or relaunch the editor with --log-file <path> to capture editor output." % reason,
 		})
 
-	var all_lines := FileAccess.get_file_as_string(log_path).split("\n", false)
+	var all_lines := log_bytes.get_string_from_utf8().split("\n", false)
 	var errors: Array = []
 	var warnings: Array = []
 	for line in all_lines:

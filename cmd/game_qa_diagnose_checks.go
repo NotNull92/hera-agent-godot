@@ -10,6 +10,11 @@ func evaluateGameQADiagnostics(data map[string]any, options gameQADiagnoseOption
 	}
 	check := map[string]any{"name": "editor_diagnostics", "ok": true, "errors": errors, "warnings": warnings}
 	issues := make([]string, 0, 3)
+	if available, exists := data["available"]; exists {
+		if _, valid := available.(bool); !valid {
+			return gameQADiagnoseFailure("editor_diagnostics", fmt.Errorf("invalid availability")), []string{"editor diagnostics response is incomplete"}
+		}
+	}
 	// Zero errors means nothing when the editor cannot read its own log: with
 	// file logging off the counts are always zero, so a silent pass here would
 	// report a healthy project purely because we are blind. Only an explicit

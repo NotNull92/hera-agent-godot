@@ -14,29 +14,30 @@ type gameQAScenario struct {
 }
 
 type gameQAStep struct {
-	Tool        string         `json:"tool"`
-	Path        string         `json:"path"`
-	Prop        string         `json:"prop"`
-	Props       []string       `json:"props"`
-	Op          string         `json:"op"`
-	Value       any            `json:"value"`
-	X           int            `json:"x"`
-	Y           int            `json:"y"`
-	Text        string         `json:"text"`
-	Action      string         `json:"action"`
-	Scene       string         `json:"scene"`
-	Current     bool           `json:"current"`
-	Wait        bool           `json:"wait"`
-	Method      string         `json:"method"`
-	Args        []any          `json:"args"`
-	Analyze     bool           `json:"analyze"`
-	Lines       int            `json:"lines"`
-	MaxErrors   int            `json:"max_errors"`
-	MaxWarnings int            `json:"max_warnings"`
-	DurationMS  int            `json:"duration_ms"`
-	Covers      []string       `json:"covers"`
-	Params      map[string]any `json:"params"`
-	targetPID   int
+	Tool         string         `json:"tool"`
+	Path         string         `json:"path"`
+	Prop         string         `json:"prop"`
+	Props        []string       `json:"props"`
+	Op           string         `json:"op"`
+	Value        any            `json:"value"`
+	X            int            `json:"x"`
+	Y            int            `json:"y"`
+	Text         string         `json:"text"`
+	Action       string         `json:"action"`
+	Scene        string         `json:"scene"`
+	Current      bool           `json:"current"`
+	Wait         bool           `json:"wait"`
+	Method       string         `json:"method"`
+	Args         []any          `json:"args"`
+	Analyze      bool           `json:"analyze"`
+	Lines        int            `json:"lines"`
+	MaxErrors    int            `json:"max_errors"`
+	MaxWarnings  *int           `json:"max_warnings"`
+	DurationMS   int            `json:"duration_ms"`
+	Covers       []string       `json:"covers"`
+	Params       map[string]any `json:"params"`
+	valueMissing bool
+	targetPID    int
 }
 
 type gameQAResult struct {
@@ -85,8 +86,8 @@ func validateGameQAScenario(scenario gameQAScenario) error {
 	}
 	plannedCoverage := map[string]bool{}
 	for index, step := range scenario.Steps {
-		if step.Tool == "" {
-			return fmt.Errorf("step %d: tool is required", index+1)
+		if err := validateGameQAStep(step); err != nil {
+			return fmt.Errorf("step %d: %w", index+1, err)
 		}
 		for _, requirement := range step.Covers {
 			plannedCoverage[requirement] = true
@@ -154,4 +155,22 @@ func coveredRequirements(requirements []string, missing []string) []string {
 		}
 	}
 	return covered
+}
+
+func (step *gameQAStep) UnmarshalJSON(raw []byte) error {
+	type plainStep gameQAStep
+	if err := json.Unmarshal(raw, (*plainStep)(step)); err != nil {
+		return err
+	}
+	if step.Tool != "game.node.set" && step.Tool != "game.assert" {
+		return nil
+	}
+	var fields struct {
+		Value json.RawMessage `json:"value"`
+	}
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		return err
+	}
+	step.valueMissing = fields.Value == nil && (step.Tool == "game.node.set" || step.Op != "exists")
+	return nil
 }

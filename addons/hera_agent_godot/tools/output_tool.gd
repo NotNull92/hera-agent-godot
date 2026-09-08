@@ -23,8 +23,16 @@ func execute(params: Dictionary) -> Dictionary:
 	# Same blind spot as `diagnostics`: with file logging off, a stale log from an
 	# earlier run still reads, so reporting `available` on file existence alone
 	# would return an empty tail as if the project were quiet.
-	if not enabled or not FileAccess.file_exists(log_path):
-		var reason := "No log file yet." if enabled else "File logging is disabled."
+	var log_file: FileAccess = FileAccess.open(log_path, FileAccess.READ) if enabled else null
+	var log_bytes := PackedByteArray()
+	var readable := false
+	if log_file != null:
+		var length := log_file.get_length()
+		log_bytes = log_file.get_buffer(length)
+		readable = log_bytes.size() == length and log_file.get_error() in [OK, ERR_FILE_EOF]
+		log_file.close()
+	if not readable:
+		var reason := "Log file is missing or unreadable." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
 			"file_logging_enabled": enabled,
@@ -35,7 +43,7 @@ func execute(params: Dictionary) -> Dictionary:
 
 	var max_lines := int(params.get("lines", 100))
 	var type_filter := String(params.get("type", "all")).to_lower()
-	var all_lines := FileAccess.get_file_as_string(log_path).split("\n", false)
+	var all_lines := log_bytes.get_string_from_utf8().split("\n", false)
 
 	var filtered: Array = []
 	for line in all_lines:

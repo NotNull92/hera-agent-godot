@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"math"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/NotNull92/hera-agent-godot/internal/client"
@@ -234,13 +236,13 @@ func validateDiagnosticsThresholds(resp *protocol.Response, step gameQAStep) err
 	if !ok {
 		return fmt.Errorf("diagnostics returned unexpected data")
 	}
-	errorCount, _ := numericField(data, "error_count")
-	warningCount, _ := numericField(data, "warning_count")
-	if errorCount > step.MaxErrors {
-		return fmt.Errorf("diagnostics errors = %d, want <= %d", errorCount, step.MaxErrors)
+	maxWarnings := noGameQAWarningLimit
+	if step.MaxWarnings != nil {
+		maxWarnings = *step.MaxWarnings
 	}
-	if step.MaxWarnings > 0 && warningCount > step.MaxWarnings {
-		return fmt.Errorf("diagnostics warnings = %d, want <= %d", warningCount, step.MaxWarnings)
+	_, issues := evaluateGameQADiagnostics(data, gameQADiagnoseOptions{maxErrors: step.MaxErrors, maxWarnings: maxWarnings})
+	if len(issues) > 0 {
+		return fmt.Errorf("%s", strings.Join(issues, "; "))
 	}
 	return nil
 }
@@ -252,9 +254,12 @@ func numericField(values map[string]any, key string) (int, bool) {
 	}
 	switch typed := value.(type) {
 	case float64:
+		if math.IsNaN(typed) || typed < 0 || typed >= -float64(math.MinInt) || math.Trunc(typed) != typed {
+			return 0, false
+		}
 		return int(typed), true
 	case int:
-		return typed, true
+		return typed, typed >= 0
 	default:
 		return 0, false
 	}
