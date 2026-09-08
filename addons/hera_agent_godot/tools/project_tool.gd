@@ -1,5 +1,7 @@
 extends RefCounted
 
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 const DEFAULT_LIMIT := 500
@@ -81,7 +83,7 @@ func _mkdir(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("directory path is required")
 	if not path.begins_with("res://"):
 		return ToolResponse.failure("directory path must start with res://")
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return ToolResponse.failure("directory path must stay inside res://")
 	var err := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path))
 	if err != OK:
@@ -124,7 +126,7 @@ func _set_main_scene(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("scene path is required")
 	if not path.begins_with("res://"):
 		return ToolResponse.failure("scene path must start with res://")
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return ToolResponse.failure("scene path must stay inside res://")
 	if path.get_extension().to_lower() != "tscn":
 		return ToolResponse.failure("scene path must end with .tscn")
@@ -134,14 +136,14 @@ func _set_main_scene(params: Dictionary) -> Dictionary:
 	var err := ProjectSettings.save()
 	if err != OK:
 		return ToolResponse.failure("could not save ProjectSettings: %s" % error_string(err))
-	return ToolResponse.success({ "main_scene": path })
+	return ToolResponse.success({ "main_scene": path, "project_path": ProjectSettings.globalize_path("res://").trim_suffix("/") })
 
 func _guard_project_file(path: String) -> String:
 	if path == "":
 		return "file path is required"
 	if not path.begins_with("res://"):
 		return "file path must start with res://"
-	if not _is_safe_res_path(path):
+	if not ProjectPathSafety.is_safe_res_path(path):
 		return "file path must stay inside res://"
 	if not FileAccess.file_exists(path):
 		return "file not found: %s" % path
@@ -199,14 +201,3 @@ func _refresh_filesystem() -> void:
 	var fs := EditorInterface.get_resource_filesystem()
 	if fs != null:
 		fs.scan()
-
-func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true

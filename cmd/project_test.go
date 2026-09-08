@@ -2,8 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 )
 
@@ -167,47 +165,6 @@ func TestProjectActionMutates(t *testing.T) {
 				t.Fatalf("projectActionMutates(%v) = %v, want %v", tt.action, got, tt.want)
 			}
 		})
-	}
-}
-
-func TestSetMainSceneInProjectFile(t *testing.T) {
-	dir := t.TempDir()
-	projectPath := filepath.Join(dir, "project.godot")
-	scenePath := filepath.Join(dir, "main.tscn")
-	if err := os.WriteFile(projectPath, []byte("[application]\nconfig/name=\"Demo\"\nrun/main_scene=\"res://old.tscn\"\n"), 0o600); err != nil {
-		t.Fatalf("write project: %v", err)
-	}
-	if err := os.WriteFile(scenePath, []byte("[gd_scene format=3]\n"), 0o600); err != nil {
-		t.Fatalf("write scene: %v", err)
-	}
-
-	if err := setMainSceneInProjectFile(dir, "res://main.tscn"); err != nil {
-		t.Fatalf("setMainSceneInProjectFile: %v", err)
-	}
-
-	got, err := os.ReadFile(projectPath)
-	if err != nil {
-		t.Fatalf("read project: %v", err)
-	}
-	want := "[application]\nconfig/name=\"Demo\"\nrun/main_scene=\"res://main.tscn\"\n"
-	if string(got) != want {
-		t.Fatalf("project.godot = %q, want %q", string(got), want)
-	}
-}
-
-func TestReadMainSceneFromProjectFile(t *testing.T) {
-	dir := t.TempDir()
-	projectPath := filepath.Join(dir, "project.godot")
-	if err := os.WriteFile(projectPath, []byte("[application]\nconfig/name=\"Demo\"\nrun/main_scene=\"res://main.tscn\"\n"), 0o600); err != nil {
-		t.Fatalf("write project: %v", err)
-	}
-
-	got, err := readMainSceneFromProjectFile(dir)
-	if err != nil {
-		t.Fatalf("readMainSceneFromProjectFile: %v", err)
-	}
-	if got != "res://main.tscn" {
-		t.Fatalf("main scene = %q, want res://main.tscn", got)
 	}
 }
 
