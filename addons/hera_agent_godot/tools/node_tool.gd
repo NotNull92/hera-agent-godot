@@ -251,7 +251,8 @@ func _reparent_node(root: Node, params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("cannot reparent a node under its own descendant")
 	var keep := bool(params.get("keep_global_transform", true))
 	var old_index := node.get_index()
-	var old_owner := node.owner
+	var owners: Dictionary = {}
+	_snapshot_owners(node, owners)
 	var old_name := node.name
 	if _undo_redo != null:
 		_undo_redo.create_action("Hera: reparent %s" % String(node.name))
@@ -259,7 +260,8 @@ func _reparent_node(root: Node, params: Dictionary) -> Dictionary:
 		_undo_redo.add_undo_method(node, "reparent", old_parent, keep)
 		_undo_redo.add_undo_method(node, "set_name", old_name)
 		_undo_redo.add_undo_method(old_parent, "move_child", node, old_index)
-		_undo_redo.add_undo_method(node, "set_owner", old_owner)
+		for owned_node in owners:
+			_undo_redo.add_undo_method(owned_node, "set_owner", owners[owned_node])
 		_undo_redo.commit_action()
 	else:
 		node.reparent(new_parent, keep)
