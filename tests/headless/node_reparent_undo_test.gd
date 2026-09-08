@@ -1,4 +1,5 @@
 extends SceneTree
+# Hera test: editor
 
 const NodeTool = preload("res://addons/hera_agent_godot/tools/node_tool.gd")
 

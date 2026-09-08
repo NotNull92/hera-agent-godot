@@ -117,6 +117,10 @@ jobs:
           fi
           exit "$status"
 
+      - name: Run standalone Godot regressions
+        if: matrix.godot-version == '4.7-stable'
+        run: GODOT_BIN="$HOME/godot-bin/godot" bash tests/headless/run.sh
+
   headless-runtime:
     name: Nonvisual runtime (Godot 4.7-stable)
     runs-on: ubuntu-24.04

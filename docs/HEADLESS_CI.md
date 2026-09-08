@@ -367,3 +367,7 @@ Hera-specific lifecycle and output rules come from this repository's
 are checked against the canonical [Godot engine](https://github.com/godotengine/godot)
 and [Godot documentation](https://github.com/godotengine/godot-docs)
 repositories; hosted-runner facts come from [GitHub Docs](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+
+## Standalone behavioral regressions
+
+Run `GODOT_BIN=/absolute/path/to/godot bash tests/headless/run.sh` with a direct engine executable (not the Windows console launcher). The Godot 4.7 CI row runs this after static validation. Each `tests/headless/*_test.gd` gets a fresh minimal project, copied addon, and private user directories. A `# Hera test: editor` marker enables editor initialization only for tests that require it. Imports and tests each have a 45-second bound. Nonzero exits and script/parser errors fail the runner; editor shutdown RID/ObjectDB messages remain visible in logs and are not treated as assertion failures. `KEEP=1` preserves successful evidence; failed runs always preserve it. This suite complements the live CLI tier above.
