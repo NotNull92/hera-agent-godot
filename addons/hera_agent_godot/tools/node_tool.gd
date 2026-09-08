@@ -200,21 +200,25 @@ func _remove_node(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
 	if path == "" or path == ".":
 		return ToolResponse.failure("cannot remove the scene root")
-	var node := root.get_node_or_null(path)
+	var node := _resolve(root, path)
 	if node == null:
 		return ToolResponse.failure("node not found: %s" % path)
+	if node == root:
+		return ToolResponse.failure("cannot remove the scene root")
 	var parent := node.get_parent()
 	if parent == null:
 		return ToolResponse.failure("node has no parent: %s" % path)
 	var index := node.get_index()
-	var old_owner := node.owner
+	var owners: Dictionary = {}
+	_snapshot_owners(node, owners)
 
 	if _undo_redo != null:
 		_undo_redo.create_action("Hera: remove %s" % String(node.name))
 		_undo_redo.add_do_method(parent, "remove_child", node)
 		_undo_redo.add_undo_method(parent, "add_child", node)
 		_undo_redo.add_undo_method(parent, "move_child", node, index)
-		_undo_redo.add_undo_method(node, "set_owner", old_owner)
+		for owned_node in owners:
+			_undo_redo.add_undo_method(owned_node, "set_owner", owners[owned_node])
 		_undo_redo.add_undo_reference(node)
 		_undo_redo.commit_action()
 	else:
@@ -227,7 +231,7 @@ func _reparent_node(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
 	if path == "" or path == ".":
 		return ToolResponse.failure("cannot reparent the scene root")
-	var node := root.get_node_or_null(path)
+	var node := _resolve(root, path)
 	if node == null:
 		return ToolResponse.failure("node not found: %s" % path)
 	if node == root:
@@ -338,7 +342,13 @@ func _detach_script(root: Node, params: Dictionary) -> Dictionary:
 	return ToolResponse.success({ "path": path, "script": "" })
 
 func _resolve(root: Node, path: String) -> Node:
-	return root if path == "." else root.get_node_or_null(path)
+	var node := root if path == "." else root.get_node_or_null(path)
+	return node if node == root or (node != null and root.is_ancestor_of(node)) else null
+
+func _snapshot_owners(node: Node, owners: Dictionary) -> void:
+	owners[node] = node.owner
+	for child in node.get_children():
+		_snapshot_owners(child, owners)
 
 func _property_info(node: Node, prop: String) -> Dictionary:
 	for p in node.get_property_list():
