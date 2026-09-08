@@ -2,10 +2,11 @@
 
 Phased build plan. Each phase is independently testable. The current repository
 has the core CLI/addon surface implemented. The `v1.1.0` GitHub Release is
-published 2026-09-08 (addon manifest `1.1.0`). Scoop and npm manifests are
-pinned in-repo; Homebrew Formula merged
-([NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1)).
-Asset Store and `npm publish` remain owner steps:
+published 2026-09-08 (addon manifest `1.1.0`). Scoop is pinned in-repo;
+Homebrew Formula merged
+([NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1));
+the owner submitted the Asset Store version on 2026-09-08.
+`npm publish` of `hera-godot@1.1.0` is still outstanding (registry is `1.0.0`):
 [docs/releases/v1.1.0-asset-store-upload.md](./releases/v1.1.0-asset-store-upload.md).
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
@@ -340,11 +341,10 @@ Goal: declare the contract stable and make depending on Hera boring.
       labeled starter-issue set.
 - [ ] Browsable docs site (GitHub Pages) with the contract and support matrix
       front and center.
-- [x] Asset Store upload `v1.0.0` submitted by the owner on 2026-07-21.
-      GitHub Release assets, npm publication, the Scoop manifest, the Homebrew
-      Formula, local upload verification, and form-copy preparation are
-      complete. The public Store page still lists v0.9.0 while v1.0.0 is
-      processed.
+- [x] Asset Store upload `v1.0.0` submitted by the owner on 2026-07-21;
+      `v1.1.0` submitted 2026-09-08. GitHub Release assets, Scoop, and
+      Homebrew for `v1.1.0` are published. npm registry still serves
+      `hera-godot@1.0.0` until the owner publishes `1.1.0`.
 - [ ] Announcement posts (Godot forums, Discord, sibling Unity repo
       cross-link).
 

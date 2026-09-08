@@ -1,9 +1,8 @@
 # Godot Editor Analysis Strategy
 
-Hera should not treat Godot like a closed editor binary. Unity-style binary
-inspection is possible, but Godot gives us a stronger path: source-aligned
-editor API work, live object introspection, and a debug-symbol editor build when
-native stepping is needed.
+Hera should not treat Godot like a closed editor binary. Godot gives a
+source-aligned path: editor API work, live object introspection, and a
+debug-symbol editor build when native stepping is needed.
 
 ## 1. Source-aligned analysis
 
@@ -14,10 +13,10 @@ belongs in Hera, not to guess at runtime state from disk.
 | Need | Primary Godot source area | Hera surface |
 |---|---|---|
 | Open scenes, edited root, play state, editor selection | `editor/editor_interface.cpp`, `editor/editor_node.cpp` | `editor state`, `scene list`, `scene tree`, `run`, `stop` |
-| Scene tree edits and undo behavior | `editor/docks/scene_tree_dock.cpp`, `scene/main/node.cpp` | `node add/instance/set/remove`, `signal connect/disconnect` |
+| Scene tree edits and undo behavior | `editor/docks/scene_tree_dock.cpp`, `scene/main/node.cpp` | `node add/instance/set/remove/reparent`, `signal connect/disconnect` |
 | Inspector-visible data | `core/object/object.cpp`, `core/object/class_db.cpp` | `node get`, `resource get`, `classdb *` |
 | Script editor and focused script | `editor/plugins/script_editor_plugin.cpp`, `editor/editor_interface.cpp` | `script current`, `script inspect`, `script open` |
-| Runtime game process state | `scene/main/scene_tree.cpp`, `scene/main/window.cpp` | `game tree`, `game ui tree`, `game node get/set/call`, `game screenshot` |
+| Runtime game process state | `scene/main/scene_tree.cpp`, `scene/main/window.cpp` | `game tree`, `game ui tree`, `game clock`, `game node get/set/call`, `game screenshot` |
 
 Useful upstream references:
 

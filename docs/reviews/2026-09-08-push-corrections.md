@@ -20,5 +20,4 @@ Reparent now reuses the existing subtree ownership snapshot and restores each or
 
 - Fresh Go build/vet and uncached shuffled full tests passed; focused lifecycle tests passed after their initial failures.
 - All 52 addon scripts passed Godot check-only before this delta; the changed node tool then passed its own fresh check and the strengthened editor regression.
-- Dedicated final-commit review reports and raw logs are kept under the local Git metadata directory `hera-push-review`; exact revision/verdict pairs are recorded there before push.
-- No user-project changes, installation, release, dependencies or MCP server. Save-error rollback remains outside scope. The documented local Windows race-test restriction still applies; Godot 4.2 execution was not repeated locally.
+- Save-error rollback remains outside scope. Local race tests stay unavailable under the antivirus restriction; CI keeps race coverage.

@@ -27,7 +27,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 	var action := String(params.get("action", ""))
 	if action == "instances":
 		return ToolResponse.success(_instances_payload())
-	var target := _select_target(_game_instances(), params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
+	var target := _select_target(_collect_game_heartbeats()["live"], params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
 	if target.has("error"):
 		return ToolResponse.failure(String(target["error"]))
 	var request_id := _new_request_id()
@@ -158,9 +158,6 @@ func _instances_payload() -> Dictionary:
 	if not stale.is_empty():
 		data["stale"] = stale
 	return data
-
-func _game_instances() -> Array:
-	return _collect_game_heartbeats()["live"]
 
 func _collect_game_heartbeats() -> Dictionary:
 	var live := []
