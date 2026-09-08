@@ -1,9 +1,14 @@
 extends RefCounted
 
+const VariantText = preload("res://addons/hera_agent_godot/core/variant_text.gd")
+
+const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+
 static func apply_props(res: Resource, raw_props: Variant) -> Dictionary:
 	if typeof(raw_props) != TYPE_DICTIONARY:
 		return { "ok": false, "error": "props must be an object" }
 	var set_props := {}
+	var values: Dictionary = {}
 	var props: Dictionary = raw_props
 	for raw_name in props.keys():
 		var prop_name := String(raw_name)
@@ -13,8 +18,9 @@ static func apply_props(res: Resource, raw_props: Variant) -> Dictionary:
 		var coerced := _coerce(props[raw_name], prop_info)
 		if not bool(coerced.get("ok", false)):
 			return { "ok": false, "error": String(coerced.get("error", "invalid property value")) }
-		var value: Variant = coerced.get("value")
-		res.set(prop_name, value)
+		values[prop_name] = coerced.get("value")
+	for prop_name in values:
+		res.set(prop_name, values[prop_name])
 		set_props[prop_name] = str(res.get(prop_name))
 	return { "ok": true, "properties": set_props }
 
@@ -27,7 +33,13 @@ static func _property_info(res: Resource, prop: String) -> Dictionary:
 static func _coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
 	var target_type := int(prop_info.get("type", TYPE_NIL))
 	if typeof(raw) != TYPE_STRING:
-		return { "ok": true, "value": raw }
+		if typeof(raw) == target_type or (raw == null and target_type == TYPE_OBJECT):
+			return { "ok": true, "value": raw }
+		if typeof(raw) == TYPE_INT and target_type == TYPE_FLOAT:
+			return { "ok": true, "value": float(raw) }
+		if typeof(raw) == TYPE_FLOAT and target_type == TYPE_INT and is_finite(raw) and raw >= -9223372036854775808.0 and raw < 9223372036854775808.0 and raw == float(int(raw)):
+			return { "ok": true, "value": int(raw) }
+		return { "ok": false, "error": "property expects %s, got %s%s" % [type_string(target_type), type_string(typeof(raw)), VariantText.hint_suffix(target_type)] }
 	var text := String(raw)
 	match target_type:
 		TYPE_STRING:
@@ -58,9 +70,9 @@ static func _coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
 		_:
 			var parsed: Variant = str_to_var(text)
 			if parsed == null and text != "null":
-				return { "ok": false, "error": "invalid %s value for property: %s%s" % [type_string(target_type), text, _hint_suffix(target_type)] }
+				return { "ok": false, "error": "invalid %s value for property: %s%s" % [type_string(target_type), text, VariantText.hint_suffix(target_type)] }
 			if typeof(parsed) != target_type:
-				return { "ok": false, "error": "property expects %s, got %s%s" % [type_string(target_type), type_string(typeof(parsed)), _hint_suffix(target_type)] }
+				return { "ok": false, "error": "property expects %s, got %s%s" % [type_string(target_type), type_string(typeof(parsed)), VariantText.hint_suffix(target_type)] }
 			return { "ok": true, "value": parsed }
 
 static func _coerce_resource_object(text: String, prop_info: Dictionary) -> Dictionary:
@@ -68,7 +80,7 @@ static func _coerce_resource_object(text: String, prop_info: Dictionary) -> Dict
 		return { "ok": true, "value": null }
 	if not (text.begins_with("res://") or text.begins_with("user://")):
 		return { "ok": false, "error": "object property expects a resource path or null: %s" % String(prop_info.get("name", "")) }
-	if text.begins_with("res://") and not _is_safe_res_path(text):
+	if text.begins_with("res://") and not ProjectPathSafety.is_safe_res_path(text):
 		return { "ok": false, "error": "resource path must stay inside res://" }
 	if not ResourceLoader.exists(text):
 		return { "ok": false, "error": "resource not found: %s" % text }
@@ -79,67 +91,3 @@ static func _coerce_resource_object(text: String, prop_info: Dictionary) -> Dict
 	if expected != "" and not loaded.is_class(expected):
 		return { "ok": false, "error": "resource type %s is not compatible with property %s (%s)" % [loaded.get_class(), String(prop_info.get("name", "")), expected] }
 	return { "ok": true, "value": loaded }
-
-static func _is_safe_res_path(path: String) -> bool:
-	if path.find("\\") != -1:
-		return false
-	var rel := path.substr("res://".length())
-	if rel == "" or rel.begins_with("/"):
-		return false
-	for part in rel.split("/", true):
-		if part == "" or part == "." or part == "..":
-			return false
-	return true
-
-# Appended to a coercion error so an agent can fix the value from the first
-# failure. Complex properties are parsed with the engine's own str_to_var, so
-# the accepted form is Godot variant text — the same text a .tscn stores.
-static func _hint_suffix(target_type: int) -> String:
-	var hint := _syntax_hint(target_type)
-	if hint != "":
-		return " — use Godot variant text, e.g. %s" % hint
-	return " — use Godot variant text (the form var_to_str() produces)"
-
-static func _syntax_hint(target_type: int) -> String:
-	match target_type:
-		TYPE_VECTOR2:
-			return "Vector2(x, y) like Vector2(120, 200)"
-		TYPE_VECTOR2I:
-			return "Vector2i(x, y)"
-		TYPE_VECTOR3:
-			return "Vector3(x, y, z)"
-		TYPE_VECTOR3I:
-			return "Vector3i(x, y, z)"
-		TYPE_VECTOR4:
-			return "Vector4(x, y, z, w)"
-		TYPE_VECTOR4I:
-			return "Vector4i(x, y, z, w)"
-		TYPE_RECT2:
-			return "Rect2(x, y, w, h)"
-		TYPE_RECT2I:
-			return "Rect2i(x, y, w, h)"
-		TYPE_COLOR:
-			return "Color(r, g, b, a) like Color(0.3, 0.8, 1, 1)"
-		TYPE_ARRAY:
-			return "[a, b, c]"
-		TYPE_DICTIONARY:
-			return "{\"key\": value}"
-		TYPE_PACKED_BYTE_ARRAY:
-			return "PackedByteArray(1, 2, 3)"
-		TYPE_PACKED_INT32_ARRAY:
-			return "PackedInt32Array(1, 2, 3)"
-		TYPE_PACKED_INT64_ARRAY:
-			return "PackedInt64Array(1, 2, 3)"
-		TYPE_PACKED_FLOAT32_ARRAY:
-			return "PackedFloat32Array(1, 2)"
-		TYPE_PACKED_FLOAT64_ARRAY:
-			return "PackedFloat64Array(1, 2)"
-		TYPE_PACKED_STRING_ARRAY:
-			return "PackedStringArray(\"a\", \"b\")"
-		TYPE_PACKED_VECTOR2_ARRAY:
-			return "PackedVector2Array(x1, y1, x2, y2, …) — a flat number list"
-		TYPE_PACKED_VECTOR3_ARRAY:
-			return "PackedVector3Array(x1, y1, z1, …) — a flat number list"
-		TYPE_PACKED_COLOR_ARRAY:
-			return "PackedColorArray(Color(1, 1, 1, 1))"
-	return ""

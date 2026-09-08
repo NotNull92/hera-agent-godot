@@ -91,6 +91,10 @@ func _set_items(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("theme set requires a 'type'")
 
 	var applied := {}
+	var values: Array[Dictionary] = []
+	for group in ["colors", "constants", "font_sizes"]:
+		if typeof(params.get(group, {})) != TYPE_DICTIONARY:
+			return ToolResponse.failure("%s must be an object" % group)
 
 	var colors: Dictionary = params.get("colors", {})
 	for item in colors.keys():
@@ -98,7 +102,7 @@ func _set_items(params: Dictionary) -> Dictionary:
 		var parsed: Variant = str_to_var(text)
 		if typeof(parsed) != TYPE_COLOR:
 			return ToolResponse.failure("invalid Color for %s: %s — use Color(r, g, b, a) like Color(0.3, 0.8, 1, 1)" % [item, text])
-		theme.set_color(String(item), type_name, parsed)
+		values.append({"kind": Theme.DATA_TYPE_COLOR, "name": String(item), "value": parsed})
 		applied[String(item)] = _color_text(parsed)
 
 	var constants: Dictionary = params.get("constants", {})
@@ -106,7 +110,7 @@ func _set_items(params: Dictionary) -> Dictionary:
 		var text2 := String(constants[item])
 		if not text2.is_valid_int():
 			return ToolResponse.failure("invalid int for constant %s: %s" % [item, text2])
-		theme.set_constant(String(item), type_name, int(text2))
+		values.append({"kind": Theme.DATA_TYPE_CONSTANT, "name": String(item), "value": int(text2)})
 		applied[String(item)] = int(text2)
 
 	var font_sizes: Dictionary = params.get("font_sizes", {})
@@ -114,11 +118,14 @@ func _set_items(params: Dictionary) -> Dictionary:
 		var text3 := String(font_sizes[item])
 		if not text3.is_valid_int():
 			return ToolResponse.failure("invalid int for font size %s: %s" % [item, text3])
-		theme.set_font_size(String(item), type_name, int(text3))
+		values.append({"kind": Theme.DATA_TYPE_FONT_SIZE, "name": String(item), "value": int(text3)})
 		applied[String(item)] = int(text3)
 
 	if applied.is_empty():
 		return ToolResponse.failure("theme set requires at least one of colors, constants or font_sizes")
+
+	for value in values:
+		theme.set_theme_item(int(value["kind"]), String(value["name"]), type_name, value["value"])
 
 	var err := ResourceSaver.save(theme, path)
 	if err != OK:
