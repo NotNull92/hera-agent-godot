@@ -1,5 +1,7 @@
 extends RefCounted
 
+const Geometry = preload("res://addons/hera_agent_godot/runtime/game_ui_geometry.gd")
+
 const FULLSCREEN_COVERAGE := 0.95
 const PIXEL_TOLERANCE := 1.0
 
@@ -37,7 +39,7 @@ static func check_interactive_rect(
 	state: Dictionary,
 	options: Dictionary
 ) -> void:
-	var rect := control.get_global_rect()
+	var rect := Geometry.rect(control)
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		_record(state, options, {
 			"rule": RULE_EMPTY_RECT,
@@ -90,9 +92,9 @@ static func check_minimum_size_fit(
 		"rule": RULE_MINIMUM_EXCEEDS_PARENT,
 		"severity": "warning",
 		"path": String(control.get_path()),
-		"rect": _rect_data(control.get_global_rect()),
+		"rect": _rect_data(Geometry.rect(control)),
 		"related_path": String(parent_control.get_path()),
-		"related_rect": _rect_data(parent_control.get_global_rect()),
+		"related_rect": _rect_data(Geometry.rect(parent_control)),
 		"minimum_size": _size_data(minimum),
 		"axes": axes,
 	})
@@ -118,10 +120,10 @@ static func check_sibling_overlaps(
 		var siblings: Array = raw_siblings
 		for first_index in range(siblings.size()):
 			var first := siblings[first_index] as Control
-			var first_rect := first.get_global_rect()
+			var first_rect := Geometry.rect(first)
 			for second_index in range(first_index + 1, siblings.size()):
 				var second := siblings[second_index] as Control
-				var second_rect := second.get_global_rect()
+				var second_rect := Geometry.rect(second)
 				var overlap := first_rect.intersection(second_rect)
 				if overlap.size.x <= PIXEL_TOLERANCE or overlap.size.y <= PIXEL_TOLERANCE:
 					continue
@@ -139,7 +141,7 @@ static func check_sibling_overlaps(
 static func is_fullscreen_blocker(control: Control) -> bool:
 	if control.mouse_filter == Control.MOUSE_FILTER_IGNORE:
 		return false
-	var rect := control.get_global_rect()
+	var rect := Geometry.rect(control)
 	var viewport_rect := control.get_viewport().get_visible_rect()
 	var viewport_area := viewport_rect.size.x * viewport_rect.size.y
 	if viewport_area <= 0.0:
@@ -165,7 +167,7 @@ static func check_fullscreen_blockers(
 			"rule": RULE_FULLSCREEN_BLOCKER,
 			"severity": "warning",
 			"path": String(candidate.get_path()),
-			"rect": _rect_data(candidate.get_global_rect()),
+			"rect": _rect_data(Geometry.rect(candidate)),
 			"related_rect": _rect_data(candidate.get_viewport().get_visible_rect()),
 		})
 
@@ -177,7 +179,7 @@ static func _effective_clip_rect(control: Control, viewport_rect: Rect2) -> Rect
 		if ancestor is Control:
 			var parent_control := ancestor as Control
 			if parent_control.clip_contents:
-				result = result.intersection(parent_control.get_global_rect())
+				result = result.intersection(Geometry.rect(parent_control))
 		ancestor = ancestor.get_parent()
 	return result
 

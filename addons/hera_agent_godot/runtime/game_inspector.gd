@@ -66,7 +66,6 @@ func _handle_file(path: String, response_path: String) -> void:
 		return
 	var text := file.get_as_text()
 	file.close()
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	# A poll can catch the file mid-write, so a parse failure is an expected
 	# retry, not a fault. JSON.parse_string() prints an engine error on every
 	# failure; JSON.parse() reports it quietly.
@@ -77,6 +76,9 @@ func _handle_file(path: String, response_path: String) -> void:
 	if typeof(decoded) != TYPE_DICTIONARY:
 		return
 	var request := decoded as Dictionary
+	# Consume before dispatch (including awaits), but only after a complete parse.
+	if DirAccess.remove_absolute(ProjectSettings.globalize_path(path)) != OK:
+		return
 	if String(request.get("id", "")) == "":
 		_write(response_path, { "ok": false, "error": "invalid game request" })
 		return
@@ -214,9 +216,10 @@ func _call_node(request: Dictionary) -> Dictionary:
 	if method == "" or not node.has_method(method):
 		return _response(request, false, { "error": "node has no method: %s" % method })
 	var call_args := GameValueCodec.call_args(request)
+	var resolved_path := String(node.get_path())
 	var result: Variant = node.callv(method, call_args)
 	return _response(request, true, {
-		"path": String(node.get_path()),
+		"path": resolved_path,
 		"method": method,
 		"result": str(result),
 		"type": type_string(typeof(result)),
@@ -443,7 +446,7 @@ func _record_input_event(event: InputEvent, source: String) -> void:
 
 func _record_mouse_button(event: InputEventMouseButton, source: String) -> void:
 	var now := Time.get_ticks_msec()
-	var button_name := _mouse_button_name(event.button_index)
+	var button_name := GameViewportActions._mouse_button_name(event.button_index)
 	var duration_ms := 0
 	if event.pressed:
 		_mouse_presses[event.button_index] = {
@@ -484,7 +487,7 @@ func _record_mouse_motion(event: InputEventMouseMotion, source: String) -> void:
 	_append_input_log(entry)
 
 func _record_key(event: InputEventKey, source: String) -> void:
-	var key_name := _key_name(event.keycode if event.keycode != 0 else event.physical_keycode)
+	var key_name := GameViewportActions._key_name(event.keycode if event.keycode != 0 else event.physical_keycode)
 	if event.pressed:
 		_active_keys[key_name] = true
 	else:
@@ -582,61 +585,9 @@ func _active_key_names() -> Array[String]:
 func _active_mouse_button_names() -> Array[String]:
 	var values: Array[String] = []
 	for button in _active_mouse_buttons.keys():
-		values.append(_mouse_button_name(int(button)))
+		values.append(GameViewportActions._mouse_button_name(int(button)))
 	values.sort()
 	return values
-
-func _mouse_button_name(index: int) -> String:
-	match index:
-		MOUSE_BUTTON_LEFT:
-			return "left"
-		MOUSE_BUTTON_RIGHT:
-			return "right"
-		MOUSE_BUTTON_MIDDLE:
-			return "middle"
-		MOUSE_BUTTON_WHEEL_UP:
-			return "wheel_up"
-		MOUSE_BUTTON_WHEEL_DOWN:
-			return "wheel_down"
-		_:
-			return str(index)
-
-func _key_name(keycode: int) -> String:
-	if keycode >= KEY_A and keycode <= KEY_Z:
-		return "KEY_%s" % String.chr(65 + keycode - KEY_A)
-	if keycode >= KEY_0 and keycode <= KEY_9:
-		return "KEY_%s" % String.chr(48 + keycode - KEY_0)
-	match keycode:
-		KEY_SPACE:
-			return "KEY_SPACE"
-		KEY_ENTER:
-			return "KEY_ENTER"
-		KEY_ESCAPE:
-			return "KEY_ESCAPE"
-		KEY_TAB:
-			return "KEY_TAB"
-		KEY_BACKSPACE:
-			return "KEY_BACKSPACE"
-		KEY_LEFT:
-			return "KEY_LEFT"
-		KEY_RIGHT:
-			return "KEY_RIGHT"
-		KEY_UP:
-			return "KEY_UP"
-		KEY_DOWN:
-			return "KEY_DOWN"
-		KEY_SHIFT:
-			return "KEY_SHIFT"
-		KEY_CTRL:
-			return "KEY_CTRL"
-		KEY_ALT:
-			return "KEY_ALT"
-		KEY_META:
-			return "KEY_META"
-		_:
-			if keycode >= KEY_F1 and keycode <= KEY_F12:
-				return "KEY_F%d" % (keycode - KEY_F1 + 1)
-	return str(keycode)
 
 func _method_arg_names(method: Dictionary) -> Array[String]:
 	var names: Array[String] = []

@@ -1,5 +1,7 @@
 extends RefCounted
 
+const Geometry = preload("res://addons/hera_agent_godot/runtime/game_ui_geometry.gd")
+
 const DEFAULT_FIELDS: Array[String] = ["path", "type", "name", "visible", "rect", "text", "disabled", "pressed"]
 const ALLOWED_FIELDS: Dictionary = {
 	"path": true,
@@ -64,7 +66,7 @@ static func _click_target_by_path(root: Node, current_scene: Node, path: String)
 	if not (node is Control):
 		return { "ok": false, "error": "click target is not a Control: %s" % path }
 	var control: Control = node as Control
-	var control_position := _click_position_for_control(control)
+	var control_position := _click_position_for_control(control, root.get_viewport())
 	if not bool(control_position.get("ok", false)):
 		return control_position
 	control_position["path"] = String(control.get_path())
@@ -76,24 +78,26 @@ static func _click_target_by_text(root: Node, text: String) -> Dictionary:
 	var control := _find_control_by_text(root, text)
 	if control == null:
 		return { "ok": false, "error": "control with text not found: %s" % text }
-	var control_position := _click_position_for_control(control)
+	var control_position := _click_position_for_control(control, root.get_viewport())
 	if not bool(control_position.get("ok", false)):
 		return control_position
 	control_position["path"] = String(control.get_path())
 	control_position["text"] = text
 	return control_position
 
-static func _click_position_for_control(control: Control) -> Dictionary:
+static func _click_position_for_control(control: Control, viewport: Viewport) -> Dictionary:
+	if control.get_viewport() != viewport:
+		return { "ok": false, "error": "click target belongs to another viewport: %s" % String(control.get_path()) }
 	if not control.is_visible_in_tree():
 		return { "ok": false, "error": "click target is not visible: %s" % String(control.get_path()) }
 	if control is BaseButton:
 		var button: BaseButton = control as BaseButton
 		if button.disabled:
 			return { "ok": false, "error": "click target is disabled: %s" % String(control.get_path()) }
-	var rect := control.get_global_rect()
+	var rect := Geometry.rect(control)
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return { "ok": false, "error": "click target has an empty rect: %s" % String(control.get_path()) }
-	return { "ok": true, "position": rect.position + rect.size * 0.5 }
+	return { "ok": true, "position": Geometry.center(control) }
 
 static func _collect_ui(node: Node, out: Array, max_nodes: int, request: Dictionary, fields: Array, max_depth: int, depth: int) -> void:
 	if out.size() > max_nodes:
@@ -110,7 +114,7 @@ static func _collect_ui(node: Node, out: Array, max_nodes: int, request: Diction
 			return
 
 static func _control_summary(control: Control, fields: Array) -> Dictionary:
-	var rect := control.get_global_rect()
+	var rect := Geometry.rect(control)
 	var item := {}
 	if fields.has("path"):
 		item["path"] = String(control.get_path())

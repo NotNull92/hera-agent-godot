@@ -70,11 +70,18 @@ func _write_request(request: Dictionary, game_pid: int) -> String:
 	var response_path := _response_path(game_pid, request_id)
 	if FileAccess.file_exists(response_path):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(response_path))
-	var file := FileAccess.open(_request_path(game_pid, request_id), FileAccess.WRITE)
+	var final_path := ProjectSettings.globalize_path(_request_path(game_pid, request_id))
+	var temporary_path := "%s.%d.%d.tmp" % [final_path, OS.get_process_id(), Time.get_ticks_usec()]
+	var file := FileAccess.open(temporary_path, FileAccess.WRITE)
 	if file == null:
 		return "could not write game request"
 	file.store_string(JSON.stringify(request))
+	file.flush()
+	var write_error := file.get_error()
 	file.close()
+	if write_error != OK or DirAccess.rename_absolute(temporary_path, final_path) != OK:
+		DirAccess.remove_absolute(temporary_path)
+		return "could not publish game request"
 	return ""
 
 func _read_response(game_pid: int, request_id: String) -> Dictionary:
