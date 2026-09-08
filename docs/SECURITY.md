@@ -14,7 +14,10 @@ and how to enable the opt-in shared-token auth.
   blocks the straightforward malicious-web-page CSRF and DNS-rebinding paths —
   browsers attach `Origin` to cross-origin POSTs.
 - Requests are capped at 1 MiB, one request per connection
-  (`Connection: close`), 5 s per-connection timeout.
+  (`Connection: close`), with separate 5 s receive and response-write deadlines.
+  Response writes advance in bounded, nonblocking chunks from the editor loop;
+  a client that stops reading cannot stall it. Queued tools retain their own
+  execution deadlines; disconnected clients and expired writes are discarded.
 - No TLS: traffic never leaves the loopback interface.
 - Heartbeat files (`~/.hera-agent-godot/instances/*.json`) advertise pid,
   port, project path, and Godot version. They contain **no secrets**, and live
@@ -58,12 +61,25 @@ Both sides resolve the token identically:
 2. `~/.hera-agent-godot/token` (contents, whitespace-trimmed), else
 3. empty → auth off.
 
+A missing or empty token file intentionally leaves auth off. If the file cannot
+be opened or read for another reason, the addon refuses to start its HTTP
+listener or publish a heartbeat. Fix the file access error and restart the
+editor, or supply a non-empty environment token override.
+
 To enable:
 
+```sh
+# POSIX shell: restrict both newly created and existing files before writing.
+umask 077
+mkdir -p ~/.hera-agent-godot
+chmod 700 ~/.hera-agent-godot
+touch ~/.hera-agent-godot/token
+chmod 600 ~/.hera-agent-godot/token
+openssl rand -hex 24 > ~/.hera-agent-godot/token
 ```
-# any random string; keep it out of the repo
-openssl rand -hex 24 > ~/.hera-agent-godot/token   # or write the file by hand
-```
+
+On Windows, use a file in your own profile with an ACL that excludes other
+accounts, or use the environment variable. Keep the secret out of the repo.
 
 then **reload the plugin** (or restart the editor): the addon reads the token
 once at plugin start. The CLI re-reads it on every invocation, so no CLI-side

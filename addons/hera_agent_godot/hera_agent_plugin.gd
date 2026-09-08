@@ -87,8 +87,13 @@ func _enter_tree() -> void:
 	_registry.register(batch_tool)
 
 	_queue = WorkQueue.new()
+	var token_result := HttpServer.load_shared_token()
+	if token_result.has("error"):
+		_set_main_status("Not connected: shared token read failed", false)
+		push_error("[hera] refusing HTTP startup: %s" % token_result["error"])
+		return
 	_server = HttpServer.new()
-	_server.auth_token = HttpServer.load_shared_token()
+	_server.auth_token = String(token_result["token"])
 	var bound: int = _server.start(8770)
 	if bound == 0:
 		_server = null

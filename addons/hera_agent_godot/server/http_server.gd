@@ -14,6 +14,7 @@ const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.g
 
 const CLIENT_TIMEOUT_MSEC := 5000
 const MAX_REQUEST_BYTES := 1048576
+const WRITE_CHUNK_BYTES := 65536
 const TOKEN_ENV_VAR := "HERA_AGENT_GODOT_TOKEN"
 
 var port := 0
@@ -24,7 +25,7 @@ var port := 0
 var auth_token := ""
 
 var _server: TCPServer
-var _clients: Array = [] # each entry: { "conn": StreamPeerTCP, "buf": PackedByteArray, "accepted_msec": int }
+var _clients: Array = [] # conn, buf, state (reading/queued/writing), deadline; output and offset when writing
 
 # Bind to the first free port in [base_port, base_port + attempts).
 # Returns the bound port, or 0 on failure.
@@ -54,13 +55,13 @@ func poll(queue) -> void:
 		return
 	var now_msec := Time.get_ticks_msec()
 	while _server.is_connection_available():
-		_clients.append({ "conn": _server.take_connection(), "buf": PackedByteArray(), "accepted_msec": now_msec })
+		_clients.append({ "conn": _server.take_connection(), "buf": PackedByteArray(), "state": "reading", "deadline": now_msec + CLIENT_TIMEOUT_MSEC })
 
 	var keep: Array = []
 	for entry in _clients:
 		var conn: StreamPeerTCP = entry["conn"]
 		conn.poll()
-		if now_msec - int(entry["accepted_msec"]) > CLIENT_TIMEOUT_MSEC:
+		if entry["state"] != "queued" and now_msec > int(entry["deadline"]):
 			conn.disconnect_from_host()
 			continue
 		var status := conn.get_status()
@@ -69,6 +70,22 @@ func poll(queue) -> void:
 			continue
 		if status != StreamPeerTCP.STATUS_CONNECTED:
 			continue # dropped/errored — discard
+		if entry["state"] == "writing":
+			var output: PackedByteArray = entry["output"]
+			var offset: int = entry["offset"]
+			var written: Array = conn.put_partial_data(output.slice(offset, mini(offset + WRITE_CHUNK_BYTES, output.size())))
+			if written[0] != OK:
+				conn.disconnect_from_host()
+				continue
+			entry["offset"] = offset + int(written[1])
+			if int(entry["offset"]) == output.size():
+				conn.disconnect_from_host()
+			else:
+				keep.append(entry)
+			continue
+		if entry["state"] == "queued":
+			keep.append(entry)
+			continue
 
 		var available := conn.get_available_bytes()
 		if available > 0:
@@ -79,6 +96,7 @@ func poll(queue) -> void:
 				entry["buf"] = buf
 				if buf.size() > MAX_REQUEST_BYTES:
 					_write_http(conn, 413, "Payload Too Large", ToolResponse.failure("request too large"))
+					keep.append(entry)
 					continue
 
 		var parsed := _parse_request(entry["buf"])
@@ -98,22 +116,37 @@ func poll(queue) -> void:
 		elif parsed["body"] == null:
 			_write_http(conn, 400, "Bad Request", ToolResponse.failure("invalid json body"))
 		else:
+			entry["state"] = "queued"
+			entry["buf"] = PackedByteArray()
 			queue.enqueue({ "conn": conn, "request": parsed["body"] })
+		keep.append(entry)
 	_clients = keep
 
-# Write a successful tool response and close the connection.
+# Queue a successful tool response; poll flushes it without blocking the editor.
 func respond(conn: StreamPeerTCP, response: Dictionary) -> void:
 	_write_http(conn, 200, "OK", response)
 
 func _write_http(conn: StreamPeerTCP, code: int, reason: String, body: Dictionary) -> void:
+	var entry: Dictionary = {}
+	for client: Dictionary in _clients:
+		if client["conn"] == conn:
+			entry = client
+			break
+	# An asynchronous tool can finish after disconnection, timeout, or stop().
+	if entry.is_empty() or entry["state"] == "writing":
+		return
 	var body_bytes := JSON.stringify(body).to_utf8_buffer()
 	var header := "HTTP/1.1 %d %s\r\n" % [code, reason]
 	header += "Content-Type: application/json\r\n"
 	header += "Content-Length: %d\r\n" % body_bytes.size()
 	header += "Connection: close\r\n\r\n"
-	conn.put_data(header.to_ascii_buffer())
-	conn.put_data(body_bytes)
-	conn.disconnect_from_host()
+	var output := header.to_ascii_buffer()
+	output.append_array(body_bytes)
+	entry["output"] = output
+	entry["offset"] = 0
+	entry["buf"] = PackedByteArray()
+	entry["state"] = "writing"
+	entry["deadline"] = Time.get_ticks_msec() + CLIENT_TIMEOUT_MSEC
 
 # Parse an accumulated buffer into { complete, method, path, origin, token, body }.
 # body is the decoded JSON Dictionary (or null on parse failure / empty).
@@ -170,18 +203,26 @@ func _parse_request(buf: PackedByteArray) -> Dictionary:
 # HERA_AGENT_GODOT_TOKEN environment variable wins, then
 # ~/.hera-agent-godot/token (whitespace-trimmed). Empty string = auth off.
 # Read once at plugin start; changing the token needs a plugin reload.
-static func load_shared_token() -> String:
+static func load_shared_token() -> Dictionary:
 	if OS.has_environment(TOKEN_ENV_VAR):
 		var env_token := OS.get_environment(TOKEN_ENV_VAR).strip_edges()
 		if env_token != "":
-			return env_token
+			return { "token": env_token }
 	var path := _token_home_dir().path_join(".hera-agent-godot").path_join("token")
-	if not FileAccess.file_exists(path):
-		return ""
+	if DirAccess.dir_exists_absolute(path):
+		return { "error": "shared token path is a directory: %s" % path }
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		return ""
-	return file.get_as_text().strip_edges()
+		var error := FileAccess.get_open_error()
+		if error == ERR_FILE_NOT_FOUND:
+			return { "token": "" }
+		return { "error": "cannot open shared token file: %s (error %d)" % [path, error] }
+	var token := file.get_as_text().strip_edges()
+	var error := file.get_error()
+	file.close()
+	if error != OK and error != ERR_FILE_EOF:
+		return { "error": "cannot read shared token file: %s (error %d)" % [path, error] }
+	return { "token": token }
 
 # Match Go's os.UserHomeDir(): USERPROFILE on Windows, HOME elsewhere.
 static func _token_home_dir() -> String:
