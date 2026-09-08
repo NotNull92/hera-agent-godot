@@ -35,29 +35,31 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 현재 릴리스 기준: v1.0.0
+## 현재 릴리스 기준: v1.1.0
 
-`v1.0.0`은 저장소 태그와 애드온 매니페스트 기준 버전입니다. 문서화된 안정 CLI
-계약을 동결하고 명시적인 사용 중단 정책과 함께 시맨틱 버저닝을 채택합니다.
+`v1.1.0`은 저장소 태그와 애드온 매니페스트 기준 버전입니다. v1 계약 위의
+마이너 릴리스로, 명령과 experimental 필드를 추가하며 문서화된 안정 JSON을
+의도적으로 깨지 않습니다.
 
-주요 변경 사항:
+v1.0.0 이후 주요 변경:
 
-- **안정 계약과 SemVer:** 문서화된 안정 명령, 출력 필드, 스트림, 종료 코드
-  의미에 메이저 버전 호환성 약속을 적용합니다
-  ([docs/CONTRACT.md](docs/CONTRACT.md)).
-- **Godot 네이티브 UI 테마 QA:** 에이전트가 `Theme` 리소스 항목을 읽고 수정한
-  뒤 간격, 타입, 색상, 대비, 컨테이너, 장식 측정 규칙을 적용할 수 있습니다.
-- **스크린샷 diff:** 프로젝트 이미지를 업로드하지 않고 두 캡처의 변경 픽셀 수,
-  비율, 경계 상자를 로컬에서 계산합니다.
-- **더 신뢰할 수 있는 라이브 상태:** discovery가 heartbeat 교체를 제한된
-  backoff로 재시도하고, diagnostics가 거짓 clean 대신 로깅 사각지대를 보고하며,
-  런타임 파일 교환은 정상적인 경합 잡음을 출력하지 않습니다.
-- **0.9에서 깨지는 마이그레이션 없음:** CLI와 애드온을 함께 업데이트하고
-  에디터를 재시작하면 기존 스크립트와 인증 설정을 유지할 수 있습니다.
-  [docs/MIGRATING_TO_V1.md](docs/MIGRATING_TO_V1.md)를 참고하세요.
+- **언어 선택:** 파일 확장자로 `.gd` 또는 `.cs`를 만들고 열고 붙입니다. C#은
+  Godot .NET과 로드된 어셈블리가 필요합니다.
+  [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
+- **플레이 시계와 입력:** `game clock`으로 `SceneTree.paused` /
+  `Engine.time_scale` / 한 프레임 스텝, 조이패드·축 주입,
+  `game input sequence`.
+- **씬과 스크립트:** 실행 취소 가능한 `node reparent`, 연결된 에디터 엔진으로
+  디스크 스크립트를 검사하는 `script validate`.
+- **정직한 런타임:** `game --pid`로 게임 프로세스 선택, 캡처 실측 크기, 만료된
+  에디터 heartbeat는 `stale`, 공유 `user://` 표시.
+- **더 안전한 변경:** undo 시 서브트리 owner 보존, 리소스/테마 일괄 검증,
+  토큰 읽기 실패 시 시작 거부, QA 시나리오 사전 검사.
 
-릴리스 노트와 Asset Store 패키징 세부 사항:
-[docs/releases/v1.0.0-asset-store-upload.md](docs/releases/v1.0.0-asset-store-upload.md).
+CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. 릴리스 노트와 Asset
+Store 패키징:
+[docs/releases/v1.1.0-asset-store-upload.md](docs/releases/v1.1.0-asset-store-upload.md).
+v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 
 ## 헤드리스 CI(구성된 티어)
 
@@ -88,12 +90,12 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 
 ## 명령 표면
 
-`v1.0.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
+`v1.1.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
 `status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
-`node`(읽기+쓰기+리소스/스크립트 연결), `signal`,
+`node`(읽기+쓰기+reparent+리소스/스크립트 연결), `signal`,
 `resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),
 `theme`(Theme 리소스 항목 get/set),
-`game`(런타임 검사+UI audit+input+input-log+set/call/click+assert+QA+screenshot),
+`game`(런타임 검사+UI audit+clock+input+joypad/축+sequence+input-log+set/call/click+assert+QA+screenshot),
 `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`(캡처 +
 로컬 before/after `diff`), `batch`,
 `smoke` + `--json`/`--ids` 출력 모드. 명령 레퍼런스는

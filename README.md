@@ -35,31 +35,32 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current release baseline: v1.0.0
+## Current release baseline: v1.1.0
 
-`v1.0.0` is the repository tag and addon manifest baseline. It freezes Hera's
-documented stable CLI contract and adopts semantic versioning with a written
-deprecation policy.
+`v1.1.0` is the repository tag and addon manifest baseline. It is a minor
+release on the v1 contract: new commands and experimental fields, no intended
+break of documented stable JSON.
 
-Highlights:
+Highlights since v1.0.0:
 
-- **Stable contract and SemVer:** documented stable commands, output fields,
-  streams, and exit-code meanings now carry a major-version compatibility
-  promise ([docs/CONTRACT.md](docs/CONTRACT.md)).
-- **Godot-native UI theme QA:** agents can inspect and update `Theme` resource
-  items, then apply the bundled measurement rules for spacing, type, color,
-  contrast, containers, and decoration.
-- **Screenshot diff:** compare two captures locally and get the changed pixel
-  count, ratio, and bounding box without uploading project images.
-- **More reliable live truth:** discovery retries heartbeat swaps over bounded
-  backoff, diagnostics report logging blind spots instead of false-clean
-  results, and runtime file exchange no longer prints expected race noise.
-- **No breaking 0.9 migration:** update the CLI and addon together, restart the
-  editor, and keep existing scripts and auth settings. See
-  [docs/MIGRATING_TO_V1.md](docs/MIGRATING_TO_V1.md).
+- **Language selection:** create, inspect, open, and attach `.gd` or `.cs` by
+  filename; C# needs Godot .NET and a loaded assembly. See
+  [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
+- **Play clock and input:** `game clock` for `SceneTree.paused` /
+  `Engine.time_scale` / one-frame step; joypad and axis injection; physics-frame
+  `game input sequence`.
+- **Scene and scripts:** undoable `node reparent`; `script validate` runs the
+  connected editor's engine on a disk script.
+- **Honest runtimes:** `game --pid` selects one live game; screenshots report
+  live capture size; expired editor heartbeats are `stale`; parallel games that
+  share `user://` are flagged.
+- **Safer mutations:** subtree ownership on undo, batched resource/theme
+  validation, fail-closed token startup, and QA scenario preflight.
 
-Release notes and Asset Store packaging details:
-[docs/releases/v1.0.0-asset-store-upload.md](docs/releases/v1.0.0-asset-store-upload.md).
+Upgrade the CLI and addon together and fully restart Godot. Release notes and
+Asset Store packaging:
+[docs/releases/v1.1.0-asset-store-upload.md](docs/releases/v1.1.0-asset-store-upload.md).
+The v1 compatibility promise remains [docs/CONTRACT.md](docs/CONTRACT.md).
 
 ## Nonvisual CI (configured tier)
 
@@ -92,12 +93,13 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 ## Command surface
 
-The `v1.0.0` CLI/addon surface includes:
-`status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`,
-`classdb`, `node` (read + write + resource/script wiring), `signal`, `resource`
+The `v1.1.0` CLI/addon surface includes:
+`status`, `instances`, `run`/`stop`, `scene`, `editor`, `script` (including
+`validate` and `.gd`/`.cs` create), `project`,
+`classdb`, `node` (read + write + reparent + resource/script wiring), `signal`, `resource`
 (get/uid/list/set/create/resave/update-uids/export-mesh-library), `theme`
 (get/set for `Theme` resource items), `game`
-(runtime inspect + UI audit + input + input-log + set/call/click + assert + QA +
+(runtime inspect + UI audit + clock + input + joypad/axis + sequence + input-log + set/call/click + assert + QA +
 screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screenshot`
 (capture + local before/after `diff`),
 `batch`, and `smoke`, with

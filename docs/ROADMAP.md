@@ -1,16 +1,16 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented and the v1.0.0 GitHub Release
-published 2026-07-21. The owner submitted the v1.0.0 Godot Asset Store version
-on 2026-07-21; the public page still exposes v0.9.0 while the new version is
-processed.
+has the core CLI/addon surface implemented. `v1.1.0` is the in-progress minor
+cut on the v1 contract (addon manifest `1.1.0`). `v1.0.0` remains the previous
+GitHub Release (2026-07-21). See
+[docs/releases/v1.1.0-asset-store-upload.md](./releases/v1.1.0-asset-store-upload.md).
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
-## Unreleased: review corrections (2026-09-08)
+## Shipped in v1.1.0 — review corrections (2026-09-08)
 
 - [x] Follow-up re-review: restore all original descendant owners after reparent undo; share QA play/stop waits so stop/state aliases do not wait for a game launch. [Evidence](reviews/2026-09-08-push-corrections.md).
 
@@ -24,7 +24,7 @@ to drive Godot from a shell.
 - [x] Wire standalone Godot behavioral regressions into the 4.7 CI row.
 - Validation and remaining boundaries: [implementation evidence](reviews/2026-09-08-review-fixes.md).
 
-## Unreleased: play-clock, reparent, joypad input (2026-09-07)
+## Shipped in v1.1.0 — play-clock, reparent, joypad input (2026-09-07)
 
 CLI follow-up work in this working tree:
 
@@ -53,7 +53,7 @@ CLI follow-up work in this working tree:
   `InputEventJoypadMotion` via `Input.parse_input_event`.
 - No MCP server. Editor spawn and DAP remain unbuilt.
 
-## Unreleased: GDScript and C# selection (2026-09-07)
+## Shipped in v1.1.0 — GDScript and C# selection (2026-09-07)
 
 - [x] Select `.gd` or `.cs` by filename; optional `script create --lang`
   validates agreement without changing defaults in mixed projects.
@@ -62,7 +62,7 @@ CLI follow-up work in this working tree:
 - [x] Go gates and real Godot 4.7.2 standard/.NET editor checks; generated C#
   compiled and its runtime QA method returned true. Godot 4.2 static checks
   and language/template tests also passed.
-- No release/version bump. Setup, limitations, and reproducible checks:
+- Shipped in `v1.1.0`. Setup, limitations, and reproducible checks:
   [C# support](CSHARP_SUPPORT.md).
 
 ## Phase 0 — Skeleton (this commit)
@@ -346,7 +346,7 @@ Goal: declare the contract stable and make depending on Hera boring.
 - [ ] Announcement posts (Godot forums, Discord, sibling Unity repo
       cross-link).
 
-## Unreleased runtime isolation fixes (2026-09-07)
+## Shipped in v1.1.0 — runtime isolation fixes (2026-09-07)
 
 - [x] Distinguish editor selection (`--instance`) from explicit live game
   selection (`game --pid`), including external runtimes, QA discovery,
@@ -358,7 +358,7 @@ Goal: declare the contract stable and make depending on Hera boring.
 - [x] Reproduced both failures, added Go/GDScript regression checks, and drove
   two external processes plus an excluded-addons PCK through Godot 4.7.2.
 
-## Unreleased viewport, heartbeat, and user-data honesty (2026-09-07)
+## Shipped in v1.1.0 — viewport, heartbeat, and user-data honesty (2026-09-07)
 
 - [x] Runtime screenshots report live PNG, window, visible-rect, and project
   viewport sizes. `size_matches_project` compares the PNG to the project
