@@ -12,6 +12,8 @@ to drive Godot from a shell.
 
 ## Unreleased: review corrections (2026-09-08)
 
+- [x] Follow-up re-review: restore all original descendant owners after reparent undo; share QA play/stop waits so stop/state aliases do not wait for a game launch. [Evidence](reviews/2026-09-08-push-corrections.md).
+
 - [x] Preserve descendant ownership on removal undo and reject resolved root aliases.
 - [x] Validate resource/theme property batches before mutation.
 - [x] Poll bounded HTTP response writes and refuse startup when a configured token cannot be read.

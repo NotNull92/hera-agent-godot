@@ -258,11 +258,12 @@ integrations/             compact Claude Code, Cursor, and AGENTS.md harness kit
 
 ## Security
 
-Undoing node removal restores descendant scene ownership. Resource/theme edits
+Undoing node removal or reparenting restores descendant scene ownership. Resource/theme edits
 validate all requested values before applying them. Runtime UI targeting and
 audit use viewport coordinates, including canvas and camera transforms.
 Scenario QA rejects unreadable diagnostics; omitting `max_warnings` allows
-warnings, while an explicit `0` requires none.
+warnings, while an explicit `0` requires none. QA run steps wait for the requested
+play/stop state; state-only reads return immediately.
 
 The bridge binds `127.0.0.1` only and rejects browser-origin requests.
 Optional shared-token auth locks it to clients that know a secret

@@ -236,6 +236,8 @@ lifecycle, and [ROADMAP.md](./ROADMAP.md) for delivery order.
 
 ### Mutation and transport boundaries
 
-`node remove` rejects the resolved scene root, including aliases such as `Branch/..`; undo restores each descendant's original owner. Resource and theme property batches validate all entries before applying setters. Native JSON resource values must match the property type; integral, finite, in-range JSON numbers are accepted for integer properties. Use typed Godot variant text for packed arrays. Disk save failures are still reported after application and do not provide transactional rollback.
+`node remove` rejects the resolved scene root, including aliases such as `Branch/..`; removal and reparent undo restore each descendant's original owner. Resource and theme property batches validate all entries before applying setters. Native JSON resource values must match the property type; integral, finite, in-range JSON numbers are accepted for integer properties. Use typed Godot variant text for packed arrays. Disk save failures are still reported after application and do not provide transactional rollback.
 
 Runtime Control bounds and click centers include canvas transforms. Node-targeted clicks reject Controls in another Viewport. Runtime requests are published by temporary-file rename, and method calls retain the original target path even when the method frees the node. HTTP responses use bounded partial writes and a separate five-second write deadline.
+
+QA `run` steps with `wait:true` wait for the requested play action, or for stopped editor/runtime state when `action:"stop"`. `action:"state"` remains a snapshot even when `wait:true`. The dedicated `stop` step uses the same stop-wait behavior.

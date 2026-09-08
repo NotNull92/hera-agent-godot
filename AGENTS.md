@@ -298,4 +298,4 @@ For prompt-driven game implementation cycles, follow
 
 ## Review correction boundaries
 
-QA scenario diagnostics require readable logs and valid counts; omitted `max_warnings` is unlimited, explicit zero is strict. Node removal undo preserves descendant ownership. Resource/theme batches validate before mutation, but disk-save failure rollback is not guaranteed. `project set-main-scene` updates and persists through the live editor. Standalone behavioral regressions run with `GODOT_BIN=/absolute/direct/godot bash tests/headless/run.sh`; each uses an isolated project and user directories.
+QA scenario diagnostics require readable logs and valid counts; omitted `max_warnings` is unlimited, explicit zero is strict. Node removal and reparent undo preserve descendant ownership. Resource/theme batches validate before mutation, but disk-save failure rollback is not guaranteed. `project set-main-scene` updates and persists through the live editor. Standalone behavioral regressions run with `GODOT_BIN=/absolute/direct/godot bash tests/headless/run.sh`; each uses an isolated project and user directories.
