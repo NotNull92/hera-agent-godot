@@ -68,6 +68,7 @@ func _enter_tree() -> void:
 	_registry.register(ScriptTool.new())
 	_registry.register(ProjectTool.new())
 	var node_tool := NodeTool.new()
+	node_tool.editor_session_id = status_tool.editor_session_id
 	node_tool.set_undo_redo(get_undo_redo())
 	_registry.register(node_tool)
 	var signal_tool := SignalTool.new()
@@ -130,6 +131,10 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	set_process(false)
+	if _registry != null:
+		var node_tool: RefCounted = _registry.resolve("node")
+		if node_tool != null:
+			node_tool.editor_session_id = ""
 	if _editor_log != null:
 		_editor_log.stop()
 		_editor_log = null

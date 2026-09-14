@@ -35,6 +35,7 @@ func execute(_params: Dictionary) -> Dictionary:
 
 func _capabilities() -> Dictionary:
 	return {
+		"node_set_guard": "supported",
 		"editor_log_cursor": editor_log.capability if editor_log != null else "unverified",
 		"editor_logger_api": _support(ClassDB.class_exists("Logger") and OS.has_method("add_logger") and OS.has_method("remove_logger")),
 		"debugger_messages_api": _support(ClassDB.class_has_method("EditorPlugin", "add_debugger_plugin") and ClassDB.class_has_method("EditorDebuggerSession", "send_message") and EngineDebugger.has_method("register_message_capture") and EngineDebugger.has_method("send_message")),

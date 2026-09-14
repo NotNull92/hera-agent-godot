@@ -16,6 +16,7 @@ const CSharpSupport = preload("res://addons/hera_agent_godot/tools/csharp_script
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const GameFeelGuide = preload("res://addons/hera_agent_godot/core/game_feel_guide.gd")
 const NodeValueCodec = preload("res://addons/hera_agent_godot/tools/node_value_codec.gd")
+const NodeGuard = preload("res://addons/hera_agent_godot/tools/node_guard.gd")
 const NodeSceneInstancer = preload("res://addons/hera_agent_godot/tools/node_scene_instancer.gd")
 const ScriptDependencyDiagnostics = preload("res://addons/hera_agent_godot/tools/script_dependency_diagnostics.gd")
 const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
@@ -24,6 +25,7 @@ const MAX_NODES := 1000
 const MAX_VALUE_LEN := 200
 
 var _undo_redo # EditorUndoRedoManager, injected by the plugin
+var editor_session_id: String = ""
 
 func set_undo_redo(undo_redo) -> void:
 	_undo_redo = undo_redo
@@ -32,10 +34,24 @@ func get_name() -> String:
 	return "node"
 
 func execute(params: Dictionary) -> Dictionary:
+	var action := String(params.get("action", ""))
+	if params.has("expected") or params.has("verify") or action == "set_guarded":
+		if not action in ["set", "set_guarded"] or (params.has("verify") and not params["verify"] is bool):
+			return ToolResponse.failure("invalid expected: guards require node set and boolean verify")
+		var invalid := NodeGuard.validate(params.get("expected"))
+		if invalid != "":
+			return ToolResponse.failure(invalid)
+		if editor_session_id == "":
+			return ToolResponse.failure("capability_unavailable: editor session is unavailable")
+		if params["expected"]["editor_session_id"] != editor_session_id:
+			return ToolResponse.failure("session_mismatch: editor session changed")
+	if params.has("snapshot") and (action != "get" or params.get("snapshot") != true or not params.get("prop") is String):
+		return ToolResponse.failure("snapshot requires node get with one prop")
 	var root := EditorInterface.get_edited_scene_root()
 	if root == null:
+		if params.has("expected"):
+			return ToolResponse.failure("state_conflict: no scene is open")
 		return ToolResponse.failure("no scene is open in the editor")
-	var action := String(params.get("action", ""))
 	match action:
 		"find":
 			return _find(root, params)
@@ -45,7 +61,7 @@ func execute(params: Dictionary) -> Dictionary:
 			return _add_node(root, params)
 		"instance":
 			return NodeSceneInstancer.execute(root, params, _undo_redo)
-		"set":
+		"set", "set_guarded":
 			return _set_property(root, params)
 		"set_resource":
 			return _set_resource_property(root, params)
@@ -93,12 +109,19 @@ func _describe(root: Node, params: Dictionary) -> Dictionary:
 	var properties := _properties_from_request(node, params)
 	if not bool(properties.get("ok", false)):
 		return ToolResponse.failure(String(properties.get("error", "property not found")))
-	return ToolResponse.success({
+	var data := {
 		"path": String(params.get("path", ".")),
 		"type": node.get_class(),
 		"name": String(node.name),
 		"properties": properties.get("properties", {}),
-	})
+	}
+	if params.get("snapshot", false):
+		var prop := String(params["prop"])
+		var expected := NodeGuard.snapshot(editor_session_id, root, node, prop, _property_info(node, prop))
+		if editor_session_id == "" or expected.is_empty():
+			return ToolResponse.failure("capability_unavailable: property cannot be represented by node_set_guard")
+		data["expected"] = expected
+	return ToolResponse.success(data)
 
 func _add_node(root: Node, params: Dictionary) -> Dictionary:
 	var type := String(params.get("type", ""))
@@ -139,10 +162,14 @@ func _set_property(root: Node, params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", "."))
 	var node := _resolve(root, path)
 	if node == null:
+		if params.has("expected"):
+			return ToolResponse.failure("state_conflict: node no longer exists at target path")
 		return ToolResponse.failure("node not found: %s" % path)
 	var prop := String(params.get("prop", ""))
 	var prop_info := _property_info(node, prop)
 	if prop == "" or prop_info.is_empty():
+		if params.has("expected"):
+			return ToolResponse.failure("state_conflict: property no longer exists")
 		return ToolResponse.failure("node has no property: %s" % prop)
 
 	var old_value: Variant = node.get(prop)
@@ -150,6 +177,14 @@ func _set_property(root: Node, params: Dictionary) -> Dictionary:
 	if not bool(coerced.get("ok", false)):
 		return ToolResponse.failure(String(coerced.get("error", "invalid property value")))
 	var new_value: Variant = coerced.get("value")
+	var session := editor_session_id
+	var node_id := str(node.get_instance_id())
+	if params.has("expected"):
+		var conflict := NodeGuard.compare(editor_session_id, root, node, prop, prop_info, old_value, params["expected"])
+		if conflict != "":
+			return ToolResponse.failure(conflict)
+		if typeof(new_value) != int(prop_info["type"]):
+			return ToolResponse.failure("invalid property value: guarded value must match the property type")
 
 	if _undo_redo != null:
 		_undo_redo.create_action("Hera: set %s.%s" % [String(node.name), prop])
@@ -159,6 +194,13 @@ func _set_property(root: Node, params: Dictionary) -> Dictionary:
 	else:
 		node.set(prop, new_value)
 
+	if params.has("expected"):
+		if session != editor_session_id or not is_instance_valid(root) or root != EditorInterface.get_edited_scene_root() or root.scene_file_path != params["expected"]["scene"] or not is_instance_valid(node) or node.is_queued_for_deletion() or _resolve(root, path) != node or str(node.get_instance_id()) != node_id or _property_info(node, prop).is_empty():
+			return ToolResponse.failure("verification_unavailable: mutation applied; original target is no longer available (not rolled back)")
+		var actual: Variant = node.get(prop)
+		if params.get("verify", false) and not NodeGuard.equal(actual, new_value):
+			return ToolResponse.failure("verification_failed: mutation applied; property differs from requested value (not rolled back)")
+		return ToolResponse.success({"path": path, "prop": prop, "value": str(actual), "editor_session_id": session, "scene": root.scene_file_path, "node_instance_id": node_id, "verification": "passed" if params.get("verify", false) else "not_requested"})
 	return ToolResponse.success({ "path": path, "prop": prop, "value": str(node.get(prop)) })
 
 func _set_resource_property(root: Node, params: Dictionary) -> Dictionary:

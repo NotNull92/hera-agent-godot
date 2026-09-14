@@ -171,6 +171,21 @@ debugger connection, logger collector, completed import, or rendered frame.
 remain `unverified` because status does not perform those behavioral probes.
 There is no version-to-capability table and no API dump in responses.
 
+`node_set_guard: supported` advertises the bounded conditional `node set`
+implementation, not merely an engine API. The node tool receives the same
+session ID as status and heartbeat. Teardown clears the node tool's session
+before retiring the registry, invalidating a setter still holding that tool.
+CLI preflight retains one selected client,
+including for guarded batch entries. Guarded writes use an internal
+`set_guarded` action so an old addon replacing the endpoint after preflight
+cannot silently treat them as ordinary writes. On the editor main thread, the shared
+node setter compares current scene/node identity and typed property value
+before undo registration, without an intervening await. Snapshot serialization
+roundtrips through the property codec; equality compares typed Variants, never
+display strings. Post-set reads check the original target again. Custom
+setters are not isolated or rolled back, and node set never saves to disk.
+See [COMMANDS](COMMANDS.md#conditional-node-property-changes) for type limits.
+
 The addon republishes the file by staging it under a temp name and swapping it
 in with `DirAccess.rename_absolute`. That swap is atomic on POSIX but **not on
 Windows**, where Godot's `DirAccess::rename` removes an existing destination
