@@ -119,8 +119,11 @@ func _enter_tree() -> void:
 func _process(delta: float) -> void:
 	if _server != null:
 		_server.poll(_queue)
-		for item in _queue.drain():
+		var queue: RefCounted = _queue
+		for item in queue.drain():
 			_handle(item)
+			if queue.operations.retired:
+				return
 
 	if _heartbeat != null:
 		_heartbeat_accum += delta
