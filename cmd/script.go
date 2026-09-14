@@ -48,10 +48,14 @@ func parseScriptArgs(args []string) (map[string]any, error) {
 		}
 		return map[string]any{"action": "inspect", "path": rest[0]}, nil
 	case "validate":
-		if len(rest) != 1 {
-			return nil, fmt.Errorf("usage: script validate <res://script.gd>")
+		if len(rest) != 1 && !(len(rest) == 2 && rest[1] == "--evidence") {
+			return nil, fmt.Errorf("usage: script validate <res://script.gd> [--evidence]")
 		}
-		return map[string]any{"action": "validate", "path": rest[0]}, nil
+		params := map[string]any{"action": "validate", "path": rest[0]}
+		if len(rest) == 2 {
+			params["evidence"] = true
+		}
+		return params, nil
 	case "open":
 		return parseScriptOpenArgs(rest)
 	case "create":

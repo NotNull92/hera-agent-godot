@@ -23,6 +23,13 @@ func TestScriptValidationOutputBounded(t *testing.T) {
 	}
 }
 
+func TestScriptValidateEvidenceFlag(t *testing.T) {
+	p, err := parseScriptArgs([]string{"validate", "res://probe.gd", "--evidence"})
+	if err != nil || p["evidence"] != true {
+		t.Fatalf("evidence flag: %v, %v", p, err)
+	}
+}
+
 func TestScriptValidateNativeGodot(t *testing.T) {
 	executable := os.Getenv("HERA_TEST_GODOT")
 	if executable == "" {
@@ -75,6 +82,20 @@ func TestScriptValidateNativeGodot(t *testing.T) {
 			}
 		})
 	}
+	t.Run("changed during validation", func(t *testing.T) {
+		source := "extends Node\nstatic func _static_init() -> void:\n\tvar file := FileAccess.open(\"res://probe.gd\", FileAccess.WRITE)\n\tfile.store_string(\"extends Node\\n# changed\\n\")\n\tfile.close()\n"
+		if err := os.WriteFile(filepath.Join(project, "probe.gd"), []byte(source), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		stdout, stderr, code := captureContractRun([]string{"script", "validate", "res://probe.gd", "--evidence"})
+		var result map[string]any
+		if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+			t.Fatalf("decode %v: %s %s", err, stdout, stderr)
+		}
+		if code != 1 || result["valid"] != false || result["changed_during_validation"] != true || result["source"] != "disk" {
+			t.Fatalf("code=%d result=%v stderr=%s", code, result, stderr)
+		}
+	})
 	t.Run("bounded static initializer", func(t *testing.T) {
 		source := "extends Node\nstatic func _static_init() -> void:\n\twhile true:\n\t\tpass\n"
 		if err := os.WriteFile(filepath.Join(project, "probe.gd"), []byte(source), 0o600); err != nil {

@@ -95,11 +95,14 @@ func _validate_context(params: Dictionary) -> Dictionary:
 	var guard := _guard_readable_script_path(path)
 	if guard != "":
 		return ToolResponse.failure(guard)
-	return ToolResponse.success({
+	var context := {
 		"path": path,
 		"project_path": ProjectSettings.globalize_path("res://"),
 		"executable": OS.get_executable_path(),
-	})
+	}
+	if bool(params.get("evidence", false)):
+		context["engine_version"] = Engine.get_version_info()
+	return ToolResponse.success(context)
 
 
 func _inspect_path(path: String) -> Dictionary:
