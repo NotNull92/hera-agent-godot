@@ -73,6 +73,7 @@ func contractCases() []contractCase {
 
 		diagClean       = `{"ok":true,"data":{"error_count":0,"warning_count":0}}`
 		editorLogStatus = `{"ok":true,"data":{"editor_session_id":"fixture","capabilities":{"editor_log_cursor":"supported"}}}`
+		guardStatus     = `{"ok":true,"data":{"editor_session_id":"session","capabilities":{"node_set_guard":"supported"}}}`
 		gameOneProc     = `{"ok":true,"data":{"instances":[{"pid":42}]}}`
 		gameNoProc      = `{"ok":true,"data":{"instances":[]}}`
 		gameTreeSmall   = `{"ok":true,"data":{"count":3,"scene":"res://scenes/Main.tscn","truncated":false}}`
@@ -82,6 +83,11 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "node_snapshot", args: []string{"node", "get", ".", "--prop", "visible", "--snapshot"}, responses: map[string]string{"status": guardStatus, "node": `{"ok":true,"data":{"name":"Main","path":".","type":"Node2D","properties":{"visible":"true"},"expected":` + guardJSON + `}}`}, golden: "node_snapshot"},
+		{name: "node_guarded", args: []string{"node", "set", ".", "--prop", "visible", "--value", "false", "--expected", guardJSON, "--verify"}, responses: map[string]string{"status": guardStatus, "node:set_guarded": `{"ok":true,"data":{"path":".","prop":"visible","value":"false","editor_session_id":"session","scene":"res://Main.tscn","node_instance_id":"9007199254740993","verification":"passed"}}`}, golden: "node_guarded"},
+		{name: "node_guard_conflict", args: []string{"node", "set", ".", "--prop", "visible", "--value", "false", "--expected", guardJSON}, responses: map[string]string{"status": guardStatus, "node:set_guarded": `{"ok":false,"error":"state_conflict: property value changed"}`}, wantExit: 1, wantStderrPrefix: "node: state_conflict:"},
+		{name: "node_guard_verification_failed", args: []string{"node", "set", ".", "--prop", "visible", "--value", "false", "--expected", guardJSON, "--verify"}, responses: map[string]string{"status": guardStatus, "node:set_guarded": `{"ok":false,"error":"verification_failed: mutation applied; property differs from requested value (not rolled back)"}`}, wantExit: 1, wantStderrPrefix: "node: verification_failed:"},
+		{name: "node_guard_verification_unavailable", args: []string{"node", "set", ".", "--prop", "visible", "--value", "false", "--expected", guardJSON, "--verify"}, responses: map[string]string{"status": guardStatus, "node:set_guarded": `{"ok":false,"error":"verification_unavailable: mutation applied; original target is no longer available (not rolled back)"}`}, wantExit: 1, wantStderrPrefix: "node: verification_unavailable:"},
 		// Stable commands, live-captured fixtures (Godot 4.7-stable).
 		{name: "status", args: []string{"status"}, responses: map[string]string{"status": "@status"}, golden: "status"},
 		{name: "status_json", args: []string{"--json", "status"}, responses: map[string]string{"status": "@status"}, golden: "status_json"},

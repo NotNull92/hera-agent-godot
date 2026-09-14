@@ -154,7 +154,7 @@ contract tests (see [Contract tests](#contract-tests)).
 | `editor state` | stable | ✓ `current_scene`, `current_script{found, path}`, `main_scene`, `open_scenes[]`, `playing`, `playing_scene`, `project_name`, `project_path`, `selected[]` |
 | `editor selected` | stable | selection list with scene-relative paths |
 | `node find` | stable | ✓ `count`, `truncated`, `nodes[]` of `{name, path, type}` |
-| `node get` | stable | ✓ `name`, `path`, `type`, `properties{}` (stringified values) |
+| `node get` | stable | ✓ `name`, `path`, `type`, `properties{}` (stringified values). Opt-in experimental `--prop P --snapshot` adds the complete typed `expected` object; ordinary reads are unchanged. |
 | `signal list` | stable | ✓ `node`, `count`, `truncated`, `signals[]` of `{name, args[], connections[]}` (+ `external_connections` when editor-internal targets exist) |
 | `screenshot diff` | experimental | ✓ `before`, `after`, `width`, `height`, `threshold`, `total_pixels`, `changed_pixels`, `changed_ratio`, `max_delta`, `identical`, and `changed_bounds{x,y,width,height}` when anything changed. Computed locally; `max_delta` is reported even when it is under the threshold |
 | `theme get` / `theme set` | experimental | ✓ (`get`) `path`, `types[]`, `items{<type>{colors{}, constants{}, font_sizes{}}}`; (`set`) `path`, `type`, `applied{}`, `undoable:false`. Colour values are printed to 6 decimals so a value round-trips what the caller wrote rather than float32 noise |
@@ -215,7 +215,7 @@ refusal is exit `1`.
 
 | Command | Tier | Notes |
 |---------|------|-------|
-| `node add` / `node set` / `node remove` | stable | undoable; `node add` may include an experimental `agent_hint` field when Game Feel Mode is on |
+| `node add` / `node set` / `node remove` | stable | undoable; `node add` may include an experimental `agent_hint` field when Game Feel Mode is on. `node set --expected JSON [--verify]` is an experimental opt-in guard, described below. |
 | `node reparent` | experimental | undoable; uses `Node.reparent` and defaults to keeping the global transform; undo restores the original name after a sibling-name collision |
 | `signal connect` / `signal disconnect` | stable | undoable, `CONNECT_PERSIST` |
 | `scene open` / `scene save` | stable | |
@@ -228,6 +228,30 @@ refusal is exit `1`.
 | `project mkdir` / `project scan` / `project reimport` / `project set-main-scene` | experimental | persistent project changes |
 | `resource set` / `resource create` / `resource resave` / `resource update-uids` / `resource export-mesh-library` | experimental | persistent filesystem changes |
 | `screenshot` | stable (base) | ✓-adjacent base fields `path`, `width`, `height`; the `--analyze` metrics block is **experimental** |
+
+#### Conditional node set
+
+`node get --prop P --snapshot` adds `expected` with exactly six string fields:
+`editor_session_id`, `scene`, `node_instance_id`, `prop`, `type`, `value`.
+`node set --expected JSON [--verify]` requires all six; property must match
+`--prop`. Malformed CLI input exits 2. Type limits and literal/Variant value
+encoding are specified in [COMMANDS](COMMANDS.md#conditional-node-property-changes).
+
+New CLI requests negotiate `capabilities.node_set_guard` on the selected client,
+including guarded batch entries. An internal `set_guarded` action also ensures
+an old addon replacing the connection after preflight rejects the mutation.
+Ordinary unguarded requests and read shapes remain unchanged.
+
+Conditional failures retain empty stdout, exit 1, and the normal `node:` stderr
+label. The following error prefixes (before the next colon) are stable:
+`session_mismatch`, `state_conflict`, `capability_unavailable`,
+`verification_failed`, `verification_unavailable`. Text following the code is
+not stable. The first three reject before setter/undo/save effects; the last
+two report post-mutation failure and do not roll back. Success adds string
+`editor_session_id`, `scene`, `node_instance_id`, and `verification`
+(`passed` or `not_requested`) to the existing `path`, `prop`, `value` fields.
+No persistence or full setter-side-effect isolation is implied. Batch results
+retain their existing per-entry error and sequential execution contract.
 
 ### Runtime (game) surface
 

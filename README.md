@@ -108,6 +108,11 @@ screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screensh
 [docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Store
 packaging status.
 
+For conditional edits, read `node get <path> --prop P --snapshot`, then pass
+its `expected` object to `node set <path> --prop P --value V --expected '<JSON>'
+--verify`. Stale sessions, scenes, nodes, or typed values are rejected before
+mutation. See [conditional changes](docs/COMMANDS.md#conditional-node-property-changes).
+
 `hera status` also reports the engine commit, addon `editor_session_id`, and
 API capability states (`supported`, `unsupported`, or `unverified`). API presence
 does not certify a connected debugger or installed SDK. See

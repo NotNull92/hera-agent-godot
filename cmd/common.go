@@ -59,6 +59,24 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
+	if requiresNodeGuard(request.tool, request.params) {
+		status, statusErr := c.Post("status", nil)
+		if statusErr != nil {
+			fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, statusErr)
+			return 1
+		}
+		if !status.OK {
+			fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, status.Error)
+			return 1
+		}
+		data, _ := status.Data.(map[string]any)
+		capabilities, _ := data["capabilities"].(map[string]any)
+		if capabilities["node_set_guard"] != "supported" {
+			fmt.Fprintf(os.Stderr, "%s: capability_unavailable: addon does not support node_set_guard\n", request.label)
+			return 1
+		}
+	}
+	useGuardedNodeAction(request.tool, request.params)
 	resp, err := c.Post(request.tool, request.params)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)

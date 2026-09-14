@@ -17,7 +17,10 @@ to drive Godot from a shell.
 
 - [x] Record the installed engine identity and isolated Go/Godot baseline.
 - [x] Add observed API capability states and a shared status/heartbeat addon
-  session identifier. Mutation guards and debugger integration remain separate work.
+  session identifier. Debugger integration remains separate work.
+- [x] Opt-in node property snapshots and conditional mutation using session,
+  scene, node instance, and typed property preconditions; capability negotiation
+  covers direct and batch CLI requests, with explicit post-set verification.
 - [x] Opt-in bounded editor log evidence with callback-verified capability,
   session cursors, dropped-history metadata, and explicit unavailability.
   Windows 4.7.2 isolated callbacks and CLI checks verified; local 4.2 execution

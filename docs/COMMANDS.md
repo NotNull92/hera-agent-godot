@@ -35,10 +35,10 @@ selected editor instance.
 | `project mkdir <res://dir>` | `project` | ☑ | Create a project directory under `res://` and refresh the editor filesystem. |
 | `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set and persist `application/run/main_scene` through the targeted editor; its in-memory setting and subsequent default `run` agree immediately. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
-| `node get <path> [--prop <name>\|--props <a,b>]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. |
+| `node get <path> [--prop <name>\|--props <a,b>] [--snapshot]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. `--snapshot` requires one `--prop` and adds a typed conditional-mutation snapshot. |
 | `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). When Game Feel Mode is enabled, feel-related node types return a compact `agent_hint` pointing at relevant `game_feel` topics. |
 | `node instance <res://scene.tscn> [--parent <path>] [--name <n>]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path (undoable). |
-| `node set <path> --prop <name> --value <v>` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). |
+| `node set <path> --prop <name> --value <v> [--expected <JSON> [--verify]]` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). Optional typed preconditions reject stale targets before mutation. |
 | `node set-resource <path> --prop <name> --resource <res://...>` | `node` | ☑ | Set an object/resource property from a Resource file, with path and type compatibility checks (undoable). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
 | `node reparent <path> --parent <path> [--no-keep-global-transform]` | `node` | ☑ | Move a node to a new parent (undoable). Defaults to keeping the global transform the way `Node.reparent` does. |
@@ -132,6 +132,50 @@ both the HTTP timeout and this process deadline. Engine output includes native
 file/line details when available; success does not certify absence of warnings.
 This is a CLI operation; the internal `script/validate-context` RPC only
 resolves the paths and does not validate code when called through `batch`.
+
+## Conditional node property changes
+
+Read `hera node get <path> --prop <name> --snapshot` to obtain an `expected`
+object, then pass that object as `node set --expected <JSON>`. Ordinary reads
+keep their existing output. The complete object has exactly six string fields:
+
+```json
+{"editor_session_id":"session-from-editor","scene":"res://Main.tscn","node_instance_id":"9876543210","prop":"visible","type":"bool","value":"true"}
+```
+
+`--verify` requires `--expected`. The CLI negotiates
+`status.capabilities.node_set_guard: supported` on the same discovered
+connection before snapshot or guarded requests. This also covers guarded
+entries in `batch`, before any entry runs. Missing/unsupported/unverified
+capabilities fail with `capability_unavailable`; no unguarded retry occurs.
+An internal guarded action also makes old addons reject a write if the endpoint
+is replaced after preflight.
+Multiple live editors still require explicit `--instance` for mutations.
+
+The addon compares session, current scene path, node instance, property name,
+declared type, and typed current value immediately before registering undo or
+calling the setter. `session_mismatch` and `state_conflict` reject the change
+without setter, undo, or disk-save effects. Instance IDs are decimal strings,
+valid only in the session, so replacing a node at the same path conflicts.
+Empty scene paths describe unsaved scenes; node identity still distinguishes
+them. No scene hash or persistent node identity is implied.
+
+Supported types: `bool`, `int`, `float`, `String`, `StringName`, `NodePath`,
+`Vector2`, `Vector2i`, `Vector3`, `Vector3i`, `Rect2`, `Rect2i`, and `Color`.
+Snapshot values use lossless Godot Variant text, except string-like values
+which remain literal strings. A snapshot that cannot roundtrip exactly fails
+with `capability_unavailable`. Other types (including collections and resources)
+are deliberately unsupported. Existing displayed property strings may be
+truncated; use the complete `expected.value`, not that display, for guards.
+
+Success returns the original `path`, `prop`, `value` plus `editor_session_id`,
+`scene`, `node_instance_id`, and `verification` (`passed` or `not_requested`).
+The same target is re-read after setting. With `--verify`, a setter that
+clamps/rejects the requested typed value fails with `verification_failed`;
+loss of the original session/scene/target fails with `verification_unavailable`.
+Both failures report that mutation was applied and is not rolled back.
+Custom setters/other plugins can have side effects; this is not a transaction.
+No save is performed. `batch` retains its sequential, nontransactional semantics.
 
 ## Physics-frame input sequences
 

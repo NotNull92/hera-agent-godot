@@ -112,6 +112,8 @@ hera node get <path> [--prop p|--props a,b]  # dump all or selected node propert
 hera node add <type> [--parent p] [--name n] # add a node (undoable)
 hera node instance <res://scene.tscn> [--parent p] [--name n] # instance a PackedScene (undoable)
 hera node set <path> --prop p --value v      # set a property (undoable)
+hera node get <path> --prop p --snapshot    # typed expected object for a conditional set
+hera node set <path> --prop p --value v --expected '<JSON>' --verify # refuse stale observations; verify same target
 hera node remove <path>                      # remove a node (undoable)
 hera node reparent <path> --parent p         # move a node (undoable; keeps global transform)
 hera node attach-script <path> <res://script.gd> # attach a script (undoable; returns dependency diagnostics)
@@ -282,6 +284,14 @@ default 5000). Default output is compact JSON.
   way — use `node set-resource <path> --prop <name> --resource res://...`.
 
 ## Verify your work (Hera)
+
+For conditional edits, retain the complete `expected` object from
+`node get --prop P --snapshot` and send it to `node set --expected JSON
+[--verify]`. CLI capability negotiation also protects guarded batch entries.
+Conflicts (`session_mismatch`, `state_conflict`, `capability_unavailable`)
+fail before mutation. Verification failure/unavailability happens after
+mutation and does not roll it back or save the scene. See the bounded type
+list and string-valued identity contract in `docs/COMMANDS.md`.
 
 Editor log evidence is opt-in: `output`/`diagnostics --source editor` first
 verify `status.capabilities.editor_log_cursor`. File logs remain the default.

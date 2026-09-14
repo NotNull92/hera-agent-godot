@@ -178,6 +178,7 @@ commands:
   scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
   editor     state | selected | select <node> [--add] | clear-selection
   node       find|get|add|instance|set|set-resource|remove|reparent|attach-script|detach-script
+             get <path> --prop P --snapshot; set <path> --prop P --value V [--expected JSON [--verify]]
   script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
              validate <res://script.gd>  check fresh on-disk GDScript with the editor's engine
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene

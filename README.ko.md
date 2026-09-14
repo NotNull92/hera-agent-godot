@@ -115,6 +115,11 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 상대 물리 프레임에 맞춰 입력하고 종료 시 눌린 액션을 해제합니다.
 시간 제한과 QA 예제는 명령 레퍼런스를 참고하세요.
 
+조건부 수정은 `node get <path> --prop P --snapshot`의 `expected` 객체를
+`node set <path> --prop P --value V --expected '<JSON>' --verify`에 전달합니다.
+세션·씬·노드·타입이 있는 속성값이 달라졌다면 수정 전에 거절합니다.
+지원 타입과 검증 실패 의미는 [명령 문서](docs/COMMANDS.md#conditional-node-property-changes)를 참고하세요.
+
 `hera status`는 엔진 커밋, 애드온 `editor_session_id`, API 기능 상태
 (`supported`, `unsupported`, `unverified`)도 반환합니다. API 존재만으로
 디버거 연결이나 SDK 설치를 보장하지 않습니다.

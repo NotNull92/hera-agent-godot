@@ -69,6 +69,8 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		params := map[string]any{"action": "get", "path": rest[0]}
 		for i := 1; i < len(rest); i++ {
 			switch rest[i] {
+			case "--snapshot":
+				params["snapshot"] = true
 			case "--prop":
 				if i+1 >= len(rest) {
 					return nil, fmt.Errorf("--prop requires a value")
@@ -94,6 +96,9 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			}
+		}
+		if params["snapshot"] == true && params["prop"] == nil {
+			return nil, fmt.Errorf("--snapshot requires --prop")
 		}
 		return params, nil
 
@@ -154,6 +159,18 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		params := map[string]any{"action": "set", "path": rest[0]}
 		for i := 1; i < len(rest); i++ {
 			switch rest[i] {
+			case "--expected":
+				if i+1 >= len(rest) {
+					return nil, fmt.Errorf("--expected requires a JSON object")
+				}
+				i++
+				expected, err := parseNodeExpected(rest[i])
+				if err != nil {
+					return nil, err
+				}
+				params["expected"] = expected
+			case "--verify":
+				params["verify"] = true
 			case "--prop":
 				if i+1 >= len(rest) {
 					return nil, fmt.Errorf("--prop requires a value")
@@ -175,6 +192,13 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		if _, ok := params["value"]; !ok {
 			return nil, fmt.Errorf("node set requires --value")
+		}
+		if expected, ok := params["expected"].(nodeExpected); ok {
+			if expected.Prop != params["prop"] {
+				return nil, fmt.Errorf("expected.prop must match --prop")
+			}
+		} else if params["verify"] == true {
+			return nil, fmt.Errorf("--verify requires --expected")
 		}
 		return params, nil
 
