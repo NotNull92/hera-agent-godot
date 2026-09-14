@@ -34,6 +34,45 @@ func TestNodeGuardArguments(t *testing.T) {
 	}
 }
 
+func TestBatchGuardAndEvidenceNegotiatesOnce(t *testing.T) {
+	var statusCalls, batchCalls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req protocol.Request
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Error(err)
+			return
+		}
+		if req.Tool == "status" {
+			statusCalls.Add(1)
+		} else {
+			batchCalls.Add(1)
+		}
+		data := map[string]any{"capabilities": map[string]string{"node_set_guard": "supported", "linked_evidence": "supported"}}
+		if req.Tool == "batch" {
+			data = map[string]any{
+				"count": 2, "stopped": false,
+				"results": []any{
+					map[string]any{"tool": "node", "ok": true, "data": map[string]any{}},
+					map[string]any{"tool": "scene", "ok": true, "data": map[string]any{"evidence": map[string]any{"available": true}}},
+				},
+			}
+		}
+		if err := json.NewEncoder(w).Encode(protocol.Response{OK: true, Data: data}); err != nil {
+			t.Error(err)
+		}
+	}))
+	t.Cleanup(server.Close)
+	installContractHome(t, contractServerPort(t, server), true)
+	file := filepath.Join(t.TempDir(), "both.json")
+	if err := os.WriteFile(file, []byte(`[{"tool":"node","params":{"action":"set","path":".","prop":"visible","value":"false","expected":`+guardJSON+`}},{"tool":"scene","params":{"action":"save","evidence":true}}]`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	_, stderr, code := captureContractRun([]string{"batch", "--file", file})
+	if code != 0 || statusCalls.Load() != 1 || batchCalls.Load() != 1 {
+		t.Fatalf("expected one status preflight: exit=%d status=%d batch=%d stderr=%s", code, statusCalls.Load(), batchCalls.Load(), stderr)
+	}
+}
+
 func TestBatchGuardNegotiatesBeforeAnyCommand(t *testing.T) {
 	var mutations atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

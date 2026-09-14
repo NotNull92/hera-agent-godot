@@ -38,23 +38,22 @@ func parseNodeExpected(raw string) (nodeExpected, error) {
 }
 
 func requiresNodeGuard(tool string, params map[string]any) bool {
-	if tool == "node" {
-		_, expected := params["expected"]
-		_, verify := params["verify"]
-		_, snapshot := params["snapshot"]
-		return expected || verify || snapshot
-	}
 	if tool == "batch" {
-		commands, _ := params["commands"].([]any)
-		for _, command := range commands {
-			entry, _ := command.(map[string]any)
-			subParams, _ := entry["params"].(map[string]any)
-			if entry["tool"] == "node" && requiresNodeGuard("node", subParams) {
-				return true
+		needed := false
+		forEachBatchChild(params, func(sub string, subParams map[string]any) {
+			if requiresNodeGuard(sub, subParams) {
+				needed = true
 			}
-		}
+		})
+		return needed
 	}
-	return false
+	if tool != "node" {
+		return false
+	}
+	_, expected := params["expected"]
+	_, verify := params["verify"]
+	_, snapshot := params["snapshot"]
+	return expected || verify || snapshot
 }
 
 func useGuardedNodeAction(tool string, params map[string]any) {
@@ -63,16 +62,6 @@ func useGuardedNodeAction(tool string, params map[string]any) {
 		_, verify := params["verify"]
 		if expected || verify {
 			params["action"] = "set_guarded"
-		}
-	}
-	if tool == "batch" {
-		commands, _ := params["commands"].([]any)
-		for _, command := range commands {
-			entry, _ := command.(map[string]any)
-			subParams, _ := entry["params"].(map[string]any)
-			if entry["tool"] == "node" {
-				useGuardedNodeAction("node", subParams)
-			}
 		}
 	}
 }

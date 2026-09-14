@@ -98,9 +98,11 @@ need a duplicate `LICENSE` at the ZIP download root.
 
 ## 4. Request lifecycle
 
-WorkQueue owns one session-local gate. `begin` assigns a private execution ID
-(or the admitted operation ID) plus editor session; `complete` releases only that
-owner. The plugin uses the same async dispatch seam for every tool. Batch passes
+WorkQueue is the enqueue/drain buffer. EditorGate owns the session-local
+mutation/import lock: `admit` assigns a private execution ID (or the admitted
+operation ID) plus editor session, and `release` drops only that owner.
+OperationRecords.prepare admits `operation` requests before they reach the
+gate. The plugin uses the same async dispatch seam for every tool. Batch passes
 an internally bound dispatcher to its children, so they retain parent ownership
 without granting client-supplied params bypass authority. Session retirement
 clears the gate, retires receipts and prevents further batch children. Delayed
@@ -115,12 +117,16 @@ processing plus completion events close that gap. Idle scan/import state and
 resource availability are checked together, not a fixed delay or one signal.
 `is_importing` is feature-detected; see COMMANDS.md for older-engine limitations.
 
-Explicit `operation` requests enter the existing WorkQueue before dispatch.
-The queue validates the ID, session, deadline, request digest and supported
-mutation, then reserves a bounded receipt. Status/cancel and duplicates are
-answered without calling tools. The plugin marks a fresh receipt running before
-the setter/async bridge and completes it before responding over HTTP. Losing the
-connection therefore does not erase the result or cause a retry.
+Explicit `operation` requests enter WorkQueue before dispatch.
+OperationRecords validates the ID, session, deadline, request digest and
+supported mutation, then reserves a bounded receipt. Status/cancel and
+duplicates are answered without calling tools. The gate is acquired before a
+fresh receipt is marked running, so editor_busy collisions reject without a
+running lifecycle. The plugin completes the receipt before responding over HTTP.
+Losing the connection therefore does not erase the result or cause a retry.
+Receipts classify from whether a mutation was attempted (runtime file published
+or setter/call invoked), not from grepping error prefixes. Pre-dispatch misses
+are `rejected`/`not_applied`.
 
 The shared `core/operation_records.gd` ledger also guards runtime set/call file
 deliveries, with the runtime's random session identity checked before admission.

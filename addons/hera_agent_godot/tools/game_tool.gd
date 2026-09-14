@@ -24,22 +24,22 @@ func execute(params: Dictionary) -> Dictionary:
 
 func execute_async(params: Dictionary) -> Dictionary:
 	if not is_instance_valid(_host) or not _host.is_inside_tree():
-		return ToolResponse.failure("session_mismatch: game host is no longer available")
+		return ToolResponse.rejected("session_mismatch: game host is no longer available", "session_mismatch")
 	var action := String(params.get("action", ""))
 	if action == "instances":
 		return ToolResponse.success(_instances_payload())
 	var target := _select_target(_collect_game_heartbeats()["live"], params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
 	if target.has("error"):
-		return ToolResponse.failure(String(target["error"]))
+		return ToolResponse.rejected(String(target["error"]), String(target.get("error_code", "target_unavailable")))
 	if params.has("runtime_session_id") and params.runtime_session_id != target.get("runtime_session_id"):
-		return ToolResponse.failure("session_mismatch: runtime session changed")
+		return ToolResponse.rejected("session_mismatch: runtime session changed", "session_mismatch")
 	if bool(params.get("evidence", false)) and not target.has("runtime_session_id"):
-		return ToolResponse.failure("evidence_unavailable: runtime session is unavailable")
+		return ToolResponse.rejected("evidence_unavailable: runtime session is unavailable", "evidence_unavailable")
 	if params.has("operation_id"):
 		if not target.has("runtime_session_id"):
-			return ToolResponse.failure("capability_unavailable: runtime does not support operation receipts")
+			return ToolResponse.rejected("capability_unavailable: runtime does not support operation receipts", "capability_unavailable")
 		if params.get("runtime_session_id") != target.runtime_session_id:
-			return ToolResponse.failure("session_mismatch: runtime session changed")
+			return ToolResponse.rejected("session_mismatch: runtime session changed", "session_mismatch")
 	var request_id := _new_request_id()
 	var request := params.duplicate()
 	request["id"] = request_id
@@ -49,7 +49,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 		request["runtime_session_id"] = target.runtime_session_id
 	var write_err := _write_request(request, int(target["pid"]))
 	if write_err != "":
-		return ToolResponse.failure(write_err)
+		return ToolResponse.rejected(write_err, "invalid_operation")
 	var deadline := Time.get_ticks_msec() + int(TIMEOUT_SEC * 1000.0)
 	while Time.get_ticks_msec() < deadline:
 		if not is_instance_valid(_host) or not _host.is_inside_tree():
@@ -151,22 +151,22 @@ func _select_target(instances: Array, params: Dictionary, scene: String, editor_
 	if params.has("pid"):
 		var raw_pid: Variant = params["pid"]
 		if (typeof(raw_pid) != TYPE_INT and typeof(raw_pid) != TYPE_FLOAT) or float(raw_pid) != floorf(float(raw_pid)) or int(raw_pid) <= 0:
-			return { "error": "game pid must be a positive integer" }
+			return { "error": "game pid must be a positive integer", "error_code": "invalid_operation" }
 		var requested_pid := int(raw_pid)
 		for instance in instances:
 			if int(instance.get("pid", 0)) == requested_pid:
 				return instance
-		return { "error": "no live Hera game process found for pid %d" % requested_pid }
+		return { "error": "no live Hera game process found for pid %d" % requested_pid, "error_code": "target_unavailable" }
 	if not editor_playing:
-		return { "error": "no game is running; start one with `hera run --current --wait` or pass --pid" }
+		return { "error": "no game is running; start one with `hera run --current --wait` or pass --pid", "error_code": "target_unavailable" }
 	var matches := []
 	for inst in instances:
 		if scene == "" or String(inst.get("scene", "")) == scene:
 			matches.append(inst)
 	if matches.is_empty():
-		return { "error": "no Hera game process found for scene %s; wait a moment or restart the play session" % scene }
+		return { "error": "no Hera game process found for scene %s; wait a moment or restart the play session" % scene, "error_code": "target_unavailable" }
 	if matches.size() > 1:
-		return { "error": "multiple Hera game processes found for scene %s (%s); pass --pid" % [scene, _pids(matches)] }
+		return { "error": "multiple Hera game processes found for scene %s (%s); pass --pid" % [scene, _pids(matches)], "error_code": "invalid_operation" }
 	return matches[0]
 
 func _instances_payload() -> Dictionary:

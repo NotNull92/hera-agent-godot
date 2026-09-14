@@ -29,6 +29,8 @@ on stderr, with exit 1. Parse errors remain exit 2. Explicit unavailability cann
 pass an evidence-enabled QA step. Scene save's `persistence: unknown` is a truthful
 observation result, not full memory-to-disk verification. Screenshot operation
 associations are caller-supplied labels, independent from operation receipts.
+Captures without `--evidence` keep ordinary error strings; they do not use
+`evidence_unavailable`.
 
 Non-nested batch children receive the same evidence negotiation and guarded save
 actions; `expected_sha256` implies evidence on scene save/resource set. Missing or
@@ -45,7 +47,9 @@ Inspect its `lifecycle`, `effect`, `verification`, `persistence`, `error_code`,
 input exits 2. Admission conflicts/expiry/capacity/unsupported actions exit 1
 with `operation: <stable_code>: <detail>` on stderr and empty stdout.
 Unknown or expired status is an explicit `outcome_unknown` receipt, not success
-or proof of no effect. Cancellation additionally returns `cancelled`.
+or proof of no effect. Failures that never published a runtime file or invoked
+the setter/call are `rejected`/`not_applied` (for example `target_unavailable`),
+not `outcome_unknown`. Cancellation additionally returns `cancelled`.
 
 Supported actions are guarded editor node set and session-targeted runtime set/call.
 `status.capabilities.operation_receipts` advertises this bounded surface;

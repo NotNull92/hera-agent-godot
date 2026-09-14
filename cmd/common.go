@@ -37,9 +37,6 @@ func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
 // dialPostPrint dials the editor, sends one tool request, and prints the
 // response Data as compact JSON. label is used in error messages.
 func dialPostPrint(tool string, params map[string]any, label string) int {
-	if (tool == "output" || tool == "diagnostics") && params["source"] == "editor" {
-		return dialEditorLogPrint(tool, params)
-	}
 	return dialAndPostPrint(dialEditor, postPrintRequest{tool: tool, params: params, label: label})
 }
 
@@ -59,38 +56,50 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
-	if requiresNodeGuard(request.tool, request.params) {
-		status, statusErr := c.Post("status", nil)
-		if statusErr != nil {
-			fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, statusErr)
-			return 1
-		}
-		if !status.OK {
-			fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, status.Error)
-			return 1
-		}
-		data, _ := status.Data.(map[string]any)
-		capabilities, _ := data["capabilities"].(map[string]any)
-		if capabilities["node_set_guard"] != "supported" {
-			fmt.Fprintf(os.Stderr, "%s: capability_unavailable: addon does not support node_set_guard\n", request.label)
-			return 1
-		}
+	needed := make([]string, 0, 3)
+	guard := requiresNodeGuard(request.tool, request.params)
+	evidenceRequested := wantsLinkedEvidence(request.tool, request.params)
+	logs := editorLogRequest(request.tool, request.params)
+	if guard {
+		needed = append(needed, "node_set_guard")
 	}
-	useGuardedNodeAction(request.tool, request.params)
-	evidenceRequested := prepareLinkedEvidence(request.tool, request.params)
 	if evidenceRequested {
-		status, statusErr := c.Post("status", nil)
+		needed = append(needed, "linked_evidence")
+	}
+	if logs {
+		needed = append(needed, "editor_log_cursor")
+	}
+	if len(needed) > 0 {
+		caps, status, statusErr := negotiate(c, needed...)
 		if statusErr != nil {
 			fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, statusErr)
 			return 1
 		}
-		data, _ := status.Data.(map[string]any)
-		capabilities, _ := data["capabilities"].(map[string]any)
-		if !status.OK || capabilities["linked_evidence"] != "supported" {
+		if logs {
+			if !status.OK {
+				fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, status.Error)
+				return 1
+			}
+			if capabilityValue(caps, "editor_log_cursor") != "supported" {
+				return printData(editorLogUnavailable(status, caps))
+			}
+		}
+		if guard {
+			if !status.OK {
+				fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, status.Error)
+				return 1
+			}
+			if capabilityValue(caps, "node_set_guard") != "supported" {
+				fmt.Fprintf(os.Stderr, "%s: capability_unavailable: addon does not support node_set_guard\n", request.label)
+				return 1
+			}
+		}
+		if evidenceRequested && (!status.OK || capabilityValue(caps, "linked_evidence") != "supported") {
 			fmt.Fprintf(os.Stderr, "%s: capability_unavailable: addon does not support linked_evidence\n", request.label)
 			return 1
 		}
 	}
+	protectActions(request.tool, request.params)
 	resp, err := c.Post(request.tool, request.params)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
@@ -109,6 +118,53 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		return 1
 	}
 	return printData(resp)
+}
+
+func forEachBatchChild(params map[string]any, fn func(tool string, params map[string]any)) {
+	commands, _ := params["commands"].([]any)
+	for _, command := range commands {
+		entry, _ := command.(map[string]any)
+		subTool, _ := entry["tool"].(string)
+		subParams, _ := entry["params"].(map[string]any)
+		if subParams == nil {
+			subParams = map[string]any{}
+			if entry != nil {
+				entry["params"] = subParams
+			}
+		}
+		fn(subTool, subParams)
+	}
+}
+
+func negotiate(c *client.Client, _ ...string) (map[string]any, *protocol.Response, error) {
+	status, err := c.Post("status", nil)
+	if err != nil {
+		return nil, nil, err
+	}
+	data, _ := status.Data.(map[string]any)
+	caps, _ := data["capabilities"].(map[string]any)
+	return caps, status, nil
+}
+
+func capabilityValue(caps map[string]any, name string) string {
+	if caps == nil {
+		return ""
+	}
+	value, _ := caps[name].(string)
+	return value
+}
+
+func editorLogRequest(tool string, params map[string]any) bool {
+	return (tool == "output" || tool == "diagnostics") && params["source"] == "editor"
+}
+
+func protectActions(tool string, params map[string]any) {
+	if tool == "batch" {
+		forEachBatchChild(params, protectActions)
+		return
+	}
+	useGuardedNodeAction(tool, params)
+	prepareLinkedEvidence(tool, params)
 }
 
 func pollPlaying(c *client.Client, want bool, timeout time.Duration) (*protocol.Response, error) {

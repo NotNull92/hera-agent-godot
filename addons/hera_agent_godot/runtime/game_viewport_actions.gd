@@ -53,7 +53,7 @@ static func screenshot(viewport: Viewport, request: Dictionary, scene_path: Stri
 	if guard != "":
 		return {"ok": false, "error": guard}
 	if DisplayServer.get_name() == "headless":
-		return CaptureEvidence.unavailable("headless renderer")
+		return CaptureEvidence.capture_error(request, "headless renderer")
 	var image := viewport.get_texture().get_image()
 	var evidence := CaptureEvidence.snapshot("runtime", "")
 	if image == null or image.is_empty():

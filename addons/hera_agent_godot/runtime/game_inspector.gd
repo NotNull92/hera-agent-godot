@@ -92,12 +92,14 @@ func _handle_file(path: String, response_path: String) -> void:
 		_handle_operation(request, response_path)
 		return
 	if String(request.get("action", "")) == "screenshot":
-		if not await GameViewportActions.CaptureEvidence.wait_for_draw(get_tree()):
-			var unavailable: Dictionary = GameViewportActions.CaptureEvidence.unavailable("no rendered frame within 1000 ms")
-			var payload: Dictionary = unavailable.data
-			payload["error"] = unavailable.error
-			_write(response_path, _response(request, false, payload))
+		var capture_fail := _screenshot_wait_error(request)
+		if not capture_fail.is_empty():
+			_write(response_path, _response(request, false, capture_fail))
 			return
+		if bool(request.get("evidence", false)):
+			if not await GameViewportActions.CaptureEvidence.wait_for_draw(get_tree()):
+				_write(response_path, _response(request, false, _screenshot_failure(request, "no rendered frame within 1000 ms")))
+				return
 	if String(request.get("action", "")) == "input" and String(request.get("kind", "")) == "sequence":
 		_write(response_path, await _input_sequence(request))
 		return
@@ -121,8 +123,6 @@ func _handle_operation(request: Dictionary, response_path: String) -> void:
 		_write(response_path, _response(request, false, {"error": accepted.error}))
 		return
 	if accepted.has("accepted") and _operations.begin(id):
-		if request.action == "call":
-			_operations.records[id].persistence = "unknown"
 		_operations.finish(id, _handle(request))
 	_write(response_path, _response(request, true, {"runtime_receipt": _operations.lookup(id)}))
 
@@ -212,14 +212,14 @@ func _set_node(request: Dictionary) -> Dictionary:
 	var path := String(request.get("path", ""))
 	var node := _node_from_request(request)
 	if node == null:
-		return _response(request, false, { "error": "node not found: %s" % path })
+		return _not_attempted(request, "node not found: %s" % path)
 	var prop := String(request.get("prop", ""))
 	var prop_info := _property_info(node, prop)
 	if prop == "" or prop_info.is_empty():
-		return _response(request, false, { "error": "node has no property: %s" % prop })
+		return _not_attempted(request, "node has no property: %s" % prop)
 	var coerced := GameValueCodec.coerce(request.get("value"), prop_info)
 	if not bool(coerced.get("ok", false)):
-		return _response(request, false, { "error": String(coerced.get("error", "invalid property value")) })
+		return _not_attempted(request, String(coerced.get("error", "invalid property value")))
 	node.set(prop, coerced.get("value"))
 	return _response(request, true, {
 		"path": String(node.get_path()),
@@ -247,10 +247,10 @@ func _call_node(request: Dictionary) -> Dictionary:
 	var path := String(request.get("path", ""))
 	var node := _node_from_request(request)
 	if node == null:
-		return _response(request, false, { "error": "node not found: %s" % path })
+		return _not_attempted(request, "node not found: %s" % path)
 	var method := String(request.get("method", ""))
 	if method == "" or not node.has_method(method):
-		return _response(request, false, { "error": "node has no method: %s" % method })
+		return _not_attempted(request, "node has no method: %s" % method)
 	var call_args := GameValueCodec.call_args(request)
 	var resolved_path := String(node.get_path())
 	var result: Variant = node.callv(method, call_args)
@@ -401,6 +401,17 @@ func _clock_snapshot() -> Dictionary:
 		"process_frames": Engine.get_process_frames(),
 		"physics_frames": Engine.get_physics_frames(),
 	}
+
+func _screenshot_wait_error(request: Dictionary) -> Dictionary:
+	if DisplayServer.get_name() == "headless":
+		return _screenshot_failure(request, "headless renderer")
+	return {}
+
+func _screenshot_failure(request: Dictionary, reason: String) -> Dictionary:
+	var failure: Dictionary = GameViewportActions.CaptureEvidence.capture_error(request, reason)
+	var payload: Dictionary = failure.get("data", {})
+	payload["error"] = failure.error
+	return payload
 
 func _screenshot(request: Dictionary) -> Dictionary:
 	var result := GameViewportActions.screenshot(get_viewport(), request, _current_scene_path(), _pid)
@@ -652,6 +663,9 @@ func _method_return_type(method: Dictionary) -> String:
 		if object_class_name != "":
 			return object_class_name
 	return type_string(type_id)
+
+func _not_attempted(request: Dictionary, error: String, code: String = "invalid_operation") -> Dictionary:
+	return _response(request, false, {"error": error, "attempted": false, "error_code": code})
 
 func _response(request: Dictionary, ok: bool, payload: Dictionary) -> Dictionary:
 	if bool(request.get("evidence", false)):

@@ -5,30 +5,33 @@ import (
 	"fmt"
 )
 
-func prepareLinkedEvidence(tool string, params map[string]any) bool {
+func wantsLinkedEvidence(tool string, params map[string]any) bool {
 	if tool == "batch" {
 		requested := false
-		commands, _ := params["commands"].([]any)
-		for _, command := range commands {
-			entry, _ := command.(map[string]any)
-			subTool, _ := entry["tool"].(string)
-			subParams, _ := entry["params"].(map[string]any)
-			if subTool != "batch" && prepareLinkedEvidence(subTool, subParams) {
+		forEachBatchChild(params, func(sub string, subParams map[string]any) {
+			if sub != "batch" && wantsLinkedEvidence(sub, subParams) {
 				requested = true
 			}
-		}
+		})
 		return requested
 	}
 	save := tool == "scene" && (params["action"] == "save" || params["action"] == "save_evidence")
 	set := tool == "resource" && (params["action"] == "set" || params["action"] == "set_evidence")
 	_, expectedHash := params["expected_sha256"]
-	if params["evidence"] != true && !(expectedHash && (save || set)) {
+	return params["evidence"] == true || (expectedHash && (save || set))
+}
+
+func prepareLinkedEvidence(tool string, params map[string]any) bool {
+	if !wantsLinkedEvidence(tool, params) {
 		return false
 	}
+	if tool == "batch" {
+		return true
+	}
 	params["evidence"] = true
-	if save {
+	if tool == "scene" && (params["action"] == "save" || params["action"] == "save_evidence") {
 		params["action"] = "save_evidence"
-	} else if set {
+	} else if tool == "resource" && (params["action"] == "set" || params["action"] == "set_evidence") {
 		params["action"] = "set_evidence"
 	}
 	return true
@@ -40,31 +43,30 @@ func linkedEvidenceAvailable(tool string, params map[string]any, raw any) bool {
 		evidence, _ := data["evidence"].(map[string]any)
 		return evidence["available"] == true
 	}
-	commands, _ := params["commands"].([]any)
 	results, _ := data["results"].([]any)
 	available := true
-	for index, command := range commands {
-		entry, _ := command.(map[string]any)
-		subParams, _ := entry["params"].(map[string]any)
-		if entry["tool"] == "batch" || subParams["evidence"] != true {
-			continue
+	index := 0
+	forEachBatchChild(params, func(sub string, subParams map[string]any) {
+		i := index
+		index++
+		if sub == "batch" || subParams["evidence"] != true {
+			return
 		}
-		if index >= len(results) {
+		if i >= len(results) {
 			available = false
-			continue
+			return
 		}
-		result, _ := results[index].(map[string]any)
+		result, _ := results[i].(map[string]any)
 		if result["ok"] != true {
 			available = false
-			continue
+			return
 		}
-		subTool, _ := entry["tool"].(string)
-		if result["tool"] != subTool || !linkedEvidenceAvailable(subTool, subParams, result["data"]) {
+		if result["tool"] != sub || !linkedEvidenceAvailable(sub, subParams, result["data"]) {
 			result["ok"] = false
 			result["error"] = "evidence_unavailable"
 			available = false
 		}
-	}
+	})
 	return available
 }
 

@@ -1,20 +1,31 @@
 extends SceneTree
 
 const WorkQueue = preload("res://addons/hera_agent_godot/server/work_queue.gd")
+const Records = preload("res://addons/hera_agent_godot/core/operation_records.gd")
 var failed := false
 
 func _initialize() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
+	var records := Records.new()
+	records.session = "session"
+	var now := int(Time.get_unix_time_from_system() * 1000)
+	var miss_id := "session:%d:nogame" % (now + 30000)
+	var call_input := {"tool": "game", "params": {"action": "call", "pid": 42, "runtime_session_id": "runtime", "path": "/root/Counter", "method": "increment"}}
+	var accepted := records.accept(miss_id, call_input)
+	_check(accepted.has("accepted") and records.lookup(miss_id).persistence == "unknown", "call receipts start with unknown persistence")
+	_check(records.begin(miss_id), "pre-dispatch failure fixture begins")
+	records.finish(miss_id, {"ok": false, "error": "no game is running; start one with `hera run --current --wait` or pass --pid", "attempted": false, "error_code": "target_unavailable"})
+	var missed := records.lookup(miss_id)
+	_check(missed.lifecycle == "rejected" and missed.effect == "not_applied" and missed.error_code == "target_unavailable", "pre-dispatch game miss is rejected, not outcome_unknown")
 	var queue := WorkQueue.new()
 	if not queue.has_method("configure_operations"):
 		_check(false, "queue must retain operation receipts before dispatch")
 	else:
 		queue.configure_operations("session")
-		var now := int(Time.get_unix_time_from_system() * 1000)
 		var id := "session:%d:counter" % (now + 30000)
-		var input := {"tool": "game", "params": {"action": "call", "pid": 42, "runtime_session_id": "runtime", "path": "/root/Counter", "method": "increment"}}
+		var input := call_input.duplicate(true)
 		var request := _submit(id, input)
 		queue.enqueue({"request": request})
 		_check(queue.operations.lookup(id).lifecycle == "accepted", "receipt exists before execution")

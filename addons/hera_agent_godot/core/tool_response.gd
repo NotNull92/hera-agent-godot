@@ -11,3 +11,13 @@ static func failure(error: String) -> Dictionary:
 		"ok": false,
 		"error": error,
 	}
+
+static func rejected(error: String, code: String = "") -> Dictionary:
+	var result := {
+		"ok": false,
+		"error": error,
+		"attempted": false,
+	}
+	if code != "":
+		result["error_code"] = code
+	return result

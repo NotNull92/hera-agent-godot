@@ -45,7 +45,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 	if not await CaptureEvidence.wait_for_draw(_host.get_tree()):
 		if is_instance_valid(ctx.get("viewport")):
 			(ctx["viewport"] as SubViewport).queue_free()
-		return CaptureEvidence.unavailable("no rendered frame within 1000 ms")
+		return CaptureEvidence.capture_error(params, "no rendered frame within 1000 ms")
 	return _finalize(ctx, params)
 
 func _setup(params: Dictionary) -> Dictionary:
@@ -53,7 +53,7 @@ func _setup(params: Dictionary) -> Dictionary:
 	if guard != "":
 		return {"error": ToolResponse.failure(guard)}
 	if DisplayServer.get_name() == "headless":
-		return {"error": CaptureEvidence.unavailable("headless renderer")}
+		return {"error": CaptureEvidence.capture_error(params, "headless renderer")}
 	if not is_instance_valid(_host) or not _host.is_inside_tree():
 		return { "error": ToolResponse.failure("screenshot host not set") }
 	var root := EditorInterface.get_edited_scene_root()
@@ -79,7 +79,7 @@ func _finalize(ctx: Dictionary, params: Dictionary) -> Dictionary:
 	if not is_instance_valid(_host) or not is_instance_valid(ctx.get("viewport")):
 		if is_instance_valid(ctx.get("viewport")):
 			(ctx["viewport"] as SubViewport).queue_free()
-		return CaptureEvidence.unavailable("editor capture host ended")
+		return CaptureEvidence.capture_error(params, "editor capture host ended")
 	var viewport: SubViewport = ctx["viewport"]
 	var image := viewport.get_texture().get_image()
 	var evidence := CaptureEvidence.snapshot("editor_preview", editor_session_id)
@@ -88,7 +88,7 @@ func _finalize(ctx: Dictionary, params: Dictionary) -> Dictionary:
 	viewport.queue_free()
 
 	if image == null or image.is_empty():
-		return CaptureEvidence.unavailable("capture produced an empty image")
+		return CaptureEvidence.capture_error(params, "capture produced an empty image")
 	if image.get_width() < MIN_CAPTURE_SIZE or image.get_height() < MIN_CAPTURE_SIZE:
 		return ToolResponse.failure("captured image is too small: %dx%d" % [image.get_width(), image.get_height()])
 

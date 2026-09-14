@@ -2,6 +2,7 @@ extends SceneTree
 
 const ResourceTool = preload("res://addons/hera_agent_godot/tools/resource_tool.gd")
 const ViewportActions = preload("res://addons/hera_agent_godot/runtime/game_viewport_actions.gd")
+const CaptureEvidence = preload("res://addons/hera_agent_godot/core/capture_evidence.gd")
 const Persistence = preload("res://addons/hera_agent_godot/core/persistence_evidence.gd")
 const Inspector = preload("res://addons/hera_agent_godot/runtime/game_inspector.gd")
 
@@ -30,6 +31,20 @@ func _run() -> void:
 	var evidence: Dictionary = capture.get("data", {}).get("evidence", {})
 	if bool(capture.get("ok", true)) or evidence.get("available") != false:
 		push_error("headless capture must report unavailable evidence")
+		quit(1)
+		return
+	var plain: Dictionary = ViewportActions.screenshot(root, {}, "", OS.get_process_id())
+	if bool(plain.get("ok", true)) or String(plain.get("error", "")).begins_with("evidence_unavailable"):
+		push_error("default headless capture must not use evidence_unavailable: %s" % plain)
+		quit(1)
+		return
+	var start := Time.get_ticks_msec()
+	Engine.time_scale = 0.0
+	var drew: bool = await CaptureEvidence.wait_for_draw(self)
+	var elapsed := Time.get_ticks_msec() - start
+	Engine.time_scale = 1.0
+	if drew or elapsed < 200 or elapsed > 2500:
+		push_error("wait_for_draw must honor the 1000 ms deadline at time scale 0 (drew=%s elapsed=%d)" % [drew, elapsed])
 		quit(1)
 		return
 	var inspector := Inspector.new()

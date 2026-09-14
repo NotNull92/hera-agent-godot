@@ -31,7 +31,10 @@ a receipt or prove causality. These options imply `--evidence`. Runtime images
 are never upscaled. Frame counters/time are sampled at readback, not an atomic
 state-and-image snapshot. A rendered-frame boundary does not imply animation has
 settled. Headless rendering and a missing frame after 1000 ms return explicit
-unavailable evidence, including while paused or at time scale zero.
+unavailable evidence, including while paused or at time scale zero. Ordinary
+captures without `--evidence` keep their previous error strings; they do not
+use the `evidence_unavailable` prefix. Runtime screenshots wait for a rendered
+frame only when evidence is requested.
 
 `scene save --evidence` and `resource set ... --evidence` report `effect`,
 `save_call`, `persistence` and separate before/after disk observations. Optional
@@ -143,7 +146,10 @@ business outcome. Arbitrary calls have `persistence:unknown`; sets do not reques
 a disk save. Setter side effects and application saves are not tracked. Guarded
 verification failures preserve `effect:applied` and report failed/unavailable
 verification. Unclassified execution errors and lost runtime responses become
-`outcome_unknown`. Inspect receipt fields even when CLI exit is zero: that exit
+`outcome_unknown`. Failures that never published a runtime request or invoked
+the setter/call are `rejected` with `effect:not_applied` and a stable code
+(`target_unavailable`, `invalid_operation`, `editor_busy`, …), so a new ID is
+allowed. Inspect receipt fields even when CLI exit is zero: that exit
 means the receipt was obtained, not that the mutation succeeded.
 
 Cancellation wins only before dispatch (`cancelled:true`, `effect:not_applied`).

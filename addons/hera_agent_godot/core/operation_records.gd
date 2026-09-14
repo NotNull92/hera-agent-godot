@@ -58,17 +58,102 @@ func accept(id: String, input: Dictionary) -> Dictionary:
 	receipt["target"] = {"scope": "runtime" if runtime else "editor", "session_id": params.get("runtime_session_id", "") if runtime else parts[0], "pid": params.get("pid", params.get("target_pid", OS.get_process_id())), "node_instance_id": expected.get("node_instance_id", ""), "path": params.get("path", "."), "scene": expected.get("scene", ""), "prop": params.get("prop", "")}
 	if params.get("verify") == true:
 		receipt.verification = "unavailable"
+	if runtime and String(params.get("action", "")) == "call":
+		receipt.persistence = "unknown"
 	records[id] = receipt
 	return {"accepted": true}
+
+static func supports_guarded_node_set(input: Dictionary) -> bool:
+	var params: Variant = input.get("params", {})
+	return input.get("tool") == "node" and params is Dictionary and params.get("action") in ["set", "set_guarded"] and params.get("expected") is Dictionary
+
+static func supports_runtime_mutation(input: Dictionary) -> bool:
+	var params: Variant = input.get("params", {})
+	if input.get("tool") != "game" or not params is Dictionary or not params.get("action") in ["set", "call"]:
+		return false
+	if not params.get("runtime_session_id") is String or params.runtime_session_id.is_empty():
+		return false
+	return typeof(params.get("pid")) in [TYPE_INT, TYPE_FLOAT] and float(params.pid) == floorf(float(params.pid)) and float(params.pid) > 0
+
+func prepare(item: Dictionary) -> void:
+	var params: Variant = item.request.get("params")
+	if not params is Dictionary or not params.get("id") is String:
+		item["response"] = _error("invalid_operation", "params and string id required")
+		_fail_item(item)
+		return
+	var id: String = params.id
+	var action: Variant = params.get("action")
+	if id_parts(id).is_empty():
+		item["response"] = _error("invalid_operation", "malformed ID")
+		_fail_item(item)
+	elif action == "status":
+		item["response"] = {"ok": true, "data": lookup(id)}
+	elif action == "cancel":
+		item["response"] = {"ok": true, "data": cancel(id)}
+	elif action == "submit":
+		_prepare_submit(item, id, params)
+	else:
+		item["response"] = _error("invalid_operation", "action must be submit, status, or cancel")
+		_fail_item(item)
+
+func _prepare_submit(item: Dictionary, id: String, params: Dictionary) -> void:
+	var raw: Variant = params.get("request")
+	if not raw is String or raw.to_utf8_buffer().size() > 16384 or params.get("digest") != raw.sha256_text():
+		item["response"] = _error("invalid_operation", "request size or digest mismatch")
+		_fail_item(item)
+		return
+	var json := JSON.new()
+	if json.parse(raw) != OK:
+		item["response"] = _error("invalid_operation", "malformed request JSON")
+		_fail_item(item)
+		return
+	var input: Variant = json.data
+	if not input is Dictionary or not input.get("params") is Dictionary:
+		item["response"] = _error("invalid_operation", "request needs tool and params")
+		_fail_item(item)
+		return
+	var inner: Dictionary = input.params
+	if not inner.get("path", ".") is String:
+		item["response"] = _error("invalid_operation", "path must be a string")
+		_fail_item(item)
+		return
+	if supports_guarded_node_set(input):
+		input.params.action = "set_guarded"
+	elif not supports_runtime_mutation(input):
+		item["response"] = _error("capability_unavailable", "operations support guarded node set or session-targeted game set/call")
+		_fail_item(item)
+		return
+	var accepted := accept(id, input)
+	if accepted.has("error"):
+		item["response"] = {"ok": false, "error": accepted.error}
+	elif accepted.has("receipt"):
+		item["response"] = {"ok": true, "data": accepted.receipt}
+	else:
+		item["operation_id"] = id
+		item.request = input
+		if input.tool == "game":
+			input.params["operation_id"] = id
+
+func _fail_item(item: Dictionary) -> void:
+	var response: Dictionary = item.response
+	if response.has("error") and not response.has("ok"):
+		item.response = {"ok": false, "error": response.error}
+
+func reject(id: String, code: String) -> void:
+	if not records.has(id) or records[id].lifecycle != "accepted":
+		return
+	var receipt: Dictionary = records[id]
+	receipt.lifecycle = "rejected"
+	receipt.effect = "not_applied"
+	receipt.error_code = code
+	receipt.cancellable = false
 
 func begin(id: String) -> bool:
 	if not records.has(id) or records[id].lifecycle != "accepted":
 		return false
 	var receipt: Dictionary = records[id]
 	if retired or _now() >= int(receipt.deadline):
-		receipt.lifecycle = "rejected"
-		receipt.error_code = "session_mismatch" if retired else "operation_expired"
-		receipt.cancellable = false
+		reject(id, "session_mismatch" if retired else "operation_expired")
 		return false
 	receipt.lifecycle = "running"
 	receipt.effect = "unknown"
@@ -82,7 +167,7 @@ func finish(id: String, response: Dictionary) -> void:
 	if receipt.lifecycle != "running":
 		return
 	var error := String(response.get("error", ""))
-	var code := error.get_slice(":", 0)
+	var code := String(response.get("error_code", error.get_slice(":", 0)))
 	receipt.cancellable = false
 	var response_data: Variant = response.get("data", {})
 	if response_data is Dictionary and response_data.get("runtime_receipt") is Dictionary:
@@ -102,10 +187,10 @@ func finish(id: String, response: Dictionary) -> void:
 		receipt.effect = "applied"
 		receipt.verification = "failed" if code == "verification_failed" else "unavailable"
 		receipt.error_code = code
-	elif code in ["editor_busy", "state_conflict", "session_mismatch", "capability_unavailable", "operation_expired", "operation_id_conflict", "operation_capacity", "invalid_operation"]:
+	elif response.get("attempted") == false:
 		receipt.lifecycle = "rejected"
 		receipt.effect = "not_applied"
-		receipt.error_code = code
+		receipt.error_code = code if code != "" and code != error else "invalid_operation"
 	else:
 		receipt.lifecycle = "outcome_unknown"
 		receipt.effect = "unknown"
