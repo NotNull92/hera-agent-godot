@@ -146,6 +146,8 @@ hera eval "<expression>"                     # evaluate one GDScript expression
 hera guidance ui                             # UI guidance; reads Game Feel UI Mode
 hera output [--type log|error|warning|all] [--lines N]
 hera diagnostics [--lines N]                 # summarize project log errors/warnings
+hera output --source editor [--since cursor] # bounded editor-session evidence
+hera diagnostics --source editor [--since cursor] # observed editor errors/warnings
 hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or capture the live viewport as-is
 hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
 hera instances                               # list live Hera-enabled editors; expired heartbeats are stale
@@ -280,6 +282,14 @@ default 5000). Default output is compact JSON.
   way — use `node set-resource <path> --prop <name> --resource res://...`.
 
 ## Verify your work (Hera)
+
+Editor log evidence is opt-in: `output`/`diagnostics --source editor` first
+verify `status.capabilities.editor_log_cursor`. File logs remain the default.
+Retain the returned cursor for an observed interval; `cursor_expired` requires
+an explicit restart from `restart_cursor`. Check `available`, `complete`, and
+`dropped_count`; a retained tail is not proof that earlier errors never occurred.
+The collector covers only this editor process after registration. Startup
+`--log-file` capture remains separate; never relaunch a user's editor for it.
 
 After an edit, **confirm it** instead of assuming:
 

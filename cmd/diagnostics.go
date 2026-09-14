@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strconv"
 )
 
 func runDiagnostics(args []string) int {
@@ -16,22 +15,12 @@ func runDiagnostics(args []string) int {
 }
 
 func parseDiagnosticsArgs(args []string) (map[string]any, error) {
-	params := map[string]any{}
-	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--lines":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--lines requires a value")
-			}
-			i++
-			n, err := strconv.Atoi(args[i])
-			if err != nil || n <= 0 {
-				return nil, fmt.Errorf("invalid --lines %q (want a positive integer)", args[i])
-			}
-			params["lines"] = n
-		default:
-			return nil, fmt.Errorf("unknown flag %q", args[i])
-		}
+	params, err := parseOutputArgs(args)
+	if err != nil {
+		return nil, err
+	}
+	if _, hasType := params["type"]; hasType {
+		return nil, fmt.Errorf("unknown flag %q", "--type")
 	}
 	return params, nil
 }

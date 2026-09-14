@@ -19,7 +19,7 @@ func _run() -> void:
 	if data.get("godot_commit", "") != Engine.get_version_info().get("hash", ""):
 		failures.append("status must report the running engine commit")
 	var capabilities: Dictionary = data.get("capabilities", {})
-	for key in ["editor_logger_api", "debugger_messages_api", "dap", "script_metadata_api", "script_symbol_lookup", "global_class_lookup_api", "import_state_api", "render_frame_event_api", "csharp", "dotnet_sdk"]:
+	for key in ["editor_logger_api", "editor_log_cursor", "debugger_messages_api", "dap", "script_metadata_api", "script_symbol_lookup", "global_class_lookup_api", "import_state_api", "render_frame_event_api", "csharp", "dotnet_sdk"]:
 		if not ["supported", "unsupported", "unverified"].has(capabilities.get(key, "")):
 			failures.append("missing capability state: " + key)
 	if capabilities.get("csharp", "") != ("supported" if ClassDB.class_exists("CSharpScript") else "unsupported"):

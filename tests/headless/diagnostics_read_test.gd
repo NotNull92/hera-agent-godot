@@ -16,6 +16,8 @@ func _initialize() -> void:
 		var data: Dictionary = response.get("data", {})
 		if not bool(response.get("ok", false)) or bool(data.get("available", true)):
 			failures.append("unreadable log reported available: %s" % tool.get_name())
+		if data.get("reason", "") != "evidence_unavailable":
+			failures.append("unreadable log needs an explicit evidence failure reason")
 		if tool.get_name() == "diagnostics" and bool(data.get("clean", true)):
 			failures.append("unreadable diagnostics reported clean")
 	var clean_path := "res://diagnostics-empty.log"

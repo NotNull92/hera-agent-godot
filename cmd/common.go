@@ -37,6 +37,9 @@ func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
 // dialPostPrint dials the editor, sends one tool request, and prints the
 // response Data as compact JSON. label is used in error messages.
 func dialPostPrint(tool string, params map[string]any, label string) int {
+	if (tool == "output" || tool == "diagnostics") && params["source"] == "editor" {
+		return dialEditorLogPrint(tool, params)
+	}
 	return dialAndPostPrint(dialEditor, postPrintRequest{tool: tool, params: params, label: label})
 }
 

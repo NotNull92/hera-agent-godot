@@ -4,6 +4,7 @@ const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.g
 const HeraSettings = preload("res://addons/hera_agent_godot/core/hera_settings.gd")
 
 var editor_session_id: String = Crypto.new().generate_random_bytes(16).hex_encode()
+var editor_log: RefCounted
 
 
 func get_name() -> String:
@@ -34,6 +35,7 @@ func execute(_params: Dictionary) -> Dictionary:
 
 func _capabilities() -> Dictionary:
 	return {
+		"editor_log_cursor": editor_log.capability if editor_log != null else "unverified",
 		"editor_logger_api": _support(ClassDB.class_exists("Logger") and OS.has_method("add_logger") and OS.has_method("remove_logger")),
 		"debugger_messages_api": _support(ClassDB.class_has_method("EditorPlugin", "add_debugger_plugin") and ClassDB.class_has_method("EditorDebuggerSession", "send_message") and EngineDebugger.has_method("register_message_capture") and EngineDebugger.has_method("send_message")),
 		"dap": "unverified",

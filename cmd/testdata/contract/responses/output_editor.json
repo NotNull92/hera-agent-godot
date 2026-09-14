@@ -1,0 +1,1 @@
+{"ok":true,"data":{"available":true,"complete":true,"cursor":"fixture:1","dropped_count":0,"editor_session_id":"fixture","entries":[{"error_type":0,"location":{"file":"res://Example.gd","function":"run","line":3},"message":"example error","sequence":1,"severity":"error","truncated":false}],"omitted_count":0,"restart_cursor":"fixture:0","source":"editor","total":1,"type":"all"}}

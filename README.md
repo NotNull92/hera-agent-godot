@@ -113,6 +113,14 @@ API capability states (`supported`, `unsupported`, or `unverified`). API presenc
 does not certify a connected debugger or installed SDK. See
 [the command reference](docs/COMMANDS.md) and [capability scope](docs/ARCHITECTURE.md#6-discovery--instance-files).
 
+Read editor-session logs with `hera output --source editor` or
+`hera diagnostics --source editor`. Reuse the returned `cursor` with `--since`
+to inspect a later interval. This requires a verified registered collector;
+unavailable evidence and expired cursors are explicit. The bounded buffer
+reports dropped history and covers only this editor after registration.
+File logs remain the default; startup `--log-file` capture stays separate.
+See [editor log evidence](docs/COMMANDS.md#editor-log-evidence).
+
 Check on-disk GDScript with `hera script validate res://Player.gd`.
 Validation uses the connected editor's engine in a bounded headless process,
 prints the engine output as JSON, and exits nonzero on failure. It does not

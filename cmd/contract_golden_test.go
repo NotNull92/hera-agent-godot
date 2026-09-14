@@ -71,13 +71,14 @@ func contractCases() []contractCase {
 		runPlaying        = `{"ok":true,"data":{"playing":true,"scene":"res://scenes/Main.tscn"}}`
 		runStopped        = `{"ok":true,"data":{"playing":false,"scene":""}}`
 
-		diagClean      = `{"ok":true,"data":{"error_count":0,"warning_count":0}}`
-		gameOneProc    = `{"ok":true,"data":{"instances":[{"pid":42}]}}`
-		gameNoProc     = `{"ok":true,"data":{"instances":[]}}`
-		gameTreeSmall  = `{"ok":true,"data":{"count":3,"scene":"res://scenes/Main.tscn","truncated":false}}`
-		gameUISmall    = `{"ok":true,"data":{"count":2,"truncated":false}}`
-		gameShotClean  = `{"ok":true,"data":{"analysis":{"nonblank":true,"low_detail":false,"possible_clipping":false}}}`
-		gameNotRunning = `{"ok":false,"error":"no game is running"}`
+		diagClean       = `{"ok":true,"data":{"error_count":0,"warning_count":0}}`
+		editorLogStatus = `{"ok":true,"data":{"editor_session_id":"fixture","capabilities":{"editor_log_cursor":"supported"}}}`
+		gameOneProc     = `{"ok":true,"data":{"instances":[{"pid":42}]}}`
+		gameNoProc      = `{"ok":true,"data":{"instances":[]}}`
+		gameTreeSmall   = `{"ok":true,"data":{"count":3,"scene":"res://scenes/Main.tscn","truncated":false}}`
+		gameUISmall     = `{"ok":true,"data":{"count":2,"truncated":false}}`
+		gameShotClean   = `{"ok":true,"data":{"analysis":{"nonblank":true,"low_detail":false,"possible_clipping":false}}}`
+		gameNotRunning  = `{"ok":false,"error":"no game is running"}`
 	)
 
 	return []contractCase{
@@ -96,6 +97,11 @@ func contractCases() []contractCase {
 		{name: "resource_uid", args: []string{"resource", "uid", "res://scenes/Main.tscn"}, responses: map[string]string{"resource": "@resource_uid"}, golden: "resource_uid"},
 		{name: "output", args: []string{"output", "--type", "all", "--lines", "3"}, responses: map[string]string{"output": "@output"}, golden: "output"},
 		{name: "diagnostics", args: []string{"diagnostics", "--lines", "5"}, responses: map[string]string{"diagnostics": "@diagnostics"}, golden: "diagnostics"},
+		{name: "output_editor", args: []string{"output", "--source", "editor", "--since", "fixture:0"}, responses: map[string]string{"status": editorLogStatus, "output": "@output_editor"}, golden: "output_editor"},
+		{name: "diagnostics_editor", args: []string{"diagnostics", "--source", "editor", "--since", "fixture:0"}, responses: map[string]string{"status": editorLogStatus, "diagnostics": "@diagnostics_editor"}, golden: "diagnostics_editor"},
+		{name: "editor_cursor_expired", args: []string{"output", "--source", "editor", "--since", "old:0"}, responses: map[string]string{"status": editorLogStatus, "output": "@editor_cursor_expired"}, golden: "editor_cursor_expired"},
+		{name: "editor_evidence_unavailable", args: []string{"diagnostics", "--source", "editor"}, responses: map[string]string{"status": `{"ok":true,"data":{}}`}, golden: "editor_evidence_unavailable"},
+		{name: "editor_status_error", args: []string{"output", "--source", "editor"}, responses: map[string]string{"status": `{"ok":false,"error":"unauthorized"}`}, wantExit: 1, wantStderrPrefix: "output: unauthorized"},
 		{name: "eval", args: []string{"eval", "1+1"}, responses: map[string]string{"eval": "@eval"}, golden: "eval"},
 		{name: "batch", args: []string{"batch", "--file", filepath.Join("testdata", "contract", "batch_input.json")}, responses: map[string]string{"batch": "@batch"}, golden: "batch"},
 

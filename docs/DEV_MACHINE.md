@@ -98,6 +98,12 @@ proves nothing.
 
 ## Editor console output needs `--log-file`
 
+Update (2026-09-14): opt-in `output`/`diagnostics --source editor` now collect
+post-registration editor events through a verified Logger callback. The
+file-backed defaults below are unchanged. Keep `--log-file` for startup
+evidence before registration; it is a separate path and Hera does not restart
+the user's editor or automatically read that path.
+
 `hera diagnostics` / `hera output` cannot see the editor's console. Godot skips
 installing the file logger entirely when running as the editor (`!editor` guard
 in `main/main.cpp`), so `debug/file_logging` only ever captures game and project

@@ -191,8 +191,8 @@ commands:
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel
   game_feel  list bundled Game Feel topics, or query one topic
-  output     tail project log (--type log|error|warning|all, --lines N)
-  diagnostics summarize project log errors and warnings (--lines N)
+  output     tail logs (--type log|error|warning|all, --lines N, --source file|editor, --since cursor)
+  diagnostics summarize logs (--lines N, --source file|editor, --since cursor)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent, --runtime, --analyze)
              diff <before.png> <after.png> [--threshold N]  compare two captures locally
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)

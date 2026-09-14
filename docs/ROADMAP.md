@@ -17,8 +17,11 @@ to drive Godot from a shell.
 
 - [x] Record the installed engine identity and isolated Go/Godot baseline.
 - [x] Add observed API capability states and a shared status/heartbeat addon
-  session identifier. This adds evidence only; mutation guards, editor log
-  collection, and debugger integration remain separate work.
+  session identifier. Mutation guards and debugger integration remain separate work.
+- [x] Opt-in bounded editor log evidence with callback-verified capability,
+  session cursors, dropped-history metadata, and explicit unavailability.
+  Windows 4.7.2 isolated callbacks and CLI checks verified; local 4.2 execution
+  remains unverified, with the existing CI parse matrix retained.
 - Evidence: [engine capability baseline](reports/2026-09-14-engine-capability-baseline.md).
 
 ## Shipped in v1.1.0 — review corrections (2026-09-08)

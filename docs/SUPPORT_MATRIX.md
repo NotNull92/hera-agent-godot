@@ -5,6 +5,14 @@ verified the installed Windows 4.7.2 .NET executable, all 52 addon parse checks,
 17 standalone regressions, and isolated live status/smoke. It does not expand
 the support tiers below or re-verify 4.2–4.6 on this machine.
 
+The M1 editor collector was exercised locally on that Windows 4.7.2 engine:
+real log/error callbacks, four logging threads, cursors/overflow, teardown,
+and CLI evidence reads. Runtime API checks plus an observed registration
+callback gate `editor_log_cursor`; no engine-version allowlist is used.
+The fixed Logger source is compiled only after API checks, keeping unsupported
+types out of common static dependencies. Local 4.2 parse/load execution for
+this change remains unverified; the existing CI 4.2 all-addon gate is retained.
+
 > Live `status` spot-check **2026-07-13** on official Windows stables (then
 > `v0.7.0`). GDScript `--check-only` on **4.2-stable** and **4.7-stable** still
 > runs in CI on every commit, including `v1.1.0`.

@@ -11,8 +11,8 @@ selected editor instance.
 | `status` | `status` | ☑ | Show the connected editor: project path, Godot version/commit, active scene, `editor_session_id`, API `capabilities`, `csharp_supported` editor capability (not SDK availability), and Game Feel modes. |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
-| `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the **running project's** log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Editor-console output is not in it (see ARCHITECTURE §6). Needs `debug/file_logging` enabled, or `--log-file <path>` on the editor; without a readable log the response reports `available:false` and a `hint` rather than an empty tail. |
-| `diagnostics [--lines N]` | `diagnostics` | ☑ | Summarize errors and warnings from the **running project's** log — Godot installs no file logger in an editor session, so editor-console messages are not covered (see ARCHITECTURE §6). Returns counts plus the latest matching lines. Needs `debug/file_logging` enabled, or the editor launched with `--log-file <path>` to capture editor output; without a readable log the response reports `available:false`, `clean:false` and a `hint` rather than counts that would read as a clean project. |
+| `output [--type log\|error\|warning\|all] [--lines N] [--source file\|editor] [--since cursor]` | `output` | ☑ | Default: tail the project's configured file log. Opt-in editor source: bounded session evidence with cursors and severity/location metadata; see below. Unreadable evidence reports `available:false`. |
+| `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
 | `scene tree` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |
@@ -229,6 +229,49 @@ Global flags go **before** the command (e.g. `hera --ids node find`,
 | (default) | ☑ | Compact JSON — minimal tokens. |
 | `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
 | `--timeout <ms>` | ☑ | Per-request HTTP timeout in milliseconds (default 5000); also separately bounds the engine child process for `script validate`. It does not bound a whole polling command (`--wait` sends many requests). Accepts `--timeout N` or `--timeout=N`. |
+
+## Editor log evidence
+
+`--source file` is the unchanged default. `--source editor` requires
+`status.capabilities.editor_log_cursor: supported`; the CLI checks before
+sending log parameters, so legacy addons cannot silently return file evidence.
+API absence is `unsupported`; registration or callback verification failure is
+`unverified`. Both produce `available:false`, `clean:false`, and
+`reason:evidence_unavailable`, without zero counts. File-read failures also
+carry this reason, while retaining their existing response fields.
+
+The editor collector retains 1024 events. `--lines` accepts 1–1024 for this
+source (defaults: output 100, diagnostics 20). Output returns the latest matching
+`entries` with `sequence`, `severity` (`log`, `warning`, `error`), `message`,
+`location` (`function`, `file`, `line`), native `error_type` (-1 for plain
+messages), and `truncated`. Messages retain at most 4096 characters; location
+strings retain 512 each. Script and shader failures count as errors; ordinary
+stderr messages also count as errors. No backtrace variables are collected.
+
+Both commands return `source`, `editor_session_id`, `cursor`, `restart_cursor`,
+`dropped_count`, `complete`, and `available`. Cursors are opaque: save a returned
+cursor, perform work, then pass `--since <cursor>` to read later events. They
+delimit observations, not causality. `dropped_count` is cumulative overwritten
+events in this session, even when the requested interval is complete.
+Output's `total` counts matches before the tail limit, and `omitted_count`
+reports matches excluded by that limit. The returned cursor advances past all
+observed events, including filtered/omitted events. Use `--lines 1024` to read
+every retained match. Diagnostics counts all matching retained events and limits
+only its `errors`/`warnings` samples. `clean` is false if history is incomplete.
+
+An old-session, malformed, future, or overwritten cursor returns
+`reason:cursor_expired`, `available:false`, `clean:false`, and a
+`restart_cursor` immediately before the oldest retained event. Explicitly use
+that restart cursor to begin a new interval after acknowledging the gap; Hera
+does not silently reset it. Re-enabling the plugin creates a new session.
+
+Coverage starts when the collector registers in this editor process. Earlier
+startup logs, external editor/game processes, disabled engine output streams,
+and un-emitted analyzer warnings are outside that evidence. Keep startup
+`--log-file <path>` collection when needed; Hera does not relaunch the editor
+or automatically read that separate file. Raw RPC/batch callers must check the
+capability themselves before using an older addon. QA scenario diagnostics
+remain on their existing file source.
 
 See [CONTRACT.md](./CONTRACT.md) for the output contract (exit codes, error
 shapes, stability tiers), [ARCHITECTURE.md](./ARCHITECTURE.md) for the request

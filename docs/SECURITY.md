@@ -25,6 +25,16 @@ and how to enable the opt-in shared-token auth.
 
 ## Threat model
 
+Editor log collection is memory-only and uses the same authenticated RPC
+boundary. It retains at most 1024 events, with 4096 message characters and
+512 characters per location string. Logs can contain project secrets or local
+paths; authorized clients can read them, so redact evidence before sharing.
+The fixed Logger adapter source accepts no client code. Callbacks only store
+bounded metadata under a mutex; they do not access editor objects, write files,
+capture variables, or log recursively. Plugin teardown removes the registered
+logger and clears its buffer. Session cursors are observation markers, not
+authentication credentials or proof that an action caused an error.
+
 **In scope** (what token auth addresses):
 
 - *Other OS users on a shared machine.* Loopback is host-wide: any local user

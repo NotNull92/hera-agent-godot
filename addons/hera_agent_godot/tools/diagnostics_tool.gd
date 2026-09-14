@@ -1,11 +1,17 @@
 extends RefCounted
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
+const EditorLog = preload("res://addons/hera_agent_godot/core/editor_log.gd")
+var editor_log: RefCounted
 
 func get_name() -> String:
 	return "diagnostics"
 
 func execute(params: Dictionary) -> Dictionary:
+	if params.get("source", "file") == "editor":
+		return editor_log.read(params, true) if editor_log != null else ToolResponse.success(EditorLog.unavailable())
+	if params.get("source", "file") != "file" or params.has("since"):
+		return ToolResponse.failure("source must be file or editor; since requires editor source")
 	# Read the effective value, not the base one: file logging defaults to true
 	# on desktop via the `.pc` feature-tag override, and plain get_setting()
 	# returns the untagged default (false). Keying availability off the base
@@ -36,6 +42,7 @@ func execute(params: Dictionary) -> Dictionary:
 		var reason := "Log file is missing or unreadable." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
+			"reason": "evidence_unavailable",
 			"file_logging_enabled": enabled,
 			"log_path": absolute_log_path,
 			"clean": false,

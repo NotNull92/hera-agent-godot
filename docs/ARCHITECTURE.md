@@ -196,7 +196,7 @@ viewport.
 
 ---
 
-> **`diagnostics` and `output` observe the running project, not the editor.**
+> **File-backed `diagnostics` and `output` remain the default.**
 > Both read `debug/file_logging/log_path` (`user://logs/godot.log`), and Godot
 > never writes that file while running as the editor. From `main/main.cpp`:
 >
@@ -214,12 +214,38 @@ viewport.
 >
 > **Workaround.** The first branch of that condition is an escape hatch: launch
 > the editor with `--log-file <path>` and the guard is bypassed, so editor
-> output is captured. That is the only way to make editor diagnostics
-> observable through these commands.
+> output is captured separately, including startup before plugin registration.
+> Hera does not automatically read this separate path or relaunch the editor.
+
+`--source editor` uses `core/editor_log.gd`, shared by output and diagnostics
+and registered once per plugin lifetime. Status and heartbeat use that same
+`editor_session_id`. Class/API checks precede compilation of a fixed in-memory
+Logger adapter source. No common script statically inherits or types `Logger`
+or `ScriptBacktrace`; the existing 4.2 all-addon parse gate still includes the
+collector file. API absence yields `unsupported`; compilation/registration or
+initial callback failure yields `unverified`. A received registration message
+is required before `editor_log_cursor` becomes `supported`.
+
+Callbacks store bounded message/severity/location data into a 1024-event ring
+under a mutex. They never inspect editor objects, do file I/O, capture script
+variables, or emit logs. Reads snapshot the ring while locked, then filter and
+serialize on the editor thread. Removal unregisters the logger, breaks its
+sink reference, and clears stored data; re-enable creates a new session.
+The cursor is the last observed sequence in that session. Invalid or lost
+cursors return an explicit expiration plus the oldest available restart point.
+This gives an observation interval without claiming causality or recovering
+pre-registration/external-process evidence. See [the response contract](COMMANDS.md#editor-log-evidence).
+
+The native callback/threading constraints are documented in the maintained
+[Godot Logger class](https://github.com/godotengine/godot/blob/master/doc/classes/Logger.xml).
+Local behavior verification covers the Windows 4.7.2 engine recorded in the
+baseline; a capability probe is not a cross-platform certification.
 
 ## 7. Security boundaries
 
 - Listener binds only to `127.0.0.1`.
+- Response serialization escapes JSON-forbidden control characters, including
+  ANSI ESC from editor progress logs, while preserving decoded message text.
 - Browser-origin requests are rejected.
 - Opt-in shared-token auth: when `~/.hera-agent-godot/token` (or
   `HERA_AGENT_GODOT_TOKEN`) is set, `/rpc` requires a matching `X-Hera-Token`

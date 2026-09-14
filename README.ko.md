@@ -120,6 +120,13 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 디버거 연결이나 SDK 설치를 보장하지 않습니다.
 [기능 상태의 범위](docs/ARCHITECTURE.md#6-discovery--instance-files)를 참고하세요.
 
+`hera output --source editor` 또는 `hera diagnostics --source editor`로
+에디터 세션 로그를 읽습니다. 반환된 `cursor`를 `--since`로 전달하면 이후 구간만
+조회합니다. 등록된 수집기의 실제 콜백을 확인해야 지원 상태가 되며, 관측 불가와
+만료된 커서는 명시적으로 반환합니다. 제한 버퍼는 누락 개수를 보고하고 등록 후
+현재 에디터 프로세스만 관측합니다. 기본 파일 로그와 시작 시 `--log-file` 수집은
+유지됩니다. [에디터 로그 증거](docs/COMMANDS.md#editor-log-evidence)를 참고하세요.
+
 스크립트 생성 예:
 `hera script create res://Player.gd` 또는
 `hera script create res://Player.cs --ready --export Speed:float=3.5f`.

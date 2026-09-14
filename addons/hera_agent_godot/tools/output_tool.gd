@@ -2,17 +2,21 @@ extends RefCounted
 
 # `output` — read the project log file (default user://logs/godot.log).
 #
-# Godot does not expose the editor Output panel / EditorLog to GDScript, so this
-# reads the log file written when `debug/file_logging` is enabled. That setting
-# is OFF by default; when it is, we report that and how to turn it on rather than
-# pretending there is nothing to show.
+# The default reads the configured file log; the opt-in editor source uses
+# the plugin's registered Logger collector and never falls back to that file.
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
+const EditorLog = preload("res://addons/hera_agent_godot/core/editor_log.gd")
+var editor_log: RefCounted
 
 func get_name() -> String:
 	return "output"
 
 func execute(params: Dictionary) -> Dictionary:
+	if params.get("source", "file") == "editor":
+		return editor_log.read(params, false) if editor_log != null else ToolResponse.success(EditorLog.unavailable())
+	if params.get("source", "file") != "file" or params.has("since"):
+		return ToolResponse.failure("source must be file or editor; since requires editor source")
 	# Read the effective value, not the base one: file logging defaults to true
 	# on desktop via the `.pc` feature-tag override, and plain get_setting()
 	# returns the untagged default (false). Keying availability off the base
@@ -35,6 +39,7 @@ func execute(params: Dictionary) -> Dictionary:
 		var reason := "Log file is missing or unreadable." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
+			"reason": "evidence_unavailable",
 			"file_logging_enabled": enabled,
 			"log_path": ProjectSettings.globalize_path(log_path),
 			"hint": "%s This log only ever covers the running project — Godot installs no file logger in an editor session, so editor-console messages are never in it. Enable Project Settings > debug/file_logging/enable_file_logging for project runs, or relaunch the editor with --log-file <path> to capture editor output." % reason,

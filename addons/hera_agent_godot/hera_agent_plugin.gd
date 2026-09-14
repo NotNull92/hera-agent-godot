@@ -35,6 +35,7 @@ const GAME_AUTOLOAD_PATH := "res://addons/hera_agent_godot/runtime/game_inspecto
 const MAIN_SCREEN_PLUGIN_NAME := "HeraAgent"
 
 var _registry: RefCounted
+var _editor_log: RefCounted
 var _server: RefCounted
 var _queue: RefCounted
 var _heartbeat: RefCounted
@@ -57,6 +58,9 @@ func _enter_tree() -> void:
 	add_export_plugin(_game_export_guard)
 	_registry = ToolRegistry.new()
 	var status_tool := StatusTool.new()
+	_editor_log = OutputTool.EditorLog.new()
+	_editor_log.start(status_tool.editor_session_id)
+	status_tool.editor_log = _editor_log
 	_registry.register(status_tool)
 	_registry.register(RunTool.new())
 	_registry.register(SceneTool.new())
@@ -75,8 +79,12 @@ func _enter_tree() -> void:
 	_registry.register(EvalTool.new())
 	_registry.register(GuidanceTool.new())
 	_registry.register(GameFeelTool.new())
-	_registry.register(OutputTool.new())
-	_registry.register(DiagnosticsTool.new())
+	var output_tool := OutputTool.new()
+	output_tool.editor_log = _editor_log
+	_registry.register(output_tool)
+	var diagnostics_tool := DiagnosticsTool.new()
+	diagnostics_tool.editor_log = _editor_log
+	_registry.register(diagnostics_tool)
 	var game_tool := GameTool.new()
 	game_tool.set_host(self)
 	_registry.register(game_tool)
@@ -122,6 +130,9 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	set_process(false)
+	if _editor_log != null:
+		_editor_log.stop()
+		_editor_log = null
 	if _game_export_guard != null:
 		remove_export_plugin(_game_export_guard)
 		_game_export_guard = null

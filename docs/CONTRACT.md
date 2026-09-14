@@ -169,6 +169,25 @@ contract tests (see [Contract tests](#contract-tests)).
 | `script current` / `script inspect` | experimental | compact script metadata; GDScript source response unchanged, C# loaded-assembly metadata as specified below |
 | `script validate` | experimental | fresh on-disk `.gd` native engine check; JSON `{path,valid,exit_code,output,output_truncated,timed_out}`; optional `error` for launch failure; invalid/timeout exits 1, output capped at 64 KiB; leading `--timeout` also bounds the child process (default 5 s) |
 
+### Editor log source (experimental)
+
+The stable file-backed `output`/`diagnostics` defaults are unchanged. Their
+unreadable response adds `reason:evidence_unavailable`. Opt-in `--source editor`
+and `--since cursor` follow [the editor log evidence contract](COMMANDS.md#editor-log-evidence).
+`--since` requires editor source. CLI negotiation checks the additive
+`capabilities.editor_log_cursor` state before sending editor log requests.
+Absent/unsupported/unverified capabilities yield JSON `available:false`,
+`clean:false`, `reason:evidence_unavailable`, with no diagnostic counts.
+These are evidence states (exit 0), not transport success claims about project
+health; malformed flags exit 2 and RPC/transport failures exit 1 as before.
+
+Editor output uses `entries[]` instead of the file source's text `lines[]`.
+The documented session/cursor, severity/location, truncation, dropped-history,
+and availability fields are experimental. Counts describe retained observations;
+`complete:false` forbids a clean-history inference. Expired cursors carry
+`restart_cursor` and never silently become a normal empty result. Timestamps
+are not used to attribute events to actions.
+
 ### C# script metadata and build boundary
 
 C# script inspection is experimental and reads Godot's loaded assembly, not a
