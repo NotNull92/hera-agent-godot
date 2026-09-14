@@ -19,6 +19,7 @@ func _run() -> void:
 	await _request("X-Hera-Token: wrong\r\n", "{}", 401)
 	await _request("X-Hera-Token: test-token\r\nOrigin: https://example.com\r\n", "{}", 403)
 	await _request("X-Hera-Token: test-token\r\n", "{}", 200)
+	await _request("X-Hera-Token: test-token\r\n", "{}", 200, "ANSI " + String.chr(27) + "[31m control " + String.chr(1) + " newline\n 한글")
 	await _request("X-Hera-Token: test-token\r\n", "[]", 400)
 	await _request("Content-Length: 1048577\r\n", "", 413)
 	var slow: StreamPeerTCP = await _connect()
@@ -130,14 +131,16 @@ func _receive_request() -> Dictionary:
 		await create_timer(0.01).timeout
 	return {}
 
-func _request(headers: String, body: String, status: int) -> void:
+func _request(headers: String, body: String, status: int, payload: String = "") -> void:
+	if payload.is_empty():
+		payload = "hello 한글".repeat(20000)
 	var client: StreamPeerTCP = await _connect()
 	client.put_data(_wire(headers, body))
 	var received := PackedByteArray()
 	for i in 200:
 		_server.poll(_queue)
 		for item: Dictionary in _queue.drain():
-			_server.respond(item["conn"], { "ok": true, "data": "hello 한글".repeat(20000) })
+			_server.respond(item["conn"], { "ok": true, "data": payload })
 		client.poll()
 		var count := client.get_available_bytes() if client.get_status() == StreamPeerTCP.STATUS_CONNECTED else 0
 		if count > 0:
@@ -149,7 +152,10 @@ func _request(headers: String, body: String, status: int) -> void:
 	var text := received.get_string_from_utf8()
 	_check(text.begins_with("HTTP/1.1 %d " % status), "HTTP status %d: %s" % [status, text.left(60)])
 	if status == 200:
-		_check(text.ends_with(JSON.stringify({ "ok": true, "data": "hello 한글".repeat(20000) })), "complete multi-chunk UTF-8 response")
+		var encoded := text.substr(text.find("\r\n\r\n") + 4)
+		_check(not encoded.contains(String.chr(27)) and not encoded.contains(String.chr(1)), "JSON wire must escape raw control bytes")
+		var decoded: Variant = JSON.parse_string(encoded)
+		_check(decoded is Dictionary and decoded.get("data", "") == payload, "complete multi-chunk UTF-8 response preserves text")
 	client.disconnect_from_host()
 
 func _check(value: bool, message: String) -> void:

@@ -26,6 +26,10 @@ var auth_token := ""
 
 var _server: TCPServer
 var _clients: Array = [] # conn, buf, state (reading/queued/writing), deadline; output and offset when writing
+var _json_controls := RegEx.new()
+
+func _init() -> void:
+	_json_controls.compile("[\\x01-\\x1f]")
 
 # Bind to the first free port in [base_port, base_port + attempts).
 # Returns the bound port, or 0 on failure.
@@ -135,7 +139,12 @@ func _write_http(conn: StreamPeerTCP, code: int, reason: String, body: Dictionar
 	# An asynchronous tool can finish after disconnection, timeout, or stop().
 	if entry.is_empty() or entry["state"] == "writing":
 		return
-	var body_bytes := JSON.stringify(body).to_utf8_buffer()
+	var json := JSON.stringify(body)
+	# Godot leaves some control characters (including ANSI ESC) unescaped.
+	if _json_controls.search(json) != null:
+		for codepoint in range(1, 32):
+			json = json.replace(String.chr(codepoint), "\\u%04x" % codepoint)
+	var body_bytes := json.to_utf8_buffer()
 	var header := "HTTP/1.1 %d %s\r\n" % [code, reason]
 	header += "Content-Type: application/json\r\n"
 	header += "Content-Length: %d\r\n" % body_bytes.size()
