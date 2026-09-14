@@ -182,7 +182,11 @@ func parseGameNodeCallArgs(args []string) (map[string]any, error) {
 }
 
 func parseGameScreenshotArgs(args []string) (map[string]any, error) {
-	params := map[string]any{"action": "screenshot"}
+	args, params, err := parseEvidenceOptions(args, true)
+	if err != nil {
+		return nil, err
+	}
+	params["action"] = "screenshot"
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--path":

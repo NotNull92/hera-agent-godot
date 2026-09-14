@@ -3,6 +3,9 @@ package cmd
 import "fmt"
 
 func validateGameQAStep(step gameQAStep) error {
+	if step.Evidence && step.Tool != "screenshot.runtime" && step.Tool != "game.node.get" && step.Tool != "game.assert" {
+		return fmt.Errorf("evidence is supported on screenshot.runtime, game.node.get and game.assert")
+	}
 	if step.valueMissing {
 		return fmt.Errorf("%s requires value (explicit null is accepted)", step.Tool)
 	}

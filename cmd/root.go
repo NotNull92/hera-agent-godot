@@ -183,7 +183,7 @@ commands:
   node       find|get|add|instance|set|set-resource|remove|reparent|attach-script|detach-script
              get <path> --prop P --snapshot; set <path> --prop P --value V [--expected JSON [--verify]]
   script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
-             validate <res://script.gd>  check fresh on-disk GDScript with the editor's engine
+             validate <res://script.gd> [--evidence]  check fresh on-disk GDScript with the editor's engine
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
@@ -198,10 +198,14 @@ commands:
   output     tail logs (--type log|error|warning|all, --lines N, --source file|editor, --since cursor)
   diagnostics summarize logs (--lines N, --source file|editor, --since cursor)
   screenshot render the edited scene to PNG (--path, --width, --height, --transparent, --runtime, --analyze)
+             --evidence [--operation-id ID] [--runtime-session ID]  capture identity and actual size
              diff <before.png> <after.png> [--threshold N]  compare two captures locally
   batch      run a JSON array of {tool, params} (stdin or --file; --continue)
   smoke      run a live editor smoke check [--run-game|--skip-game]
   version    print the CLI version
+
+scene save and resource set accept --evidence [--expected-sha256 HASH].
+Save-call success, observed disk contents and memory equivalence are separate.
 
 global flags (before the command):
   --json         pretty-print the response

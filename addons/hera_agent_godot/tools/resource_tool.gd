@@ -6,6 +6,7 @@ const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.g
 const ResourceValueCodec = preload("res://addons/hera_agent_godot/tools/resource_value_codec.gd")
 const MeshLibraryExporter = preload("res://addons/hera_agent_godot/tools/mesh_library_exporter.gd")
 const ResourceLister = preload("res://addons/hera_agent_godot/tools/resource_lister.gd")
+const PersistenceEvidence = preload("res://addons/hera_agent_godot/core/persistence_evidence.gd")
 
 const MAX_VALUE_LEN := 200
 const MAX_ERRORS := 20
@@ -22,7 +23,7 @@ func execute(params: Dictionary) -> Dictionary:
 			return _uid(params)
 		"list":
 			return _list(params)
-		"set":
+		"set", "set_evidence":
 			return _set_resource(params)
 		"create":
 			return _create(params)
@@ -83,10 +84,23 @@ func _set_resource(params: Dictionary) -> Dictionary:
 	var res := ResourceLoader.load(path)
 	if res == null:
 		return ToolResponse.failure("failed to load resource: %s" % path)
+	var before: Dictionary = PersistenceEvidence.observe(path) if bool(params.get("evidence", false)) else {}
+	var conflict := PersistenceEvidence.guard(params, before)
+	if not conflict.is_empty():
+		return conflict
 	var prop_result := ResourceValueCodec.apply_props(res, params.get("props", {}))
 	if not bool(prop_result.get("ok", false)):
 		return ToolResponse.failure(String(prop_result.get("error", "invalid resource properties")))
 	var err := ResourceSaver.save(res, path)
+	if bool(params.get("evidence", false)):
+		var response := ToolResponse.success({"updated": path, "type": res.get_class(), "properties": prop_result.get("properties", {}), "uid": _resource_uid(path)}) if err == OK else ToolResponse.failure("save_failed: %s" % error_string(err))
+		var expected: Dictionary = {}
+		for property: String in prop_result.get("properties", {}):
+			expected[property] = res.get(property)
+		var verification: Dictionary = PersistenceEvidence.verify_properties(path, expected) if err == OK else {"available": false, "reason": "save call failed"}
+		if err == OK and not bool(verification.available):
+			response = ToolResponse.failure("evidence_unavailable: selected disk properties could not be verified")
+		return PersistenceEvidence.finish(response, {"path": path, "before": before, "effect": "applied", "save_call": "succeeded" if err == OK else "failed", "verification": verification})
 	if err != OK:
 		return ToolResponse.failure("save failed: %s" % error_string(err))
 	return ToolResponse.success({

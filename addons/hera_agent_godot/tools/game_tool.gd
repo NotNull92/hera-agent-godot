@@ -11,6 +11,7 @@ const FRESHNESS_SEC := 5.0
 
 var _host: Node
 var _next_request_seq := 0
+var editor_session_id := ""
 
 func set_host(host: Node) -> void:
 	_host = host
@@ -30,6 +31,10 @@ func execute_async(params: Dictionary) -> Dictionary:
 	var target := _select_target(_collect_game_heartbeats()["live"], params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
 	if target.has("error"):
 		return ToolResponse.failure(String(target["error"]))
+	if params.has("runtime_session_id") and params.runtime_session_id != target.get("runtime_session_id"):
+		return ToolResponse.failure("session_mismatch: runtime session changed")
+	if bool(params.get("evidence", false)) and not target.has("runtime_session_id"):
+		return ToolResponse.failure("evidence_unavailable: runtime session is unavailable")
 	if params.has("operation_id"):
 		if not target.has("runtime_session_id"):
 			return ToolResponse.failure("capability_unavailable: runtime does not support operation receipts")
@@ -40,6 +45,8 @@ func execute_async(params: Dictionary) -> Dictionary:
 	request["id"] = request_id
 	request["target_pid"] = int(target["pid"])
 	request["target_scene"] = String(target["scene"])
+	if bool(params.get("evidence", false)):
+		request["runtime_session_id"] = target.runtime_session_id
 	var write_err := _write_request(request, int(target["pid"]))
 	if write_err != "":
 		return ToolResponse.failure(write_err)
@@ -49,6 +56,9 @@ func execute_async(params: Dictionary) -> Dictionary:
 			return ToolResponse.failure("outcome_unknown: game host ended while awaiting a dispatched request")
 		var response := _read_response(int(target["pid"]), request_id)
 		if not response.is_empty():
+			if bool(params.get("evidence", false)) and response.get("evidence") is Dictionary:
+				response.evidence["editor_session_id"] = editor_session_id
+				response.evidence["editor_pid"] = OS.get_process_id()
 			if bool(response.get("ok", false)):
 				response.erase("ok")
 				response.erase("id")
@@ -59,7 +69,10 @@ func execute_async(params: Dictionary) -> Dictionary:
 					response["ok"] = bool(response.get("passed", false))
 					response.erase("passed")
 				return ToolResponse.success(response)
-			return ToolResponse.failure(String(response.get("error", "game request failed")))
+			var failure := ToolResponse.failure(String(response.get("error", "game request failed")))
+			if bool(params.get("evidence", false)) and response.has("evidence"):
+				failure["data"] = {"evidence": response.evidence}
+			return failure
 		await _host.get_tree().create_timer(POLL_INTERVAL_SEC).timeout
 	return ToolResponse.failure("outcome_unknown: game response timed out; do not retry mutation with a new operation ID" if params.has("operation_id") else "game request timed out; ensure HeraGameInspector autoload is active")
 

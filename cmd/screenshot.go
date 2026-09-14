@@ -32,7 +32,10 @@ func runScreenshot(args []string) int {
 }
 
 func parseScreenshotArgs(args []string) (map[string]any, error) {
-	params := map[string]any{}
+	args, params, err := parseEvidenceOptions(args, true)
+	if err != nil {
+		return nil, err
+	}
 	var runtime bool
 	var sized bool
 	var transparent bool
@@ -80,6 +83,9 @@ func parseScreenshotArgs(args []string) (map[string]any, error) {
 	}
 	if runtime && (sized || transparent) {
 		return nil, fmt.Errorf("--runtime captures the running game viewport and cannot be combined with --width, --height, or --transparent")
+	}
+	if params["runtime_session_id"] != nil && !runtime {
+		return nil, fmt.Errorf("--runtime-session requires --runtime")
 	}
 	return params, nil
 }

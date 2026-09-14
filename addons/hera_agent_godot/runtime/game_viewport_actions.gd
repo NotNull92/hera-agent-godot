@@ -1,6 +1,7 @@
 extends RefCounted
 
 const GameImageAnalyzer = preload("res://addons/hera_agent_godot/runtime/game_image_analyzer.gd")
+const CaptureEvidence = preload("res://addons/hera_agent_godot/core/capture_evidence.gd")
 
 const HERA_INPUT_DEVICE_ID := 240920
 
@@ -48,7 +49,13 @@ static func geometry(viewport: Viewport) -> Dictionary:
 	}
 
 static func screenshot(viewport: Viewport, request: Dictionary, scene_path: String, pid: int) -> Dictionary:
+	var guard := CaptureEvidence.guard(request)
+	if guard != "":
+		return {"ok": false, "error": guard}
+	if DisplayServer.get_name() == "headless":
+		return CaptureEvidence.unavailable("headless renderer")
 	var image := viewport.get_texture().get_image()
+	var evidence := CaptureEvidence.snapshot("runtime", "")
 	if image == null or image.is_empty():
 		return { "ok": false, "error": "runtime screenshot produced an empty image" }
 	var out_path := String(request.get("path", "user://hera_game_screenshots/latest.png"))
@@ -65,6 +72,12 @@ static func screenshot(viewport: Viewport, request: Dictionary, scene_path: Stri
 	data["height"] = height
 	data["pid"] = pid
 	data["scene"] = scene_path
+	if bool(request.get("evidence", false)):
+		evidence["width"] = width
+		evidence["height"] = height
+		evidence["geometry"] = geometry(viewport)
+		CaptureEvidence.link(evidence, request)
+		data["evidence"] = evidence
 	data["size_matches_project"] = sizes_match(width, height, int(data.get("project_width", 0)), int(data.get("project_height", 0)))
 	if bool(request.get("analyze", false)):
 		data["analysis"] = GameImageAnalyzer.analyze(image)

@@ -91,6 +91,13 @@ func _handle_file(path: String, response_path: String) -> void:
 	if request.has("operation_id"):
 		_handle_operation(request, response_path)
 		return
+	if String(request.get("action", "")) == "screenshot":
+		if not await GameViewportActions.CaptureEvidence.wait_for_draw(get_tree()):
+			var unavailable: Dictionary = GameViewportActions.CaptureEvidence.unavailable("no rendered frame within 1000 ms")
+			var payload: Dictionary = unavailable.data
+			payload["error"] = unavailable.error
+			_write(response_path, _response(request, false, payload))
+			return
 	if String(request.get("action", "")) == "input" and String(request.get("kind", "")) == "sequence":
 		_write(response_path, await _input_sequence(request))
 		return
@@ -120,6 +127,8 @@ func _handle_operation(request: Dictionary, response_path: String) -> void:
 	_write(response_path, _response(request, true, {"runtime_receipt": _operations.lookup(id)}))
 
 func _handle(request: Dictionary) -> Dictionary:
+	if request.has("runtime_session_id") and request.runtime_session_id != runtime_session_id:
+		return _response(request, false, {"error": "session_mismatch: runtime session changed"})
 	var action := String(request.get("action", ""))
 	match action:
 		"tree":
@@ -396,7 +405,9 @@ func _clock_snapshot() -> Dictionary:
 func _screenshot(request: Dictionary) -> Dictionary:
 	var result := GameViewportActions.screenshot(get_viewport(), request, _current_scene_path(), _pid)
 	if not bool(result.get("ok", false)):
-		return _response(request, false, { "error": String(result.get("error", "runtime screenshot failed")) })
+		var failure: Dictionary = result.get("data", {})
+		failure["error"] = String(result.get("error", "runtime screenshot failed"))
+		return _response(request, false, failure)
 	var data: Dictionary = result.get("data", {})
 	return _response(request, true, data)
 
@@ -643,6 +654,17 @@ func _method_return_type(method: Dictionary) -> String:
 	return type_string(type_id)
 
 func _response(request: Dictionary, ok: bool, payload: Dictionary) -> Dictionary:
+	if bool(request.get("evidence", false)):
+		var evidence: Dictionary = payload.get("evidence", GameViewportActions.CaptureEvidence.snapshot("runtime", runtime_session_id))
+		evidence["available"] = bool(evidence.get("available", false)) and ok
+		evidence["runtime_session_id"] = runtime_session_id
+		evidence["game_pid"] = _pid
+		evidence["scene"] = _current_scene_path()
+		if request.get("action") != "screenshot":
+			evidence["source"] = "runtime_state"
+			evidence["observed_at_unix_ms"] = evidence.get("captured_at_unix_ms")
+			evidence.erase("captured_at_unix_ms")
+		payload["evidence"] = evidence
 	payload["id"] = String(request.get("id", ""))
 	payload["ok"] = ok
 	return payload

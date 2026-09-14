@@ -1,6 +1,7 @@
 extends RefCounted
 
 const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
+const PersistenceEvidence = preload("res://addons/hera_agent_godot/core/persistence_evidence.gd")
 
 # `scene` — read and manage scenes via EditorInterface.
 #   tree         -> flat node list of the edited scene { path, type, name }
@@ -30,8 +31,8 @@ func execute(params: Dictionary) -> Dictionary:
 			return _open(params)
 		"reload":
 			return _reload(params)
-		"save":
-			return _save()
+		"save", "save_evidence":
+			return _save(params)
 		"create":
 			return _create(params)
 		"save_as":
@@ -81,13 +82,22 @@ func _reload(params: Dictionary) -> Dictionary:
 	EditorInterface.reload_scene_from_path(path)
 	return ToolResponse.success({ "reloaded": path, "current": _current_scene() })
 
-func _save() -> Dictionary:
+func _save(params: Dictionary = {}) -> Dictionary:
 	var root := EditorInterface.get_edited_scene_root()
 	if root == null:
 		return ToolResponse.failure("no scene to save")
 	if root.scene_file_path == "":
+		if bool(params.get("evidence", false)):
+			return PersistenceEvidence.finish(ToolResponse.failure("save_failed: scene has no path"), {"path": "", "before": {}, "effect": "unknown", "save_call": "not_called"})
 		return ToolResponse.failure("scene has no path yet; save it once from the editor first")
+	var before: Dictionary = PersistenceEvidence.observe(root.scene_file_path) if bool(params.get("evidence", false)) else {}
+	var conflict := PersistenceEvidence.guard(params, before)
+	if not conflict.is_empty():
+		return conflict
 	var err := EditorInterface.save_scene()
+	if bool(params.get("evidence", false)):
+		var response := ToolResponse.success({"saved": root.scene_file_path}) if err == OK else ToolResponse.failure("save_failed: %s" % error_string(err))
+		return PersistenceEvidence.finish(response, {"path": root.scene_file_path, "before": before, "effect": "unknown", "save_call": "succeeded" if err == OK else "failed"})
 	if err != OK:
 		return ToolResponse.failure("save failed: %s" % error_string(err))
 	return ToolResponse.success({ "saved": root.scene_file_path })

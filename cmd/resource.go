@@ -106,6 +106,10 @@ func parseResourceListArgs(args []string) (map[string]any, error) {
 }
 
 func parseResourceSetArgs(args []string) (map[string]any, error) {
+	args, params, err := parseEvidenceOptions(args, false)
+	if err != nil {
+		return nil, err
+	}
 	if len(args) < 3 {
 		return nil, fmt.Errorf("usage: resource set <res://path> --prop <name=value> ...")
 	}
@@ -116,7 +120,8 @@ func parseResourceSetArgs(args []string) (map[string]any, error) {
 	if len(props) == 0 {
 		return nil, fmt.Errorf("resource set requires at least one --prop")
 	}
-	return map[string]any{"action": "set", "path": args[0], "props": props}, nil
+	params["action"], params["path"], params["props"] = "set", args[0], props
+	return params, nil
 }
 
 func parseResourceCreateArgs(args []string) (map[string]any, error) {

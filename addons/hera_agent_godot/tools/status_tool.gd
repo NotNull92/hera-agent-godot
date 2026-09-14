@@ -36,6 +36,7 @@ func execute(_params: Dictionary) -> Dictionary:
 func _capabilities() -> Dictionary:
 	return {
 		"editor_mutation_gate": "supported",
+		"linked_evidence": "supported",
 		"import_busy_api": _support(ClassDB.class_has_method("EditorFileSystem", "is_importing")),
 		"operation_receipts": "supported",
 		"node_set_guard": "supported",

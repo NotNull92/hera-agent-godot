@@ -14,6 +14,7 @@ type gameQAScenario struct {
 }
 
 type gameQAStep struct {
+	Evidence     bool           `json:"evidence"`
 	Tool         string         `json:"tool"`
 	Path         string         `json:"path"`
 	Prop         string         `json:"prop"`

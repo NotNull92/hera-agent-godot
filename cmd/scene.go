@@ -56,10 +56,15 @@ func parseSceneArgs(args []string) (map[string]any, error) {
 		}
 		return params, nil
 	case "save":
-		if len(args) > 1 {
+		rest, params, err := parseEvidenceOptions(args[1:], false)
+		if err != nil {
+			return nil, err
+		}
+		if len(rest) > 0 {
 			return nil, fmt.Errorf("scene save does not accept arguments")
 		}
-		return map[string]any{"action": "save"}, nil
+		params["action"] = "save"
+		return params, nil
 	case "create":
 		return parseSceneCreateArgs(args[1:])
 	case "save-as":

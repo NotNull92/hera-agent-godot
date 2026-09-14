@@ -77,14 +77,45 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		}
 	}
 	useGuardedNodeAction(request.tool, request.params)
+	if request.params["evidence"] == true {
+		status, statusErr := c.Post("status", nil)
+		if statusErr != nil {
+			fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, statusErr)
+			return 1
+		}
+		data, _ := status.Data.(map[string]any)
+		capabilities, _ := data["capabilities"].(map[string]any)
+		if !status.OK || capabilities["linked_evidence"] != "supported" {
+			fmt.Fprintf(os.Stderr, "%s: capability_unavailable: addon does not support linked_evidence\n", request.label)
+			return 1
+		}
+		if request.tool == "scene" && request.params["action"] == "save" {
+			request.params["action"] = "save_evidence"
+		}
+		if request.tool == "resource" && request.params["action"] == "set" {
+			request.params["action"] = "set_evidence"
+		}
+	}
 	resp, err := c.Post(request.tool, request.params)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
 	if !resp.OK {
+		if request.params["evidence"] == true && resp.Data != nil {
+			printData(resp)
+		}
 		fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, resp.Error)
 		return 1
+	}
+	if request.params["evidence"] == true {
+		data, _ := resp.Data.(map[string]any)
+		evidence, _ := data["evidence"].(map[string]any)
+		if evidence["available"] != true {
+			printData(resp)
+			fmt.Fprintf(os.Stderr, "%s: evidence_unavailable\n", request.label)
+			return 1
+		}
 	}
 	return printData(resp)
 }

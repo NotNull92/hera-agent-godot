@@ -86,9 +86,11 @@ func _enter_tree() -> void:
 	diagnostics_tool.editor_log = _editor_log
 	_registry.register(diagnostics_tool)
 	var game_tool := GameTool.new()
+	game_tool.editor_session_id = status_tool.editor_session_id
 	game_tool.set_host(self)
 	_registry.register(game_tool)
 	var screenshot_tool := ScreenshotTool.new()
+	screenshot_tool.editor_session_id = status_tool.editor_session_id
 	screenshot_tool.set_host(self)
 	_registry.register(screenshot_tool)
 	_registry.register(BatchTool.new())

@@ -84,9 +84,20 @@ func executeGameQAStep(c *client.Client, index int, step gameQAStep) gameQAResul
 		result.Error = err.Error()
 		return result
 	}
+	if step.Evidence {
+		result.Data = resp.Data
+	}
 	if !resp.OK {
 		result.Error = resp.Error
 		return result
+	}
+	if step.Evidence {
+		data, _ := resp.Data.(map[string]any)
+		evidence, _ := data["evidence"].(map[string]any)
+		if evidence["available"] != true {
+			result.Error = "evidence_unavailable: requested evidence was not observed"
+			return result
+		}
 	}
 	if step.Tool == "game.ui.audit" {
 		passed, auditErr := gameUIAuditPassed(resp.Data)
@@ -152,7 +163,11 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 	case "game.ui.audit":
 		return c.Post("game", targetGameParams(gameUIAuditParamsFromQAStep(step), step.targetPID))
 	case "game.assert":
-		return c.Post("game", targetGameParams(map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value}, step.targetPID))
+		params := map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value}
+		if step.Evidence {
+			params["evidence"] = true
+		}
+		return c.Post("game", targetGameParams(params, step.targetPID))
 	case "screenshot.runtime":
 		return c.Post("game", targetGameParams(screenshotParamsFromQAStep(step), step.targetPID))
 	case "diagnostics":
@@ -183,6 +198,9 @@ func runParamsFromQAStep(step gameQAStep) map[string]any {
 
 func gameNodeGetParamsFromQAStep(step gameQAStep) map[string]any {
 	params := map[string]any{"action": "get", "path": normalizeGameNodePath(step.Path)}
+	if step.Evidence {
+		params["evidence"] = true
+	}
 	if len(step.Props) > 0 {
 		params["props"] = step.Props
 	} else if step.Prop != "" {
@@ -214,6 +232,9 @@ func gameUIAuditParamsFromQAStep(step gameQAStep) map[string]any {
 
 func screenshotParamsFromQAStep(step gameQAStep) map[string]any {
 	params := map[string]any{"action": "screenshot", "analyze": true}
+	if step.Evidence {
+		params["evidence"] = true
+	}
 	if step.Path != "" {
 		params["path"] = step.Path
 	}
