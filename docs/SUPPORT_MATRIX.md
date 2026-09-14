@@ -1,5 +1,10 @@
 # Godot support matrix
 
+The [2026-09-14 local baseline](reports/2026-09-14-engine-capability-baseline.md)
+verified the installed Windows 4.7.2 .NET executable, all 52 addon parse checks,
+17 standalone regressions, and isolated live status/smoke. It does not expand
+the support tiers below or re-verify 4.2–4.6 on this machine.
+
 > Live `status` spot-check **2026-07-13** on official Windows stables (then
 > `v0.7.0`). GDScript `--check-only` on **4.2-stable** and **4.7-stable** still
 > runs in CI on every commit, including `v1.1.0`.

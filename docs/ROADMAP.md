@@ -13,6 +13,14 @@ standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
+## In development — engine baseline (2026-09-14)
+
+- [x] Record the installed engine identity and isolated Go/Godot baseline.
+- [x] Add observed API capability states and a shared status/heartbeat addon
+  session identifier. This adds evidence only; mutation guards, editor log
+  collection, and debugger integration remain separate work.
+- Evidence: [engine capability baseline](reports/2026-09-14-engine-capability-baseline.md).
+
 ## Shipped in v1.1.0 — review corrections (2026-09-08)
 
 - [x] Follow-up re-review: restore all original descendant owners after reparent undo; share QA play/stop waits so stop/state aliases do not wait for a game launch. [Evidence](reviews/2026-09-08-push-corrections.md).

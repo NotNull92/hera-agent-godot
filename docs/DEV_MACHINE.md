@@ -7,6 +7,17 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **Verified direct executable (2026-09-14)**: the 4.7.2 .NET path below is
+  the engine itself (181,449,736 bytes, native x64 PE). Its sibling
+  `_console.exe` is 198,152 bytes; use the direct executable for bounded child
+  process checks and redirected output. `--version` and isolated
+  `Engine.get_version_info()` agree on commit
+  `ed1daf0bf001b61586d9930840f2f1394092c079`. Full hashes, capability scope, and
+  fresh baseline results are in [the report](reports/2026-09-14-engine-capability-baseline.md).
+  There were no fresh user editor heartbeats during this run; old files were
+  left untouched. Windows smoke isolation explicitly set `APPDATA` as well as
+  `HOME`/`USERPROFILE`, and the engine confirmed the isolated `user://` path.
+
 - **Additional active editor (2026-09-07)**: Godot 4.7.2 .NET is installed at
   `C:\Users\PC\Desktop\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64.exe`.
   The user's open project in this session was the sibling `testproject`, not
@@ -15,7 +26,8 @@ of re-discovering it; date the entries that are point-in-time observations.
 - **Binary**: Godot 4.7 stable lives at
   `C:\Users\PC\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe`
   (note the nested folder with the same name). It is **not on PATH**. Always
-  use the `_console.exe` variant so stdout/stderr is captured in shells.
+  use explicit stdout/stderr redirection with the direct executable for bounded
+  checks; the console wrapper is useful for interactive shell output only.
 - **Console-wrapper gotcha**: `Godot_v4.x_win64_console.exe` is a ~200KB
   wrapper that spawns the real editor as a **child process**. The Hera
   heartbeat lands under the **child pid**, not the wrapper pid returned by
@@ -105,9 +117,13 @@ buffering.
 
 ## Toolchain limits on this PC
 
-- **`go test -race` cannot run**: the antivirus blocks race-instrumented
-  binaries. Run the full non-race suite locally and note the skip; race runs
-  happen in CI.
+- **Race check reverified (2026-09-14)**: `go test -race -shuffle=on -count=1 ./...`
+  passed with Go 1.26.2 windows/amd64, `CGO_ENABLED=1`, and the installed UCRT64
+  GCC. The earlier antivirus block did not recur; attempt the check before
+  treating that historical limitation as current.
+- **.NET SDK inventory (2026-09-14)**: `dotnet --list-sdks` reports 7.0.101
+  and 10.0.204. This proves installation, not a successful project restore,
+  build, or assembly load. Status deliberately leaves SDK readiness unverified.
 - **Long Windows paths poison clones**: cloning a large third-party repo can
   hit `Filename too long` checkout failures, after which a "one-line" commit
   silently **deletes every unmaterialized file** (observed: 2,410 deletions;
