@@ -20,6 +20,8 @@ to drive Godot from a shell.
   requirements/covers QA. Disk changes, unavailable rendering, stale runtime
   sessions and failed persistence cannot masquerade as verified success.
   Scene memory equivalence and unsupported resource properties remain unknown.
+  Non-nested batch evidence uses the same capability/save guards and fails on
+  missing child observations while retaining their data.
 
 - [x] Session-local mutation gate rejects overlap with `editor_busy`, retains
   async/batch ownership through import completion, permits buffered safe reads,

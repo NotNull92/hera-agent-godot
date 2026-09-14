@@ -30,6 +30,12 @@ pass an evidence-enabled QA step. Scene save's `persistence: unknown` is a truth
 observation result, not full memory-to-disk verification. Screenshot operation
 associations are caller-supplied labels, independent from operation receipts.
 
+Non-nested batch children receive the same evidence negotiation and guarded save
+actions; `expected_sha256` implies evidence on scene save/resource set. Missing or
+failed evidence children exit 1. A child claiming success without available
+evidence is marked `ok: false` with `error: evidence_unavailable`; its data remains
+on stdout. Ordinary batches retain their existing envelope and exit contract.
+
 ## Experimental operation receipts
 
 `operation submit <session:unix_ms:nonce> --request JSON`, `operation status <id>`,

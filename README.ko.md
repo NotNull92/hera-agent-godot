@@ -10,6 +10,8 @@
 디스크 코드, 실행 세션, 실제 화면 크기, 저장 결과를 구분합니다. 관측 불가는
 증거를 요청한 QA의 성공으로 처리하지 않습니다. 캡처의 작업 ID는 호출자가 지정한
 연결 표식이며 인과관계를 증명하지 않습니다. [증거 계약](docs/COMMANDS.md#linked-evidence-opt-in)을 참고하세요.
+배치의 하위 요청에도 같은 증거 사전 검사와 저장 조건 보호가 적용됩니다.
+하위 요청의 증거가 없으면 관측 결과를 유지하면서 CLI가 실패합니다.
 
 > Hera gives agents eyes, hands, and proof in the live Godot editor.
 

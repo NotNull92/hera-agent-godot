@@ -41,6 +41,8 @@ In-development `--evidence` on script validation, captures, scene save and resou
 set separates disk code, live sessions, actual viewport size and save outcomes.
 Unavailable observations fail evidence-enabled QA; capture operation IDs are
 caller-supplied correlation labels. See [linked evidence](docs/COMMANDS.md#linked-evidence-opt-in).
+Batch children receive the same evidence preflight and save guards; unavailable
+child evidence fails the CLI while preserving returned observations.
 
 `v1.1.0` is the repository tag and addon manifest baseline. It is a minor
 release on the v1 contract: new commands and experimental fields, no intended

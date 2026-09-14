@@ -107,3 +107,23 @@ policy; no approval-policy rejection occurred in this M5 run. Temporary project
 cleanup was paused by the controller while investigating reported permission
 messages. Private logs and the parameterized QA helper were
 retained for the final independent review and manual QA.
+
+## Final review correction: batch evidence
+
+Final review found that batch children bypassed linked-evidence preflight and
+guarded save actions. The CLI now applies both to non-nested children, including
+hash-only scene/resource save preconditions. Missing/unavailable child evidence
+becomes an explicit failure with its data preserved; ordinary batches keep their
+existing output and exit behavior. This is a Go CLI correction; addon source is
+unchanged from the independently exercised M4/M5 surfaces above.
+
+Focused regressions failed before the correction and passed afterward (32 table
+cases). Fresh Go build, vet, full uncached tests, shuffled tests, race tests, and
+contract golden regeneration passed; regeneration produced no golden changes.
+A parameterized real-binary loopback harness exercised 12 negative cases against
+legacy, replaced-after-preflight and evidence-free response doubles. The prior
+binary failed all 12; the corrected binary passed all 12. Legacy doubles received
+only status; replaced doubles received guarded actions and performed zero modeled
+legacy mutations. These are transport/CLI observations, not new native Godot
+executions. The prior installed-engine verification remains applicable to the
+unchanged addon; its older-engine/platform and evidence limits remain unchanged.

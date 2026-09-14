@@ -41,6 +41,15 @@ CLI capability negotiation and distinct internal evidence actions prevent an old
 addon from ignoring the save precondition. Failed commands can print their
 evidence on stdout with exit 1 and an error on stderr; defaults stay compact.
 
+These protections also apply to non-nested `batch` children: `evidence: true`
+requests capability negotiation before the batch is sent, and `expected_sha256`
+on scene save/resource set implies evidence. Protected saves use distinct internal
+actions even after preflight. A failed or missing evidence child makes the CLI
+exit 1. A success-shaped child without available evidence becomes `ok: false`,
+`error: evidence_unavailable`, with its `data` retained. This response check occurs
+after execution; it cannot undo earlier children or change the server's `stopped`
+observation. Batches without evidence keep their existing output and exit behavior.
+
 Resource property changes report `effect: applied` even if saving fails. A fresh
 resource load without the root cache verifies selected non-object/non-container
 properties; observed mismatch means `persistence: failed`, even when the engine
