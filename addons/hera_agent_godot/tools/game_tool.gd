@@ -30,6 +30,11 @@ func execute_async(params: Dictionary) -> Dictionary:
 	var target := _select_target(_collect_game_heartbeats()["live"], params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
 	if target.has("error"):
 		return ToolResponse.failure(String(target["error"]))
+	if params.has("operation_id"):
+		if not target.has("runtime_session_id"):
+			return ToolResponse.failure("capability_unavailable: runtime does not support operation receipts")
+		if params.get("runtime_session_id") != target.runtime_session_id:
+			return ToolResponse.failure("session_mismatch: runtime session changed")
 	var request_id := _new_request_id()
 	var request := params.duplicate()
 	request["id"] = request_id
@@ -54,7 +59,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 				return ToolResponse.success(response)
 			return ToolResponse.failure(String(response.get("error", "game request failed")))
 		await _host.get_tree().create_timer(POLL_INTERVAL_SEC).timeout
-	return ToolResponse.failure("game request timed out; ensure HeraGameInspector autoload is active")
+	return ToolResponse.failure("outcome_unknown: game response timed out; do not retry mutation with a new operation ID" if params.has("operation_id") else "game request timed out; ensure HeraGameInspector autoload is active")
 
 func _new_request_id() -> String:
 	_next_request_seq += 1

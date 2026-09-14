@@ -88,6 +88,22 @@ need a duplicate `LICENSE` at the ZIP download root.
 
 ## 4. Request lifecycle
 
+Explicit `operation` requests enter the existing WorkQueue before dispatch.
+The queue validates the ID, session, deadline, request digest and supported
+mutation, then reserves a bounded receipt. Status/cancel and duplicates are
+answered without calling tools. The plugin marks a fresh receipt running before
+the setter/async bridge and completes it before responding over HTTP. Losing the
+connection therefore does not erase the result or cause a retry.
+
+The shared `core/operation_records.gd` ledger also guards runtime set/call file
+deliveries, with the runtime's random session identity checked before admission.
+The editor propagates its ID and retains the runtime receipt when available;
+lost runtime replies remain outcome unknown, never an automatic resend. Queue
+cancellation cannot undo an already-started tool. Both ledgers bound count,
+serialized bytes, evidence, execution deadlines and retention; IDs embed immutable
+session/deadline fields so dropped history cannot become valid new execution.
+These records are not persisted. See the operation contract in COMMANDS.md.
+
 ```text
 1. CLI: hera run --scene res://Main.tscn --wait
 2. CLI parses args and builds Request{ tool:"run", params:{...} }

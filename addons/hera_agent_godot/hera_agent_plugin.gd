@@ -97,6 +97,7 @@ func _enter_tree() -> void:
 	_registry.register(batch_tool)
 
 	_queue = WorkQueue.new()
+	_queue.configure_operations(status_tool.editor_session_id)
 	var token_result := HttpServer.load_shared_token()
 	if token_result.has("error"):
 		_set_main_status("Not connected: shared token read failed", false)
@@ -131,6 +132,8 @@ func _process(delta: float) -> void:
 
 func _exit_tree() -> void:
 	set_process(false)
+	if _queue != null:
+		_queue.operations.retire()
 	if _registry != null:
 		var node_tool: RefCounted = _registry.resolve("node")
 		if node_tool != null:
@@ -229,6 +232,10 @@ func restore_game_autoload_after_export() -> void:
 		_game_autoload_injected = true
 
 func _handle(item: Dictionary) -> void:
+	var queue: RefCounted = _queue
+	if not queue.begin(item):
+		_server.respond(item["conn"], item["response"])
+		return
 	var request: Dictionary = item["request"]
 	var tool_name := String(request.get("tool", ""))
 	var tool = _registry.resolve(tool_name) if tool_name != "" else null
@@ -237,12 +244,13 @@ func _handle(item: Dictionary) -> void:
 		if typeof(params) != TYPE_DICTIONARY:
 			params = {}
 		var response: Dictionary = await tool.execute_async(params)
+		response = queue.complete(item, response)
 		if _server != null:
 			_server.respond(item["conn"], response)
 		else:
 			(item["conn"] as StreamPeerTCP).disconnect_from_host()
 	else:
-		_server.respond(item["conn"], _dispatch(request))
+		_server.respond(item["conn"], queue.complete(item, _dispatch(request)))
 
 func _dispatch(request: Dictionary) -> Dictionary:
 	var tool_name := String(request.get("tool", ""))

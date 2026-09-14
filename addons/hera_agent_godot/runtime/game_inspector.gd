@@ -7,6 +7,7 @@ const GameUIInspector = preload("res://addons/hera_agent_godot/runtime/game_ui_i
 const GameUIAuditor = preload("res://addons/hera_agent_godot/runtime/game_ui_auditor.gd")
 const GameViewportActions = preload("res://addons/hera_agent_godot/runtime/game_viewport_actions.gd")
 const GameInputSequence = preload("res://addons/hera_agent_godot/runtime/game_input_sequence.gd")
+const OperationRecords = preload("res://addons/hera_agent_godot/core/operation_records.gd")
 
 const INSTANCE_DIR := "user://hera_game_instances"
 const REQUEST_ROOT := "user://hera_game_requests"
@@ -23,6 +24,8 @@ var _mouse_presses := {}
 var _active_keys := {}
 var _active_mouse_buttons := {}
 var _temporal_busy := false
+var runtime_session_id := Crypto.new().generate_random_bytes(16).hex_encode()
+var _operations := OperationRecords.new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -32,6 +35,7 @@ func _ready() -> void:
 	_last_heartbeat_ms = Time.get_ticks_msec()
 
 func _exit_tree() -> void:
+	_operations.retire()
 	if _pid != 0:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(_instance_path()))
 
@@ -84,6 +88,9 @@ func _handle_file(path: String, response_path: String) -> void:
 		return
 	if int(request.get("target_pid", _pid)) != _pid:
 		return
+	if request.has("operation_id"):
+		_handle_operation(request, response_path)
+		return
 	if String(request.get("action", "")) == "input" and String(request.get("kind", "")) == "sequence":
 		_write(response_path, await _input_sequence(request))
 		return
@@ -91,6 +98,26 @@ func _handle_file(path: String, response_path: String) -> void:
 		_write(response_path, await _clock_step(request))
 		return
 	_write(response_path, _handle(request))
+
+func _handle_operation(request: Dictionary, response_path: String) -> void:
+	if request.get("runtime_session_id") != runtime_session_id:
+		_write(response_path, _response(request, false, {"error": "session_mismatch: runtime session changed"}))
+		return
+	if not request.get("operation_id") is String or request.get("action") not in ["set", "call"]:
+		_write(response_path, _response(request, false, {"error": "invalid_operation: runtime operations require ID and set/call"}))
+		return
+	var id: String = request.operation_id
+	var input := request.duplicate(true)
+	input.erase("id")
+	var accepted := _operations.accept(id, {"tool": "game", "params": input})
+	if accepted.has("error"):
+		_write(response_path, _response(request, false, {"error": accepted.error}))
+		return
+	if accepted.has("accepted") and _operations.begin(id):
+		if request.action == "call":
+			_operations.records[id].persistence = "unknown"
+		_operations.finish(id, _handle(request))
+	_write(response_path, _response(request, true, {"runtime_receipt": _operations.lookup(id)}))
 
 func _handle(request: Dictionary) -> Dictionary:
 	var action := String(request.get("action", ""))
@@ -640,6 +667,7 @@ func _write_heartbeat() -> void:
 		return
 	var data := {
 		"pid": _pid,
+		"runtime_session_id": runtime_session_id,
 		"scene": _current_scene_path(),
 		"ts": Time.get_unix_time_from_system(),
 		"user_data_dir": OS.get_user_data_dir(),
