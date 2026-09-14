@@ -35,6 +35,7 @@ func execute(_params: Dictionary) -> Dictionary:
 
 func _capabilities() -> Dictionary:
 	return {
+		"operation_receipts": "supported",
 		"node_set_guard": "supported",
 		"editor_log_cursor": editor_log.capability if editor_log != null else "unverified",
 		"editor_logger_api": _support(ClassDB.class_exists("Logger") and OS.has_method("add_logger") and OS.has_method("remove_logger")),

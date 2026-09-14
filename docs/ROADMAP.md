@@ -15,6 +15,11 @@ to drive Godot from a shell.
 
 ## In development — engine baseline (2026-09-14)
 
+- [x] Explicit operation receipts for guarded node set and runtime set/call,
+  session/deadline-bound IDs, duplicate suppression, queued cancellation and
+  honest outcome-unknown reporting. Records and evidence are bounded and lost
+  on restart; no durable exactly-once or rollback guarantee.
+
 - [x] Record the installed engine identity and isolated Go/Godot baseline.
 - [x] Add observed API capability states and a shared status/heartbeat addon
   session identifier. Debugger integration remains separate work.

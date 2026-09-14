@@ -86,6 +86,9 @@ The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 
 ```
 hera status                                  # project / version / scene / session / API capabilities
+hera operation submit <session:unix_ms:nonce> --request JSON # explicit receipt: guarded node set or session-targeted game set/call
+hera operation status <id>                   # retained result or honest outcome_unknown
+hera operation cancel <id>                   # queued work only; running/completed effects preserved
 hera scene tree                              # node tree of the edited scene
 hera scene list                              # open scenes + current
 hera scene open res://Path.tscn              # open a scene
@@ -284,6 +287,13 @@ default 5000). Default output is compact JSON.
   way — use `node set-resource <path> --prop <name> --resource res://...`.
 
 ## Verify your work (Hera)
+
+Operation receipts are opt-in and bounded in process. Retain the caller-supplied
+session/deadline/nonce ID before submission; after transport failure query or
+explicitly resubmit the same ID/input, never automatically repeat a mutation.
+Inspect lifecycle/effect/verification/persistence independently. Queued cancellation
+does not roll back running work. Old sessions reject submissions; missing history
+means unknown effect. See `docs/COMMANDS.md` for supported actions and retention.
 
 For conditional edits, retain the complete `expected` object from
 `node get --prop P --snapshot` and send it to `node set --expected JSON

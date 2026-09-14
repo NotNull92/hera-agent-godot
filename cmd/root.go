@@ -107,6 +107,8 @@ func Execute(args []string) int {
 	switch args[0] {
 	case "status":
 		return runStatus(args[1:])
+	case "operation":
+		return runOperation(args[1:])
 	case "run":
 		return runRun(args[1:])
 	case "stop":
@@ -173,6 +175,7 @@ usage: hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
 
 commands:
   status     show the connected editor (project, version, scene, session, capabilities)
+  operation  submit <session:unix_ms:nonce> --request JSON | status|cancel <id>
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
   scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as

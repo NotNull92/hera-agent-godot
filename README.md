@@ -113,6 +113,11 @@ its `expected` object to `node set <path> --prop P --value V --expected '<JSON>'
 --verify`. Stale sessions, scenes, nodes, or typed values are rejected before
 mutation. See [conditional changes](docs/COMMANDS.md#conditional-node-property-changes).
 
+For response-loss recovery, explicit `operation submit <id> --request JSON` wraps
+guarded node sets or runtime set/call; `operation status|cancel <id>` inspects or
+cancels queued work. Same-ID retries do not repeat retained operations. Records
+are bounded and lost on restart. See [operation receipts](docs/COMMANDS.md#operation-receipts-experimental).
+
 `hera status` also reports the engine commit, addon `editor_session_id`, and
 API capability states (`supported`, `unsupported`, or `unverified`). API presence
 does not certify a connected debugger or installed SDK. See

@@ -6,6 +6,80 @@
 Each command maps 1:1 to an addon tool and sends a single JSON request to the
 selected editor instance.
 
+## Operation receipts (experimental)
+
+`operation submit <id> --request '<JSON>'` explicitly wraps a mutation in an
+in-process receipt. `operation status <id>` reads it; `operation cancel <id>`
+cancels only accepted, queued work. These commands use the selected editor and
+require `--instance` when several editors are live. Legacy commands are unchanged.
+
+The caller constructs and retains `id` as `EDITOR_SESSION:UNIX_MS:NONCE`, using
+`status.editor_session_id`, an absolute execution deadline no more than 60 seconds
+ahead, and a unique ASCII alphanumeric/underscore/hyphen nonce. Example PowerShell:
+
+```powershell
+$session = (hera status | ConvertFrom-Json).editor_session_id
+$deadline = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() + 30000
+$operationId = "${session}:${deadline}:change1"
+# $request contains one supported {tool,params} object described below.
+hera operation submit $operationId --request $request
+hera operation status $operationId
+hera operation cancel $operationId
+```
+
+Supported request objects (maximum 16 KiB UTF-8):
+
+- `{"tool":"node","params":{"action":"set","path":".","prop":"visible","value":"false","expected":{...},"verify":true}}`.
+  Use the complete `expected` from `node get --prop visible --snapshot`.
+  The addon normalizes `set` to the guarded action before admission.
+- `{"tool":"game","params":{"action":"set","pid":123,"runtime_session_id":"...","path":"/root/Main","prop":"speed","value":"5"}}`.
+- `{"tool":"game","params":{"action":"call","pid":123,"runtime_session_id":"...","path":"/root/Main","method":"increment","args":[1]}}`.
+  Read PID and random runtime session identity from `game instances`.
+
+Other tools/actions fail `capability_unavailable` before execution. The CLI sends
+a SHA-256 of the raw request for boundary validation; the addon computes its own
+digest from the normalized input and session. Same ID and normalized request
+returns current/preserved state without dispatch. Different input with a retained
+ID fails `operation_id_conflict`. Deadlines are checked at admission and again
+before dispatch, including the runtime file consumer. A retained completed receipt
+is readable after the execution deadline.
+
+Receipts separate `lifecycle` (`accepted|running|completed|rejected|cancelled|outcome_unknown`),
+`effect` (`not_applied|applied|unknown`), `verification`, `persistence`, stable
+`error_code`, `target`, `input_digest`, `evidence`, and `cancellable`.
+Successful method dispatch reports `applied`; it does not prove the method's
+business outcome. Arbitrary calls have `persistence:unknown`; sets do not request
+a disk save. Setter side effects and application saves are not tracked. Guarded
+verification failures preserve `effect:applied` and report failed/unavailable
+verification. Unclassified execution errors and lost runtime responses become
+`outcome_unknown`. Inspect receipt fields even when CLI exit is zero: that exit
+means the receipt was obtained, not that the mutation succeeded.
+
+Cancellation wins only before dispatch (`cancelled:true`, `effect:not_applied`).
+Running/completed operations return `cancelled:false`, preserving their effect;
+no rollback or interruption is promised. An HTTP timeout does not cancel work.
+The CLI never automatically retries a failed mutation. Query its ID, or explicitly
+resubmit the same ID and input. A retained unknown outcome is never re-executed.
+
+Each editor and runtime keeps at most 128 records and 4 MiB of serialized records.
+Full response evidence is capped at 16 KiB; clipping retains the effect and ID and
+reports `evidence.complete:false` with a dropped-result count. Capacity rejects
+new operations instead of evicting valid IDs. Records expire 60 seconds after the
+immutable ID deadline; an expired ID cannot become fresh execution. Missing history
+reports unknown effect, with retention-expired/session-mismatch codes where known.
+Retention metadata exposes expired/dropped counts and `durable:false`. Clocks are
+anchored to monotonic elapsed time during each process lifetime.
+
+Plugin restart loses editor history and changes its session; old-session submissions
+fail `session_mismatch`. Runtime restart changes `runtime_session_id` and rejects
+old targets. The runtime also deduplicates repeated file deliveries during its
+lifetime. Atomic request publication and partial-file reads remain unchanged.
+There is no durable or distributed exactly-once guarantee or automatic recovery
+after a process dies before its effect is recorded. Do not give an uncertain
+mutation a new ID merely to force it to run.
+
+## Command reference
+
 | Command | Tool | Status | Description |
 |---------|------|--------|-------------|
 | `status` | `status` | ☑ | Show the connected editor: project path, Godot version/commit, active scene, `editor_session_id`, API `capabilities`, `csharp_supported` editor capability (not SDK availability), and Game Feel modes. |

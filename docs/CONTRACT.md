@@ -18,6 +18,26 @@ the transitional alias for the same binary; the contract is identical.)
   version **together**; the wire protocol may change between releases and is
   not a stable integration point. Build on the CLI, not on `/rpc`.
 
+## Experimental operation receipts
+
+`operation submit <session:unix_ms:nonce> --request JSON`, `operation status <id>`,
+and `operation cancel <id>` print a receipt on stdout with exit 0 when obtained.
+Inspect its `lifecycle`, `effect`, `verification`, `persistence`, `error_code`,
+`cancellable`, and `evidence`; exit 0 alone is not mutation success. Invalid CLI
+input exits 2. Admission conflicts/expiry/capacity/unsupported actions exit 1
+with `operation: <stable_code>: <detail>` on stderr and empty stdout.
+Unknown or expired status is an explicit `outcome_unknown` receipt, not success
+or proof of no effect. Cancellation additionally returns `cancelled`.
+
+Supported actions are guarded editor node set and session-targeted runtime set/call.
+`status.capabilities.operation_receipts` advertises this bounded surface;
+`game instances[].runtime_session_id` identifies the runtime incarnation.
+IDs and session identities are strings; the decimal milliseconds component fixes
+the deadline. Request/response evidence is bounded, in-process only, and disappears
+on restart. The full lifecycle, error and retention semantics are defined in
+[Commands](COMMANDS.md#operation-receipts-experimental). Legacy command output is
+unchanged. Contract goldens cover status/cancel/conflict and command help.
+
 ## Stability tiers
 
 | Tier | Meaning |

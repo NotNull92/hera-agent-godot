@@ -120,6 +120,11 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 세션·씬·노드·타입이 있는 속성값이 달라졌다면 수정 전에 거절합니다.
 지원 타입과 검증 실패 의미는 [명령 문서](docs/COMMANDS.md#conditional-node-property-changes)를 참고하세요.
 
+응답 유실에 대비하려면 조건부 노드 수정 또는 런타임 set/call을
+`operation submit <id> --request JSON`으로 실행하고 `operation status|cancel <id>`로
+조회하거나 대기 중 작업을 취소합니다. 보존 중인 동일 ID는 다시 실행하지 않습니다.
+기록은 용량·기간이 제한되며 재시작 시 사라집니다. [작업 영수증](docs/COMMANDS.md#operation-receipts-experimental)을 참고하세요.
+
 `hera status`는 엔진 커밋, 애드온 `editor_session_id`, API 기능 상태
 (`supported`, `unsupported`, `unverified`)도 반환합니다. API 존재만으로
 디버거 연결이나 SDK 설치를 보장하지 않습니다.
