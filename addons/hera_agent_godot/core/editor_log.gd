@@ -7,12 +7,17 @@ const MESSAGE_LIMIT := 4096
 # Fixed source is compiled only after API checks; older engines never parse Logger.
 const LOGGER_SOURCE := """@tool
 extends Logger
-var sink: RefCounted
+var sink: WeakRef
+var lease: int
 func _log_message(message: String, error: bool) -> void:
-	sink.record(message, "error" if error else "log")
+	var target: RefCounted = sink.get_ref()
+	if target != null:
+		target.record(lease, message, "error" if error else "log")
 func _log_error(function: String, file: String, line: int, code: String, rationale: String, _editor_notify: bool, error_type: int, _script_backtraces: Array[ScriptBacktrace]) -> void:
 	var severity := "warning" if error_type == Logger.ERROR_TYPE_WARNING else "error"
-	sink.record(rationale if not rationale.is_empty() else code, severity, function, file, line, error_type)
+	var target: RefCounted = sink.get_ref()
+	if target != null:
+		target.record(lease, rationale if not rationale.is_empty() else code, severity, function, file, line, error_type)
 """
 
 var capability := "unverified"
@@ -21,6 +26,7 @@ var _logger: RefCounted
 var _mutex := Mutex.new()
 var _entries: Array[Dictionary] = []
 var _sequence := 0
+var _lease := 0
 
 func start(session: String) -> void:
 	stop()
@@ -35,7 +41,8 @@ func start(session: String) -> void:
 		return
 	_entries.resize(CAPACITY)
 	_logger = adapter.new()
-	_logger.set("sink", self)
+	_logger.set("sink", weakref(self))
+	_logger.set("lease", _lease)
 	OS.call("add_logger", _logger)
 	print("[hera] editor log capture registered")
 	_mutex.lock()
@@ -47,21 +54,24 @@ func start(session: String) -> void:
 		stop()
 
 func stop() -> void:
-	if _logger != null:
-		OS.call("remove_logger", _logger)
-		_logger.set("sink", null)
-		_logger = null
 	_mutex.lock()
+	_lease += 1
 	_entries.clear()
 	_sequence = 0
 	_mutex.unlock()
+	if _logger != null:
+		OS.call("remove_logger", _logger)
+		_logger = null
 	capability = "unverified"
 
-func record(message: String, severity: String, function: String = "", file: String = "", line: int = 0, error_type: int = -1) -> void:
+func record(lease: int, message: String, severity: String, function: String = "", file: String = "", line: int = 0, error_type: int = -1) -> void:
+	_mutex.lock()
+	if lease != _lease or _entries.is_empty():
+		_mutex.unlock()
+		return
 	var entry := {"message": message.left(MESSAGE_LIMIT), "severity": severity,
 		"location": {"function": function.left(512), "file": file.left(512), "line": line},
 		"error_type": error_type, "truncated": message.length() > MESSAGE_LIMIT or function.length() > 512 or file.length() > 512}
-	_mutex.lock()
 	_sequence += 1
 	entry["sequence"] = _sequence
 	_entries[(_sequence - 1) % CAPACITY] = entry

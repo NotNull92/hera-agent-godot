@@ -229,8 +229,10 @@ is required before `editor_log_cursor` becomes `supported`.
 Callbacks store bounded message/severity/location data into a 1024-event ring
 under a mutex. They never inspect editor objects, do file I/O, capture script
 variables, or emit logs. Reads snapshot the ring while locked, then filter and
-serialize on the editor thread. Removal unregisters the logger, breaks its
-sink reference, and clears stored data; re-enable creates a new session.
+serialize on the editor thread. Removal retires the registration lease under
+the storage mutex before clearing data and unregistering. Callbacks hold an
+immutable weak sink and lease; a callback already in flight becomes a no-op
+after retirement, including after restart. Re-enable creates a new session.
 The cursor is the last observed sequence in that session. Invalid or lost
 cursors return an explicit expiration plus the oldest available restart point.
 This gives an observation interval without claiming causality or recovering

@@ -141,9 +141,16 @@ func _write_http(conn: StreamPeerTCP, code: int, reason: String, body: Dictionar
 		return
 	var json := JSON.stringify(body)
 	# Godot leaves some control characters (including ANSI ESC) unescaped.
-	if _json_controls.search(json) != null:
-		for codepoint in range(1, 32):
-			json = json.replace(String.chr(codepoint), "\\u%04x" % codepoint)
+	var controls := _json_controls.search_all(json)
+	if not controls.is_empty():
+		var pieces := PackedStringArray()
+		var offset := 0
+		for control in controls:
+			pieces.append(json.substr(offset, control.get_start() - offset))
+			pieces.append("\\u%04x" % json.unicode_at(control.get_start()))
+			offset = control.get_end()
+		pieces.append(json.substr(offset))
+		json = "".join(pieces)
 	var body_bytes := json.to_utf8_buffer()
 	var header := "HTTP/1.1 %d %s\r\n" % [code, reason]
 	header += "Content-Type: application/json\r\n"

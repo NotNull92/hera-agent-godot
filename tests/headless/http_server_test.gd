@@ -31,7 +31,7 @@ func _run() -> void:
 	_check(not _server._clients.is_empty(), "receive deadline does not cancel queued asynchronous work")
 	print("HTTP_BACKPRESSURE_BEGIN")
 	var started := Time.get_ticks_msec()
-	_server.respond(pending["conn"], { "ok": true, "data": "x".repeat(32 * 1024 * 1024) })
+	_server.respond(pending["conn"], { "ok": true, "data": "x".repeat(32 * 1024 * 1024) + String.chr(27) })
 	_check(Time.get_ticks_msec() - started < 2000, "respond must not block on a nonreading client")
 	_check(not _server._clients.is_empty(), "large response remains tracked until written or timed out")
 	var ticks := 0

@@ -5,6 +5,10 @@ const OutputTool = preload("res://addons/hera_agent_godot/tools/output_tool.gd")
 const DiagnosticsTool = preload("res://addons/hera_agent_godot/tools/diagnostics_tool.gd")
 
 var failures: Array[String] = []
+var _race_mutex := Mutex.new()
+var _race_running := true
+var _race_ready := Semaphore.new()
+var _late_release := Semaphore.new()
 
 func _initialize() -> void:
 	print("before-registration")
@@ -67,7 +71,51 @@ func _initialize() -> void:
 	_check(output.execute({"source": "editor"})["data"]["total"] == 1, "re-enable duplicated callbacks or retained old entries")
 	_check(output.execute({"source": "editor", "since": overflow["cursor"]})["data"].get("reason", "") == "cursor_expired", "re-enable accepted an old session")
 	collector.stop()
+	var retired: WeakRef = _test_close_race(collector)
+	_check(retired.get_ref() == null, "retired adapter must be released after the callback and its owning scope exit")
 	_finish()
+
+func _test_close_race(collector: RefCounted) -> WeakRef:
+	collector.start("race")
+	var old_adapter: RefCounted = collector._logger
+	var late := Thread.new()
+	_check(late.start(_late_callback.bind(old_adapter)) == OK, "late callback worker starts")
+	_race_ready.wait()
+	var active := Thread.new()
+	_check(active.start(_during_close_logs) == OK, "active logging worker starts")
+	_race_ready.wait()
+	collector.stop()
+	collector.start("race")
+	_race_mutex.lock()
+	_race_running = false
+	_race_mutex.unlock()
+	active.wait_to_finish()
+	var before: Dictionary = collector.read({}, false)["data"]
+	_late_release.post()
+	late.wait_to_finish()
+	late = null
+	var after: Dictionary = collector.read({"since": before["cursor"]}, false)["data"]
+	_check(after["total"] == 0, "retired callback must neither write nor emit an error after restart")
+	var retired: WeakRef = weakref(old_adapter)
+	old_adapter = null
+	collector.stop()
+	return retired
+
+func _late_callback(adapter: RefCounted) -> void:
+	_race_ready.post()
+	_late_release.wait()
+	adapter.call("_log_message", "retired-callback", false)
+
+func _during_close_logs() -> void:
+	print("race-worker-start")
+	_race_ready.post()
+	while true:
+		_race_mutex.lock()
+		var running := _race_running
+		_race_mutex.unlock()
+		if not running:
+			return
+		print("race-worker-active")
 
 func _script_error() -> void:
 	var empty: Variant = null
