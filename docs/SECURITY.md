@@ -8,6 +8,15 @@ and how to enable the opt-in shared-token auth.
 
 ## What the transport guarantees
 
+Detailed evidence is observational, not an authorization token or file lock.
+Hashes and session IDs do not prevent manual/external changes between reads.
+Capture operation IDs are caller-supplied correlation labels, not proof of an
+operation's effects. Disk validation may run native dependency initializers;
+explicit resource persistence verification may load resource scripts/dependencies
+again. Use isolated copies for untrusted projects. Neither action automatically
+reloads editor buffers or updates running game code. Evidence adds local engine
+and file paths to output; keep private artifacts out of public reports.
+
 - The addon binds **`127.0.0.1` only** (ports 8770–8785, first free). It never
   listens on `0.0.0.0`; nothing off-machine can connect directly.
 - **Browser-origin requests are rejected** (403 on any `Origin` header), which

@@ -12,6 +12,16 @@ concepts.
 
 ## 1. High-level model
 
+Opt-in evidence stays in the existing CLI/HTTP/runtime-file flow. Disk validation
+hashes around its native child process; capture helpers bound rendered-frame waits
+and sample readback metadata. Runtime requests bind the heartbeat incarnation and
+responses report their actual incarnation. Save evidence observes files separately
+from engine save return codes; resource verification loads a fresh root resource
+and compares only supported selected properties. Scene equivalence remains unknown.
+Capture operation labels never enter the mutation receipt ledger. Synchronous
+plugin retirement stops already-drained dispatch using a retained queue reference,
+before any further access to the freed plugin.
+
 Two processes talk over localhost HTTP:
 
 ```text

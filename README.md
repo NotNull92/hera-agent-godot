@@ -37,6 +37,11 @@ same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
 ## Current release baseline: v1.1.0
 
+In-development `--evidence` on script validation, captures, scene save and resource
+set separates disk code, live sessions, actual viewport size and save outcomes.
+Unavailable observations fail evidence-enabled QA; capture operation IDs are
+caller-supplied correlation labels. See [linked evidence](docs/COMMANDS.md#linked-evidence-opt-in).
+
 `v1.1.0` is the repository tag and addon manifest baseline. It is a minor
 release on the v1 contract: new commands and experimental fields, no intended
 break of documented stable JSON.

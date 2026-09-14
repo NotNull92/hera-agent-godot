@@ -18,6 +18,18 @@ the transitional alias for the same binary; the contract is identical.)
   version **together**; the wire protocol may change between releases and is
   not a stable integration point. Build on the CLI, not on `/rpc`.
 
+## Opt-in code, capture and save evidence
+
+`--evidence` is experimental on script validation, screenshots, scene save and
+resource set. See [linked evidence](COMMANDS.md#linked-evidence-opt-in) for fields,
+limits and proof boundaries. Legacy successful outputs remain unchanged. Detailed
+validation exits 1 for changed/unobservable source even when `exit_code` is 0.
+Other detailed failures retain available JSON evidence on stdout and the error
+on stderr, with exit 1. Parse errors remain exit 2. Explicit unavailability cannot
+pass an evidence-enabled QA step. Scene save's `persistence: unknown` is a truthful
+observation result, not full memory-to-disk verification. Screenshot operation
+associations are caller-supplied labels, independent from operation receipts.
+
 ## Experimental operation receipts
 
 `operation submit <session:unix_ms:nonce> --request JSON`, `operation status <id>`,

@@ -15,6 +15,12 @@ to drive Godot from a shell.
 
 ## In development — engine baseline (2026-09-14)
 
+- [x] Opt-in disk validation hashes/source, bounded capture session/time/size
+  evidence, separate save-call/file/property observations, and evidence-enabled
+  requirements/covers QA. Disk changes, unavailable rendering, stale runtime
+  sessions and failed persistence cannot masquerade as verified success.
+  Scene memory equivalence and unsupported resource properties remain unknown.
+
 - [x] Session-local mutation gate rejects overlap with `editor_busy`, retains
   async/batch ownership through import completion, permits buffered safe reads,
   and retires on teardown. External import observability is capability-dependent.

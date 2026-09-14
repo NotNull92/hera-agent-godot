@@ -288,6 +288,15 @@ default 5000). Default output is compact JSON.
 
 ## Verify your work (Hera)
 
+Use `--evidence` on script validate, captures, scene save and resource set when
+proof provenance matters. Disk validation does not observe buffers/running code;
+captures sample separate frames/times from runtime state reads. Capture
+`--operation-id` is only caller-supplied correlation; `--runtime-session` guards
+the actual incarnation. Save-call success is distinct from disk observation and
+selected-property equivalence, with full scene persistence unknown. Evidence-enabled
+QA screenshot/get/assert steps fail unavailable evidence. See the linked-evidence
+section in `docs/COMMANDS.md`; do not infer rollback after a save failure.
+
 Concurrent mutations and sensitive reads fail `editor_busy` immediately. Status,
 operation status/cancel and buffered `--source editor` logs remain available.
 Batch children retain parent ownership; a client timeout does not unlock running

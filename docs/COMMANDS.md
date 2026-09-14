@@ -6,6 +6,61 @@
 Each command maps 1:1 to an addon tool and sends a single JSON request to the
 selected editor instance.
 
+## Linked evidence (opt-in)
+
+`script validate res://file.gd --evidence` adds `source: disk`, selected engine
+path and editor-reported version/commit, pre/post SHA-256, start/finish UTC times,
+and `changed_during_validation`. Missing engine/hash evidence or a changed file
+makes `valid: false` and exits 1, even if the child exited 0. The ordinary 64-KiB
+output cap, timeout and engine exit code remain. Each hash reads at most 64 MiB.
+`editor_buffer`, `loaded_script`, and `running_code` each report unavailable;
+external IDE buffers are not observed. Equal hashes are two observations, not an
+atomic snapshot: changes between reads, changes restored before the second read,
+and changed dependencies can escape detection. Version comes from the selected
+editor context; the child banner remains in output, and replacing the engine
+executable concurrently is not prevented. No automatic reload occurs.
+
+`screenshot --evidence`, `screenshot --runtime --evidence`, and
+`game screenshot --evidence` add source, editor/runtime sessions, PID, scene,
+wall-clock capture time, observed process/physics/draw frame counters, actual PNG
+size and viewport/window/project geometry. Editor source is an offscreen
+`editor_preview`, not the running game. `--runtime-session ID` rejects a different
+runtime incarnation. `--operation-id session:unix_ms:nonce` adds only a validated
+format correlation label with `association: caller_supplied`; it does not look up
+a receipt or prove causality. These options imply `--evidence`. Runtime images
+are never upscaled. Frame counters/time are sampled at readback, not an atomic
+state-and-image snapshot. A rendered-frame boundary does not imply animation has
+settled. Headless rendering and a missing frame after 1000 ms return explicit
+unavailable evidence, including while paused or at time scale zero.
+
+`scene save --evidence` and `resource set ... --evidence` report `effect`,
+`save_call`, `persistence` and separate before/after disk observations. Optional
+`--expected-sha256 HASH` checks the current file before dispatching the save or
+resource mutation; external/manual writers are not locked out after that check.
+CLI capability negotiation and distinct internal evidence actions prevent an old
+addon from ignoring the save precondition. Failed commands can print their
+evidence on stdout with exit 1 and an error on stderr; defaults stay compact.
+
+Resource property changes report `effect: applied` even if saving fails. A fresh
+resource load without the root cache verifies selected non-object/non-container
+properties; observed mismatch means `persistence: failed`, even when the engine
+save call returned success. Unsupported verification is unavailable, never a
+pass. `saved` applies only to those selected properties, not all dependencies.
+Scene save reports prior memory effect and full persistence as `unknown`: its
+save-call result and file hash do not prove that all scene memory reached disk.
+For scene saves, `evidence.available: true` means the file observation is readable;
+`memory_disk_equivalence.available: false` still means full persistence is unverified.
+No rollback or storage-device durability is claimed. A scene with no path reports
+failed persistence and `save_call: not_called`.
+
+Existing QA steps `screenshot.runtime`, `game.node.get` and `game.assert` accept
+`"evidence": true`; returned evidence is retained and unavailable evidence fails
+the step and its `covers` coverage. Capture and state assertions carry separate
+timestamps. Cover interaction requirements with the relevant `game.assert` after
+input: a passing visual step cannot override a failing state assertion. Missing
+InputMap actions still fail; Hera does not create actions or alter game logic.
+`status.capabilities.linked_evidence` advertises this bounded addon surface.
+
 ## Editor mutation gate
 
 Each editor session permits one mutation or sensitive read at a time. Conflicting

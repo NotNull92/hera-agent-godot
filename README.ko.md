@@ -6,6 +6,11 @@
 
 [English](README.md) · **한국어**
 
+개발 중인 `--evidence` 옵션은 스크립트 검사·화면 캡처·씬 저장·리소스 변경에서
+디스크 코드, 실행 세션, 실제 화면 크기, 저장 결과를 구분합니다. 관측 불가는
+증거를 요청한 QA의 성공으로 처리하지 않습니다. 캡처의 작업 ID는 호출자가 지정한
+연결 표식이며 인과관계를 증명하지 않습니다. [증거 계약](docs/COMMANDS.md#linked-evidence-opt-in)을 참고하세요.
+
 > Hera gives agents eyes, hands, and proof in the live Godot editor.
 
 <p align="center">

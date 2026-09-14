@@ -205,6 +205,18 @@ environment-specific questions on isolated project copies and isolated user data
 - `go test -race` passed here. `gopls` is absent and its installation had
   previously been declined; Go build/vet/tests supplied the Go checks.
 
+## Save return codes and Windows file protection (2026-09-14)
+
+An isolated GUI Godot 4.7.2 .NET editor returned `OK` from `ResourceSaver.save`
+while a Windows file lock or readonly attribute prevented its safe-save rename.
+The engine logged `Safe save failed`, and the original `.tres` bytes remained.
+Hera's opt-in resource evidence now verifies selected properties through a fresh
+root resource load, reporting applied memory effect and failed persistence even
+when the save call said success. File existence or a successful save return alone
+is insufficient. Repeated injected failures also produced an engine dialog-parent
+error; this is retained in the evidence rather than called a clean editor log.
+Only disposable fixture files were protected, and their attributes were restored.
+
 ## Live log read sharing (2026-09-08)
 
 An isolated Windows Godot 4.7 editor returned FileAccess open error 12 while reading its running project's logger file, even though a shell could read that same path. Verify actual FileAccess success; file existence and a shell read are not evidence that addon diagnostics can read it. Hera now reports `available:false`, `clean:false` instead of zero counts when open/read fails. Inspect separately captured runtime stdout/stderr when this occurs. A missing final newline in project.godot is safely handled by the editor's ProjectSettings.save; live setter → in-memory setting → default run was verified without restart.
