@@ -118,6 +118,12 @@ guarded node sets or runtime set/call; `operation status|cancel <id>` inspects o
 cancels queued work. Same-ID retries do not repeat retained operations. Records
 are bounded and lost on restart. See [operation receipts](docs/COMMANDS.md#operation-receipts-experimental).
 
+Overlapping mutations and sensitive reads fail immediately with `editor_busy`.
+Status, operation status/cancel and buffered editor logs remain available. Batch
+shares ownership across its children; client timeouts do not unlock running work.
+See [the editor gate](docs/COMMANDS.md#editor-mutation-gate) for import readiness
+and engine capability limits.
+
 `hera status` also reports the engine commit, addon `editor_session_id`, and
 API capability states (`supported`, `unsupported`, or `unverified`). API presence
 does not certify a connected debugger or installed SDK. See

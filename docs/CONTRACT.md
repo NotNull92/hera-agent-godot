@@ -40,6 +40,15 @@ unchanged. Contract goldens cover status/cancel/conflict and command help.
 
 ## Stability tiers
 
+Concurrent mutation or sensitive-read requests fail before dispatch with the
+stable `editor_busy` code (exit 1, empty stdout, `<command>: editor_busy: ...`
+on stderr). An admitted operation receipt instead records `lifecycle: rejected`,
+`effect: not_applied`, and `error_code: editor_busy`, with receipt exit 0.
+Safe status, operation status/cancel and buffered editor-log reads remain
+available. A client timeout does not release a running owner's gate. See
+[the gate policy](COMMANDS.md#editor-mutation-gate) for import readiness,
+engine capability limits, batch ownership and the boundary of runtime completion.
+
 | Tier | Meaning |
 |------|---------|
 | **stable** | Shape is frozen for `v1.0.0`. Documented fields keep their name and JSON type within a major version. New fields may be **added** at any time — consumers must ignore unknown fields. |

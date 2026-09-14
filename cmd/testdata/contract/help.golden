@@ -40,4 +40,6 @@ global flags (before the command):
   --timeout MS   per-request HTTP timeout in milliseconds (default 5000)
                  also bounds the engine process for script validate
 
+Overlapping mutations or sensitive reads fail editor_busy; status and buffered
+editor logs remain available. A client timeout does not unlock running work.
 See docs/COMMANDS.md for details.

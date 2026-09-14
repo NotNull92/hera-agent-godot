@@ -83,6 +83,7 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "editor_busy", args: []string{"project", "scan"}, responses: map[string]string{"project": `{"ok":false,"error":"editor_busy: editor mutation or import in progress"}`}, wantExit: 1, wantStderrPrefix: "project: editor_busy:"},
 		{name: "operation_status", args: []string{"operation", "status", "session:1:x"}, responses: map[string]string{"operation:status": `{"ok":true,"data":{"id":"session:1:x","lifecycle":"completed","effect":"applied","verification":"not_requested","persistence":"unknown","error_code":"","cancellable":false,"evidence":{"complete":true}}}`}, golden: "operation_status"},
 		{name: "operation_cancel", args: []string{"operation", "cancel", "session:1:x"}, responses: map[string]string{"operation:cancel": `{"ok":true,"data":{"id":"session:1:x","lifecycle":"cancelled","effect":"not_applied","verification":"not_requested","persistence":"not_requested","error_code":"operation_cancelled","cancellable":false,"cancelled":true}}`}, golden: "operation_cancel"},
 		{name: "operation_conflict", args: []string{"operation", "submit", "session:1:x", "--request", `{"tool":"game","params":{"action":"call"}}`}, responses: map[string]string{"operation:submit": `{"ok":false,"error":"operation_id_conflict: ID binds another request"}`}, wantExit: 1, wantStderrPrefix: "operation: operation_id_conflict:"},

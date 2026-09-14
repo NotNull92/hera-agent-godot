@@ -15,6 +15,10 @@ to drive Godot from a shell.
 
 ## In development — engine baseline (2026-09-14)
 
+- [x] Session-local mutation gate rejects overlap with `editor_busy`, retains
+  async/batch ownership through import completion, permits buffered safe reads,
+  and retires on teardown. External import observability is capability-dependent.
+
 - [x] Explicit operation receipts for guarded node set and runtime set/call,
   session/deadline-bound IDs, duplicate suppression, queued cancellation and
   honest outcome-unknown reporting. Records and evidence are bounded and lost

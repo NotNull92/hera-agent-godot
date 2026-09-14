@@ -125,6 +125,12 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 조회하거나 대기 중 작업을 취소합니다. 보존 중인 동일 ID는 다시 실행하지 않습니다.
 기록은 용량·기간이 제한되며 재시작 시 사라집니다. [작업 영수증](docs/COMMANDS.md#operation-receipts-experimental)을 참고하세요.
 
+수정 작업과 민감한 읽기가 겹치면 대기 없이 `editor_busy`로 거절합니다.
+상태·작업 상태/취소·수집된 에디터 로그는 계속 조회할 수 있습니다.
+batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초과만으로 실행 중인
+작업을 해제하지 않습니다. import 준비 상태와 엔진별 한계는
+[수정 gate](docs/COMMANDS.md#editor-mutation-gate)를 참고하세요.
+
 `hera status`는 엔진 커밋, 애드온 `editor_session_id`, API 기능 상태
 (`supported`, `unsupported`, `unverified`)도 반환합니다. API 존재만으로
 디버거 연결이나 SDK 설치를 보장하지 않습니다.

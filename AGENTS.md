@@ -288,6 +288,14 @@ default 5000). Default output is compact JSON.
 
 ## Verify your work (Hera)
 
+Concurrent mutations and sensitive reads fail `editor_busy` immediately. Status,
+operation status/cancel and buffered `--source editor` logs remain available.
+Batch children retain parent ownership; a client timeout does not unlock running
+work. Wait for known completion before a new mutation, and retain operation IDs
+for uncertain outcomes. `import_busy_api` reports external import observability;
+older engines without it still guard Hera-owned imports and observed scans.
+See `docs/COMMANDS.md` for readiness and ownership limits.
+
 Operation receipts are opt-in and bounded in process. Retain the caller-supplied
 session/deadline/nonce ID before submission; after transport failure query or
 explicitly resubmit the same ID/input, never automatically repeat a mutation.

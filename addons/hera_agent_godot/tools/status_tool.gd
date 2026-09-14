@@ -35,6 +35,8 @@ func execute(_params: Dictionary) -> Dictionary:
 
 func _capabilities() -> Dictionary:
 	return {
+		"editor_mutation_gate": "supported",
+		"import_busy_api": _support(ClassDB.class_has_method("EditorFileSystem", "is_importing")),
 		"operation_receipts": "supported",
 		"node_set_guard": "supported",
 		"editor_log_cursor": editor_log.capability if editor_log != null else "unverified",

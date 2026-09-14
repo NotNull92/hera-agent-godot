@@ -6,6 +6,33 @@
 Each command maps 1:1 to an addon tool and sends a single JSON request to the
 selected editor instance.
 
+## Editor mutation gate
+
+Each editor session permits one mutation or sensitive read at a time. Conflicting
+requests immediately fail `editor_busy` without waiting or running. The gate spans
+async work and scan completion, independent of the HTTP connection or client
+timeout. `status`, `operation status|cancel` and `output`/`diagnostics --source editor`
+remain available; cancellation still affects only work that has not started.
+Scene, resource, script, runtime and file-log reads are conservatively gated.
+Batch children explicitly share their parent's ownership; nested batches remain
+invalid. A failed child never grants ownership to an unrelated request.
+
+Scan completion combines engine scan state, completion events and the end of
+pending filesystem processing. Reimport checks indexed paths and resulting import
+validity/resource availability. Consumers still validate the particular resource
+or script they need; idle scanning alone is not successful compilation or C#
+assembly readiness. `status.capabilities.editor_mutation_gate` reports the gate;
+`import_busy_api` separately reports `EditorFileSystem.is_importing` availability.
+On engines without that API (including 4.2), Hera-owned import lifetimes and
+observed scans are covered, but unrelated editor imports cannot always be observed.
+
+Ownership ends after execution settles, or on session teardown; rejected/queued
+cancellation does not release another running owner. No effects are rolled back.
+A lost runtime response remains unknown under the existing runtime receipt
+contract, not proof that an application method finished. Independent project
+sessions share no gate. The gate coordinates Hera requests, not manual editor
+actions, external file writers or work an application schedules after returning.
+
 ## Operation receipts (experimental)
 
 `operation submit <id> --request '<JSON>'` explicitly wraps a mutation in an
