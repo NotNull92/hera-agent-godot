@@ -108,6 +108,11 @@ screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screensh
 [docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Store
 packaging status.
 
+`hera status` also reports the engine commit, addon `editor_session_id`, and
+API capability states (`supported`, `unsupported`, or `unverified`). API presence
+does not certify a connected debugger or installed SDK. See
+[the command reference](docs/COMMANDS.md) and [capability scope](docs/ARCHITECTURE.md#6-discovery--instance-files).
+
 Check on-disk GDScript with `hera script validate res://Player.gd`.
 Validation uses the connected editor's engine in a bounded headless process,
 prints the engine output as JSON, and exits nonzero on failure. It does not

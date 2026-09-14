@@ -146,6 +146,7 @@ need a duplicate `LICENSE` at the ZIP download root.
   "port": 8770,
   "project_path": "/abs/path/to/project",
   "godot_version": "4.7.stable",
+  "editor_session_id": "00000000000000000000000000000001",
   "scene": "res://Main.tscn",
   "ts": 1750636800
 }
@@ -155,6 +156,20 @@ The CLI treats an instance as live only if `now - ts` is within the freshness
 window. Expired files stay visible as `stale` on `hera instances` so a process
 that stopped publishing is distinct from a missing advertisement. They are not
 targeted unless a later heartbeat becomes fresh again.
+
+`editor_session_id` is a random 128-bit hex identifier created with the status
+tool for each addon startup. Status and heartbeat share it; disabling/restarting
+the addon creates a new identity even within the same editor PID. Discovery
+preserves it and omits it for legacy heartbeats. It is evidence, not a mutation
+guard or authentication credential.
+
+Status also reports the running engine's `godot_commit` and a small
+`capabilities` map. Keys ending in `_api` report direct method/class/signal
+presence as `supported` or `unsupported`; presence does not prove a working
+debugger connection, logger collector, completed import, or rendered frame.
+`csharp` checks `CSharpScript`; `dap`, `script_symbol_lookup`, and `dotnet_sdk`
+remain `unverified` because status does not perform those behavioral probes.
+There is no version-to-capability table and no API dump in responses.
 
 The addon republishes the file by staging it under a temp name and swapping it
 in with `DirAccess.rename_absolute`. That swap is atomic on POSIX but **not on

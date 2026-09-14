@@ -40,12 +40,13 @@ func rescanDelayFor(attempt int) time.Duration {
 
 // Instance describes a running Godot editor the CLI can talk to.
 type Instance struct {
-	PID          int    `json:"pid"`
-	Port         int    `json:"port"`
-	ProjectPath  string `json:"project_path"`
-	GodotVersion string `json:"godot_version"`
-	Scene        string `json:"scene"`
-	TS           int64  `json:"ts"` // unix seconds of last heartbeat
+	PID             int    `json:"pid"`
+	Port            int    `json:"port"`
+	ProjectPath     string `json:"project_path"`
+	GodotVersion    string `json:"godot_version"`
+	EditorSessionID string `json:"editor_session_id,omitempty"`
+	Scene           string `json:"scene"`
+	TS              int64  `json:"ts"` // unix seconds of last heartbeat
 }
 
 // AgeSeconds is how old the heartbeat is at now. Display code uses this; it is

@@ -8,7 +8,7 @@ selected editor instance.
 
 | Command | Tool | Status | Description |
 |---------|------|--------|-------------|
-| `status` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, `csharp_supported` editor capability (not SDK availability), Game Feel UI Mode state, and Game Feel Mode state. |
+| `status` | `status` | ☑ | Show the connected editor: project path, Godot version/commit, active scene, `editor_session_id`, API `capabilities`, `csharp_supported` editor capability (not SDK availability), and Game Feel modes. |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N]` | `output` | ☑ | Tail the **running project's** log file (`user://logs/godot.log`), optionally filtered (`log` excludes error/warning lines). Editor-console output is not in it (see ARCHITECTURE §6). Needs `debug/file_logging` enabled, or `--log-file <path>` on the editor; without a readable log the response reports `available:false` and a `hint` rather than an empty tail. |

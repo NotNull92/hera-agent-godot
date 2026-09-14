@@ -1,7 +1,21 @@
 {
+  "capabilities": {
+    "csharp": "unsupported",
+    "dap": "unverified",
+    "debugger_messages_api": "supported",
+    "dotnet_sdk": "unverified",
+    "editor_logger_api": "unsupported",
+    "global_class_lookup_api": "supported",
+    "import_state_api": "supported",
+    "render_frame_event_api": "supported",
+    "script_metadata_api": "supported",
+    "script_symbol_lookup": "unverified"
+  },
   "csharp_supported": false,
+  "editor_session_id": "00000000000000000000000000000001",
   "game_feel_mode": true,
   "game_feel_ui_mode": true,
+  "godot_commit": "fixture-engine-commit",
   "godot_version": "4.7-stable (official)",
   "pid": 49928,
   "project_name": "Hera Agent Godot (dev)",

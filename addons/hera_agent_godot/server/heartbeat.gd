@@ -13,12 +13,14 @@ const DIR_NAME := ".hera-agent-godot"
 const PUBLISH_WARN_AFTER := 8
 
 var port := 0
+var editor_session_id := ""
 
 var _path := ""
 var _publish_failures := 0
 
-func start(listen_port: int) -> void:
+func start(listen_port: int, session_id: String = "") -> void:
 	port = listen_port
+	editor_session_id = session_id
 	var dir := _instances_dir()
 	DirAccess.make_dir_recursive_absolute(dir)
 	_path = dir.path_join("%d.json" % OS.get_process_id())
@@ -32,6 +34,7 @@ func write() -> void:
 		"port": port,
 		"project_path": ProjectSettings.globalize_path("res://"),
 		"godot_version": String(Engine.get_version_info().get("string", "")),
+		"editor_session_id": editor_session_id,
 		"scene": _current_scene(),
 		"ts": int(Time.get_unix_time_from_system()),
 	}

@@ -140,8 +140,8 @@ contract tests (see [Contract tests](#contract-tests)).
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
-| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. (`game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` are experimental fields inside a stable response; the last reports editor build capability, not SDK availability.) |
-| `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain |
+| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. Experimental additions: `godot_commit`, `editor_session_id`, `capabilities` (values `supported`, `unsupported`, `unverified`), `game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` (editor build capability, not SDK availability). See ARCHITECTURE §6 for capability scope. |
+| `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` with optional experimental `editor_session_id`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain. Legacy heartbeats omit the session field. |
 | `version` | stable | bare string (linker-injected; `dev` for source builds) |
 | `run` / `stop` | stable | ✓ state shape `{playing, scene}` |
 

@@ -56,7 +56,8 @@ func _enter_tree() -> void:
 	_game_export_guard.setup(self)
 	add_export_plugin(_game_export_guard)
 	_registry = ToolRegistry.new()
-	_registry.register(StatusTool.new())
+	var status_tool := StatusTool.new()
+	_registry.register(status_tool)
 	_registry.register(RunTool.new())
 	_registry.register(SceneTool.new())
 	_registry.register(EditorTool.new())
@@ -103,7 +104,7 @@ func _enter_tree() -> void:
 
 	var auth_note := " (token auth on)" if _server.auth_token != "" else ""
 	_heartbeat = Heartbeat.new()
-	_heartbeat.start(bound)
+	_heartbeat.start(bound, status_tool.editor_session_id)
 	_set_main_status("Listening on 127.0.0.1:%d%s" % [bound, auth_note], true)
 	print("[hera] Hera Agent Godot listening on 127.0.0.1:%d%s" % [bound, auth_note])
 

@@ -172,7 +172,7 @@ func usageTo(w io.Writer) {
 usage: hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
 
 commands:
-  status     show the connected editor (project, version, active scene, UI mode)
+  status     show the connected editor (project, version, scene, session, capabilities)
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
   scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as

@@ -115,6 +115,11 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 상대 물리 프레임에 맞춰 입력하고 종료 시 눌린 액션을 해제합니다.
 시간 제한과 QA 예제는 명령 레퍼런스를 참고하세요.
 
+`hera status`는 엔진 커밋, 애드온 `editor_session_id`, API 기능 상태
+(`supported`, `unsupported`, `unverified`)도 반환합니다. API 존재만으로
+디버거 연결이나 SDK 설치를 보장하지 않습니다.
+[기능 상태의 범위](docs/ARCHITECTURE.md#6-discovery--instance-files)를 참고하세요.
+
 스크립트 생성 예:
 `hera script create res://Player.gd` 또는
 `hera script create res://Player.cs --ready --export Speed:float=3.5f`.

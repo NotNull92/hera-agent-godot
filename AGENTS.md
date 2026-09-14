@@ -85,7 +85,7 @@ The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 ## Commands
 
 ```
-hera status                                  # project / version / active scene / UI mode
+hera status                                  # project / version / scene / session / API capabilities
 hera scene tree                              # node tree of the edited scene
 hera scene list                              # open scenes + current
 hera scene open res://Path.tscn              # open a scene
