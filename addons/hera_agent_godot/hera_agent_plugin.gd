@@ -2,7 +2,6 @@
 extends EditorPlugin
 
 const ToolRegistry = preload("res://addons/hera_agent_godot/core/tool_registry.gd")
-const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const HeraSettings = preload("res://addons/hera_agent_godot/core/hera_settings.gd")
 const MainScreenPanel = preload("res://addons/hera_agent_godot/core/main_screen_panel.gd")
 const HttpServer = preload("res://addons/hera_agent_godot/server/http_server.gd")
@@ -92,12 +91,11 @@ func _enter_tree() -> void:
 	var screenshot_tool := ScreenshotTool.new()
 	screenshot_tool.set_host(self)
 	_registry.register(screenshot_tool)
-	var batch_tool := BatchTool.new()
-	batch_tool.set_registry(_registry)
-	_registry.register(batch_tool)
+	_registry.register(BatchTool.new())
 
 	_queue = WorkQueue.new()
 	_queue.configure_operations(status_tool.editor_session_id)
+	_queue.set_filesystem(EditorInterface.get_resource_filesystem())
 	var token_result := HttpServer.load_shared_token()
 	if token_result.has("error"):
 		_set_main_status("Not connected: shared token read failed", false)
@@ -133,7 +131,7 @@ func _process(delta: float) -> void:
 func _exit_tree() -> void:
 	set_process(false)
 	if _queue != null:
-		_queue.operations.retire()
+		_queue.retire()
 	if _registry != null:
 		var node_tool: RefCounted = _registry.resolve("node")
 		if node_tool != null:
@@ -233,36 +231,16 @@ func restore_game_autoload_after_export() -> void:
 
 func _handle(item: Dictionary) -> void:
 	var queue: RefCounted = _queue
+	var server: RefCounted = _server
 	if not queue.begin(item):
-		_server.respond(item["conn"], item["response"])
+		server.respond(item["conn"], item["response"])
 		return
-	var request: Dictionary = item["request"]
-	var tool_name := String(request.get("tool", ""))
-	var tool = _registry.resolve(tool_name) if tool_name != "" else null
-	if tool != null and tool.has_method("execute_async"):
-		var params: Variant = request.get("params", {})
-		if typeof(params) != TYPE_DICTIONARY:
-			params = {}
-		var response: Dictionary = await tool.execute_async(params)
-		response = queue.complete(item, response)
-		if _server != null:
-			_server.respond(item["conn"], response)
-		else:
-			(item["conn"] as StreamPeerTCP).disconnect_from_host()
+	var response: Dictionary = await queue.execute_request(item.request, _registry, item.get("gate_owner", ""))
+	response = queue.complete(item, response)
+	if not queue.operations.retired:
+		server.respond(item["conn"], response)
 	else:
-		_server.respond(item["conn"], queue.complete(item, _dispatch(request)))
-
-func _dispatch(request: Dictionary) -> Dictionary:
-	var tool_name := String(request.get("tool", ""))
-	if tool_name == "":
-		return ToolResponse.failure("missing tool name")
-	var tool = _registry.resolve(tool_name)
-	if tool == null:
-		return ToolResponse.failure("unknown tool: %s" % tool_name)
-	var params: Variant = request.get("params", {})
-	if typeof(params) != TYPE_DICTIONARY:
-		params = {}
-	return tool.execute(params)
+		(item["conn"] as StreamPeerTCP).disconnect_from_host()
 
 func _create_main_screen() -> void:
 	var refs := MainScreenPanel.create(

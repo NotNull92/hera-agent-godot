@@ -22,8 +22,8 @@ func execute(params: Dictionary) -> Dictionary:
 	return ToolResponse.failure("game requires async dispatch")
 
 func execute_async(params: Dictionary) -> Dictionary:
-	if _host == null:
-		return ToolResponse.failure("game host not set")
+	if not is_instance_valid(_host) or not _host.is_inside_tree():
+		return ToolResponse.failure("session_mismatch: game host is no longer available")
 	var action := String(params.get("action", ""))
 	if action == "instances":
 		return ToolResponse.success(_instances_payload())
@@ -45,6 +45,8 @@ func execute_async(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure(write_err)
 	var deadline := Time.get_ticks_msec() + int(TIMEOUT_SEC * 1000.0)
 	while Time.get_ticks_msec() < deadline:
+		if not is_instance_valid(_host) or not _host.is_inside_tree():
+			return ToolResponse.failure("outcome_unknown: game host ended while awaiting a dispatched request")
 		var response := _read_response(int(target["pid"]), request_id)
 		if not response.is_empty():
 			if bool(response.get("ok", false)):

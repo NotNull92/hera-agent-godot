@@ -102,7 +102,7 @@ func finish(id: String, response: Dictionary) -> void:
 		receipt.effect = "applied"
 		receipt.verification = "failed" if code == "verification_failed" else "unavailable"
 		receipt.error_code = code
-	elif code in ["state_conflict", "session_mismatch", "capability_unavailable", "operation_expired", "operation_id_conflict", "operation_capacity", "invalid_operation"]:
+	elif code in ["editor_busy", "state_conflict", "session_mismatch", "capability_unavailable", "operation_expired", "operation_id_conflict", "operation_capacity", "invalid_operation"]:
 		receipt.lifecycle = "rejected"
 		receipt.effect = "not_applied"
 		receipt.error_code = code

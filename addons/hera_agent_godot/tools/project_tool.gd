@@ -114,9 +114,16 @@ func _reimport(params: Dictionary) -> Dictionary:
 		return ToolResponse.failure("editor resource filesystem is not available")
 	if not fs.has_method("reimport_files"):
 		return ToolResponse.failure("resource filesystem cannot reimport files in this Godot version")
+	for path in paths:
+		if fs.get_file_type(path).is_empty():
+			return ToolResponse.failure("resource_unavailable: file is not indexed; scan before reimport: %s" % path)
 	fs.call("reimport_files", paths)
 	var out := []
 	for path in paths:
+		var directory := fs.get_filesystem_path(path.get_base_dir())
+		var index := directory.find_file_index(path.get_file()) if directory != null else -1
+		if index < 0 or not directory.get_file_import_is_valid(index) or not ResourceLoader.exists(path):
+			return ToolResponse.failure("resource_unavailable: reimport did not produce an available resource: %s" % path)
 		out.append(String(path))
 	return ToolResponse.success({ "reimported": paths.size(), "paths": out })
 

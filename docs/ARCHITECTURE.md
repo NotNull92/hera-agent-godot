@@ -88,6 +88,23 @@ need a duplicate `LICENSE` at the ZIP download root.
 
 ## 4. Request lifecycle
 
+WorkQueue owns one session-local gate. `begin` assigns a private execution ID
+(or the admitted operation ID) plus editor session; `complete` releases only that
+owner. The plugin uses the same async dispatch seam for every tool. Batch passes
+an internally bound dispatcher to its children, so they retain parent ownership
+without granting client-supplied params bypass authority. Session retirement
+clears the gate, retires receipts and prevents further batch children. Delayed
+completion cannot respond through a replacement session's server.
+
+Only status and buffered editor logs bypass dispatch ownership; operation
+status/cancel/duplicates are answered by admission. All other reads are
+conservative because loading resources/scripts can run code. An in-flight tool
+keeps ownership while awaiting runtime replies or filesystem work. The scan
+worker can clear `is_scanning` before the editor installs its result; pending
+processing plus completion events close that gap. Idle scan/import state and
+resource availability are checked together, not a fixed delay or one signal.
+`is_importing` is feature-detected; see COMMANDS.md for older-engine limitations.
+
 Explicit `operation` requests enter the existing WorkQueue before dispatch.
 The queue validates the ID, session, deadline, request digest and supported
 mutation, then reserves a bounded receipt. Status/cancel and duplicates are
