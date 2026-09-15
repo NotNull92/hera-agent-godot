@@ -3,8 +3,8 @@ hera — drive a live Godot 4.x editor from the shell
 usage: hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
 
 commands:
-  status     show the connected editor (project, version, scene, session, capabilities)
-  operation  submit <session:unix_ms:nonce> --request JSON | status|cancel <id>
+  status     show the connected editor (project, version, scene, session); --capabilities for API detail
+  operation  submit <session:unix_ms:nonce> --request JSON | status|cancel <id> [--verbose]
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
   scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
@@ -38,7 +38,7 @@ Save-call success, observed disk contents and memory equivalence are separate.
 
 global flags (before the command):
   --json         pretty-print the response
-  --ids          print only node paths (for scene tree / node find)
+  --ids          print only paths (scene tree / node find / game ui tree)
   --instance N   target the editor with pid N (required for mutations when
                  more than one editor is live; status output includes the pid)
   --timeout MS   per-request HTTP timeout in milliseconds (default 5000)

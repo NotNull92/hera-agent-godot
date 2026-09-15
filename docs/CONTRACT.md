@@ -43,7 +43,8 @@ on stdout. Ordinary batches retain their existing envelope and exit contract.
 `operation submit <session:unix_ms:nonce> --request JSON`, `operation status <id>`,
 and `operation cancel <id>` print a receipt on stdout with exit 0 when obtained.
 Inspect its `lifecycle`, `effect`, `verification`, `persistence`, `error_code`,
-`cancellable`, and `evidence`; exit 0 alone is not mutation success. Invalid CLI
+`cancellable`, and `evidence`; exit 0 alone is not mutation success. Default CLI
+stdout omits `retention` and echoed `evidence.response`; `--verbose` prints them. Invalid CLI
 input exits 2. Admission conflicts/expiry/capacity/unsupported actions exit 1
 with `operation: <stable_code>: <detail>` on stderr and empty stdout.
 Unknown or expired status is an explicit `outcome_unknown` receipt, not success
@@ -52,7 +53,8 @@ the setter/call are `rejected`/`not_applied` (for example `target_unavailable`),
 not `outcome_unknown`. Cancellation additionally returns `cancelled`.
 
 Supported actions are guarded editor node set and session-targeted runtime set/call.
-`status.capabilities.operation_receipts` advertises this bounded surface;
+`hera status --capabilities` advertises this bounded surface as
+`capabilities.operation_receipts`;
 `game instances[].runtime_session_id` identifies the runtime incarnation.
 IDs and session identities are strings; the decimal milliseconds component fixes
 the deadline. Request/response evidence is bounded, in-process only, and disappears
@@ -191,7 +193,7 @@ contract tests (see [Contract tests](#contract-tests)).
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
-| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. Experimental additions: `godot_commit`, `editor_session_id`, `capabilities` (values `supported`, `unsupported`, `unverified`), `game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` (editor build capability, not SDK availability). See ARCHITECTURE §6 for capability scope. |
+| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. Experimental additions always in the default CLI: `editor_session_id`, `game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` (editor build capability, not SDK availability). `godot_commit` and `capabilities` (values `supported`, `unsupported`, `unverified`) are experimental detail on `status --capabilities`. See ARCHITECTURE §6 for capability scope. |
 | `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` with optional experimental `editor_session_id`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain. Legacy heartbeats omit the session field. |
 | `version` | stable | bare string (linker-injected; `dev` for source builds) |
 | `run` / `stop` | stable | ✓ state shape `{playing, scene}` |
@@ -215,8 +217,8 @@ contract tests (see [Contract tests](#contract-tests)).
 | `resource get` | stable | class, name, editor-visible properties |
 | `resource uid` | stable | ✓ `path`, `uid`, `uid_path`, `sidecar`, `sidecar_exists` |
 | `resource list` | stable | resource entries with class + path |
-| `output` | stable | ✓ `available`, `log_path`, `type`, `total`, `lines[]` |
-| `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. `available` is false whenever the log cannot be read, and `clean` is false there too since cleanliness cannot be asserted without a readable log. `file_logging_enabled` is the *effective* value (`get_setting_with_override`), because file logging defaults to true on desktop through the `.pc` feature tag while the untagged default is false |
+| `output` | stable | ✓ `available`, `log_path`, `type`, `total`, `lines[]`. Additive `source` is `file` for the default log and `editor` for `--source editor`. |
+| `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. Additive `source` is `file` for the default log (so `clean` is not a claim about the editor Output panel) and `editor` for `--source editor`. `available` is false whenever the log cannot be read, and `clean` is false there too since cleanliness cannot be asserted without a readable log. `file_logging_enabled` is the *effective* value (`get_setting_with_override`), because file logging defaults to true on desktop through the `.pc` feature tag while the untagged default is false |
 | `script current` / `script inspect` | experimental | compact script metadata; GDScript source response unchanged, C# loaded-assembly metadata as specified below |
 | `script validate` | experimental | fresh on-disk `.gd` native engine check; JSON `{path,valid,exit_code,output,output_truncated,timed_out}`; optional `error` for launch failure; invalid/timeout exits 1, output capped at 64 KiB; leading `--timeout` also bounds the child process (default 5 s) |
 

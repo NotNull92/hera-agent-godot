@@ -20,6 +20,8 @@ func _initialize() -> void:
 			failures.append("unreadable log needs an explicit evidence failure reason")
 		if tool.get_name() == "diagnostics" and bool(data.get("clean", true)):
 			failures.append("unreadable diagnostics reported clean")
+		if data.get("source", "") != "file":
+			failures.append("%s unreadable log must name source file" % tool.get_name())
 	var clean_path := "res://diagnostics-empty.log"
 	var clean_file := FileAccess.open(clean_path, FileAccess.WRITE)
 	clean_file.close()
@@ -28,6 +30,8 @@ func _initialize() -> void:
 	var clean_data: Dictionary = clean_response.get("data", {})
 	if not bool(clean_data.get("available", false)) or not bool(clean_data.get("clean", false)):
 		failures.append("readable empty log must be available and clean")
+	if clean_data.get("source", "") != "file":
+		failures.append("readable diagnostics must name source file")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(clean_path))
 	for failure in failures:
 		push_error(failure)

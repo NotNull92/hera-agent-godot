@@ -131,9 +131,10 @@ shares ownership across its children; client timeouts do not unlock running work
 See [the editor gate](docs/COMMANDS.md#editor-mutation-gate) for import readiness
 and engine capability limits.
 
-`hera status` also reports the engine commit, addon `editor_session_id`, and
-API capability states (`supported`, `unsupported`, or `unverified`). API presence
-does not certify a connected debugger or installed SDK. See
+`hera status` reports `editor_session_id` and Game Feel / C# editor flags.
+`hera status --capabilities` adds the engine commit and API capability states
+(`supported`, `unsupported`, or `unverified`). API presence does not certify a
+connected debugger or installed SDK. See
 [the command reference](docs/COMMANDS.md) and [capability scope](docs/ARCHITECTURE.md#6-discovery--instance-files).
 
 Read editor-session logs with `hera output --source editor` or

@@ -11,27 +11,41 @@ import (
 )
 
 func runOperation(args []string) int {
-	params, err := parseOperation(args)
+	params, verbose, err := parseOperation(args)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "operation:", err)
 		return 2
 	}
-	return dialMutationPostPrint("operation", params, "operation")
+	reshape := compactReceiptData
+	if verbose {
+		reshape = nil
+	}
+	return dialAndPostPrint(dialMutationEditor, postPrintRequest{tool: "operation", params: params, label: "operation", reshape: reshape})
 }
 
-func parseOperation(args []string) (map[string]any, error) {
+func parseOperation(args []string) (map[string]any, bool, error) {
+	verbose := false
+	filtered := make([]string, 0, len(args))
+	for _, arg := range args {
+		if arg == "--verbose" {
+			verbose = true
+			continue
+		}
+		filtered = append(filtered, arg)
+	}
+	args = filtered
 	if len(args) < 2 || !validOperationID(args[1]) {
-		return nil, fmt.Errorf("usage: operation status|cancel <session:unix_ms:nonce>; operation submit <id> --request JSON")
+		return nil, false, fmt.Errorf("usage: operation status|cancel <session:unix_ms:nonce>; operation submit <id> --request JSON [--verbose]")
 	}
 	params := map[string]any{"action": args[0], "id": args[1]}
 	switch args[0] {
 	case "status", "cancel":
 		if len(args) != 2 {
-			return nil, fmt.Errorf("%s requires only an operation ID", args[0])
+			return nil, false, fmt.Errorf("%s requires only an operation ID", args[0])
 		}
 	case "submit":
 		if len(args) != 4 || args[2] != "--request" {
-			return nil, fmt.Errorf("submit requires <id> --request JSON")
+			return nil, false, fmt.Errorf("submit requires <id> --request JSON")
 		}
 		raw := args[3]
 		var input struct {
@@ -39,15 +53,15 @@ func parseOperation(args []string) (map[string]any, error) {
 			Params json.RawMessage `json:"params"`
 		}
 		if len(raw) > 16384 || json.Unmarshal([]byte(raw), &input) != nil || input.Tool == "" || len(input.Params) == 0 || input.Params[0] != '{' {
-			return nil, fmt.Errorf("request must be a JSON object with tool and params, at most 16384 bytes")
+			return nil, false, fmt.Errorf("request must be a JSON object with tool and params, at most 16384 bytes")
 		}
 		digest := sha256.Sum256([]byte(raw))
 		params["request"] = raw
 		params["digest"] = hex.EncodeToString(digest[:])
 	default:
-		return nil, fmt.Errorf("unknown action %q (want submit|status|cancel)", args[0])
+		return nil, false, fmt.Errorf("unknown action %q (want submit|status|cancel)", args[0])
 	}
-	return params, nil
+	return params, verbose, nil
 }
 
 func validOperationID(id string) bool {

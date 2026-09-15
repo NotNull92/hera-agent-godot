@@ -71,7 +71,7 @@ the step and its `covers` coverage. Capture and state assertions carry separate
 timestamps. Cover interaction requirements with the relevant `game.assert` after
 input: a passing visual step cannot override a failing state assertion. Missing
 InputMap actions still fail; Hera does not create actions or alter game logic.
-`status.capabilities.linked_evidence` advertises this bounded addon surface.
+`hera status --capabilities` advertises this bounded addon surface as `capabilities.linked_evidence`.
 
 ## Editor mutation gate
 
@@ -88,7 +88,8 @@ Scan completion combines engine scan state, completion events and the end of
 pending filesystem processing. Reimport checks indexed paths and resulting import
 validity/resource availability. Consumers still validate the particular resource
 or script they need; idle scanning alone is not successful compilation or C#
-assembly readiness. `status.capabilities.editor_mutation_gate` reports the gate;
+assembly readiness. `hera status --capabilities` reports the gate as
+`capabilities.editor_mutation_gate`;
 `import_busy_api` separately reports `EditorFileSystem.is_importing` availability.
 On engines without that API (including 4.2), Hera-owned import lifetimes and
 observed scans are covered, but unrelated editor imports cannot always be observed.
@@ -104,8 +105,11 @@ actions, external file writers or work an application schedules after returning.
 
 `operation submit <id> --request '<JSON>'` explicitly wraps a mutation in an
 in-process receipt. `operation status <id>` reads it; `operation cancel <id>`
-cancels only accepted, queued work. These commands use the selected editor and
-require `--instance` when several editors are live. Legacy commands are unchanged.
+cancels only accepted, queued work. Default stdout omits `retention` and echoed
+`evidence.response`; `--verbose` prints the full receipt. Exit 0 still means the
+receipt was obtained, not that the mutation succeeded. These commands use the
+selected editor and require `--instance` when several editors are live. Legacy
+commands are unchanged.
 
 The caller constructs and retains `id` as `EDITOR_SESSION:UNIX_MS:NONCE`, using
 `status.editor_session_id`, an absolute execution deadline no more than 60 seconds
@@ -179,11 +183,11 @@ mutation a new ID merely to force it to run.
 
 | Command | Tool | Status | Description |
 |---------|------|--------|-------------|
-| `status` | `status` | ☑ | Show the connected editor: project path, Godot version/commit, active scene, `editor_session_id`, API `capabilities`, `csharp_supported` editor capability (not SDK availability), and Game Feel modes. |
+| `status [--capabilities]` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, `editor_session_id`, `csharp_supported` (editor build, not SDK), and Game Feel modes. `--capabilities` adds experimental `godot_commit` and the full API `capabilities` map (`supported`/`unsupported`/`unverified`). |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N] [--source file\|editor] [--since cursor]` | `output` | ☑ | Default: tail the project's configured file log. Opt-in editor source: bounded session evidence with cursors and severity/location metadata; see below. Unreadable evidence reports `available:false`. |
-| `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
+| `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log and set `source: file`. That `clean` flag is only the file log, not the editor Output panel. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
 | `scene tree` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |
@@ -315,7 +319,7 @@ keep their existing output. The complete object has exactly six string fields:
 ```
 
 `--verify` requires `--expected`. The CLI negotiates
-`status.capabilities.node_set_guard: supported` on the same discovered
+`capabilities.node_set_guard: supported` (`hera status --capabilities`) on the same discovered
 connection before snapshot or guarded requests. This also covers guarded
 entries in `batch`, before any entry runs. Missing/unsupported/unverified
 capabilities fail with `capability_unavailable`; no unguarded retry occurs.
@@ -440,7 +444,7 @@ Global flags go **before** the command (e.g. `hera --ids node find`,
 | Flag | Status | Meaning |
 |------|--------|---------|
 | `--json` | ☑ | Pretty-print the response Data. |
-| `--ids` | ☑ | Print only node paths (for `scene tree` / `node find`); compact JSON otherwise. |
+| `--ids` | ☑ | Print only paths from `nodes[]` or `controls[]` (`scene tree`, `node find`, `game ui tree`); compact JSON otherwise. |
 | (default) | ☑ | Compact JSON — minimal tokens. |
 | `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
 | `--timeout <ms>` | ☑ | Per-request HTTP timeout in milliseconds (default 5000); also separately bounds the engine child process for `script validate`. It does not bound a whole polling command (`--wait` sends many requests). Accepts `--timeout N` or `--timeout=N`. |
@@ -448,7 +452,7 @@ Global flags go **before** the command (e.g. `hera --ids node find`,
 ## Editor log evidence
 
 `--source file` is the unchanged default. `--source editor` requires
-`status.capabilities.editor_log_cursor: supported`; the CLI checks before
+`capabilities.editor_log_cursor: supported` (`hera status --capabilities`); the CLI checks before
 sending log parameters, so legacy addons cannot silently return file evidence.
 API absence is `unsupported`; registration or callback verification failure is
 `unverified`. Both produce `available:false`, `clean:false`, and

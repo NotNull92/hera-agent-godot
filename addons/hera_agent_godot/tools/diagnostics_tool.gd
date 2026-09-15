@@ -42,6 +42,7 @@ func execute(params: Dictionary) -> Dictionary:
 		var reason := "Log file is missing or unreadable." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
+			"source": "file",
 			"reason": "evidence_unavailable",
 			"file_logging_enabled": enabled,
 			"log_path": absolute_log_path,
@@ -65,6 +66,7 @@ func execute(params: Dictionary) -> Dictionary:
 
 	return ToolResponse.success({
 		"available": true,
+		"source": "file",
 		"file_logging_enabled": enabled,
 		"log_path": absolute_log_path,
 		"clean": errors.is_empty() and warnings.is_empty(),

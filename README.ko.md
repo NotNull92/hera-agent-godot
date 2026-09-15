@@ -138,9 +138,10 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 작업을 해제하지 않습니다. import 준비 상태와 엔진별 한계는
 [수정 gate](docs/COMMANDS.md#editor-mutation-gate)를 참고하세요.
 
-`hera status`는 엔진 커밋, 애드온 `editor_session_id`, API 기능 상태
-(`supported`, `unsupported`, `unverified`)도 반환합니다. API 존재만으로
-디버거 연결이나 SDK 설치를 보장하지 않습니다.
+`hera status`는 `editor_session_id`와 Game Feel / C# 에디터 플래그를 반환합니다.
+`hera status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
+`unsupported`, `unverified`)를 추가합니다. API 존재만으로 디버거 연결이나 SDK
+설치를 보장하지 않습니다.
 [기능 상태의 범위](docs/ARCHITECTURE.md#6-discovery--instance-files)를 참고하세요.
 
 `hera output --source editor` 또는 `hera diagnostics --source editor`로

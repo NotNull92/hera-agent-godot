@@ -39,6 +39,7 @@ func execute(params: Dictionary) -> Dictionary:
 		var reason := "Log file is missing or unreadable." if enabled else "File logging is disabled."
 		return ToolResponse.success({
 			"available": false,
+			"source": "file",
 			"reason": "evidence_unavailable",
 			"file_logging_enabled": enabled,
 			"log_path": ProjectSettings.globalize_path(log_path),
@@ -58,6 +59,7 @@ func execute(params: Dictionary) -> Dictionary:
 	var start: int = max(0, filtered.size() - max_lines)
 	return ToolResponse.success({
 		"available": true,
+		"source": "file",
 		"log_path": ProjectSettings.globalize_path(log_path),
 		"type": type_filter,
 		"total": filtered.size(),

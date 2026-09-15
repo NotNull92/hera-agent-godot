@@ -6,60 +6,12 @@ check the result — don't guess scene structure or whether a change worked from
 memory. The binary installs as `hera`; `hera-agent-godot` is a transitional
 alias for the same CLI.
 
-## Co-developing this repo (Claude Code × Codex)
+This file is the **driver card**: setup, everyday commands, and safety.
+The full flag/response reference is [docs/COMMANDS.md](docs/COMMANDS.md).
+If you are changing Hera itself, follow [docs/CO_DEVELOPMENT.md](docs/CO_DEVELOPMENT.md).
 
-Claude Code and Codex collaborate on **developing hera-agent-godot itself**
-(the Go CLI, the GDScript addon, docs, and distribution) — this section is
-about building the tool, not driving the editor with it. Rules for both
-agents:
-
-- The other agent reconstructs context **only from the repo**: git history and
-  docs. Make small commits with descriptive English messages; never leave
-  meaningful state only in chat.
-- State that lives **outside this repo** — Godot Asset Store submissions and
-  the Homebrew tap repo ([NotNull92/homebrew-hera](https://github.com/NotNull92/homebrew-hera))
-  — must be recorded under `docs/` (release notes in `docs/releases/` or the
-  ROADMAP) whenever it changes.
-- `main` is shared: never force-push or rewrite pushed history; rebase
-  local-only work.
-- The same gates apply regardless of agent: `go build/vet/test` + `gofmt`
-  for Go; Godot `--check-only` for GDScript; sync README (EN/KO),
-  `docs/COMMANDS.md`, and `docs/ROADMAP.md` when the surface changes, and
-  regenerate the contract goldens when `docs/CONTRACT.md` behavior changes.
-- Outward-facing actions (store uploads, PRs to third-party repos, version
-  bumps/releases) need the user's explicit go-ahead; Asset Store form
-  submission is done by the user personally.
-- Machine-specific facts (Godot binary path, isolated-smoke pattern, toolchain
-  limits, external-form gotchas) live in [docs/DEV_MACHINE.md](docs/DEV_MACHINE.md)
-  — read it before local Godot smokes, third-party PRs, or publishes, and
-  update it there instead of re-discovering.
-- **Ported capabilities must be fully naturalized.** When an idea, architecture,
-  or workflow is adapted from an outside tool, what ships is a Hera-native
-  capability: named for the Godot/Hera construct it operates on, and justified
-  from engine behaviour rather than from "the other tool does it this way".
-  Leave no external tool name, no "ported from X" framing, no side-by-side
-  comparison tables, and no borrowed taxonomy labels anywhere in the repo —
-  docs, skills, and code alike. Re-derive each rule from the Godot fact that
-  forces it; if a rule cannot be justified that way, it does not belong.
-  Attribution cuts the other way for **copied material**: anything actually
-  vendored or licensed keeps its upstream provenance and licence, and published
-  standards stay cited (as WCAG is in the `ui-theme-qa` corpus). Never strip a
-  credit while keeping copied expression — rewrite the expression genuinely
-  instead. Prefer deriving values from Godot's own defaults over vendoring
-  someone else's data, so the question does not arise.
-
-## Canonical Godot sources for documentation and review
-
-When verifying or reviewing Godot engine behavior, APIs, CLI flags, version
-compatibility, or official documentation, consult the maintained upstream
-repositories first:
-
-- Godot engine: [github.com/godotengine/godot](https://github.com/godotengine/godot)
-- Official Godot documentation: [github.com/godotengine/godot-docs](https://github.com/godotengine/godot-docs)
-
-Local repository documentation remains authoritative for Hera-specific
-contracts and policies. Use the upstream sources above to settle Godot facts;
-do not substitute stale recollection or unofficial summaries when they apply.
+For Godot engine/API facts, prefer the official engine and docs repositories
+over recollection; Hera docs remain authoritative for Hera contracts.
 
 ## When to use it
 
@@ -84,85 +36,27 @@ The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 
 ## Commands
 
+Everyday driver surface (full flags and response fields: [docs/COMMANDS.md](docs/COMMANDS.md)):
+
 ```
-hera status                                  # project / version / scene / session / API capabilities
-hera operation submit <session:unix_ms:nonce> --request JSON # explicit receipt: guarded node set or session-targeted game set/call
-hera operation status <id>                   # retained result or honest outcome_unknown
-hera operation cancel <id>                   # queued work only; running/completed effects preserved
-hera scene tree                              # node tree of the edited scene
-hera scene list                              # open scenes + current
-hera scene open res://Path.tscn              # open a scene
-hera scene reload [res://Path.tscn]          # reload current/open scene from disk
-hera scene save                              # save the edited scene
-hera scene create res://Path.tscn [--root Node2D] [--force] [--open]
-hera scene save-as res://Path.tscn [--force]
-hera editor state                            # current scene, selection, play/script state
-hera editor selected                         # selected editor nodes
-hera editor select <node> [--add]            # select a node in the editor
-hera editor clear-selection                  # clear editor node selection
-hera script current                          # inspect focused script
-hera script inspect res://scripts/foo.gd     # script metadata
-hera script validate res://scripts/foo.gd    # fresh on-disk GDScript check; nonzero on failure
-hera script open res://scripts/foo.gd [--line N] [--column N] # open in script editor
-hera script create res://scripts/foo.gd [--extends Node2D] [--class-name Foo] [--force] [--tool] [--ready] [--process] [--physics-process] [--input] [--unhandled-input] [--signal name] [--export name:type=value]
-hera script create res://Player.cs --lang csharp --ready --export Speed:float=3.5f # Godot .NET; build/reload before attach
-hera project mkdir res://scripts
-hera project scan                            # refresh Godot's resource filesystem
-hera project reimport res://icon.svg         # reimport one or more project files
-hera project set-main-scene res://Path.tscn # set ProjectSettings main scene
-hera node find [query] [--type Class]        # find nodes
-hera node get <path> [--prop p|--props a,b]  # dump all or selected node properties
-hera node add <type> [--parent p] [--name n] # add a node (undoable)
-hera node instance <res://scene.tscn> [--parent p] [--name n] # instance a PackedScene (undoable)
-hera node set <path> --prop p --value v      # set a property (undoable)
-hera node get <path> --prop p --snapshot    # typed expected object for a conditional set
-hera node set <path> --prop p --value v --expected '<JSON>' --verify # refuse stale observations; verify same target
-hera node remove <path>                      # remove a node (undoable)
-hera node reparent <path> --parent p         # move a node (undoable; keeps global transform)
-hera node attach-script <path> <res://script.gd> # attach a script (undoable; returns dependency diagnostics)
-hera node detach-script <path>               # clear a node script (undoable)
-hera signal list <node>                      # signals a node exposes + connections
-hera signal connect <from> <sig> <to> <method>     # wire a signal (undoable)
-hera signal disconnect <from> <sig> <to> <method>  # unwire (undoable)
-hera resource get <res://...>                # dump a resource's properties
-hera resource list [res://dir] [--type Class] [--pattern text] [--limit N] # list resources
-hera resource set <res://...> --prop p=v     # set and save resource properties
-hera resource create <Class> <res://out.tres> [--force] [--prop name=value]
-hera game tree                               # running game node tree
-hera game ui tree [--path p] [--depth N] [--fields a,b] [--type Class] [--text t] # running Control nodes, optionally scoped
-hera game ui audit [--path p] [--severity error|warning|all] [--rule id] [--strict] [--limit N] # generic runtime UI defects
-hera game instances                          # running game process heartbeats; shared user:// is flagged
-hera game --pid N tree                       # target one listed runtime, including externally launched games
-hera game screenshot [--path p] [--analyze]  # capture/analyze running game viewport
-hera game click --x N --y N                  # click the running game viewport
-hera game click --node /root/Main/Button     # click the center of a live Control
-hera game click --text Restart               # click the center of a visible Control by text
-hera game clock [--pause|--resume] [--time-scale N] [--step] [--physics] # SceneTree.paused / Engine.time_scale / one frame
-hera game input joypad --button A --press    # InputEventJoypadButton; axis: game input axis --axis LEFT_X --value 1
-hera game input sequence --file events.json # ordered {frame,action,pressed} events on physics frames
-hera game node get <path> [--prop p|--props a,b] # running game node properties
-hera game node set <path> --prop p --value v # set a running game property (not undoable)
-hera game node call <path> <method> [--arg v] # call a running game method (not undoable)
-hera game assert <path> <prop> <op> [value]  # assert runtime property for QA
-hera game qa discover [path]                 # list callable runtime qa_* or QaReady-style helpers
-hera game qa --file scenario.json            # run generic QA scenario, optionally with requirements/covers
-hera run [--scene r] [--current] [--wait]    # play; hera stop [--wait]
-hera eval "<expression>"                     # evaluate one GDScript expression
-hera guidance ui                             # UI guidance; reads Game Feel UI Mode
-hera output [--type log|error|warning|all] [--lines N]
-hera diagnostics [--lines N]                 # summarize project log errors/warnings
-hera output --source editor [--since cursor] # bounded editor-session evidence
-hera diagnostics --source editor [--since cursor] # observed editor errors/warnings
-hera screenshot [--path p] [--width N] [--height N] [--runtime] [--analyze] # render edited scene or capture the live viewport as-is
-hera batch [--file f] [--continue]           # run a JSON array of {tool, params}
-hera instances                               # list live Hera-enabled editors; expired heartbeats are stale
-hera smoke [--run-game|--skip-game]          # quick live editor smoke check; run-game includes runtime screenshot analysis
+hera status                                  # project, version, scene, session; not the editor console
+hera status --capabilities                   # include experimental API capability map
+hera instances                               # live editors; stale heartbeats listed separately
+hera --ids scene tree                        # edited scene paths
+hera node get <path> --prop p                # one property; omit --prop only when you need the dump
+hera node add|set|remove ...                 # undoable editor mutations
+hera diagnostics [--lines N]                 # project file log; source is file, not the Output panel
+hera diagnostics --source editor             # opt-in editor-session errors (capability-gated)
+hera run --current --wait / hera stop --wait
+hera game ui tree --type Button --fields name,path,text,disabled
+hera --ids game ui tree                      # Control paths only
+hera guidance ui                             # UI mode before building UI
 ```
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
-only node paths, for `scene tree` / `node find`), `--instance <pid>` (explicitly
-target a pid shown by `status`), `--timeout <ms>` (per-request HTTP timeout,
-default 5000). Default output is compact JSON.
+only paths for `scene tree` / `node find` / `game ui tree`), `--instance <pid>`
+(explicitly target a pid shown by `status`), `--timeout <ms>` (per-request HTTP
+timeout, default 5000). Default output is compact JSON.
 
 ## Conventions & safety
 
@@ -222,8 +116,8 @@ default 5000). Default output is compact JSON.
   mechanically for routine edits. Use this quick gate first, then open the full
   guide only when the change touches syntax/API not covered here, diagnostics
   fail, the guide changed, or you are uncertain:
-  - Do not invent syntax; when uncertain, check the canonical Godot sources
-    above or existing code.
+  - Do not invent syntax; when uncertain, check official Godot docs/engine
+    sources or existing code.
   - Use explicit types for function parameters/returns, dynamic API results,
     `Variant`, and untyped `Array`/`Dictionary` reads.
   - Use `:=` only when Godot can infer a concrete non-Variant type.
@@ -321,7 +215,7 @@ mutation and does not roll it back or save the scene. See the bounded type
 list and string-valued identity contract in `docs/COMMANDS.md`.
 
 Editor log evidence is opt-in: `output`/`diagnostics --source editor` first
-verify `status.capabilities.editor_log_cursor`. File logs remain the default.
+verify `hera status --capabilities` → `capabilities.editor_log_cursor`. File logs remain the default.
 Retain the returned cursor for an observed interval; `cursor_expired` requires
 an explicit restart from `restart_cursor`. Check `available`, `complete`, and
 `dropped_count`; a retained tail is not proof that earlier errors never occurred.
@@ -332,7 +226,9 @@ After an edit, **confirm it** instead of assuming:
 
 - After `node add`/`set`: `hera node get <path>` and check the value.
 - After structural changes: `hera scene tree` (or `--ids`).
-- After `run`: `hera output --type error` to catch runtime errors.
+- After `run`: `hera output --type error` (project file log) or
+  `hera diagnostics --source editor` when that capability is supported. File-log
+  `clean: true` is not a claim about the editor Output panel.
 - For UI/visual changes: `hera screenshot` for the edited scene, or
   `hera screenshot --runtime` after `run` for the live game viewport.
 

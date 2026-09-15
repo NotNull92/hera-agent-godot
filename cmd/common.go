@@ -45,9 +45,10 @@ func dialMutationPostPrint(tool string, params map[string]any, label string) int
 }
 
 type postPrintRequest struct {
-	tool   string
-	params map[string]any
-	label  string
+	tool    string
+	params  map[string]any
+	label   string
+	reshape func(any) any
 }
 
 func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequest) int {
@@ -116,6 +117,9 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		printData(resp)
 		fmt.Fprintf(os.Stderr, "%s: evidence_unavailable\n", request.label)
 		return 1
+	}
+	if request.reshape != nil {
+		resp.Data = request.reshape(resp.Data)
 	}
 	return printData(resp)
 }
@@ -339,21 +343,33 @@ func printData(resp *protocol.Response) int {
 	return 0
 }
 
-// printIDs prints just the node paths from a response carrying a "nodes" array
-// (scene tree / node find); otherwise it falls back to compact JSON.
+// printIDs prints just the paths from a response carrying a "nodes" or
+// "controls" array; otherwise it falls back to compact JSON.
 func printIDs(data any) {
 	if m, ok := data.(map[string]any); ok {
-		if nodes, ok := m["nodes"].([]any); ok {
-			for _, n := range nodes {
-				if nm, ok := n.(map[string]any); ok {
-					if p, ok := nm["path"].(string); ok {
-						fmt.Println(p)
-					}
-				}
-			}
+		if printPathList(m, "nodes") || printPathList(m, "controls") {
 			return
 		}
 	}
 	out, _ := json.Marshal(data)
 	fmt.Println(string(out))
+}
+
+func hasPathList(data map[string]any, key string) bool {
+	_, ok := data[key].([]any)
+	return ok
+}
+
+func printPathList(data map[string]any, key string) bool {
+	items, ok := data[key].([]any)
+	if !ok {
+		return false
+	}
+	for _, item := range items {
+		entry, _ := item.(map[string]any)
+		if path, ok := entry["path"].(string); ok {
+			fmt.Println(path)
+		}
+	}
+	return true
 }
