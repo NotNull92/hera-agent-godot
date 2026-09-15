@@ -13,6 +13,17 @@ standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
+## In development — compact observation (2026-09-15)
+
+- [x] Default `status` omits experimental `capabilities`/`godot_commit`;
+  `status --capabilities` prints the full map including `unverified`.
+- [x] Default operation receipts omit `retention` and echoed `evidence.response`;
+  `--verbose` restores them. Exit 0 still means the receipt was obtained.
+- [x] File `diagnostics`/`output` name `source: file` so `clean` is not an
+  editor-console claim. `--ids` prints Control paths from `game ui tree`.
+- [x] Guarded editor operations that refuse before the setter stay
+  `rejected`/`not_applied` with a stable `error_code`, not `outcome_unknown`.
+
 ## In development — engine baseline (2026-09-14)
 
 - [x] Opt-in disk validation hashes/source, bounded capture session/time/size

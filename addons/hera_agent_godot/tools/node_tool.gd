@@ -30,6 +30,12 @@ var editor_session_id: String = ""
 func set_undo_redo(undo_redo) -> void:
 	_undo_redo = undo_redo
 
+func _reject_before_set(error: String) -> Dictionary:
+	var code := error.get_slice(":", 0)
+	if code.contains(" "):
+		code = "invalid_operation"
+	return ToolResponse.rejected(error, code)
+
 func get_name() -> String:
 	return "node"
 
@@ -37,20 +43,20 @@ func execute(params: Dictionary) -> Dictionary:
 	var action := String(params.get("action", ""))
 	if params.has("expected") or params.has("verify") or action == "set_guarded":
 		if not action in ["set", "set_guarded"] or (params.has("verify") and not params["verify"] is bool):
-			return ToolResponse.failure("invalid expected: guards require node set and boolean verify")
+			return _reject_before_set("invalid expected: guards require node set and boolean verify")
 		var invalid := NodeGuard.validate(params.get("expected"))
 		if invalid != "":
-			return ToolResponse.failure(invalid)
+			return _reject_before_set(invalid)
 		if editor_session_id == "":
-			return ToolResponse.failure("capability_unavailable: editor session is unavailable")
+			return _reject_before_set("capability_unavailable: editor session is unavailable")
 		if params["expected"]["editor_session_id"] != editor_session_id:
-			return ToolResponse.failure("session_mismatch: editor session changed")
+			return _reject_before_set("session_mismatch: editor session changed")
 	if params.has("snapshot") and (action != "get" or params.get("snapshot") != true or not params.get("prop") is String):
 		return ToolResponse.failure("snapshot requires node get with one prop")
 	var root := EditorInterface.get_edited_scene_root()
 	if root == null:
 		if params.has("expected"):
-			return ToolResponse.failure("state_conflict: no scene is open")
+			return _reject_before_set("state_conflict: no scene is open")
 		return ToolResponse.failure("no scene is open in the editor")
 	match action:
 		"find":
@@ -163,28 +169,31 @@ func _set_property(root: Node, params: Dictionary) -> Dictionary:
 	var node := _resolve(root, path)
 	if node == null:
 		if params.has("expected"):
-			return ToolResponse.failure("state_conflict: node no longer exists at target path")
+			return _reject_before_set("state_conflict: node no longer exists at target path")
 		return ToolResponse.failure("node not found: %s" % path)
 	var prop := String(params.get("prop", ""))
 	var prop_info := _property_info(node, prop)
 	if prop == "" or prop_info.is_empty():
 		if params.has("expected"):
-			return ToolResponse.failure("state_conflict: property no longer exists")
+			return _reject_before_set("state_conflict: property no longer exists")
 		return ToolResponse.failure("node has no property: %s" % prop)
 
 	var old_value: Variant = node.get(prop)
 	var coerced := NodeValueCodec.coerce(params.get("value"), prop_info)
 	if not bool(coerced.get("ok", false)):
-		return ToolResponse.failure(String(coerced.get("error", "invalid property value")))
+		var coerce_error := String(coerced.get("error", "invalid property value"))
+		if params.has("expected"):
+			return _reject_before_set(coerce_error)
+		return ToolResponse.failure(coerce_error)
 	var new_value: Variant = coerced.get("value")
 	var session := editor_session_id
 	var node_id := str(node.get_instance_id())
 	if params.has("expected"):
 		var conflict := NodeGuard.compare(editor_session_id, root, node, prop, prop_info, old_value, params["expected"])
 		if conflict != "":
-			return ToolResponse.failure(conflict)
+			return _reject_before_set(conflict)
 		if typeof(new_value) != int(prop_info["type"]):
-			return ToolResponse.failure("invalid property value: guarded value must match the property type")
+			return _reject_before_set("invalid property value: guarded value must match the property type")
 
 	if _undo_redo != null:
 		_undo_redo.create_action("Hera: set %s.%s" % [String(node.name), prop])

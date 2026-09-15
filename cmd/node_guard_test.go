@@ -73,6 +73,47 @@ func TestBatchGuardAndEvidenceNegotiatesOnce(t *testing.T) {
 	}
 }
 
+func TestBatchPreservesInvalidChildParams(t *testing.T) {
+	var posted atomic.Value
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req protocol.Request
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Error(err)
+			return
+		}
+		if req.Tool != "batch" {
+			t.Errorf("unexpected tool %q", req.Tool)
+			return
+		}
+		posted.Store(req)
+		if err := json.NewEncoder(w).Encode(protocol.Response{OK: true, Data: map[string]any{
+			"count": 1, "stopped": true,
+			"results": []any{map[string]any{"tool": "screenshot", "ok": false, "error": "params must be an object"}},
+		}}); err != nil {
+			t.Error(err)
+		}
+	}))
+	t.Cleanup(server.Close)
+	installContractHome(t, contractServerPort(t, server), true)
+	file := filepath.Join(t.TempDir(), "bad-params.json")
+	if err := os.WriteFile(file, []byte(`[{"tool":"screenshot","params":"bad"}]`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr, code := captureContractRun([]string{"batch", "--file", file})
+	req, _ := posted.Load().(protocol.Request)
+	commands, _ := req.Params["commands"].([]any)
+	if len(commands) != 1 {
+		t.Fatalf("posted commands = %#v", req.Params["commands"])
+	}
+	entry, _ := commands[0].(map[string]any)
+	if entry["params"] != "bad" {
+		t.Fatalf("CLI rewrote params: %#v", entry["params"])
+	}
+	if !strings.Contains(stdout, "params must be an object") {
+		t.Fatalf("missing rejection: exit=%d stdout=%s stderr=%s", code, stdout, stderr)
+	}
+}
+
 func TestBatchGuardNegotiatesBeforeAnyCommand(t *testing.T) {
 	var mutations atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

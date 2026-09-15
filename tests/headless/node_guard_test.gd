@@ -2,6 +2,7 @@
 extends SceneTree
 
 const NodeTool = preload("res://addons/hera_agent_godot/tools/node_tool.gd")
+const Records = preload("res://addons/hera_agent_godot/core/operation_records.gd")
 var passed: bool = true
 
 func _initialize() -> void:
@@ -31,6 +32,17 @@ func _test() -> void:
 	var expected := {"editor_session_id": "old-session", "scene": scene.scene_file_path, "node_instance_id": str(scene.get_instance_id()), "prop": "visible", "type": "bool", "value": "true"}
 	var result: Dictionary = tool.execute({"action": "set", "path": ".", "prop": "visible", "value": "false", "expected": expected, "verify": true})
 	_check(not result.get("ok", false) and String(result.get("error", "")).begins_with("session_mismatch:"), "stale session must reject before mutation")
+	_check(result.get("attempted") == false and result.get("error_code") == "session_mismatch", "pre-set session mismatch must be a rejected attempt")
+	var records := Records.new()
+	records.session = "session"
+	var now := int(Time.get_unix_time_from_system() * 1000)
+	var id := "session:%d:guard" % (now + 30000)
+	var input := {"tool": "node", "params": {"action": "set_guarded", "path": ".", "prop": "visible", "value": "false", "expected": expected}}
+	_check(records.accept(id, input).has("accepted"), "guarded set must be an admissible operation")
+	_check(records.begin(id), "guarded rejection fixture begins")
+	records.finish(id, result)
+	var receipt: Dictionary = records.lookup(id)
+	_check(receipt.lifecycle == "rejected" and receipt.effect == "not_applied" and receipt.error_code == "session_mismatch", "guarded pre-set conflict must not become outcome_unknown")
 	var read: Dictionary = tool.execute({"action": "get", "path": ".", "prop": "visible"}).get("data", {})
 	_check(read.get("properties", {}).get("visible") == "true", "conflict changed property")
 	var history: UndoRedo = manager.get_history_undo_redo(manager.get_object_history_id(scene))
@@ -40,7 +52,7 @@ func _test() -> void:
 		mismatch["editor_session_id"] = "session"
 		mismatch[field] = "false" if field == "value" else "other"
 		result = tool.execute({"action": "set", "path": ".", "prop": "visible", "value": "false", "expected": mismatch})
-		_check(not result.get("ok", false), "accepted mismatched " + field)
+		_check(not result.get("ok", false) and result.get("attempted") == false and result.get("error_code") != "outcome_unknown", "mismatched " + field + " lost attempted=false")
 		read = tool.execute({"action": "get", "path": ".", "prop": "visible"}).get("data", {})
 		_check(read.get("properties", {}).get("visible") == "true" and not history.has_undo(), "conflict had side effects: " + field)
 	expected["editor_session_id"] = "session"

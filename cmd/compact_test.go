@@ -44,6 +44,11 @@ func TestCompactReceiptDataOmitsRetentionAndEchoedResponse(t *testing.T) {
 	if evidence["complete"] != true {
 		t.Fatalf("compact receipt dropped evidence.complete: %v", evidence)
 	}
+	in["error_code"] = "state_conflict"
+	got, _ = compactReceiptData(in).(map[string]any)
+	if got["error_code"] != "state_conflict" {
+		t.Fatalf("compact receipt dropped error_code: %v", got)
+	}
 	if _, ok := evidence["response"]; ok {
 		t.Fatal("compact receipt still echoes evidence.response")
 	}
@@ -63,6 +68,21 @@ func TestParseStatusArgs(t *testing.T) {
 	}
 	if _, err := parseStatusArgs([]string{"--verbose"}); err == nil {
 		t.Fatal("accepted unknown flag")
+	}
+}
+
+func TestForEachBatchChildDoesNotReplaceNonObjectParams(t *testing.T) {
+	params := map[string]any{"commands": []any{
+		map[string]any{"tool": "screenshot", "params": "bad"},
+	}}
+	forEachBatchChild(params, func(_ string, child map[string]any) {
+		if child != nil {
+			t.Fatal("non-object params should stay unnormalized")
+		}
+	})
+	entry := params["commands"].([]any)[0].(map[string]any)
+	if entry["params"] != "bad" {
+		t.Fatalf("batch child params = %#v, want the original string", entry["params"])
 	}
 }
 

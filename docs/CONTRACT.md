@@ -138,7 +138,7 @@ hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 |------|----------|
 | default | Compact JSON, one line. |
 | `--json` | Same `data`, pretty-printed with 2-space indent. |
-| `--ids` | For responses carrying a `nodes` array (`scene tree`, `node find`): node paths only, one per line. Anything else falls back to compact JSON. |
+| `--ids` | For responses carrying a `nodes` or `controls` array (`scene tree`, `node find`, `game ui tree`): paths only, one per line. Anything else falls back to compact JSON. |
 
 ### JSON conventions
 

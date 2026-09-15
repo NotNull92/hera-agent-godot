@@ -19,6 +19,12 @@ func _run() -> void:
 	records.finish(miss_id, {"ok": false, "error": "no game is running; start one with `hera run --current --wait` or pass --pid", "attempted": false, "error_code": "target_unavailable"})
 	var missed := records.lookup(miss_id)
 	_check(missed.lifecycle == "rejected" and missed.effect == "not_applied" and missed.error_code == "target_unavailable", "pre-dispatch game miss is rejected, not outcome_unknown")
+	var guard_id := "session:%d:guard" % (now + 30000)
+	var guard_input := {"tool": "node", "params": {"action": "set_guarded", "path": ".", "prop": "visible", "value": "false", "expected": {"editor_session_id": "session", "scene": "res://Main.tscn", "node_instance_id": "1", "prop": "visible", "type": "bool", "value": "true"}}}
+	_check(records.accept(guard_id, guard_input).has("accepted") and records.begin(guard_id), "guarded set receipt begins")
+	records.finish(guard_id, {"ok": false, "error": "state_conflict: property value changed", "attempted": false, "error_code": "state_conflict"})
+	var guarded := records.lookup(guard_id)
+	_check(guarded.lifecycle == "rejected" and guarded.effect == "not_applied" and guarded.error_code == "state_conflict", "guarded pre-set conflict must stay rejected")
 	var queue := WorkQueue.new()
 	if not queue.has_method("configure_operations"):
 		_check(false, "queue must retain operation receipts before dispatch")

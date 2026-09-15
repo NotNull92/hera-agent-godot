@@ -130,12 +130,6 @@ func forEachBatchChild(params map[string]any, fn func(tool string, params map[st
 		entry, _ := command.(map[string]any)
 		subTool, _ := entry["tool"].(string)
 		subParams, _ := entry["params"].(map[string]any)
-		if subParams == nil {
-			subParams = map[string]any{}
-			if entry != nil {
-				entry["params"] = subParams
-			}
-		}
 		fn(subTool, subParams)
 	}
 }
