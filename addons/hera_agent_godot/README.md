@@ -2,7 +2,7 @@
 
 Hera gives agents eyes, hands, and proof in the live Godot editor.
 
-This folder is the **distributable addon** for the current `v1.1.0` baseline. To
+This folder is the **distributable addon** for the current `v1.2.0` baseline. To
 use it in your own project:
 
 1. Use any **Godot 4.2–4.7** stable build (4.7 recommended — it gets the full
@@ -16,11 +16,10 @@ shared-token auth: put a random string in `~/.hera-agent-godot/token` (or set
 `HERA_AGENT_GODOT_TOKEN`) and reload the plugin — see the repo's
 `docs/SECURITY.md`.
 
-`v1.1.0` is a minor cut on the v1 contract: GDScript or C# by filename,
-`node reparent`, `game clock`, joypad/axis input, `game input sequence`,
-`script validate`, isolated `game --pid` targeting, and safer undo/resource
-batches. Upgrade the CLI and addon together and fully restart Godot. The
-verified Godot range remains **4.2–4.7**.
+`v1.2.0` is a minor cut on the v1 contract: mutation gate, operation receipts,
+guarded node sets, editor-log and linked evidence, and compact default
+status/diagnostics. Upgrade the CLI and addon together and fully restart Godot.
+The verified Godot range remains **4.2–4.7**.
 
 ## Layout
 
@@ -28,9 +27,9 @@ verified Godot range remains **4.2–4.7**.
 |------|------|
 | `plugin.cfg` | Addon manifest, points at `hera_agent_plugin.gd`. |
 | `hera_agent_plugin.gd` | `@tool` `EditorPlugin`; owns server, queue, heartbeat, registry. |
-| `core/` | response helpers, settings, `ToolRegistry`, and the Hera main-screen panel. |
-| `server/` | `http_server`, `work_queue`, `heartbeat`. |
-| `tools/` | Handlers for status, guidance, game feel, run, scene, editor, script (including validate), project, classdb, node (including reparent), signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
+| `core/` | response helpers, settings, `ToolRegistry`, operation receipts, editor-log collector, evidence helpers, and the Hera main-screen panel. |
+| `server/` | `http_server`, `work_queue`, `editor_gate`, `heartbeat`. |
+| `tools/` | Handlers for status, guidance, game feel, run, scene, editor, script (including validate), project, classdb, node (including reparent and guarded set), signal, resource, eval, output, diagnostics, screenshot, batch, and the game bridge. |
 | `runtime/` | Runtime autoload for live game inspection/control, play clock, UI tree reads, semantic clicks, keyboard/mouse/joypad input, sequences, input logs, assertions, and screenshot analysis during play sessions. |
 
 The entry script uses `@tool`, so it runs inside the editor. Full design and CLI

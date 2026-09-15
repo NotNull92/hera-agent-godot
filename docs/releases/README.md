@@ -1,14 +1,17 @@
 # Release records
 
-Current cut: **[v1.1.0](v1.1.0-asset-store-upload.md)** (GitHub Release 2026-09-08;
+Prepared cut: **[v1.2.0](v1.2.0-asset-store-upload.md)** (addon manifest
+`1.2.0`; GitHub/npm/Scoop/Asset Store still `v1.1.0` until tagged).
+
+Published cut: **[v1.1.0](v1.1.0-asset-store-upload.md)** (GitHub Release 2026-09-08;
 Asset Store submitted 2026-09-08; `hera-godot@1.1.0` on npm the same day).
-Store paste and checksums live there.
 
 Older Asset Store submissions are short historical records. Full superseded
 store copy is not kept in-tree.
 
 | Version | GitHub Release | Store |
 |---------|----------------|-------|
+| [v1.2.0](v1.2.0-asset-store-upload.md) | pending tag | not submitted |
 | [v1.1.0](v1.1.0-asset-store-upload.md) | 2026-09-08 | submitted 2026-09-08 |
 | [v1.0.0](v1.0.0-asset-store-upload.md) | 2026-07-21 | submitted 2026-07-21 |
 | [v0.9.0](v0.9.0-asset-store-upload.md) | 2026-07-14 | listed by 2026-07-21 |

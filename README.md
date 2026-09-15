@@ -35,39 +35,33 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current release baseline: v1.1.0
+## Current in-repo baseline: v1.2.0
 
-In-development `--evidence` on script validation, captures, scene save and resource
-set separates disk code, live sessions, actual viewport size and save outcomes.
-Unavailable observations fail evidence-enabled QA; capture operation IDs are
-caller-supplied correlation labels. See [linked evidence](docs/COMMANDS.md#linked-evidence-opt-in).
-Batch children receive the same evidence preflight and save guards; unavailable
-child evidence fails the CLI while preserving returned observations.
+Addon manifest is `1.2.0`. GitHub Releases, npm, Homebrew, Scoop, and the Asset
+Store still serve **v1.1.0** until `v1.2.0` is tagged. Release notes:
+[docs/releases/v1.2.0-asset-store-upload.md](docs/releases/v1.2.0-asset-store-upload.md).
 
-`v1.1.0` is the repository tag and addon manifest baseline. It is a minor
-release on the v1 contract: new commands and experimental fields, no intended
-break of documented stable JSON.
+`v1.2.0` is a minor cut on the v1 contract: new experimental commands and
+fields, no intended break of documented stable JSON.
 
-Highlights since v1.0.0:
+Highlights since v1.1.0:
 
-- **Language selection:** create, inspect, open, and attach `.gd` or `.cs` by
-  filename; C# needs Godot .NET and a loaded assembly. See
-  [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
-- **Play clock and input:** `game clock` for `SceneTree.paused` /
-  `Engine.time_scale` / one-frame step; joypad and axis injection; physics-frame
-  `game input sequence`.
-- **Scene and scripts:** undoable `node reparent`; `script validate` runs the
-  connected editor's engine on a disk script.
-- **Honest runtimes:** `game --pid` selects one live game; screenshots report
-  live capture size; expired editor heartbeats are `stale`; parallel games that
-  share `user://` are flagged.
-- **Safer mutations:** subtree ownership on undo, batched resource/theme
-  validation, fail-closed token startup, and QA scenario preflight.
+- **Mutation gate:** overlapping editor writes fail `editor_busy`; batches keep
+  ownership through import.
+- **Operation receipts:** `operation submit|status|cancel` for guarded node set
+  and session-targeted game set/call. Pre-dispatch refusals are
+  `rejected`/`not_applied`.
+- **Guarded node sets:** `--expected` / `--snapshot` / `--verify` refuse stale
+  observations before the setter.
+- **Editor-log evidence:** `output`/`diagnostics --source editor` with cursors.
+  File logs name `source: file`.
+- **Linked evidence:** opt-in `--evidence` on captures, save, and script
+  validate. See [linked evidence](docs/COMMANDS.md#linked-evidence-opt-in).
+- **Compact defaults:** `status --capabilities`, `operation --verbose`,
+  `--ids` on `game ui tree`.
 
-Upgrade the CLI and addon together and fully restart Godot. Release notes and
-Asset Store packaging:
-[docs/releases/v1.1.0-asset-store-upload.md](docs/releases/v1.1.0-asset-store-upload.md).
-The v1 compatibility promise remains [docs/CONTRACT.md](docs/CONTRACT.md).
+Upgrade the CLI and addon together and fully restart Godot. The v1 compatibility
+promise remains [docs/CONTRACT.md](docs/CONTRACT.md).
 
 ## Nonvisual CI (configured tier)
 
@@ -90,8 +84,8 @@ The "MCP-grade reach, fewer tokens" claim — with numbers:
 | | Hera (CLI) | Godot MCP servers (~41–155 tools) |
 |---|---|---|
 | Tool schemas resident **per turn** | **0** | ~4k–31k tok (grows with tool count) |
-| Surface the agent loads | one doc, ~1.0k tok — cacheable & flat | full tool list, re-sent each turn |
-| Per-action response | compact JSON — `status` ≈48 tok, `node get` ≈186 tok | JSON, often pretty |
+| Surface the agent loads | cacheable markdown (live-editor skill ~1k tok; full COMMANDS.md is larger) | full tool list, re-sent each turn |
+| Per-action response | compact JSON — default `status` ≈79 tok (fixture), `node get` ≈186 tok | JSON, often pretty |
 
 Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 **estimate** from sampled public Godot MCP tool counts (~41–155 tools) ×
@@ -100,8 +94,8 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 ## Command surface
 
-The `v1.1.0` CLI/addon surface includes:
-`status`, `instances`, `run`/`stop`, `scene`, `editor`, `script` (including
+The `v1.2.0` CLI/addon surface includes:
+`status` (`--capabilities`), `operation`, `instances`, `run`/`stop`, `scene`, `editor`, `script` (including
 `validate` and `.gd`/`.cs` create), `project`,
 `classdb`, `node` (read + write + reparent + resource/script wiring), `signal`, `resource`
 (get/uid/list/set/create/resave/update-uids/export-mesh-library), `theme`

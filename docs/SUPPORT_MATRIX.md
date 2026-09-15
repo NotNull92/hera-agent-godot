@@ -15,7 +15,7 @@ this change remains unverified; the existing CI 4.2 all-addon gate is retained.
 
 > Live `status` spot-check **2026-07-13** on official Windows stables (then
 > `v0.7.0`). GDScript `--check-only` on **4.2-stable** and **4.7-stable** still
-> runs in CI on every commit, including `v1.1.0`.
+> runs in CI on every commit, including the `v1.2.0` tree.
 
 Hera is developed and fully QA'd against **Godot 4.7**. The spot-check below
 verifies how far back the addon actually works: every addon script passes the
@@ -50,8 +50,10 @@ requirement-covered runtime-logic scenario. See
 **What this means**
 
 - **Verified minimum: 4.2.** The addon parses on 4.2 in CI. It loaded and
-  answered `status` on 4.2–4.6 in the 2026-07-13 spot-check. v1.1.0 commands
-  (`node reparent`, `game clock`, joypad events) use APIs present in 4.2.
+  answered `status` on 4.2–4.6 in the 2026-07-13 spot-check. v1.1.0/v1.2.0
+  commands (`node reparent`, `game clock`, joypad events, Logger-backed editor
+  logs when the API exists) use APIs present in 4.2 or degrade via capability
+  states.
   Nothing in the addon requires a 4.7-only class (the heaviest dependency is
   the `EditorInterface` singleton, available since 4.2).
 - **Recommended: 4.7+.** Only 4.7 gets the full live QA treatment (runtime

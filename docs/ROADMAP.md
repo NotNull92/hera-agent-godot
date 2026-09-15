@@ -1,17 +1,23 @@
 # Roadmap
 
 Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented. The `v1.1.0` GitHub Release is
-published 2026-09-08 (addon manifest `1.1.0`). Scoop is pinned in-repo;
-Homebrew Formula merged
-([NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1));
-the owner submitted the Asset Store version on 2026-09-08;
-`hera-godot@1.1.0` is on npm (published 2026-09-08).
-See [docs/releases/v1.1.0-asset-store-upload.md](./releases/v1.1.0-asset-store-upload.md).
+has the core CLI/addon surface implemented. Addon manifest is `1.2.0`; the
+GitHub/npm/Scoop/Homebrew/Asset Store channels still serve `v1.1.0` until
+`v1.2.0` is tagged. See
+[docs/releases/v1.2.0-asset-store-upload.md](./releases/v1.2.0-asset-store-upload.md).
+The previous cut: GitHub `v1.1.0` 2026-09-08; Scoop in-repo; Homebrew
+[NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1);
+Asset Store submitted 2026-09-08; `hera-godot@1.1.0` on npm.
 Phases 7–9 chart the
 standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
+
+## Prepared — v1.2.0 (2026-09-15)
+
+Addon manifest `1.2.0`. Not tagged. Published CLI channels remain `v1.1.0`
+until `git tag v1.2.0` runs the release workflow. Record:
+[v1.2.0-asset-store-upload.md](releases/v1.2.0-asset-store-upload.md).
 
 ## In development — compact observation (2026-09-15)
 
@@ -386,7 +392,8 @@ Goal: declare the contract stable and make depending on Hera boring.
 - [x] Asset Store upload `v1.0.0` submitted by the owner on 2026-07-21;
       `v1.1.0` submitted 2026-09-08. GitHub Release assets, Scoop, and
       Homebrew for `v1.1.0` are published. `hera-godot@1.1.0` is on npm
-      (2026-09-08).
+      (2026-09-08). `v1.2.0` addon manifest is prepared; tag and store
+      upload are pending.
 - [ ] Announcement posts (Godot forums, Discord, sibling Unity repo
       cross-link).
 

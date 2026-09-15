@@ -42,31 +42,29 @@ GDScript 평가 등. 에이전트가 낡은 학습 데이터로 추측하는 대
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 현재 릴리스 기준: v1.1.0
+## 현재 저장소 기준: v1.2.0
 
-`v1.1.0`은 저장소 태그와 애드온 매니페스트 기준 버전입니다. v1 계약 위의
-마이너 릴리스로, 명령과 experimental 필드를 추가하며 문서화된 안정 JSON을
-의도적으로 깨지 않습니다.
+애드온 매니페스트는 `1.2.0`입니다. GitHub Releases, npm, Homebrew, Scoop, Asset
+Store는 태그가 올라가기 전까지 **v1.1.0**을 제공합니다. 릴리스 노트:
+[docs/releases/v1.2.0-asset-store-upload.md](docs/releases/v1.2.0-asset-store-upload.md).
 
-v1.0.0 이후 주요 변경:
+`v1.2.0`은 v1 계약 위의 마이너입니다. experimental 명령과 필드를 추가하며
+문서화된 안정 JSON을 의도적으로 깨지 않습니다.
 
-- **언어 선택:** 파일 확장자로 `.gd` 또는 `.cs`를 만들고 열고 붙입니다. C#은
-  Godot .NET과 로드된 어셈블리가 필요합니다.
-  [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
-- **플레이 시계와 입력:** `game clock`으로 `SceneTree.paused` /
-  `Engine.time_scale` / 한 프레임 스텝, 조이패드·축 주입,
-  `game input sequence`.
-- **씬과 스크립트:** 실행 취소 가능한 `node reparent`, 연결된 에디터 엔진으로
-  디스크 스크립트를 검사하는 `script validate`.
-- **정직한 런타임:** `game --pid`로 게임 프로세스 선택, 캡처 실측 크기, 만료된
-  에디터 heartbeat는 `stale`, 공유 `user://` 표시.
-- **더 안전한 변경:** undo 시 서브트리 owner 보존, 리소스/테마 일괄 검증,
-  토큰 읽기 실패 시 시작 거부, QA 시나리오 사전 검사.
+v1.1.0 이후 주요 변경:
 
-CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. 릴리스 노트와 Asset
-Store 패키징:
-[docs/releases/v1.1.0-asset-store-upload.md](docs/releases/v1.1.0-asset-store-upload.md).
-v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
+- **수정 게이트:** 겹치는 에디터 쓰기는 `editor_busy`. batch는 import 동안 소유권 유지.
+- **operation receipt:** `operation submit|status|cancel`. 실행 전 거부는
+  `rejected`/`not_applied`.
+- **가드된 node set:** `--expected` / `--snapshot` / `--verify`.
+- **에디터 로그 증거:** `output`/`diagnostics --source editor`. 파일 로그는
+  `source: file`.
+- **linked evidence:** 캡처·세이브·`script validate`의 `--evidence`.
+- **compact 기본값:** `status --capabilities`, `operation --verbose`,
+  `game ui tree`의 `--ids`.
+
+CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. v1 호환 약속은
+[docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 
 ## 헤드리스 CI(구성된 티어)
 
@@ -90,8 +88,8 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 | | 헤라 (CLI) | Godot MCP 서버 (도구 약 41~155개) |
 |---|---|---|
 | **매 턴** 상주하는 도구 스키마 | **0** | ~4k~31k tok (도구 수에 비례 증가) |
-| 에이전트가 로드하는 표면 | 문서 1개, ~1.0k tok — 캐시 가능·평탄 | 전체 도구 목록, 매 턴 재전송 |
-| 액션당 응답 | compact JSON — `status` ≈48 tok, `node get` ≈186 tok | JSON, 보통 pretty |
+| 에이전트가 로드하는 표면 | 캐시 가능한 마크다운 (live-editor 스킬 ~1k tok; COMMANDS.md는 더 큼) | 전체 도구 목록, 매 턴 재전송 |
+| 액션당 응답 | compact JSON — 기본 `status` ≈79 tok (픽스처), `node get` ≈186 tok | JSON, 보통 pretty |
 
 헤라 수치는 라이브 Godot 4.7 에디터에서 **실측**, MCP 열은 공개 Godot MCP
 서버들의 표본 도구 수(약 41~155개) × 도구 스키마당 ~100~200 tok 으로 낸
@@ -100,8 +98,8 @@ v1 호환 약속은 [docs/CONTRACT.md](docs/CONTRACT.md)입니다.
 
 ## 명령 표면
 
-`v1.1.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
-`status`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
+`v1.2.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
+`status`(`--capabilities`), `operation`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
 `node`(읽기+쓰기+reparent+리소스/스크립트 연결), `signal`,
 `resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),
 `theme`(Theme 리소스 항목 get/set),
