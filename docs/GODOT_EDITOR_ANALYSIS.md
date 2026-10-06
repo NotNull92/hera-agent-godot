@@ -6,7 +6,7 @@ debug-symbol editor build when native stepping is needed.
 
 ## 1. Source-aligned analysis
 
-Start from the exact Godot editor version reported by `hera status`, then read
+Start from the exact Godot editor version reported by `hera-godot status`, then read
 the matching Godot source tag. Use source files to decide whether a capability
 belongs in Hera, not to guess at runtime state from disk.
 
@@ -66,16 +66,16 @@ Use Godot's own metadata APIs before reaching for binaries:
 The `classdb` command is the low-token entry point for this contract:
 
 ```text
-hera classdb info <Class>
-hera classdb methods <Class>
-hera classdb properties <Class>
-hera classdb signals <Class>
-hera classdb constants <Class>
-hera classdb enums <Class>
-hera classdb signals <Class> --own
-hera classdb constants <Class> --own
-hera classdb enums <Class> --own
-hera classdb inherits <Class> <BaseClass>
+hera-godot classdb info <Class>
+hera-godot classdb methods <Class>
+hera-godot classdb properties <Class>
+hera-godot classdb signals <Class>
+hera-godot classdb constants <Class>
+hera-godot classdb enums <Class>
+hera-godot classdb signals <Class> --own
+hera-godot classdb constants <Class> --own
+hera-godot classdb enums <Class> --own
+hera-godot classdb inherits <Class> <BaseClass>
 ```
 
 Godot's ClassDB documentation notes that exported release builds can lack debug
@@ -91,8 +91,8 @@ answer the question or a native crash must be stepped.
 
 Recommended loop:
 
-1. Capture observable evidence first: `hera status`, `hera diagnostics`,
-   `hera output --type error`, and a minimal reproduction scene.
+1. Capture observable evidence first: `hera-godot status`, `hera-godot diagnostics`,
+   `hera-godot output --type error`, and a minimal reproduction scene.
 2. Check the matching Godot source tag for the editor version.
 3. Build Godot with debug symbols. Godot's build docs document
    `debug_symbols=yes`, and `dev_build=yes` is useful for editor debugging.

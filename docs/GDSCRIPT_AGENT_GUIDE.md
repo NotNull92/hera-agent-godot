@@ -31,9 +31,9 @@ godot --headless --path . --check-only --script res://path/to/script.gd
 If a local `godot` command is unavailable, use the live editor through Hera:
 
 ```sh
-hera diagnostics --lines 80
-hera run --current
-hera output --type error --lines 80
+hera-godot diagnostics --lines 80
+hera-godot run --current
+hera-godot output --type error --lines 80
 ```
 
 For timer-driven prompt games, include a deterministic QA path before runtime
@@ -154,7 +154,7 @@ interaction boundaries the player sees. If the AI can act after a human move,
 capture the state before the human half-move and before the automated half-move
 as separate undo boundaries.
 
-Before agent-driven UI work, run `hera guidance ui` when a live editor is
+Before agent-driven UI work, run `hera-godot guidance ui` when a live editor is
 available. If it reports `game_feel_ui_mode: true`, treat Game Feel as a hard UI
 requirement: add immediate input feedback, expressive state changes, satisfying
 motion where it clarifies state, and runtime visual QA that proves the feedback
@@ -887,21 +887,21 @@ Before finishing GDScript work:
 - No unqualified engine constants copied from class references exist.
 - No `:=` is assigned from `Variant`, untyped `Array`, untyped `Dictionary`, or a
   dynamic API result.
-- `hera diagnostics --lines 80` is clean.
-- Runtime output has no errors after `hera run --current` when runtime behavior
+- `hera-godot diagnostics --lines 80` is clean.
+- Runtime output has no errors after `hera-godot run --current` when runtime behavior
   changed.
 - UI or visual changes have a Hera screenshot, preferably runtime when a game
   viewport is available.
 - Runtime QA starts from a clean process when possible: stop the current game,
-  check `hera game instances`, run with `hera run --current --wait`, then inspect
-  `hera game ui tree` or `hera game tree`.
+  check `hera-godot game instances`, run with `hera-godot run --current --wait`, then inspect
+  `hera-godot game ui tree` or `hera-godot game tree`.
 - State-changing runtime QA is ordered: do not run semantic clicks, `game input`,
   or `game node call qa_*` in parallel against the same live game process.
-- UI work checks `hera guidance ui`; when Game Feel UI Mode is enabled, the
+- UI work checks `hera-godot guidance ui`; when Game Feel UI Mode is enabled, the
   implementation includes snappy feedback and satisfying state-change cues, then
   verifies them through the runtime viewport.
-- Gameplay-feel work checks `hera guidance game-feel`; when Game Feel Mode is
-  enabled, query concrete topics with `hera game_feel <topic>` before tuning
+- Gameplay-feel work checks `hera-godot guidance game-feel`; when Game Feel Mode is
+  enabled, query concrete topics with `hera-godot game_feel <topic>` before tuning
   controls, camera, hit stop, screen shake, sound, particles, rewards, or
   presentation.
 - Timer-driven, spawned, physics-driven, or autonomous game loops expose

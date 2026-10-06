@@ -58,9 +58,9 @@ Command names should stay boring and discoverable:
 Good:
 
 ```sh
-hera game qa discover
-hera game ui tree --type Button --fields name,path,text,disabled
-hera game qa --file scenario.json
+hera-godot game qa discover
+hera-godot game ui tree --type Button --fields name,path,text,disabled
+hera-godot game qa --file scenario.json
 ```
 
 Avoid:

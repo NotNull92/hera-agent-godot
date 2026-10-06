@@ -1,6 +1,8 @@
 # Go build output
 /hera
 /hera.exe
+/hera-godot
+/hera-godot.exe
 /hera-agent-godot
 /hera-agent-godot.exe
 *.exe
@@ -14,6 +16,9 @@
 # Godot generated files
 **/.godot/
 **/bin/
+!/packaging/npm/bin/
+!/packaging/npm/bin/*.js
+/packaging/npm/vendor/
 **/obj/
 *.user
 

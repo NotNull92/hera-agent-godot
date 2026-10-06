@@ -69,7 +69,7 @@ requirement-covered runtime-logic scenario. See
 fresh minimal project, run `--headless --path <proj> --check-only --script`
 over every addon `.gd`, then enable the plugin and boot
 `--headless --editor`; wait for the heartbeat under
-`~/.hera-agent-godot/instances/` and run `hera --instance <pid> status`.
+`~/.hera-agent-godot/instances/` and run `hera-godot --instance <pid> status`.
 Expected noise on never-imported projects: font import errors from the panel's
 bundled `.woff2` (harmless; real projects import assets before the plugin is
 enabled).

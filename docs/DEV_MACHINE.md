@@ -7,6 +7,28 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **CLI name separation (2026-10-06)**: `%USERPROFILE%\.local\bin\hera.cmd`
+  launches the sibling `heraAgent\bin\hera.mjs` with the existing Node executable.
+  `hera-godot.cmd` launches this checkout's ignored
+  `dist\command-migration\hera-godot.exe` (development build). Both are development
+  links and depend on these checkout paths. This directory was already before
+  `%APPDATA%\npm` in user PATH; no PATH/profile or execution-policy change was made.
+  Fresh PowerShell 7 and Windows PowerShell 5.1 both resolved the intended commands.
+  The original npm `hera`, `hera.cmd` and `hera.ps1` were preserved byte-for-byte.
+  No credentials or editor processes were changed. Rebuild the development binary
+  after Go changes; future published installs require the migration documented in
+  `packaging/README.md`.
+
+- **Rename verification (2026-10-06)**: Go 1.26.2 Windows/amd64 build, vet, uncached
+  tests and race/shuffled tests passed. Actual npm pack/install executed both aliases
+  from a temporary prefix with spaces/Korean while preserving a separate `hera`.
+  The PowerShell installer passed with a local fixture archive and NoPathUpdate.
+  Its architecture fallback handles an absent PROCESSOR_ARCHITECTURE using .NET.
+  The one changed addon diagnostic string passed isolated Godot 4.7.2 .NET
+  `--headless --check-only` with separate HOME/USERPROFILE/APPDATA. No live-editor
+  interaction or macOS/Linux execution was performed for this rename. CI coverage
+  was added locally; no remote success or package publication is claimed.
+
 - **Verified direct executable (2026-09-14)**: the 4.7.2 .NET path below is
   the engine itself (181,449,736 bytes, native x64 PE). Its sibling
   `_console.exe` is 198,152 bytes; use the direct executable for bounded child

@@ -53,7 +53,7 @@ the setter/call are `rejected`/`not_applied` (for example `target_unavailable`),
 not `outcome_unknown`. Cancellation additionally returns `cancelled`.
 
 Supported actions are guarded editor node set and session-targeted runtime set/call.
-`hera status --capabilities` advertises this bounded surface as
+`hera-godot status --capabilities` advertises this bounded surface as
 `capabilities.operation_receipts`;
 `game instances[].runtime_session_id` identifies the runtime incarnation.
 IDs and session identities are strings; the decimal milliseconds component fixes
@@ -129,7 +129,7 @@ hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
   `node: node not found: /nonexistent`). Error **message text is not part of
   the contract** — do not parse it; branch on the exit code instead. Messages
   may include actionable hints (e.g.
-  ``game: no game is running; start one with `hera run --current --wait` ``).
+  ``game: no game is running; start one with `hera-godot run --current --wait` ``).
 - `version` is the one exception: it prints a bare version string, not JSON.
 
 ### Output modes

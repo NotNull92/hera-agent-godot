@@ -37,7 +37,7 @@ docs: <https://github.com/NotNull92/hera-agent-godot>.
 
 `game instances` lists fresh runtime heartbeats, flags shared `user://`, and
 keeps expired files under `stale`. Use
-`hera --instance <EDITOR_PID> game --pid <GAME_PID> ...` to target an external
+`hera-godot --instance <EDITOR_PID> game --pid <GAME_PID> ...` to target an external
 or parallel runtime; unqualified requests retain editor-play matching and
 ambiguity refusal. Runtime screenshots report the live viewport and are not
 upscaled. The plugin temporarily removes its owned runtime inspector

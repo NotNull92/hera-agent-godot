@@ -4,6 +4,11 @@
 
 # hera-agent-godot
 
+**CLI 명령 변경(아직 미배포):** 이 소스의 기본 명령은 `hera-godot`이며
+`hera-agent-godot` 별칭은 유지합니다. 다른 도구와 충돌하지 않도록 `hera`는
+등록하지 않습니다. 이미 배포된 패키지와 Homebrew는 별도 배포 전까지 기존
+이름을 사용할 수 있습니다. [전환 안내](packaging/README.md#command-name-migration)를 참고하세요.
+
 [English](README.md) · **한국어**
 
 개발 중인 `--evidence` 옵션은 스크립트 검사·화면 캡처·씬 저장·리소스 변경에서
@@ -111,11 +116,11 @@ CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. v1 �
 [docs/ROADMAP.md](docs/ROADMAP.md)에서 확인하세요.
 
 스크립트 확장자로 GDScript 또는 C#을 선택합니다:
-`hera script validate res://Player.gd`는 연결된 에디터의 엔진으로 별도 headless
+`hera-godot script validate res://Player.gd`는 연결된 에디터의 엔진으로 별도 headless
 프로세스에서 디스크의 최신 GDScript를 검사합니다. 엔진 출력을 JSON으로 반환하고
 실패 시 비정상 종료합니다. C# 컴파일이나 경고가 없다는 보장은 제공하지 않으며,
 의존성을 로드하면서 코드가 실행될 수 있습니다.
-`hera game input sequence --file events.json`은
+`hera-godot game input sequence --file events.json`은
 `{ "frame": 0, "action": "ui_accept", "pressed": true }` 객체의 배열을 받아
 상대 물리 프레임에 맞춰 입력하고 종료 시 눌린 액션을 해제합니다.
 시간 제한과 QA 예제는 명령 레퍼런스를 참고하세요.
@@ -136,13 +141,13 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 작업을 해제하지 않습니다. import 준비 상태와 엔진별 한계는
 [수정 gate](docs/COMMANDS.md#editor-mutation-gate)를 참고하세요.
 
-`hera status`는 `editor_session_id`와 Game Feel / C# 에디터 플래그를 반환합니다.
-`hera status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
+`hera-godot status`는 `editor_session_id`와 Game Feel / C# 에디터 플래그를 반환합니다.
+`hera-godot status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
 `unsupported`, `unverified`)를 추가합니다. API 존재만으로 디버거 연결이나 SDK
 설치를 보장하지 않습니다.
 [기능 상태의 범위](docs/ARCHITECTURE.md#6-discovery--instance-files)를 참고하세요.
 
-`hera output --source editor` 또는 `hera diagnostics --source editor`로
+`hera-godot output --source editor` 또는 `hera-godot diagnostics --source editor`로
 에디터 세션 로그를 읽습니다. 반환된 `cursor`를 `--since`로 전달하면 이후 구간만
 조회합니다. 등록된 수집기의 실제 콜백을 확인해야 지원 상태가 되며, 관측 불가와
 만료된 커서는 명시적으로 반환합니다. 제한 버퍼는 누락 개수를 보고하고 등록 후
@@ -150,8 +155,8 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 유지됩니다. [에디터 로그 증거](docs/COMMANDS.md#editor-log-evidence)를 참고하세요.
 
 스크립트 생성 예:
-`hera script create res://Player.gd` 또는
-`hera script create res://Player.cs --ready --export Speed:float=3.5f`.
+`hera-godot script create res://Player.gd` 또는
+`hera-godot script create res://Player.cs --ready --export Speed:float=3.5f`.
 선택 옵션 `--lang gdscript|csharp`는 확장자와 일치해야 합니다. C# 생성·열기·연결은
 Godot .NET이 필요하며, `status.csharp_supported`는 에디터 지원 여부를 나타냅니다
 (.NET SDK 설치 여부는 검사하지 않습니다). 새 스크립트를 연결하기 전에 C# 어셈블리를
@@ -161,13 +166,13 @@ GDScript로 유지되며 `eval`은 두 언어의 프로젝트 모두에서 GDScr
 설정과 제한은 [C# 지원 가이드](docs/CSHARP_SUPPORT.md)를 참고하세요.
 
 외부 실행 또는 병렬 실행 중인 게임은 에디터와 별도로 선택할 수 있습니다.
-`hera game instances`로 목록을 읽고
-`hera --instance <EDITOR_PID> game --pid <GAME_PID> tree`처럼 모든 game/QA
+`hera-godot game instances`로 목록을 읽고
+`hera-godot --instance <EDITOR_PID> game --pid <GAME_PID> tree`처럼 모든 game/QA
 하위 명령에 게임 PID를 지정합니다. `--pid`가 없으면 기존 editor-play 선택을
 사용하며 대상이 모호하면 계속 실패합니다. `--instance`와 `--pid`는 프로세스를
 고를 뿐 `user://` 세이브는 나누지 않습니다. 런타임 스크린샷은 실제 뷰포트
 크기를 보고하며 프로젝트 해상도로 확대하지 않습니다. 만료된 에디터 heartbeat는
-`hera instances`의 `stale`로 보이며, 에디터가 없다고 뭉개지 않습니다. Hera
+`hera-godot instances`의 `stale`로 보이며, 에디터가 없다고 뭉개지 않습니다. Hera
 런타임 inspector는 에디터 재생에는 유지되지만 export된 프로젝트 설정에서는
 제거됩니다.
 
@@ -205,7 +210,7 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 ```
 
 특정 태그는 `HERA_VERSION`, 설치 경로는 `HERA_BIN_DIR`로 지정할 수 있습니다.
-소스 빌드는 `go build -o hera .` (Go 1.25+). `hera version`으로 확인하세요.
+소스 빌드는 `go build -o hera-godot .` (Go 1.25+). `hera-godot version`으로 확인하세요.
 Windows winget 배포는 의도적으로 폐기했습니다. winget-pkgs 제출은 한 번도 하지
 않았으며 앞으로도 계획하지 않습니다. 결정 기록은
 [`packaging/README.md`](packaging/README.md)를 확인하세요.

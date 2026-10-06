@@ -261,7 +261,7 @@ and `HERA_AGENT_GODOT_TOKEN`. This matters because Hera discovers editor
 heartbeats under the user's home directory and resolves opt-in token auth from
 the environment before consulting a token file. The recipe's before/after
 heartbeat snapshot is only the scoped selection step for the editor it just
-launched; all requests then use the public `hera --instance <pid>` and
+launched; all requests then use the public `hera-godot --instance <pid>` and
 exit-code surface. See [SECURITY.md](SECURITY.md) and
 [CONTRACT.md](CONTRACT.md).
 
@@ -273,7 +273,7 @@ a different PID. Before launch, the recipe snapshots heartbeat filenames; after
 launch, it accepts only a newly created `<pid>.json` whose embedded `pid`
 matches its filename, and records that value as `heartbeat_pid`. The bounded
 `status` loop then proves that this fresh heartbeat answers through the addon
-protocol. Every `hera --instance` call uses `heartbeat_pid`; `launcher_pid` is
+protocol. Every `hera-godot --instance` call uses `heartbeat_pid`; `launcher_pid` is
 retained only for exact, scoped cleanup. Only after status succeeds does the
 recipe capture `instances` for diagnostics. Do not select the first listed
 editor, and do not kill by process name.
@@ -291,7 +291,7 @@ This avoids two distinct hazards:
 
 For a slow machine, extend the **bounded lifecycle deadline** first. If one RPC
 needs more than the default five seconds, use the documented global flag before
-the command, for example `hera --instance "$heartbeat_pid" --timeout 10000 status`.
+the command, for example `hera-godot --instance "$heartbeat_pid" --timeout 10000 status`.
 That flag bounds one request, not the whole polling loop.
 
 ## Why these two checks
@@ -339,7 +339,7 @@ for this tier. Command exit codes are the verdict; logs are diagnostic evidence.
 | No fresh heartbeat before the deadline | Read `editor.stderr.log` and `editor.stdout.log`; confirm the plugin is enabled, `HOME` and `USERPROFILE` are identical, and the editor was started from the intended checkout. Keep the bounded loop; do not add an unbounded sleep. |
 | `unauthorized` | Confirm the editor child and CLI inherited the same nonempty `HERA_AGENT_GODOT_TOKEN`. The environment variable intentionally takes precedence over a token file. |
 | More than one editor appears | Retain `instances.json`, continue using the captured `heartbeat_pid`, and do not use `pkill`, `killall`, or a global process-name kill. |
-| Scenario cannot find a runtime | Preserve the scenario stderr and editor logs, then use `hera --instance "$heartbeat_pid" game instances` as a diagnostic read. The explicit `stop --wait` remains the only normal shutdown path. |
+| Scenario cannot find a runtime | Preserve the scenario stderr and editor logs, then use `hera-godot --instance "$heartbeat_pid" game instances` as a diagnostic read. The explicit `stop --wait` remains the only normal shutdown path. |
 | Cleanup leaves the editor alive | The trap targets only the captured `heartbeat_pid` and `launcher_pid`; inspect their logs and terminate only those known processes. The launcher wait is bounded, so cleanup cannot wait forever. Do not broaden cleanup to unrelated Godot processes. |
 
 ## CI and remote status

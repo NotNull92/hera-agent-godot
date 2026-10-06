@@ -8,7 +8,7 @@ import (
 
 const waitTimeout = 10 * time.Second
 
-// runRun implements `hera run [--scene <res://...>] [--current] [--wait]`.
+// runRun implements `hera-godot run [--scene <res://...>] [--current] [--wait]`.
 //
 // Default (no flag) plays the main scene; --current plays the edited scene;
 // --scene plays a specific scene. --wait polls until the play session starts.
@@ -49,7 +49,7 @@ func runRun(args []string) int {
 	return printData(resp)
 }
 
-// runStop implements `hera stop [--wait]` (addon `run` tool, stop action).
+// runStop implements `hera-godot stop [--wait]` (addon `run` tool, stop action).
 func runStop(args []string) int {
 	wait := false
 	for _, a := range args {

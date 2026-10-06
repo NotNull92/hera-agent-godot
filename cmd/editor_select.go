@@ -21,16 +21,16 @@ func selectEditor(scan discovery.Scan, requireSingle bool, targetPID int) (disco
 		}
 		for _, inst := range scan.Stale {
 			if inst.PID == targetPID {
-				return discovery.Instance{}, fmt.Errorf("Godot editor pid %d heartbeat expired %s ago; the OS process may still be running. Restart the editor or wait for a fresh heartbeat, then retry (`hera instances` lists stale files)", inst.PID, heartbeatAgeText(inst))
+				return discovery.Instance{}, fmt.Errorf("Godot editor pid %d heartbeat expired %s ago; the OS process may still be running. Restart the editor or wait for a fresh heartbeat, then retry (`hera-godot instances` lists stale files)", inst.PID, heartbeatAgeText(inst))
 			}
 		}
 		return discovery.Instance{}, fmt.Errorf("no Godot editor heartbeat for pid %d (%s)", targetPID, describeEditors(scan))
 	}
 	if len(scan.Live) == 0 {
 		if len(scan.Stale) > 0 {
-			return discovery.Instance{}, fmt.Errorf("no live Godot editor found; stale heartbeat(s): %s. Open the project in Godot, enable the Hera Agent plugin, or restart a stalled editor, then run `hera instances`", stalePIDs(scan.Stale))
+			return discovery.Instance{}, fmt.Errorf("no live Godot editor found; stale heartbeat(s): %s. Open the project in Godot, enable the Hera Agent plugin, or restart a stalled editor, then run `hera-godot instances`", stalePIDs(scan.Stale))
 		}
-		return discovery.Instance{}, fmt.Errorf("no live Godot editor found; open the project in Godot, enable the Hera Agent plugin, then run `hera instances` to confirm the heartbeat")
+		return discovery.Instance{}, fmt.Errorf("no live Godot editor found; open the project in Godot, enable the Hera Agent plugin, then run `hera-godot instances` to confirm the heartbeat")
 	}
 	if requireSingle && len(scan.Live) > 1 {
 		return discovery.Instance{}, fmt.Errorf("multiple live Godot editors found (%s); pass --instance <pid> or close the extras before running mutation commands", instancePIDs(scan.Live))

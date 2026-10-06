@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-// runStatus implements `hera status`: find a live editor, ask it for status,
+// runStatus implements `hera-godot status`: find a live editor, ask it for status,
 // and print the result as compact JSON. Experimental capability detail is
 // omitted unless --capabilities is passed.
 func runStatus(args []string) int {

@@ -158,7 +158,7 @@ func _select_target(instances: Array, params: Dictionary, scene: String, editor_
 				return instance
 		return { "error": "no live Hera game process found for pid %d" % requested_pid, "error_code": "target_unavailable" }
 	if not editor_playing:
-		return { "error": "no game is running; start one with `hera run --current --wait` or pass --pid", "error_code": "target_unavailable" }
+		return { "error": "no game is running; start one with `hera-godot run --current --wait` or pass --pid", "error_code": "target_unavailable" }
 	var matches := []
 	for inst in instances:
 		if scene == "" or String(inst.get("scene", "")) == scene:

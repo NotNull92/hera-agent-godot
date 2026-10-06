@@ -1,5 +1,19 @@
 # Roadmap
 
+## In development — collision-free CLI name (2026-10-06)
+
+- Canonical command: `hera-godot`; retain `hera-agent-godot`, stop registering `hera`.
+- Update npm bins, installer destinations, Scoop shims, help and active agent docs.
+- Track the npm JS launcher explicitly; the general Godot bin/ ignore previously
+  excluded the launcher from source checkouts.
+- Preserve archive names/checksum pins, credentials, heartbeat paths and existing
+  unrelated commands. No engine/addon behavior changes.
+- Windows Go build/vet/test, race/shuffle, package/alias and fixture-installer checks
+  passed. The changed addon diagnostic passed isolated Godot 4.7.2 check-only.
+  macOS/Linux package CI is added, not claimed locally or remotely executed.
+- Published npm/release channels and external Homebrew tap await separate updates.
+  See [command migration](../packaging/README.md#command-name-migration).
+
 Phased build plan. Each phase is independently testable. The current repository
 has the core CLI/addon surface implemented. Addon manifest is `1.2.0`; the
 GitHub/npm/Scoop/Homebrew/Asset Store channels still serve `v1.1.0` until

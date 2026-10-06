@@ -1,6 +1,29 @@
 # CLI package-manager manifests
 
-How the companion `hera` CLI is distributed beyond the one-line installers.
+## Command-name migration
+
+The canonical installed command is `hera-godot`; `hera-agent-godot` remains an
+alias. npm bins, the Windows/POSIX installers and Scoop shims must not register
+`hera`. Existing `hera` files are preserved; do not delete a same-named tool based
+only on its name. Check its resolved path and package ownership first.
+
+Archive names and internal `hera`/`hera.exe` members remain unchanged so published
+URLs and checksum pins keep working. Installers expose that payload as
+`hera-godot`; the npm launcher keeps it private in vendor/. No protocol, token,
+heartbeat directory or Godot addon name changes are involved.
+
+Published npm packages and the external Homebrew tap have not been updated by
+this source change. The tap's formula needs a separate reviewed change to install
+its payload as `hera-godot` and avoid a `hera` symlink before claiming the migration
+is available through Homebrew. No version bump, package or release is published.
+
+Verification: `npm test --prefix packaging/npm` builds a scratch native CLI, packs
+and installs the actual npm archive, executes both installed aliases and preserves
+an unrelated `hera` sentinel. `packaging/test-windows-install.ps1` tests the Windows
+installer with a local archive and `-NoPathUpdate`. CI covers Windows, macOS and Linux;
+only actually observed runs establish platform success.
+
+How the companion `hera-godot` CLI is distributed beyond the one-line installers.
 Every active manifest pins the versioned release URLs
 (`/releases/download/v<ver>/...`) and SHA256 values from that release's
 `checksums.txt` — never the version-less `latest/download` URLs, which
@@ -35,7 +58,7 @@ npm install -g hera-godot     # or: npx hera-godot status
 The `hera-godot` package is a thin wrapper: its postinstall (or the first run,
 when scripts were skipped) downloads the pinned release binary for the current
 platform/arch, verifies the SHA256 from [`npm/manifest.json`](npm/manifest.json),
-and unpacks it next to the launcher. `hera` and the transitional
+and unpacks it next to the launcher. `hera-godot` and the transitional
 `hera-agent-godot` alias are both exposed as bins.
 
 Per release: bump `version` in `npm/package.json` and `npm/manifest.json`,

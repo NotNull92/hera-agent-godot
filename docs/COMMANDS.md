@@ -71,7 +71,7 @@ the step and its `covers` coverage. Capture and state assertions carry separate
 timestamps. Cover interaction requirements with the relevant `game.assert` after
 input: a passing visual step cannot override a failing state assertion. Missing
 InputMap actions still fail; Hera does not create actions or alter game logic.
-`hera status --capabilities` advertises this bounded addon surface as `capabilities.linked_evidence`.
+`hera-godot status --capabilities` advertises this bounded addon surface as `capabilities.linked_evidence`.
 
 ## Editor mutation gate
 
@@ -88,7 +88,7 @@ Scan completion combines engine scan state, completion events and the end of
 pending filesystem processing. Reimport checks indexed paths and resulting import
 validity/resource availability. Consumers still validate the particular resource
 or script they need; idle scanning alone is not successful compilation or C#
-assembly readiness. `hera status --capabilities` reports the gate as
+assembly readiness. `hera-godot status --capabilities` reports the gate as
 `capabilities.editor_mutation_gate`;
 `import_busy_api` separately reports `EditorFileSystem.is_importing` availability.
 On engines without that API (including 4.2), Hera-owned import lifetimes and
@@ -116,13 +116,13 @@ The caller constructs and retains `id` as `EDITOR_SESSION:UNIX_MS:NONCE`, using
 ahead, and a unique ASCII alphanumeric/underscore/hyphen nonce. Example PowerShell:
 
 ```powershell
-$session = (hera status | ConvertFrom-Json).editor_session_id
+$session = (hera-godot status | ConvertFrom-Json).editor_session_id
 $deadline = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() + 30000
 $operationId = "${session}:${deadline}:change1"
 # $request contains one supported {tool,params} object described below.
-hera operation submit $operationId --request $request
-hera operation status $operationId
-hera operation cancel $operationId
+hera-godot operation submit $operationId --request $request
+hera-godot operation status $operationId
+hera-godot operation cancel $operationId
 ```
 
 Supported request objects (maximum 16 KiB UTF-8):
@@ -292,7 +292,7 @@ mutation a new ID merely to force it to run.
 
 ## Fresh GDScript validation
 
-`hera script validate res://scripts/player.gd` selects a live editor (use
+`hera-godot script validate res://scripts/player.gd` selects a live editor (use
 `--instance` when several are open), obtains its engine/project paths, and runs
 that engine with `--headless --check-only --script` in a separate process.
 It checks the file on disk, including relative dependencies, rather than the
@@ -310,7 +310,7 @@ resolves the paths and does not validate code when called through `batch`.
 
 ## Conditional node property changes
 
-Read `hera node get <path> --prop <name> --snapshot` to obtain an `expected`
+Read `hera-godot node get <path> --prop <name> --snapshot` to obtain an `expected`
 object, then pass that object as `node set --expected <JSON>`. Ordinary reads
 keep their existing output. The complete object has exactly six string fields:
 
@@ -319,7 +319,7 @@ keep their existing output. The complete object has exactly six string fields:
 ```
 
 `--verify` requires `--expected`. The CLI negotiates
-`capabilities.node_set_guard: supported` (`hera status --capabilities`) on the same discovered
+`capabilities.node_set_guard: supported` (`hera-godot status --capabilities`) on the same discovered
 connection before snapshot or guarded requests. This also covers guarded
 entries in `batch`, before any entry runs. Missing/unsupported/unverified
 capabilities fail with `capability_unavailable`; no unguarded retry occurs.
@@ -354,7 +354,7 @@ No save is performed. `batch` retains its sequential, nontransactional semantics
 
 ## Physics-frame input sequences
 
-`hera game input sequence --file events.json` reads a JSON array:
+`hera-godot game input sequence --file events.json` reads a JSON array:
 
 ```json
 [
@@ -438,8 +438,8 @@ Hera-owned autoload; a same-named autoload pointing elsewhere is preserved.
 
 ## Global flags
 
-Global flags go **before** the command (e.g. `hera --ids node find`,
-`hera --instance 2840 node add Node2D`).
+Global flags go **before** the command (e.g. `hera-godot --ids node find`,
+`hera-godot --instance 2840 node add Node2D`).
 
 | Flag | Status | Meaning |
 |------|--------|---------|
@@ -452,7 +452,7 @@ Global flags go **before** the command (e.g. `hera --ids node find`,
 ## Editor log evidence
 
 `--source file` is the unchanged default. `--source editor` requires
-`capabilities.editor_log_cursor: supported` (`hera status --capabilities`); the CLI checks before
+`capabilities.editor_log_cursor: supported` (`hera-godot status --capabilities`); the CLI checks before
 sending log parameters, so legacy addons cannot silently return file evidence.
 API absence is `unsupported`; registration or callback verification failure is
 `unverified`. Both produce `available:false`, `clean:false`, and

@@ -9,6 +9,28 @@ permissions:
   contents: read
 
 jobs:
+  cli-package:
+    name: CLI command isolation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Verify packed command names and preserve an existing hera
+        run: npm test --prefix packaging/npm
+      - name: Verify Windows installer without network or PATH changes
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./packaging/test-windows-install.ps1
   go:
     name: Go (build · vet · test · gofmt)
     runs-on: ubuntu-latest

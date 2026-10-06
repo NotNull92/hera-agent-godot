@@ -138,7 +138,7 @@ session/deadline fields so dropped history cannot become valid new execution.
 These records are not persisted. See the operation contract in COMMANDS.md.
 
 ```text
-1. CLI: hera run --scene res://Main.tscn --wait
+1. CLI: hera-godot run --scene res://Main.tscn --wait
 2. CLI parses args and builds Request{ tool:"run", params:{...} }
 3. discovery scans ~/.hera-agent-godot/instances/ and picks a live editor
 4. client posts JSON to http://127.0.0.1:<port>/rpc
@@ -202,7 +202,7 @@ These records are not persisted. See the operation contract in COMMANDS.md.
 ```
 
 The CLI treats an instance as live only if `now - ts` is within the freshness
-window. Expired files stay visible as `stale` on `hera instances` so a process
+window. Expired files stay visible as `stale` on `hera-godot instances` so a process
 that stopped publishing is distinct from a missing advertisement. They are not
 targeted unless a later heartbeat becomes fresh again.
 

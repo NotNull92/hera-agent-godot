@@ -8,8 +8,8 @@
 **Status: complete.** All planned phases have shipped. The `ui-theme-qa` skill
 covers six areas in both plugin trees — `spacing`, `type-scale`, `color` and
 `contrast` enforce theme tokens; `containers` and `decoration` report only. The
-gaps that blocked project-level work are closed by `hera theme get/set` (G1) and
-`hera screenshot diff` (G2). The one remaining phase, a wholesale restyle mode,
+gaps that blocked project-level work are closed by `hera-godot theme get/set` (G1) and
+`hera-godot screenshot diff` (G2). The one remaining phase, a wholesale restyle mode,
 is **deliberately unbuilt** — see §11.1 for why, so it is not mistaken for
 pending work. Capability claims cite code paths (`file:line`) verified against
 the addon sources.
@@ -260,7 +260,7 @@ earned its keep against a real UI before any code existed.
   data (`set_color`/`set_constant`/`set_font_size` on a type map) is
   method-based, so `resource set --prop` cannot reach it, and `eval` is a single
   non-undoable expression. The MVP avoids this by enforcing per-node overrides.
-  A future `hera theme set <res://t.tres> --type Label --color font_color=…`
+  A future `hera-godot theme set <res://t.tres> --type Label --color font_color=…`
   would unlock palette convergence at the project level.
 - **G2 — No visual regression / before-after pixel diff.** *(closed)* The
   analyzer remains a coarse whole-image heuristic (`game_image_analyzer.gd`):
@@ -314,7 +314,7 @@ Per area, `findings-<area>.md`, one entry each. The `check` is a Hera command
   evidence: <live measurement — node path + value(s)>
   fix: <mechanical change — which theme_override, snapped to which rung>
   check: <re-measurable predicate — e.g.
-          `hera node get Panel/VBox --props "theme_override_constants/separation"`
+          `hera-godot node get Panel/VBox --props "theme_override_constants/separation"`
           returns a value on the declared ladder>
   order: decoration|containers|spacing|type-scale|color|contrast
 ```
@@ -380,8 +380,8 @@ writes reach the rendered frame.
 - **v1.1** *(done)* — `color` convergence at the node level (enforced), plus
   `containers` and `decoration` as report-only areas. Their fixes are structural
   and stay proposals; making them mutate would need an explicit opt-in flag.
-- **v2** *(done)* — `hera theme get/set` (closed G1) makes project-wide `Theme`
-  values reachable; `hera screenshot diff` (closed G2) compares two captures and
+- **v2** *(done)* — `hera-godot theme get/set` (closed G1) makes project-wide `Theme`
+  values reachable; `hera-godot screenshot diff` (closed G2) compares two captures and
   locates the change.
 - **later** — a wholesale restyle mode. **Closed as deliberately unbuilt**, not
   pending. See §11.1.

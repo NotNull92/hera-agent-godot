@@ -4,6 +4,11 @@
 
 # hera-agent-godot
 
+**CLI command migration (unreleased):** this checkout installs `hera-godot`, with
+`hera-agent-godot` retained as an alias. It no longer registers `hera`, so other
+tools can use that name. Published packages/Homebrew may still expose the old name
+until separately released. See [migration notes](packaging/README.md#command-name-migration).
+
 **English** · [한국어](README.ko.md)
 
 > Hera gives agents eyes, hands, and proof in the live Godot editor.
@@ -125,31 +130,31 @@ shares ownership across its children; client timeouts do not unlock running work
 See [the editor gate](docs/COMMANDS.md#editor-mutation-gate) for import readiness
 and engine capability limits.
 
-`hera status` reports `editor_session_id` and Game Feel / C# editor flags.
-`hera status --capabilities` adds the engine commit and API capability states
+`hera-godot status` reports `editor_session_id` and Game Feel / C# editor flags.
+`hera-godot status --capabilities` adds the engine commit and API capability states
 (`supported`, `unsupported`, or `unverified`). API presence does not certify a
 connected debugger or installed SDK. See
 [the command reference](docs/COMMANDS.md) and [capability scope](docs/ARCHITECTURE.md#6-discovery--instance-files).
 
-Read editor-session logs with `hera output --source editor` or
-`hera diagnostics --source editor`. Reuse the returned `cursor` with `--since`
+Read editor-session logs with `hera-godot output --source editor` or
+`hera-godot diagnostics --source editor`. Reuse the returned `cursor` with `--since`
 to inspect a later interval. This requires a verified registered collector;
 unavailable evidence and expired cursors are explicit. The bounded buffer
 reports dropped history and covers only this editor after registration.
 File logs remain the default; startup `--log-file` capture stays separate.
 See [editor log evidence](docs/COMMANDS.md#editor-log-evidence).
 
-Check on-disk GDScript with `hera script validate res://Player.gd`.
+Check on-disk GDScript with `hera-godot script validate res://Player.gd`.
 Validation uses the connected editor's engine in a bounded headless process,
 prints the engine output as JSON, and exits nonzero on failure. It does not
 compile C# or certify warning-free code; loading dependencies can execute code.
-Replay input actions with `hera game input sequence --file events.json`, where
+Replay input actions with `hera-godot game input sequence --file events.json`, where
 the array contains `{ "frame": 0, "action": "ui_accept", "pressed": true }`
 events. Frames are relative physics frames; held actions are released on exit.
 See the command reference for timing limits and QA examples.
 
-Choose GDScript or C# by the script filename: `hera script create res://Player.gd`
-or `hera script create res://Player.cs --ready --export Speed:float=3.5f`.
+Choose GDScript or C# by the script filename: `hera-godot script create res://Player.gd`
+or `hera-godot script create res://Player.cs --ready --export Speed:float=3.5f`.
 Optional `--lang gdscript|csharp` must agree with the extension. C# creation,
 opening, and attachment require Godot .NET; `status.csharp_supported` reports
 editor support, not whether the .NET SDK is installed. Build and reload the C#
@@ -159,13 +164,13 @@ The addon stays GDScript, and `eval` uses GDScript expressions in either project
 See [C# support](docs/CSHARP_SUPPORT.md) for setup and limitations.
 
 Externally launched and parallel game processes can be selected independently
-from the editor: list them with `hera game instances`, then use
-`hera --instance <EDITOR_PID> game --pid <GAME_PID> tree` (or any other game/QA
+from the editor: list them with `hera-godot game instances`, then use
+`hera-godot --instance <EDITOR_PID> game --pid <GAME_PID> tree` (or any other game/QA
 subcommand). Without `--pid`, editor-play selection remains the default and
 ambiguous targets still fail. `--instance` and `--pid` select processes; they
 do not isolate `user://` save files. Runtime screenshots report the live
 viewport size and are not upscaled to the project resolution. Expired editor
-heartbeats show up as `stale` on `hera instances` instead of looking like a
+heartbeats show up as `stale` on `hera-godot instances` instead of looking like a
 missing editor. The Hera runtime inspector stays available for editor play but
 is removed from exported project settings.
 
@@ -203,7 +208,7 @@ irm https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.ps
 ```
 
 Set `HERA_VERSION` to pin a tag and `HERA_BIN_DIR` to change the target dir. Or
-build from source: `go build -o hera .` (Go 1.25+). Check it with `hera version`.
+build from source: `go build -o hera-godot .` (Go 1.25+). Check it with `hera-godot version`.
 Windows winget distribution is intentionally retired: no winget-pkgs submission
 exists or is planned. See the recorded decision in
 [`packaging/README.md`](packaging/README.md).

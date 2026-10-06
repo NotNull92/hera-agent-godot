@@ -14,7 +14,10 @@
         }
     },
     "bin": [
-        "hera.exe",
+        [
+            "hera.exe",
+            "hera-godot"
+        ],
         [
             "hera.exe",
             "hera-agent-godot"

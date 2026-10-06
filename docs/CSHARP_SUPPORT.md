@@ -8,9 +8,9 @@ a default language from project files or invoke a build automatically.
 ## Use
 
 ```sh
-hera status
-hera script create res://Player.cs --lang csharp --extends Node2D --ready --export Speed:float=3.5f
-hera script create res://helper.gd --lang gdscript --ready
+hera-godot status
+hera-godot script create res://Player.cs --lang csharp --extends Node2D --ready --export Speed:float=3.5f
+hera-godot script create res://helper.gd --lang gdscript --ready
 ```
 
 `status.csharp_supported` reports whether the connected editor has C# support;
@@ -23,11 +23,11 @@ Build using Godot's Build action or `dotnet build` in the project directory.
 Reload the assembly (restart the editor if needed), then:
 
 ```sh
-hera script inspect res://Player.cs
-hera node attach-script . res://Player.cs
-hera scene save
-hera run --current --wait
-hera game qa discover
+hera-godot script inspect res://Player.cs
+hera-godot node attach-script . res://Player.cs
+hera-godot scene save
+hera-godot run --current --wait
+hera-godot game qa discover
 ```
 
 The C# class name is the filename without `.cs`. If supplied, `--class-name`
@@ -53,7 +53,7 @@ Godot can inspect a `.cs` file's path/line count but has no assembly metadata.
 
 C# custom method names keep their case. Public QA helpers such as
 `public bool QaReady() => true;` are discovered alongside GDScript `qa_*`
-methods. Call them using `hera game node call /root/Main QaReady`.
+methods. Call them using `hera-godot game node call /root/Main QaReady`.
 `Qa` must be followed by an uppercase ASCII letter. `eval` continues to use
 Godot's GDScript expression evaluator for both project languages.
 

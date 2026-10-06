@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// runBatch implements `hera batch [--file <path>] [--continue]`.
+// runBatch implements `hera-godot batch [--file <path>] [--continue]`.
 //
 // Reads a JSON array of {tool, params} from --file (or stdin) and runs them in a
 // single request. By default it stops at the first failing command; --continue

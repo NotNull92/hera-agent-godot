@@ -20,7 +20,7 @@ func TestSelectEditor_reportsActionableMessage_whenNoInstances(t *testing.T) {
 		t.Fatal("expected an error for an empty live-editor list")
 	}
 	message := err.Error()
-	for _, want := range []string{"no live Godot editor found", "Hera Agent plugin", "hera instances"} {
+	for _, want := range []string{"no live Godot editor found", "Hera Agent plugin", "hera-godot instances"} {
 		if !strings.Contains(message, want) {
 			t.Fatalf("error %q does not include %q", message, want)
 		}
@@ -37,7 +37,7 @@ func TestSelectEditor_distinguishesExpiredHeartbeatFromMissing(t *testing.T) {
 		t.Fatal("expected expired-heartbeat error")
 	}
 	message := err.Error()
-	for _, want := range []string{"pid 33516", "expired", "ago", "hera instances"} {
+	for _, want := range []string{"pid 33516", "expired", "ago", "hera-godot instances"} {
 		if !strings.Contains(message, want) {
 			t.Fatalf("targeted stale error %q does not include %q", message, want)
 		}

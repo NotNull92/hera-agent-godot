@@ -1,9 +1,9 @@
 # Working with hera-agent-godot (for AI agents)
 
-`hera` (repo: hera-agent-godot) is a low-token CLI that lets you inspect and
+`hera-godot` (repo: hera-agent-godot) is a low-token CLI that lets you inspect and
 control a **live Godot 4.x editor**. Use it to act on the *real* editor and
 check the result — don't guess scene structure or whether a change worked from
-memory. The binary installs as `hera`; `hera-agent-godot` is a transitional
+memory. The CLI installs as `hera-godot`; `hera-agent-godot` is a transitional
 alias for the same CLI.
 
 This file is the **driver card**: setup, everyday commands, and safety.
@@ -30,7 +30,7 @@ enabled, commands fail with "no live Godot editor found" — ask them to enable 
 2. Enable **Project → Project Settings → Plugins → Hera Agent Godot**. The Output
    panel should show `[hera] ... listening on 127.0.0.1:<port>`.
 3. Get the CLI: install a release binary (see the README's Install section) or
-   build from source with `go build -o hera .` (from the repo root).
+   build from source with `go build -o hera-godot .` (from the repo root).
 
 The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 
@@ -39,18 +39,18 @@ The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 Everyday driver surface (full flags and response fields: [docs/COMMANDS.md](docs/COMMANDS.md)):
 
 ```
-hera status                                  # project, version, scene, session; not the editor console
-hera status --capabilities                   # include experimental API capability map
-hera instances                               # live editors; stale heartbeats listed separately
-hera --ids scene tree                        # edited scene paths
-hera node get <path> --prop p                # one property; omit --prop only when you need the dump
-hera node add|set|remove ...                 # undoable editor mutations
-hera diagnostics [--lines N]                 # project file log; source is file, not the Output panel
-hera diagnostics --source editor             # opt-in editor-session errors (capability-gated)
-hera run --current --wait / hera stop --wait
-hera game ui tree --type Button --fields name,path,text,disabled
-hera --ids game ui tree                      # Control paths only
-hera guidance ui                             # UI mode before building UI
+hera-godot status                                  # project, version, scene, session; not the editor console
+hera-godot status --capabilities                   # include experimental API capability map
+hera-godot instances                               # live editors; stale heartbeats listed separately
+hera-godot --ids scene tree                        # edited scene paths
+hera-godot node get <path> --prop p                # one property; omit --prop only when you need the dump
+hera-godot node add|set|remove ...                 # undoable editor mutations
+hera-godot diagnostics [--lines N]                 # project file log; source is file, not the Output panel
+hera-godot diagnostics --source editor             # opt-in editor-session errors (capability-gated)
+hera-godot run --current --wait / hera-godot stop --wait
+hera-godot game ui tree --type Button --fields name,path,text,disabled
+hera-godot --ids game ui tree                      # Control paths only
+hera-godot guidance ui                             # UI mode before building UI
 ```
 
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
@@ -86,7 +86,7 @@ timeout, default 5000). Default output is compact JSON.
   and physics rate >=60 Hz; held inputs are released on completion/cancellation.
   The runtime deadline is 2.5 seconds. See `docs/COMMANDS.md` for QA integration.
 - **UI work reads the live guidance mode first.** Before agent-driven UI work,
-  run `hera guidance ui`. If it reports `game_feel_ui_mode: true`, implement
+  run `hera-godot guidance ui`. If it reports `game_feel_ui_mode: true`, implement
   UI around Game Feel: immediate input feedback, expressive state changes,
   satisfying bounded motion, and runtime visual QA for those effects.
 - **Mutations are undoable where Godot exposes editor undo.**
@@ -146,7 +146,7 @@ timeout, default 5000). Default output is compact JSON.
   window, visible-rect, and project viewport sizes. They do not upscale a
   smaller embedded window to the project resolution. Input coordinates are in
   that actual viewport. `possible_clipping` is not a resolution check.
-- **Expired editor heartbeats are not the same as a missing editor.** `hera
+- **Expired editor heartbeats are not the same as a missing editor.** `hera-godot
   instances` lists stale files separately. `--instance <pid>` against an expired
   heartbeat says so instead of reporting "no live Godot editor found".
 - **The runtime inspector is excluded from exports.** The editor plugin removes
@@ -170,8 +170,8 @@ timeout, default 5000). Default output is compact JSON.
   `scene save-as` write project files; use `--force` only when overwriting is
   intended.
 - **Use a single writer for scene files.** Before external `.tscn` edits, stop the
-  running game with `hera stop --wait`; after external edits, run
-  `hera scene reload [res://Path.tscn]` before saving through the editor.
+  running game with `hera-godot stop --wait`; after external edits, run
+  `hera-godot scene reload [res://Path.tscn]` before saving through the editor.
 - **`node set` value** is coerced to the property's type via the engine's own
   `str_to_var`, so pass Godot variant text (the form a `.tscn` stores) for
   complex types: `--value "Vector2(10, 20)"`, `--value "Color(0.3, 0.8, 1, 1)"`,
@@ -215,7 +215,7 @@ mutation and does not roll it back or save the scene. See the bounded type
 list and string-valued identity contract in `docs/COMMANDS.md`.
 
 Editor log evidence is opt-in: `output`/`diagnostics --source editor` first
-verify `hera status --capabilities` → `capabilities.editor_log_cursor`. File logs remain the default.
+verify `hera-godot status --capabilities` → `capabilities.editor_log_cursor`. File logs remain the default.
 Retain the returned cursor for an observed interval; `cursor_expired` requires
 an explicit restart from `restart_cursor`. Check `available`, `complete`, and
 `dropped_count`; a retained tail is not proof that earlier errors never occurred.
@@ -224,16 +224,16 @@ The collector covers only this editor process after registration. Startup
 
 After an edit, **confirm it** instead of assuming:
 
-- After `node add`/`set`: `hera node get <path>` and check the value.
-- After structural changes: `hera scene tree` (or `--ids`).
-- After `run`: `hera output --type error` (project file log) or
-  `hera diagnostics --source editor` when that capability is supported. File-log
+- After `node add`/`set`: `hera-godot node get <path>` and check the value.
+- After structural changes: `hera-godot scene tree` (or `--ids`).
+- After `run`: `hera-godot output --type error` (project file log) or
+  `hera-godot diagnostics --source editor` when that capability is supported. File-log
   `clean: true` is not a claim about the editor Output panel.
-- For UI/visual changes: `hera screenshot` for the edited scene, or
-  `hera screenshot --runtime` after `run` for the live game viewport.
+- For UI/visual changes: `hera-godot screenshot` for the edited scene, or
+  `hera-godot screenshot --runtime` after `run` for the live game viewport.
 
 Batch a change and its check together when it helps, e.g. pipe a JSON array of
-`[{set...}, {get...}]` into `hera batch`.
+`[{set...}, {get...}]` into `hera-godot batch`.
 
 See [docs/COMMANDS.md](docs/COMMANDS.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 For prompt-driven game implementation cycles, follow

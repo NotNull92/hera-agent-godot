@@ -20,8 +20,8 @@
   "license": "MIT",
   "author": "NotNull92",
   "bin": {
-    "hera": "bin/hera.js",
-    "hera-agent-godot": "bin/hera.js"
+    "hera-godot": "bin/hera-godot.js",
+    "hera-agent-godot": "bin/hera-godot.js"
   },
   "files": [
     "bin/",
@@ -29,7 +29,8 @@
     "manifest.json"
   ],
   "scripts": {
-    "postinstall": "node scripts/install.js"
+    "postinstall": "node scripts/install.js",
+    "test": "node ../test-cli-install.cjs"
   },
   "engines": {
     "node": ">=18"
