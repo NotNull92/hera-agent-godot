@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest, ubuntu-24.04]
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
@@ -33,7 +33,7 @@ jobs:
         run: ./packaging/test-windows-install.ps1
   go:
     name: Go (build · vet · test · gofmt)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
 
@@ -67,7 +67,7 @@ jobs:
 
   gdscript:
     name: GDScript (--check-only, Godot ${{ matrix.godot-version }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -138,6 +138,16 @@ jobs:
             echo "::error::GDScript --check-only reported problems"
           fi
           exit "$status"
+
+      - name: Load plugin in the editor
+        run: |
+          timeout 90s ~/godot-bin/godot --headless --editor --path . --quit-after 300 > /tmp/hera-import.log 2>&1
+          timeout 60s ~/godot-bin/godot --headless --editor --path . --quit-after 120 > /tmp/hera-load.log 2>&1
+          cat /tmp/hera-import.log /tmp/hera-load.log
+          if grep -Eiq 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script' /tmp/hera-import.log /tmp/hera-load.log; then
+            exit 1
+          fi
+          grep -q 'Hera Agent Godot listening' /tmp/hera-load.log
 
       - name: Run standalone Godot regressions
         if: matrix.godot-version == '4.7-stable'
