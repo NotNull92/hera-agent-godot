@@ -139,10 +139,16 @@ jobs:
           fi
           exit "$status"
 
-      - name: Load plugin in the editor
+      - name: Load plugin in an isolated editor project
         run: |
-          timeout 90s ~/godot-bin/godot --headless --editor --path . --quit-after 300 > /tmp/hera-import.log 2>&1
-          timeout 60s ~/godot-bin/godot --headless --editor --path . --quit-after 120 > /tmp/hera-load.log 2>&1
+          set -euo pipefail
+          project="$(mktemp -d)"
+          mkdir -p "$project/addons"
+          cp -R addons/hera_agent_godot "$project/addons/"
+          printf 'config_version=5\n[application]\nconfig/name="Hera CI plugin load"\n[rendering]\nrenderer/rendering_method="gl_compatibility"\n' > "$project/project.godot"
+          timeout 90s ~/godot-bin/godot --headless --editor --path "$project" --quit > /tmp/hera-import.log 2>&1
+          printf '[editor_plugins]\nenabled=PackedStringArray("res://addons/hera_agent_godot/plugin.cfg")\n' >> "$project/project.godot"
+          timeout 60s ~/godot-bin/godot --headless --editor --path "$project" --quit-after 120 > /tmp/hera-load.log 2>&1
           cat /tmp/hera-import.log /tmp/hera-load.log
           if grep -Eiq 'SCRIPT ERROR|Parse Error|Parser Error|Failed to load script' /tmp/hera-import.log /tmp/hera-load.log; then
             exit 1
