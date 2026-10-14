@@ -503,3 +503,5 @@ lifecycle, and [ROADMAP.md](./ROADMAP.md) for delivery order.
 Runtime Control bounds and click centers include canvas transforms. Node-targeted clicks reject Controls in another Viewport. Runtime requests are published by temporary-file rename, and method calls retain the original target path even when the method frees the node. HTTP responses use bounded partial writes and a separate five-second write deadline.
 
 QA `run` steps with `wait:true` wait for the requested play action, or for stopped editor/runtime state when `action:"stop"`. `action:"state"` remains a snapshot even when `wait:true`. The dedicated `stop` step uses the same stop-wait behavior.
+
+The v1.2.0 installed command is `hera-godot` (`hera-agent-godot` remains an alias). New installs do not register `hera`; see [upgrade steps](MIGRATING_TO_V1.md#upgrade) before updating scripts or removing old binaries.

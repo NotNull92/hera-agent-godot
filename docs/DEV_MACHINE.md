@@ -43,7 +43,7 @@ of re-discovering it; date the entries that are point-in-time observations.
 - **Additional active editor (2026-09-07)**: Godot 4.7.2 .NET is installed at
   `C:\Users\PC\Desktop\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64.exe`.
   The user's open project in this session was the sibling `testproject`, not
-  this repository. Always inspect `hera status` before assuming the target.
+  this repository. Always inspect `hera-godot status` before assuming the target.
 
 - **Binary**: Godot 4.7 stable lives at
   `C:\Users\PC\Downloads\Godot_v4.7-stable_win64.exe\Godot_v4.7-stable_win64_console.exe`
@@ -79,7 +79,7 @@ To smoke the addon end-to-end without touching the user's editor:
    from `game instances[].user_data_dir` rather than assuming the OS default.
 3. Launch `--editor --headless --path <tempcopy>`, wait for the heartbeat
    JSON, and read the isolated editor's pid from the filename.
-4. Drive it with `hera --instance <pid>`, running the CLI under the same
+4. Drive it with `hera-godot --instance <pid>`, running the CLI under the same
    isolated `USERPROFILE`/`HOME`.
 5. Tear down with PID-specific kills only, and remove the heartbeat file
    named after the **child** pid.
@@ -110,7 +110,7 @@ answering. **Quit and relaunch the editor** after changing anything under
 
 Observed on 4.7: after merging a change to `diagnostics_tool.gd` and toggling
 the plugin, the on-disk source read `get_setting_with_override(...)` while
-`hera diagnostics` still returned the pre-change `file_logging_enabled:false`,
+`hera-godot diagnostics` still returned the pre-change `file_logging_enabled:false`,
 and `output` still used the old response shape.
 
 Worth checking before you trust a live smoke: compare something the change
@@ -126,7 +126,7 @@ file-backed defaults below are unchanged. Keep `--log-file` for startup
 evidence before registration; it is a separate path and Hera does not restart
 the user's editor or automatically read that path.
 
-`hera diagnostics` / `hera output` cannot see the editor's console. Godot skips
+`hera-godot diagnostics` / `hera-godot output` cannot see the editor's console. Godot skips
 installing the file logger entirely when running as the editor (`!editor` guard
 in `main/main.cpp`), so `debug/file_logging` only ever captures game and project
 runs. Turning that setting on does nothing for editor messages.
@@ -242,3 +242,16 @@ Only disposable fixture files were protected, and their attributes were restored
 ## Live log read sharing (2026-09-08)
 
 An isolated Windows Godot 4.7 editor returned FileAccess open error 12 while reading its running project's logger file, even though a shell could read that same path. Verify actual FileAccess success; file existence and a shell read are not evidence that addon diagnostics can read it. Hera now reports `available:false`, `clean:false` instead of zero counts when open/read fails. Inspect separately captured runtime stdout/stderr when this occurs. A missing final newline in project.godot is safely handled by the editor's ProjectSettings.save; live setter → in-memory setting → default run was verified without restart.
+
+## macOS release validation (2026-10-14)
+
+- Direct Godot 4.7.2 .NET remains at
+  `/Users/admin/Downloads/Godot_mono.app/Contents/MacOS/Godot`.
+  Official 4.2-stable was downloaded into a disposable `/tmp/hera-v120/4.2/`
+  for release validation; do not rely on this temporary path later.
+- macOS system bash is 3.2 and GNU `timeout` is absent. The standalone runner
+  now handles empty editor arguments on bash 3.2 and reports missing `timeout`
+  explicitly. Local validation uses a temporary bounded subprocess shim on
+  PATH; Linux CI uses GNU `timeout`.
+- Release checks use scratch project copies and separate HOME, USERPROFILE,
+  APPDATA and XDG directories. No user editor or existing heartbeat is changed.
