@@ -73,26 +73,26 @@ High-volume UI reads should be scoped. On the Memory Match prompt scene, the
 full runtime Control tree was 7,858 chars (~1,965 tok), while this focused read:
 
 ```sh
-./hera game ui tree --type Button --fields name,path,text,disabled
+./hera-godot game ui tree --type Button --fields name,path,text,disabled
 ```
 
 returned 2,803 chars (~701 tok). For one exact control, this is smaller still:
 
 ```sh
-./hera game ui tree --text Restart --fields name,path,text,rect,disabled
+./hera-godot game ui tree --text Restart --fields name,path,text,rect,disabled
 ```
 
 Use the narrowest command that answers the question:
 
 | Need | Prefer |
 |------|--------|
-| Confirm editor scene structure | `./hera --ids scene tree` |
-| Inspect one editor property | `./hera node get . --prop script` |
-| Inspect a few editor properties | `./hera node get . --props visible,position` |
-| Find clickable runtime controls | `./hera game ui tree --type Button --fields name,path,text,disabled` |
-| Inspect one runtime control | `./hera game ui tree --text Restart --fields name,path,text,rect,disabled` |
-| Discover deterministic QA helpers | `./hera game qa discover` |
-| Check layout/clipping visually | `./hera game screenshot --analyze` |
+| Confirm editor scene structure | `./hera-godot --ids scene tree` |
+| Inspect one editor property | `./hera-godot node get . --prop script` |
+| Inspect a few editor properties | `./hera-godot node get . --props visible,position` |
+| Find clickable runtime controls | `./hera-godot game ui tree --type Button --fields name,path,text,disabled` |
+| Inspect one runtime control | `./hera-godot game ui tree --text Restart --fields name,path,text,rect,disabled` |
+| Discover deterministic QA helpers | `./hera-godot game qa discover` |
+| Check layout/clipping visually | `./hera-godot game screenshot --analyze` |
 
 ---
 
@@ -131,8 +131,8 @@ for cmd in "status" "scene tree" "node get ." "node find" \
   "game ui tree" \
   "game ui tree --type Button --fields name,path,text,disabled" \
   "game qa discover"; do
-  c=$(./hera $cmd | wc -c)
-  p=$(./hera --json $cmd | wc -c)
+  c=$(./hera-godot $cmd | wc -c)
+  p=$(./hera-godot --json $cmd | wc -c)
   printf "%-16s compact=%4d chars  pretty=%4d chars\n" "$cmd" "$c" "$p"
 done
 

@@ -102,7 +102,7 @@ See [MIGRATING_TO_V1.md](MIGRATING_TO_V1.md) for the 0.x upgrade path.
 ## Invocation
 
 ```
-hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
+hera-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 ```
 
 - Global flags come **before** the command. `--instance` and `--timeout`
@@ -158,7 +158,7 @@ hera [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
 |------|---------|---------------------|
 | `0` | Success. | `status`, `scene tree`, passing `game assert` |
 | `1` | Runtime failure or failed check: no live editor, tool returned an error, mutation guard refused, or a verdict command reported not-OK. | `node get /nonexistent`, `game tree` with no game running, `game ui audit` with errors, `game qa diagnose` with issues |
-| `2` | Usage error: unknown command, missing/invalid flag argument, invalid `--instance` pid or `--timeout` value, malformed scenario file arguments. | `hera bogus`, `run --scene` (missing value), `--instance abc`, `--timeout abc` |
+| `2` | Usage error: unknown command, missing/invalid flag argument, invalid `--instance` pid or `--timeout` value, malformed scenario file arguments. | `hera-godot bogus`, `run --scene` (missing value), `--instance abc`, `--timeout abc` |
 
 ### Verdict commands
 

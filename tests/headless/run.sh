@@ -2,6 +2,10 @@
 # Run standalone behavioral regressions without using the developer's project or home.
 set -euo pipefail
 : "${GODOT_BIN:?Set GODOT_BIN to an absolute direct Godot executable (not a console launcher)}"
+if ! command -v timeout >/dev/null 2>&1; then
+    printf 'Missing timeout: install GNU coreutils and add its timeout command to PATH.\n' >&2
+    exit 1
+fi
 repo_dir=$(cd "$(dirname "$0")/../.." && pwd -P)
 run_dir=$(mktemp -d "${TMPDIR:-/tmp}/hera-regressions.XXXXXX")
 run_dir=$(cd "$run_dir" && pwd -P)
@@ -43,7 +47,7 @@ PROJECT
     fi
     printf 'Testing %s\n' "$name"
     code=0
-    "${test_env[@]}" timeout 45s "$GODOT_BIN" --headless "${editor_args[@]}" --path "$fixture" --script "res://tests/headless/$name.gd" >"$fixture/test.log" 2>&1 || code=$?
+    "${test_env[@]}" timeout 45s "$GODOT_BIN" --headless ${editor_args[@]+"${editor_args[@]}"} --path "$fixture" --script "res://tests/headless/$name.gd" >"$fixture/test.log" 2>&1 || code=$?
     cat "$fixture/test.log"
     if [[ $code != 0 ]] || grep -Eq 'SCRIPT ERROR|Parse Error|Parser Error' "$fixture/test.log"; then
         printf 'FAIL: %s (exit %s)\n' "$name" "$code" >&2

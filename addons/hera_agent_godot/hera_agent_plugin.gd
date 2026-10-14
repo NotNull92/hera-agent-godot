@@ -26,7 +26,6 @@ const DiagnosticsTool = preload("res://addons/hera_agent_godot/tools/diagnostics
 const GameTool = preload("res://addons/hera_agent_godot/tools/game_tool.gd")
 const ScreenshotTool = preload("res://addons/hera_agent_godot/tools/screenshot_tool.gd")
 const BatchTool = preload("res://addons/hera_agent_godot/tools/batch_tool.gd")
-const GameInspectorExportGuard = preload("res://addons/hera_agent_godot/runtime/game_inspector_export_guard.gd")
 
 const HEARTBEAT_INTERVAL := 0.5
 const GAME_AUTOLOAD_NAME := "HeraGameInspector"
@@ -52,7 +51,9 @@ func _enter_tree() -> void:
 	set_process(true)
 	_create_main_screen()
 	_ensure_game_autoload()
-	_game_export_guard = GameInspectorExportGuard.new()
+	# Godot 4.2 check-only cannot statically construct editor-only classes.
+	var export_guard_script: Script = load("res://addons/hera_agent_godot/runtime/game_inspector_export_guard.gd")
+	_game_export_guard = export_guard_script.new()
 	_game_export_guard.setup(self)
 	add_export_plugin(_game_export_guard)
 	_registry = ToolRegistry.new()

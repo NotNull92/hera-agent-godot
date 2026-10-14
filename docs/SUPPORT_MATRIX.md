@@ -73,3 +73,22 @@ over every addon `.gd`, then enable the plugin and boot
 Expected noise on never-imported projects: font import errors from the panel's
 bundled `.woff2` (harmless; real projects import assets before the plugin is
 enabled).
+
+## v1.2.0 export guard and Godot 4.2 (2026-10-14)
+
+The 4.2 standalone `--check-only` process does not set the editor hint.
+Its [ClassDB::can_instantiate](https://github.com/godotengine/godot/blob/4.2-stable/core/object/class_db.cpp#L401-L419)
+returns false for editor API classes outside editor mode, and the
+[GDScript analyzer](https://github.com/godotengine/godot/blob/4.2-stable/modules/gdscript/gdscript_analyzer.cpp#L4943-L4959)
+rejects a statically resolved constructor. Both
+[4.2](https://github.com/godotengine/godot/blob/4.2-stable/editor/register_editor_types.cpp)
+and [4.7](https://github.com/godotengine/godot/blob/4.7-stable/editor/register_editor_types.cpp)
+register `EditorExportPlugin` as a constructible class. The unmodified 4.2
+editor loaded Hera successfully; the standalone failure was not an editor
+load failure. Hera now loads the export-guard script at editor startup and
+constructs it there, where editor classes are available.
+
+The guard is retained on 4.2: export callbacks still suspend Hera's owned
+runtime inspector autoload and restore it for editor play. There is no 4.2
+fallback that includes the inspector in exported project settings, and no
+security or isolation downgrade. Do not run the inspector in exported games.

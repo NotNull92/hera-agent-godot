@@ -51,6 +51,8 @@ fields, no intended break of documented stable JSON.
 
 Highlights since v1.1.0:
 
+- **Command name:** use `hera-godot`; `hera-agent-godot` remains available. New installs do not register `hera`.
+
 - **Mutation gate:** overlapping editor writes fail `editor_busy`; batches keep
   ownership through import.
 - **Operation receipts:** `operation submit|status|cancel` for guarded node set
@@ -175,6 +177,8 @@ missing editor. The Hera runtime inspector stays available for editor play but
 is removed from exported project settings.
 
 ## Install
+
+For v1.2.0 upgrades, update scripts to `hera-godot` and verify with `hera-godot version`. npm upgrades remove the old package bin; one-line installers preserve existing `hera` files. Check the resolved path and ownership before manually removing an old Hera Godot `hera`; another tool may own it. Upgrade CLI and addon together. Homebrew migration awaits a separate tap update.
 
 **CLI** — via a package manager:
 

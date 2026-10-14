@@ -58,6 +58,8 @@ Store는 태그가 올라가기 전까지 **v1.1.0**을 제공합니다. 릴리�
 
 v1.1.0 이후 주요 변경:
 
+- **명령 이름:** 기본 명령은 `hera-godot`, `hera-agent-godot` 별칭은 유지합니다. 새 설치는 `hera`를 등록하지 않습니다.
+
 - **수정 게이트:** 겹치는 에디터 쓰기는 `editor_busy`. batch는 import 동안 소유권 유지.
 - **operation receipt:** `operation submit|status|cancel`. 실행 전 거부는
   `rejected`/`not_applied`.
@@ -177,6 +179,8 @@ GDScript로 유지되며 `eval`은 두 언어의 프로젝트 모두에서 GDScr
 제거됩니다.
 
 ## 설치
+
+v1.2.0 업그레이드 시 스크립트를 `hera-godot`으로 바꾸고 `hera-godot version`으로 확인하세요. npm 업그레이드는 이전 패키지 bin을 제거하지만 원라인 설치는 기존 `hera` 파일을 보존합니다. 이전 Hera Godot의 `hera`를 수동 삭제하기 전에 실제 경로와 소유를 확인하세요. 다른 도구의 파일일 수 있습니다. CLI와 애드온을 함께 올리세요. Homebrew 전환은 별도 탭 업데이트를 기다립니다.
 
 **CLI** — 패키지 매니저로 설치:
 

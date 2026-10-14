@@ -19,6 +19,11 @@ func _initialize() -> void:
 		failures.append("owned uid:// autoload not recognized")
 	if plugin._owns_game_autoload("*res://user/game_inspector.gd"):
 		failures.append("user-owned autoload claimed")
+	var guard_script: Script = load("res://addons/hera_agent_godot/runtime/game_inspector_export_guard.gd")
+	var guard: EditorExportPlugin = guard_script.new()
+	guard.setup(plugin)
+	if guard._get_name() != "HeraGameInspector":
+		failures.append("export guard must remain constructible in editor mode")
 	plugin.free()
 	for failure in failures:
 		push_error(failure)
