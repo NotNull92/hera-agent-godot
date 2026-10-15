@@ -137,14 +137,16 @@ func runCaptureMovie(params map[string]any) int {
 	)
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	runStarted := time.Now()
+	// The sequence state is captured before the run, so this run's frames are
+	// identified by change rather than by a timestamp comparison.
+	before := snapshotMovieFrames(output)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	notes := []string{
 		"Movie Maker requires a working display driver; --headless uses the dummy renderer and crashed in testing",
 		"the recording size follows the project viewport setting; --resolution only requests the window size",
 		"the recording is fixed-FPS, so frame N always maps to the same simulated time",
-		"frames_written counts only files this invocation produced; older files with the same prefix are reported as frames_present",
+		"frames_written counts only files this invocation created or rewrote; unchanged files with the same prefix are reported as frames_present",
 	}
 	result := mergeResult(map[string]any{
 		"project_path":     filepath.ToSlash(project),
@@ -160,13 +162,13 @@ func runCaptureMovie(params map[string]any) int {
 	} else {
 		result["output_exists"] = false
 	}
-	if width, height, ok := firstFrameSize(output, runStarted); ok {
+	if width, height, ok := firstFrameSize(output, before); ok {
 		result["frame_size"] = fmt.Sprintf("%dx%d", width, height)
 	}
-	if written, present, ok := movieFrameCounts(output, runStarted); ok {
+	if written, present, ok := movieFrameCounts(output, before); ok {
 		result["frames_written"], result["frames_present"] = written, present
 		if present > written {
-			result["notes"] = append(notes, fmt.Sprintf("stale_frames_present: %d frame file(s) with the same prefix predate this run", present-written))
+			result["notes"] = append(notes, fmt.Sprintf("stale_frames_present: %d frame file(s) with the same prefix are unchanged since before this run", present-written))
 		}
 	}
 	if failure := runFailureCode(run); failure != "" {
@@ -184,19 +186,70 @@ func resolveOutputPath(projectDir, output string) string {
 	return output
 }
 
-// movieFrameCounts separates frames this run produced from older files with the
-// same prefix. ok is false for non-PNG containers, where no frame is measured.
-func movieFrameCounts(output string, runStart time.Time) (written int, present int, ok bool) {
+// frameSnapshot is the PNG sequence state before a run, so this run's output can
+// be told from an older file with the same name without trusting timestamp
+// granularity (coarse filesystems can report a fresh write in the past).
+type frameSnapshot map[string]frameStamp
+
+// frameStamp is one frame's size and modification time.
+type frameStamp struct {
+	bytes int64
+	mod   time.Time
+}
+
+// movieFramePattern returns the directory and name pattern of a PNG sequence.
+func movieFramePattern(output string) (string, *regexp.Regexp, bool) {
 	if !strings.EqualFold(filepath.Ext(output), ".png") {
-		return 0, 0, false
+		return "", nil, false
 	}
 	dir := filepath.Dir(output)
 	base := strings.TrimSuffix(filepath.Base(output), filepath.Ext(output))
+	return dir, regexp.MustCompile(`^` + regexp.QuoteMeta(base) + `\d+\.png$`), true
+}
+
+// snapshotMovieFrames records the PNG sequence state before a run.
+func snapshotMovieFrames(output string) frameSnapshot {
+	before := frameSnapshot{}
+	dir, pattern, measurable := movieFramePattern(output)
+	if !measurable {
+		return before
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return before
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
+			continue
+		}
+		if info, infoErr := entry.Info(); infoErr == nil {
+			before[entry.Name()] = frameStamp{bytes: info.Size(), mod: info.ModTime()}
+		}
+	}
+	return before
+}
+
+// changed reports whether a frame is this run's output: it is new, or its size or
+// modification time differs from the snapshot.
+func (s frameSnapshot) changed(name string, info os.FileInfo) bool {
+	stamp, seen := s[name]
+	if !seen {
+		return true
+	}
+	return stamp.bytes != info.Size() || !stamp.mod.Equal(info.ModTime())
+}
+
+// movieFrameCounts separates frames this run produced from older files with the
+// same prefix. ok is false for non-PNG containers, where no frame is measured.
+func movieFrameCounts(output string, before frameSnapshot) (written int, present int, ok bool) {
+	dir, pattern, measurable := movieFramePattern(output)
+	if !measurable {
+		return 0, 0, false
+	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0, 0, false
 	}
-	pattern := regexp.MustCompile(`^` + regexp.QuoteMeta(base) + `\d+\.png$`)
 	for _, entry := range entries {
 		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
 			continue
@@ -206,7 +259,7 @@ func movieFrameCounts(output string, runStart time.Time) (written int, present i
 		if infoErr != nil {
 			continue
 		}
-		if !info.ModTime().Before(runStart) {
+		if before.changed(entry.Name(), info) {
 			written++
 		}
 	}
@@ -216,24 +269,22 @@ func movieFrameCounts(output string, runStart time.Time) (written int, present i
 // firstFrameSize reads the first PNG frame this run produced. Movie Maker sizes
 // the recording from the project viewport, so callers need the observed size
 // rather than the requested --resolution.
-func firstFrameSize(output string, runStart time.Time) (int, int, bool) {
-	if !strings.EqualFold(filepath.Ext(output), ".png") {
+func firstFrameSize(output string, before frameSnapshot) (int, int, bool) {
+	dir, pattern, measurable := movieFramePattern(output)
+	if !measurable {
 		return 0, 0, false
 	}
-	dir := filepath.Dir(output)
-	base := strings.TrimSuffix(filepath.Base(output), filepath.Ext(output))
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0, 0, false
 	}
-	pattern := regexp.MustCompile(`^` + regexp.QuoteMeta(base) + `\d+\.png$`)
 	names := []string{}
 	for _, entry := range entries {
 		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
 			continue
 		}
 		info, infoErr := entry.Info()
-		if infoErr != nil || info.ModTime().Before(runStart) {
+		if infoErr != nil || !before.changed(entry.Name(), info) {
 			continue
 		}
 		names = append(names, entry.Name())

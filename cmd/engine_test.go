@@ -206,25 +206,30 @@ func TestParseCaptureMovieArgs(t *testing.T) {
 
 func TestMovieFrameCounts(t *testing.T) {
 	dir := t.TempDir()
-	runStart := time.Now()
-	old := runStart.Add(-2 * time.Hour)
 	stale := filepath.Join(dir, "shot00000000.png")
 	if err := os.WriteFile(stale, []byte("old"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chtimes(stale, old, old); err != nil {
-		t.Fatal(err)
-	}
+	before := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
 	for _, name := range []string{"shot00000001.png", "shot00000002.png", "shot.wav", "other00000003.png"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	written, present, ok := movieFrameCounts(filepath.Join(dir, "shot.png"), runStart)
+	written, present, ok := movieFrameCounts(filepath.Join(dir, "shot.png"), before)
 	if !ok || written != 2 || present != 3 {
 		t.Fatalf("written=%d present=%d ok=%v", written, present, ok)
 	}
-	if _, _, ok := movieFrameCounts(filepath.Join(dir, "shot.avi"), runStart); ok {
+	// A frame this run rewrote counts as its output; a frame it left alone does
+	// not, whatever the filesystem says about timestamps.
+	if err := os.WriteFile(stale, []byte("new-and-longer"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	written, present, ok = movieFrameCounts(filepath.Join(dir, "shot.png"), before)
+	if !ok || written != 3 || present != 3 {
+		t.Fatalf("rewritten: written=%d present=%d ok=%v", written, present, ok)
+	}
+	if _, _, ok := movieFrameCounts(filepath.Join(dir, "shot.avi"), before); ok {
 		t.Fatal("containers must report no measurable frame count")
 	}
 }
@@ -445,7 +450,6 @@ func TestEngineHarnessError(t *testing.T) {
 
 func TestFirstFrameSize(t *testing.T) {
 	dir := t.TempDir()
-	runStart := time.Now()
 	header := make([]byte, 24)
 	copy(header, []byte{0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a})
 	binary.BigEndian.PutUint32(header[8:12], 13)
@@ -456,24 +460,29 @@ func TestFirstFrameSize(t *testing.T) {
 	if err := os.WriteFile(stale, header, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	old := runStart.Add(-2 * time.Hour)
-	if err := os.Chtimes(stale, old, old); err != nil {
-		t.Fatal(err)
-	}
-	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.png"), runStart); ok {
-		t.Fatal("a stale frame must not report this run's size")
+	before := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
+	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.png"), before); ok {
+		t.Fatal("an unchanged frame must not report this run's size")
 	}
 	if err := os.WriteFile(filepath.Join(dir, "shot00000001.png"), header, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	width, height, ok := firstFrameSize(filepath.Join(dir, "shot.png"), runStart)
+	width, height, ok := firstFrameSize(filepath.Join(dir, "shot.png"), before)
 	if !ok || width != 1152 || height != 648 {
 		t.Fatalf("size=%dx%d ok=%v", width, height, ok)
 	}
-	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.avi"), runStart); ok {
+	// Rewriting an existing first frame makes it this run's output again.
+	if err := os.WriteFile(stale, append(header, 0), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	width, height, ok = firstFrameSize(filepath.Join(dir, "shot.png"), before)
+	if !ok || width != 1152 || height != 648 {
+		t.Fatalf("rewritten: size=%dx%d ok=%v", width, height, ok)
+	}
+	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.avi"), before); ok {
 		t.Fatal("only PNG sequences report a frame size")
 	}
-	if _, _, ok := firstFrameSize(filepath.Join(dir, "empty.png"), runStart); ok {
+	if _, _, ok := firstFrameSize(filepath.Join(dir, "empty.png"), before); ok {
 		t.Fatal("missing frames must not report a size")
 	}
 }
