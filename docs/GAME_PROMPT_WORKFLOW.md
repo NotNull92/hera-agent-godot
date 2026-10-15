@@ -53,6 +53,12 @@ func qa_step(seconds: float = 0.0) -> void
 func qa_restart() -> void
 ```
 
+QA helpers should return a **Dictionary or Array**, not a `JSON.stringify`
+string. Read `result_value` from the CLI JSON directly, without reparsing
+`result`. Handle `result_value_omitted` as an unavailable structured value;
+if both fields are absent, the producing addon/runtime is older. Test field
+presence rather than truthiness (`null` and `false` are valid).
+
 For pause and one-frame advance, prefer `hera-godot game clock --pause`,
 `hera-godot game clock --resume`, and `hera-godot game clock --step` (or `--step --physics`).
 Those set `SceneTree.paused` and wait one `SceneTree` frame; they do not need

@@ -54,6 +54,9 @@ Godot can inspect a `.cs` file's path/line count but has no assembly metadata.
 C# custom method names keep their case. Public QA helpers such as
 `public bool QaReady() => true;` are discovered alongside GDScript `qa_*`
 methods. Call them using `hera-godot game node call /root/Main QaReady`.
+With the v1.2.0 addon, a true return includes:
+`{"method":"QaReady","path":"/root/Main","result":"true","result_value":true,"type":"bool"}`.
+The stable text `result` is unchanged; read experimental `result_value` directly.
 `Qa` must be followed by an uppercase ASCII letter. `eval` continues to use
 Godot's GDScript expression evaluator for both project languages.
 
