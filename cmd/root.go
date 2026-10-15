@@ -154,6 +154,8 @@ func Execute(args []string) int {
 		return runPerf(args[1:])
 	case "docs":
 		return runDocs(args[1:])
+	case "debug":
+		return runDebug(args[1:])
 	case "eval":
 		return runEval(args[1:])
 	case "guidance":
@@ -218,6 +220,8 @@ commands:
   capture    movie <out.avi|.png|.ogv> [--frames N] [--fps N] [--resolution WxH]  deterministic frames
   perf       sample [--headless] [--top N]  engine benchmark phases as JSON
   docs       dump --out <dir> [--format xml|json] [--scripts] [--force]  engine or project API reference
+  debug      attach [--break res://f.gd:N ...] [--dap-port N] [--wait-ms N]  attach to a running editor debug server
+             session | stack | variables | evaluate <expr> | continue | next | step-in | step-out | detach
   instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel
