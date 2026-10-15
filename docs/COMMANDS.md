@@ -489,9 +489,11 @@ in CI or on a machine where no editor is open. They share one contract:
   Go's own bookkeeping, so **Unix descendants are not terminated** (that is
   deliberate: a numeric group kill after reaping could hit an unrelated group).
   `termination_error` reports incomplete cleanup — a failed job termination, a
-  missing job, or a start that could only be stopped alone. Comments in the
-  source state the remaining window: a Windows descendant spawned before the job
-  assignment is not enrolled.
+  missing job, or a start that could only be stopped alone. Windows children are
+  launched suspended, so a descendant cannot be spawned before the job assignment;
+  what remains is a termination mechanism that fails, and that is reported
+  (`...outlived the bounded wait`) instead of blocking the caller — the wait after
+  a termination attempt is bounded like the rest of the command.
 - **Failure vocabulary.** Any of `engine_timeout`, `engine_exit_nonzero`,
   `output_incomplete` (the process exited but something kept its pipes open, so
   captured output may be truncated), or a launch error fails the command; the
@@ -503,8 +505,11 @@ in CI or on a machine where no editor is open. They share one contract:
   ANSI-colored, so **status is never parsed from it**. Success comes from the
   exit code plus observed artifacts (files, sizes, counts), and from
   machine-readable artifacts such as `--benchmark-file` when the engine writes
-  one. `project export` omits the raw log unless `--verbose` is passed, because
-  signing tools and export plugins can log credential-bearing arguments.
+  one: a clean exit that produced no artifact of its own fails the command
+  (`no_frame_produced`, `no_artifact_produced`, `docs_output_stale`,
+  `docs_scan_failed`). `project export` omits the raw log unless `--verbose` is
+  passed, because signing tools and export plugins can log credential-bearing
+  arguments.
 - **Failures.** A structured pre-flight failure prints its JSON with
   `ok:false`/`error` on stdout, a one-line `error: <code>` diagnostic on stderr,
   and exits `1`. Missing and unreadable inputs are reported apart
@@ -582,6 +587,14 @@ Verified behavior behind these commands (Godot 4.7.2, see
   shared temporary directory.
 - **Hera owns no debuggee.** The editor and game are started and stopped by you;
   `debug detach` only closes the connection.
+- **Known DAP limits.** A response whose `command` field is empty is accepted (only
+  a different non-empty name is rejected); the `initialized` event is consumed
+  when present but not awaited before breakpoint configuration; concurrent
+  `debug attach`/`debug detach` share one `latest` pointer without a single-writer
+  lock, so a detach can clear a newer session's pointer and later default-session
+  commands then fail until the next attach; endpoint continuity cannot be proven;
+  and Godot's adapter provides no causal request boundary, so a stop's
+  `attribution` is always reported as unproven rather than guaranteed.
 
 ## Editor log evidence
 

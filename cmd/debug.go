@@ -772,7 +772,8 @@ func runDebugAttach(params map[string]any) int {
 	case observeErr != nil:
 		return debugFail(result, "dap_observe_failed", observeErr.Error())
 	case state.Stopped:
-		result["stopped"] = map[string]any{"frame": state.topFrame(), "frame_count": len(state.Frames), "observed": "already_paused"}
+		result["stopped"] = map[string]any{"frame": state.topFrame(), "frame_count": len(state.Frames), "observed": "already_paused",
+			"attribution": "not_applicable: the debuggee was paused before Hera asked for a resume"}
 	default:
 		stopState, resumeErr := resumeAndObserve(client, "continue", wait)
 		switch {

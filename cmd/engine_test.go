@@ -571,7 +571,7 @@ func TestRunEngineBoundedRefusesExecutionWithoutOwnership(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=4000")
+	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=800")
 	started := time.Now()
 	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
 	elapsed := time.Since(started)
@@ -585,8 +585,11 @@ func TestRunEngineBoundedRefusesExecutionWithoutOwnership(t *testing.T) {
 		!strings.Contains(result.RunErr.Error(), "job ownership was not established") {
 		t.Fatalf("the refusal must be a launch error naming the ownership failure: %+v", result)
 	}
-	if result.Termination != "" {
-		t.Fatalf("a clean termination after a refused launch reports no termination error: %q", result.Termination)
+	// A refused launch must report the ownership failure. A bounded termination
+	// note is legitimate: on Unix nothing else can stop the child (the fake guard
+	// does not), while Windows kills it through the owned job on close.
+	if result.Termination != "" && !strings.Contains(result.Termination, "did not exit after termination") {
+		t.Fatalf("an unexpected termination report: %q", result.Termination)
 	}
 	if elapsed > 8*time.Second {
 		t.Fatalf("the refusal path was not bounded: %s", elapsed)
@@ -594,15 +597,21 @@ func TestRunEngineBoundedRefusesExecutionWithoutOwnership(t *testing.T) {
 }
 
 // TestRunEngineBoundedReportsIncompleteTermination pins the honest-failure path:
-// a termination that cannot stop the process is reported instead of being
-// silently treated as a clean timeout.
+// a termination that cannot stop the process is reported instead of hanging the
+// caller, and a child that outlives the bounded wait is called out.
 func TestRunEngineBoundedReportsIncompleteTermination(t *testing.T) {
 	guard := &fakeGuard{terminateResult: "job termination failed; nothing could be terminated"}
 	installFakeGuard(t, guard)
+	// Shorten the bound instead of waiting for the production value.
+	previousDelay := engineWaitDelay
+	engineWaitDelay = 250 * time.Millisecond
+	t.Cleanup(func() { engineWaitDelay = previousDelay })
 
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cancel()
-	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=1200")
+	// The child deliberately outlives the bound: termination is simulated as
+	// unable to stop it, so nothing but the bound can unblock the caller.
+	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=6000")
 	started := time.Now()
 	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
 	elapsed := time.Since(started)
@@ -612,7 +621,13 @@ func TestRunEngineBoundedReportsIncompleteTermination(t *testing.T) {
 	if result.Termination == "" || !strings.Contains(result.Termination, "nothing could be terminated") {
 		t.Fatalf("incomplete termination must be reported: %+v", result)
 	}
-	if elapsed > 8*time.Second {
+	if !strings.Contains(result.Termination, "outlived the bounded wait") {
+		t.Fatalf("a process that outlived the wait must be called out: %+v", result)
+	}
+	if result.ExitCode != -1 {
+		t.Fatalf("a process that never exited must not report an exit code: %+v", result)
+	}
+	if elapsed > 5*time.Second {
 		t.Fatalf("a failed termination must not block the caller: %s", elapsed)
 	}
 }

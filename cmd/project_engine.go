@@ -237,6 +237,16 @@ func runProjectExport(params map[string]any) int {
 	if len(warnings) > 0 {
 		result["warnings"] = warnings
 	}
+	if run.ExitCode == 0 {
+		// A clean exit that produced no artifact is not a successful export: pack
+		// writes a file, release/debug write into the target directory.
+		expectsDirectory := kind == "release" || kind == "debug"
+		artifactPresent := statErr == nil && stat.IsDir() == expectsDirectory
+		if !artifactPresent {
+			result["error"] = "no_artifact_produced"
+			result["detail"] = "the engine exited without writing the requested export artifact: " + filepath.ToSlash(outputAbs)
+		}
+	}
 	return finishEngineResult(result, run)
 }
 

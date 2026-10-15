@@ -28,10 +28,13 @@ const (
 	engineOutputLimit       = 64 * 1024
 	engineVersionTimeout    = 10 * time.Second
 	engineProjectRunTimeout = 300 * time.Second
-	// engineWaitDelay bounds waiting for inherited stdout/stderr pipes after the
-	// started process exits, so a surviving grandchild cannot block the caller.
-	engineWaitDelay = 5 * time.Second
 )
+
+// engineWaitDelay bounds both the inherited-pipe wait after the started process
+// exits and Hera's own wait for a process it asked to terminate, so a surviving
+// descendant or a termination that failed cannot block the caller. Tests shorten
+// it instead of sleeping for the production value.
+var engineWaitDelay = 5 * time.Second
 
 // newEngineCommand builds the engine process with its hardening applied:
 // bounded pipe draining and an owned process group on Unix.
@@ -91,8 +94,11 @@ func resolveConsoleWrapper(path string) string {
 	return path
 }
 
-// boundedOutput keeps at most limit bytes and records truncation.
+// boundedOutput keeps at most limit bytes and records truncation. Writes and
+// snapshots are mutex-guarded, so a bounded wait that abandons a live engine can
+// still read what was drained without racing the pipe copier.
 type boundedOutput struct {
+	mu        sync.Mutex
 	text      []byte
 	truncated bool
 	limit     int
@@ -106,6 +112,8 @@ func newBoundedOutput(limit int) *boundedOutput {
 }
 
 func (o *boundedOutput) Write(p []byte) (int, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
 	if o.limit <= 0 {
 		o.limit = engineOutputLimit
 	}
@@ -119,6 +127,13 @@ func (o *boundedOutput) Write(p []byte) (int, error) {
 		o.text = append(o.text, p...)
 	}
 	return len(p), nil
+}
+
+// snapshot returns the output collected so far and whether it was truncated.
+func (o *boundedOutput) snapshot() (string, bool) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	return string(o.text), o.truncated
 }
 
 // processGuarder is the ownership contract runEngineBounded relies on. Tests
@@ -214,6 +229,7 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 
 	var mu sync.Mutex
 	finished := false
+	outlived := false
 	termination := ""
 	stopped := make(chan struct{})
 	cleanupDone := make(chan struct{})
@@ -231,22 +247,47 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 		}
 	}()
 
-	waitErr := command.Wait()
+	waitErr := func() error {
+		// A termination that cannot stop the engine must not block the caller:
+		// the wait is bounded like the refusal path, and an engine that outlives
+		// the bound is reported as incomplete cleanup rather than hanging Hera.
+		waited := make(chan error, 1)
+		go func() { waited <- command.Wait() }()
+		select {
+		case err := <-waited:
+			return err
+		case <-time.After(engineWaitDelay):
+			outlived = true
+			return nil
+		}
+	}()
 	mu.Lock()
 	finished = true
 	mu.Unlock()
 	close(stopped)
-	<-cleanupDone
+	select {
+	case <-cleanupDone:
+	case <-time.After(engineWaitDelay):
+		outlived = true
+	}
+	mu.Lock()
+	if outlived {
+		termination = strings.TrimSpace(termination + "; the started process outlived the bounded wait")
+	}
+	finalTermination := termination
+	mu.Unlock()
 
-	if command.ProcessState != nil {
+	if !outlived && command.ProcessState != nil {
+		// ProcessState belongs to Wait; reading it while Wait runs would race.
 		result.ExitCode = command.ProcessState.ExitCode()
 	}
 	result.TimedOut = ctx.Err() != nil
 	result.RunErr = waitErr
-	result.Output = strings.TrimSpace(string(output.text))
-	result.Truncated = output.truncated
+	text, truncated := output.snapshot()
+	result.Output = strings.TrimSpace(text)
+	result.Truncated = truncated
 	result.Duration = time.Since(started)
-	result.Termination = termination
+	result.Termination = finalTermination
 	return result
 }
 

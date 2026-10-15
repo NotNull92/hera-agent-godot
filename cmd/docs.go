@@ -154,6 +154,7 @@ func runDocsDump(params map[string]any) int {
 	}
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
+	dirBefore := snapshotDirectory(outAbs)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, workDir, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
@@ -192,9 +193,19 @@ func runDocsDump(params map[string]any) int {
 			result["xml_scan_error"] = xmlErr.Error()
 		}
 		result["xml_files"] = xmlFiles
-		if format == "xml" && xmlErr == nil && xmlFiles == 0 {
+		dirAfter := snapshotDirectory(outAbs)
+		switch {
+		case xmlErr != nil:
+			// A destination that cannot be scanned cannot be verified either.
+			result["error"] = "docs_scan_failed"
+			result["detail"] = "the generated documentation could not be scanned: " + xmlErr.Error()
+		case format == "xml" && xmlFiles == 0:
 			result["error"] = "docs_output_empty"
 			result["detail"] = "the engine produced no XML class reference"
+		case format == "xml" && countErr == nil && dirAfter.bytes == dirBefore.bytes && !dirAfter.newest.After(dirBefore.newest):
+			// Files that predate the run must not satisfy this run's verification.
+			result["error"] = "docs_output_stale"
+			result["detail"] = "no documentation file in the destination was replaced by this run"
 		}
 	}
 	if failure := runFailureCode(run); failure != "" && resultError(result) == "" {
@@ -209,6 +220,34 @@ func runDocsDump(params map[string]any) int {
 // maxDocsScanDepth bounds how deep the destination scan follows linked
 // directories while looking for existing XML documentation.
 const maxDocsScanDepth = 12
+
+// directoryStamp is the state of a destination directory before or after a run.
+type directoryStamp struct {
+	bytes  int64
+	newest time.Time
+}
+
+// snapshotDirectory records a destination's size and newest modification time, so
+// files that predate a run cannot satisfy that run's verification.
+func snapshotDirectory(dir string) directoryStamp {
+	var stamp directoryStamp
+	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
+		return stamp
+	}
+	if _, bytes, err := dirSize(dir); err == nil {
+		stamp.bytes = bytes
+	}
+	_ = filepath.WalkDir(dir, func(_ string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil || entry.IsDir() {
+			return nil
+		}
+		if info, infoErr := entry.Info(); infoErr == nil && info.ModTime().After(stamp.newest) {
+			stamp.newest = info.ModTime()
+		}
+		return nil
+	})
+	return stamp
+}
 
 // fileSnapshot records the state of one destination path.
 type fileSnapshot struct {

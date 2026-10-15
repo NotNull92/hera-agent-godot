@@ -168,10 +168,20 @@ func runCaptureMovie(params map[string]any) int {
 	if written, present, ok := movieFrameCounts(output, before); ok {
 		result["frames_written"], result["frames_present"] = written, present
 		if present > written {
-			result["notes"] = append(notes, fmt.Sprintf("stale_frames_present: %d frame file(s) with the same prefix are unchanged since before this run", present-written))
+			notes = append(notes, fmt.Sprintf("stale_frames_present: %d frame file(s) with the same prefix are unchanged since before this run", present-written))
 		}
+		if written == 0 {
+			// A clean exit with no frame of its own is not a usable recording.
+			result["error"] = "no_frame_produced"
+			notes = append(notes, "no_frame_produced: the engine exited without writing a frame for this run")
+		}
+		result["notes"] = notes
+	} else if result["output_exists"] != true {
+		// Containers are written once; a clean exit without the file is a failure.
+		result["error"] = "no_artifact_produced"
+		result["detail"] = "the engine exited without writing the recording: " + filepath.ToSlash(output)
 	}
-	if failure := runFailureCode(run); failure != "" {
+	if failure := runFailureCode(run); failure != "" && resultError(result) == "" {
 		result["error"] = failure
 	}
 	return finishEngineResult(result, run)
