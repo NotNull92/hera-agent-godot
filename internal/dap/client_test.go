@@ -359,34 +359,32 @@ func TestPoisonedClientRefusesFurtherRequests(t *testing.T) {
 	}
 }
 
+// continuousOutputConn keeps input available without scheduler-created idle gaps.
+type continuousOutputConn struct {
+	net.Conn
+	frame  string
+	offset int
+}
+
+func (c *continuousOutputConn) Read(p []byte) (int, error) {
+	n := copy(p, c.frame[c.offset:])
+	c.offset = (c.offset + n) % len(c.frame)
+	return n, nil
+}
+
+func (c *continuousOutputConn) SetReadDeadline(time.Time) error { return nil }
+
 func TestReconcileToIdleIsBoundedUnderContinuousOutput(t *testing.T) {
-	stop := make(chan struct{})
-	address, closeAdapter := fakeAdapter(t, func(reader *bufio.Reader, writer *bufio.Writer) {
-		readRequest(reader)
-		writeFrame(writer, `{"type":"response","request_seq":1,"command":"initialize","success":true}`)
-		// A game that prints every frame: the idle window never completes.
-		for {
-			select {
-			case <-stop:
-				return
-			default:
-			}
-			writeFrame(writer, `{"type":"event","event":"output","body":{"output":"noise"}}`)
-			time.Sleep(10 * time.Millisecond)
-		}
-	})
-	defer func() { close(stop); closeAdapter() }()
-	client, err := Dial(address, 2*time.Second)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer client.Close()
-	if _, err := client.Request("initialize", nil, 2*time.Second); err != nil {
-		t.Fatal(err)
-	}
+	body := `{"type":"event","event":"output","body":{"output":"noise"}}`
+	conn := &continuousOutputConn{frame: fmt.Sprintf("Content-Length: %d\r\n\r\n%s", len(body), body)}
+	client := &Client{conn: conn, reader: bufio.NewReader(conn)}
 	start := time.Now()
-	if _, _, err := client.ReconcileToIdle(50*time.Millisecond, 300*time.Millisecond); err == nil {
+	dropped, terminal, err := client.ReconcileToIdle(50*time.Millisecond, 300*time.Millisecond)
+	if err == nil {
 		t.Fatal("steady output must fail the boundary instead of hanging")
+	}
+	if dropped == 0 || terminal != nil || !strings.Contains(err.Error(), "never went") {
+		t.Fatalf("continuous valid events must exhaust the budget: dropped=%d terminal=%v err=%v", dropped, terminal, err)
 	}
 	if elapsed := time.Since(start); elapsed > 3*time.Second {
 		t.Fatalf("reconciliation was not bounded: %s", elapsed)
