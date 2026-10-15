@@ -63,13 +63,16 @@ func normalizeStaleInstances(s string) string {
 
 func contractCases() []contractCase {
 	const (
-		gameTree          = `{"ok":true,"data":{"count":1,"nodes":[{"name":"Main","path":".","type":"Node2D"}],"scene":"res://scenes/Main.tscn","truncated":false}}`
-		gameNodeGet       = `{"ok":true,"data":{"name":"Main","path":".","properties":{"position":"(0.0, 0.0)","visible":"true"},"type":"Node2D"}}`
-		gameAssert        = `{"ok":true,"data":{"actual":"true","expected":"true","op":"eq","prop":"visible"}}`
-		gameUIAuditClean  = `{"ok":true,"data":{"ok":true,"strict":false,"scope":"/root/Main","controls":2,"errors":0,"warnings":0,"findings":[],"truncated":false}}`
-		gameUIAuditIssues = `{"ok":true,"data":{"ok":false,"strict":true,"scope":"/root/Main","controls":2,"errors":0,"warnings":1,"findings":[{"rule":"fullscreen_mouse_blocker","severity":"warning","path":"/root/Main/Overlay"}],"truncated":false}}`
-		runPlaying        = `{"ok":true,"data":{"playing":true,"scene":"res://scenes/Main.tscn"}}`
-		runStopped        = `{"ok":true,"data":{"playing":false,"scene":""}}`
+		gameTree            = `{"ok":true,"data":{"count":1,"nodes":[{"name":"Main","path":".","type":"Node2D"}],"scene":"res://scenes/Main.tscn","truncated":false}}`
+		gameNodeCall        = `{"ok":true,"data":{"path":"/root/Main","method":"qa_state","type":"Dictionary","result":"{ \"hp\": 3, \"nested\": { \"big\": 9007199254740993, \"ratio\": nan }, \"pos\": (1.0, 2.0) }","result_value":{"hp":3,"nested":{"big":"9007199254740993","ratio":"nan"},"pos":"Vector2(1, 2)"}}}`
+		gameNodeCallLegacy  = `{"ok":true,"data":{"path":"/root/Main","method":"qa_state","type":"Dictionary","result":"{ \"hp\": 3 }"}}`
+		gameNodeCallOmitted = `{"ok":true,"data":{"path":"/root/Main","method":"qa_state","type":"Array","result":"[...]","result_value_omitted":"size_limit"}}`
+		gameNodeGet         = `{"ok":true,"data":{"name":"Main","path":".","properties":{"position":"(0.0, 0.0)","visible":"true"},"type":"Node2D"}}`
+		gameAssert          = `{"ok":true,"data":{"actual":"true","expected":"true","op":"eq","prop":"visible"}}`
+		gameUIAuditClean    = `{"ok":true,"data":{"ok":true,"strict":false,"scope":"/root/Main","controls":2,"errors":0,"warnings":0,"findings":[],"truncated":false}}`
+		gameUIAuditIssues   = `{"ok":true,"data":{"ok":false,"strict":true,"scope":"/root/Main","controls":2,"errors":0,"warnings":1,"findings":[{"rule":"fullscreen_mouse_blocker","severity":"warning","path":"/root/Main/Overlay"}],"truncated":false}}`
+		runPlaying          = `{"ok":true,"data":{"playing":true,"scene":"res://scenes/Main.tscn"}}`
+		runStopped          = `{"ok":true,"data":{"playing":false,"scene":""}}`
 
 		diagClean       = `{"ok":true,"data":{"error_count":0,"warning_count":0}}`
 		editorLogStatus = `{"ok":true,"data":{"editor_session_id":"fixture","capabilities":{"editor_log_cursor":"supported"}}}`
@@ -125,6 +128,11 @@ func contractCases() []contractCase {
 		{name: "run_current", args: []string{"run", "--current"}, responses: map[string]string{"run": runPlaying}, golden: "run_current"},
 		{name: "stop", args: []string{"stop"}, responses: map[string]string{"run": runStopped}, golden: "stop"},
 		{name: "game_tree", args: []string{"game", "tree"}, responses: map[string]string{"game": gameTree}, golden: "game_tree"},
+		{name: "game_node_call", args: []string{"game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCall}, golden: "game_node_call"},
+		{name: "game_node_call_legacy", args: []string{"game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCallLegacy}, golden: "game_node_call_legacy"},
+		{name: "game_node_call_omitted", args: []string{"game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCallOmitted}, golden: "game_node_call_omitted"},
+		{name: "game_node_call_json", args: []string{"--json", "game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCall}, golden: "game_node_call_json"},
+		{name: "eval_structured", args: []string{"eval", "1+1"}, responses: map[string]string{"eval": `{"ok":true,"data":{"result":"2","result_value":2,"type":"int","undoable":false}}`}, golden: "eval_structured"},
 		{name: "game_node_get", args: []string{"game", "node", "get", "/root/Main"}, responses: map[string]string{"game": gameNodeGet}, golden: "game_node_get"},
 		{name: "game_assert_pass", args: []string{"game", "assert", "/root/Main", "visible", "eq", "true"}, responses: map[string]string{"game": gameAssert}, golden: "game_assert_pass"},
 		{name: "game_ui_audit_clean", args: []string{"game", "ui", "audit"}, responses: map[string]string{"game:ui_audit": gameUIAuditClean}, golden: "game_ui_audit_clean"},
