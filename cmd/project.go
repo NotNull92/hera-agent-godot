@@ -12,6 +12,12 @@ func runProject(args []string) int {
 		fmt.Fprintf(os.Stderr, "project: %v\n", err)
 		return 2
 	}
+	if params["action"] == "import" {
+		return runProjectImport(params)
+	}
+	if params["action"] == "export" {
+		return runProjectExport(params)
+	}
 	if projectActionMutates(params["action"]) {
 		return dialMutationPostPrint("project", params, "project")
 	}
@@ -29,9 +35,13 @@ func projectActionMutates(action any) bool {
 
 func parseProjectArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: project <info|list-files|scan|reimport|mkdir|set-main-scene> ...")
+		return nil, fmt.Errorf("usage: project <info|list-files|scan|reimport|mkdir|set-main-scene|import|export> ...")
 	}
 	switch args[0] {
+	case "import":
+		return parseProjectImportArgs(args[1:])
+	case "export":
+		return parseProjectExportArgs(args[1:])
 	case "info":
 		if len(args) != 1 {
 			return nil, fmt.Errorf("usage: project info")
@@ -59,7 +69,7 @@ func parseProjectArgs(args []string) (map[string]any, error) {
 		}
 		return map[string]any{"action": "set_main_scene", "path": args[1]}, nil
 	default:
-		return nil, fmt.Errorf("unknown project subcommand %q (want info|list-files|scan|reimport|mkdir|set-main-scene)", args[0])
+		return nil, fmt.Errorf("unknown project subcommand %q (want info|list-files|scan|reimport|mkdir|set-main-scene|import|export)", args[0])
 	}
 }
 

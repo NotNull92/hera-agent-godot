@@ -34,6 +34,7 @@ func Execute(args []string) int {
 	outputMode = ""
 	targetPID = 0
 	requestTimeout = 0
+	engineFlagPath = ""
 	start := 0
 	for start < len(args) {
 		arg := args[start]
@@ -45,6 +46,16 @@ func Execute(args []string) int {
 		if arg == "--ids" {
 			outputMode = "ids"
 			start++
+			continue
+		}
+		if arg == "--engine" || strings.HasPrefix(arg, "--engine=") {
+			value, next, err := takeFlagValue(args, start, "--engine")
+			if err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				return 2
+			}
+			engineFlagPath = value
+			start = next
 			continue
 		}
 		if arg == "--instance" {
@@ -135,6 +146,14 @@ func Execute(args []string) int {
 		return runGame(args[1:])
 	case "instances":
 		return runInstances(args[1:])
+	case "engine":
+		return runEngine(args[1:])
+	case "capture":
+		return runCapture(args[1:])
+	case "perf":
+		return runPerf(args[1:])
+	case "docs":
+		return runDocs(args[1:])
 	case "eval":
 		return runEval(args[1:])
 	case "guidance":
@@ -171,7 +190,7 @@ func usage() {
 func usageTo(w io.Writer) {
 	fmt.Fprint(w, `hera-godot — drive a live Godot 4.x editor from the shell
 
-usage: hera-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [flags]
+usage: hera-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] [--engine <path>] <command> [flags]
 
 commands:
   status     show the connected editor (project, version, scene, session); --capabilities for API detail
@@ -184,13 +203,21 @@ commands:
              get <path> --prop P --snapshot; set <path> --prop P --value V [--expected JSON [--verify]]
   script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
              validate <res://script.gd> [--evidence]  check fresh on-disk GDScript with the editor's engine
+             run <res://tool.gd> [--quit-after N] [-- <args>...]  headless SceneTree harness, no editor needed
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
+             import [--project DIR]  engine import pass, no editor needed
+             export <preset> <output> [--kind pack|release|debug|patch] [--patches a,b] [--verbose]
   signal     list <node> | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
   theme      get <res://t.tres> [--type T] | set <res://t.tres> --type T --color|--constant|--font-size name=value
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
+             dump --out <dir>  offline ClassDB JSON from the engine (no editor needed)
   game       [--pid N] tree | ui tree|audit | instances | screenshot | click | input | clock | assert | qa discover|diagnose|--file | node get|set|call
              input sequence --file <events.json>  replay actions on physics frames
+  engine     info | doctor [--project DIR]  engine identity, build kind, export templates, project cache
+  capture    movie <out.avi|.png|.ogv> [--frames N] [--fps N] [--resolution WxH]  deterministic frames
+  perf       sample [--headless] [--top N]  engine benchmark phases as JSON
+  docs       dump --out <dir> [--format xml|json] [--scripts] [--force]  engine or project API reference
   instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel
@@ -213,10 +240,17 @@ global flags (before the command):
   --instance N   target the editor with pid N (required for mutations when
                  more than one editor is live; status output includes the pid)
   --timeout MS   per-request HTTP timeout in milliseconds (default 5000)
-                 also bounds the engine process for script validate
+                 also bounds the engine process for script validate and every
+                 engine-backed command (script run, project import/export,
+                 capture movie, perf sample, docs dump, classdb dump)
+  --engine PATH  Godot engine executable for commands that do not need a live
+                 editor; also read from HERA_GODOT_ENGINE or GODOT_BIN
 
-Overlapping mutations or sensitive reads fail editor_busy; status and buffered
-editor logs remain available. A client timeout does not unlock running work.
+Engine-backed commands run the real engine in a bounded child process and report
+its exit code plus observed artifacts; engine stdout/stderr text is localized and
+is never parsed for status. Overlapping mutations or sensitive reads fail
+editor_busy; status and buffered editor logs remain available. A client timeout
+does not unlock running work.
 See docs/COMMANDS.md for details.
 `)
 }
