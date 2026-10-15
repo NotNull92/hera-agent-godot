@@ -89,6 +89,13 @@ first, because the adapter arms breakpoints on resume. A session record is an
 endpoint recipe, not proof that the original editor, game or paused state still
 exists.
 
+Engine timeouts do not bound native termination calls or destination filesystem
+scans; Unix descendants are not terminated. Artifact metadata changes do not
+prove writer identity, and exports verify existence only. DAP stack/resume targets
+thread 1; recovery retries never resume again. Detach removes its record but leaves
+`latest` untouched, so a detached default requires another attach or an explicit
+retained `--session ID`. See the operational limits in [docs/CONTRACT.md](docs/CONTRACT.md).
+
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
 only paths for `scene tree` / `node find` / `game ui tree`), `--instance <pid>`
 (explicitly target a pid shown by `status`), `--timeout <ms>` (per-request HTTP

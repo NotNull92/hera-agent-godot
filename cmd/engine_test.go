@@ -396,19 +396,45 @@ func TestRunEngineBoundedDefersCloseToARunningTerminationWorker(t *testing.T) {
 func TestContainerVerification(t *testing.T) {
 	before := fileStamp{bytes: 10, mod: time.Unix(100, 0)}
 	after := fileStamp{bytes: 10, mod: time.Unix(100, 0)}
-	if code, inconclusive := containerVerification(before, true, after, true); code != "" || !inconclusive {
+	if code, inconclusive := containerVerification(before, true, after, true, nil, nil); code != "" || !inconclusive {
 		t.Fatalf("an unchanged container must be inconclusive: code=%q inconclusive=%v", code, inconclusive)
 	}
 	changed := fileStamp{bytes: 20, mod: time.Unix(200, 0)}
-	if code, inconclusive := containerVerification(before, true, changed, true); code != "" || inconclusive {
+	if code, inconclusive := containerVerification(before, true, changed, true, nil, nil); code != "" || inconclusive {
 		t.Fatalf("a changed container is this run's output: code=%q inconclusive=%v", code, inconclusive)
 	}
 	// A brand-new file was not present before the run: it is this run's output.
-	if code, inconclusive := containerVerification(fileStamp{}, false, changed, true); code != "" || inconclusive {
+	if code, inconclusive := containerVerification(fileStamp{}, false, changed, true, nil, nil); code != "" || inconclusive {
 		t.Fatalf("a new container is this run's output: code=%q inconclusive=%v", code, inconclusive)
 	}
-	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false); code != "no_artifact_produced" {
+	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false, nil, nil); code != "no_artifact_produced" {
 		t.Fatalf("a missing container must fail: %q", code)
+	}
+	if code, inconclusive := containerVerification(fileStamp{}, false, after, true, os.ErrPermission, nil); code != "" || !inconclusive {
+		t.Fatalf("an unobservable past must be inconclusive: %q %v", code, inconclusive)
+	}
+	if code, _ := containerVerification(before, true, fileStamp{}, false, nil, os.ErrPermission); code != "artifact_stat_failed" {
+		t.Fatalf("an unobservable output is not proof of absence: %q", code)
+	}
+	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false, os.ErrPermission, nil); code != "no_artifact_produced" {
+		t.Fatalf("known absence must still fail after an unobservable past: %q", code)
+	}
+}
+
+func TestStatFileStampDistinguishesAbsence(t *testing.T) {
+	dir := t.TempDir()
+	if _, seen, err := statFileStamp(filepath.Join(dir, "missing.avi")); seen || err != nil {
+		t.Fatalf("missing file: seen=%v err=%v", seen, err)
+	}
+	if _, seen, err := statFileStamp(dir); seen || err == nil {
+		t.Fatalf("a directory is not a missing recording: seen=%v err=%v", seen, err)
+	}
+	path := filepath.Join(dir, "movie.avi")
+	if err := os.WriteFile(path, []byte("movie"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if stamp, seen, err := statFileStamp(path); !seen || err != nil || stamp.bytes != 5 {
+		t.Fatalf("existing file: stamp=%+v seen=%v err=%v", stamp, seen, err)
 	}
 }
 
@@ -1039,6 +1065,9 @@ func TestResolveDestination(t *testing.T) {
 }
 
 func TestRunFailureClassification(t *testing.T) {
+	if code := runFailureCode(engineRunResult{ExitCode: -1, RunErr: errors.New("signal: killed")}); code == "" {
+		t.Fatal("a reaped signal exit must fail even without abandonment")
+	}
 	if code := runFailureCode(engineRunResult{ExitCode: 1}); code != "engine_exit_nonzero" {
 		t.Fatalf("nonzero exit must fail: %q", code)
 	}

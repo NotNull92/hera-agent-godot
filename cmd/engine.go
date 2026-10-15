@@ -37,7 +37,7 @@ const (
 var engineWaitDelay = 5 * time.Second
 
 // newEngineCommand builds the engine process with its hardening applied:
-// bounded pipe draining and an owned process group on Unix.
+// bounded pipe draining and platform-specific launch ownership.
 func newEngineCommand(executable string, args []string) *exec.Cmd {
 	command := exec.Command(executable, args...)
 	command.WaitDelay = engineWaitDelay

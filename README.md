@@ -135,7 +135,7 @@ and engine capability limits.
 The unreleased v1.3 line adds an **engine-backed surface** that needs no open
 editor: `engine info`/`doctor`, `script run` (headless `SceneTree` harness with
 passthrough args), `project import`, `project export` (`pack` needs no export
-templates; `release`/`debug` fail fast when templates are missing),
+templates; `release`/`debug` warn when standard templates are missing),
 `capture movie` (deterministic Movie Maker frames), `perf sample` (engine
 benchmark phases), `docs dump` (engine or project API reference), and
 `classdb dump` (offline ClassDB JSON). They take the engine from

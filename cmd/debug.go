@@ -903,33 +903,17 @@ func runDebugAction(params map[string]any) int {
 		}
 		result["detached"] = true
 		result["notes"] = []string{"the editor and game keep running; Hera only closes the debug connection"}
-		if err := removeDebugSession(session.ID, recordPath); err != nil {
+		if err := removeDebugSession(recordPath); err != nil {
 			return debugFail(result, "session_remove_failed", err.Error())
 		}
 	}
 	return finishDebugResult(result)
 }
 
-// removeDebugSession deletes the record it loaded and clears latest only when the
-// pointer still names that record.
-func removeDebugSession(id, recordPath string) error {
-	root, err := dapSessionRoot()
-	if err != nil {
-		return err
-	}
+// removeDebugSession leaves latest alone: a read-then-remove could erase a newer attach.
+func removeDebugSession(recordPath string) error {
 	if err := os.Remove(recordPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
-	}
-	latestPath := filepath.Join(root, "latest")
-	data, readErr := os.ReadFile(latestPath)
-	switch {
-	case readErr == nil && strings.TrimSpace(string(data)) == id:
-		if err := os.Remove(latestPath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-	case readErr != nil && !errors.Is(readErr, os.ErrNotExist):
-		// A stale pointer that cannot be read is reported instead of ignored.
-		return fmt.Errorf("session removed but the latest pointer could not be read: %w", readErr)
 	}
 	return nil
 }

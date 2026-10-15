@@ -146,7 +146,7 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 아직 릴리스되지 않은 v1.3 라인은 **에디터 없이 동작하는 엔진 표면**을 추가합니다:
 `engine info`/`doctor`, `script run`(헤드리스 `SceneTree` 하니스 + 인자 전달),
 `project import`, `project export`(`pack`은 export 템플릿 없이 동작하고
-`release`/`debug`는 템플릿이 없으면 미리 실패), `capture movie`(Movie Maker로
+`release`/`debug`는 기본 템플릿이 없으면 경고), `capture movie`(Movie Maker로
 결정론적 프레임 기록), `perf sample`(엔진 벤치마크 단계), `docs dump`(엔진 또는
 프로젝트 API 문서), `classdb dump`(오프라인 ClassDB JSON). 엔진 경로는
 `--engine <path>`, `HERA_GODOT_ENGINE`, `GODOT_BIN` 순으로 찾고 `--timeout`으로

@@ -368,7 +368,7 @@ release until they are promoted.
 | `script run` | experimental | `exit_code`, `timed_out`, `duration_ms`, `output` (+`output_truncated`), `arguments[]`, `path`, `project_path`, `engine{path,source,version}`, `source: "engine_process"`. Exit `1` when the engine exits non-zero or the bound is hit; a pre-flight refusal is `not_a_harness` (only bases known to be incompatible are refused). |
 | `project import` | experimental | `exit_code`, `duration_ms`, `output`, `cache{}`, `script_uid_files`, `engine{}`. Engine progress text is localized and not part of the contract. |
 | `project export` | experimental | Success: `project_path`, `kind`, `preset`, `output_path`, `output_exists`, `output_is_dir` (target type, since Godot takes a file for ordinary binary/pack/patch exports and some plugin-driven targets write a directory), `output_bytes` (regular files), `available_presets[]`, `engine{path,source,version}` (+`export_templates_dir`/`export_template_files` when the usual directory was found), optional `warnings[]`. The raw log is omitted by default: `output_omitted:true` plus a reason; `--verbose` restores `output`/`output_truncated` at the caller's risk. Pre-flight failure: `ok:false`, `error` in `{preset_not_found, export_presets_missing, export_presets_unreadable, output_directory_missing, output_directory_unreadable, pack_extension, editor_build_required}`, with a stderr diagnostic; exit `1`. A clean exit whose target is absent fails with `no_artifact_produced`; Hera checks existence, not platform-specific completeness. Template lookup is advisory and never blocks an export. |
-| `capture movie` | experimental | `output_path`, `output_exists`, `output_bytes`, `frames_requested`, `frames_written`/`frames_present` (PNG sequences), `frame_size` (PNG sequences), `fps`, `engine{}`. PNG frames are identified by change against a pre-run snapshot, so `frames_written` counts frames whose size or modification time changed and `frames_unchanged` counts the rest. The post-run scan always decides first: a sequence that cannot be listed fails with `sequence_scan_failed` and one with no frame at all fails with `no_frame_produced`, whatever the pre-run state was. With output present, an all-unchanged sequence is `frames_verification: "inconclusive"` (a same-size rewrite inside one timestamp interval is indistinguishable from no work, and a concurrent writer's change is indistinguishable from this run's), and a pre-run observation that could not be taken reports the same inconclusive field with its reason but withholds `frames_written`/`frames_unchanged`. Containers are compared as a single file: missing after a clean exit fails with `no_artifact_produced`, unchanged since before the run is `output_verification: "inconclusive"`, and a container whose stat failed before the run is simply "not seen before", so it is not reported as inconclusive. A display driver is required; `--headless` is never passed. `res://` outputs are resolved into the project before inspection. |
+| `capture movie` | experimental | `output_path`, `output_exists`, `output_bytes`, `frames_requested`, `frames_written`/`frames_present` (PNG sequences), `frame_size` (PNG sequences), `fps`, `engine{}`. PNG frames are identified by change against a pre-run snapshot, so `frames_written` counts frames whose size or modification time changed and `frames_unchanged` counts the rest. The post-run scan always decides first: a sequence that cannot be listed fails with `sequence_scan_failed` and one with no frame at all fails with `no_frame_produced`, whatever the pre-run state was. With output present, an all-unchanged sequence is `frames_verification: "inconclusive"` (a same-size rewrite inside one timestamp interval is indistinguishable from no work, and a concurrent writer's change is indistinguishable from this run's), and a pre-run observation that could not be taken reports the same inconclusive field with its reason but withholds `frames_written`/`frames_unchanged`. Containers are compared as a single file: missing after a clean exit fails with `no_artifact_produced`, unchanged since before the run is `output_verification: "inconclusive"`, an unavailable pre-run container stat makes freshness inconclusive when output is present, and an unavailable post-run stat fails with `artifact_stat_failed` without claiming `output_exists` or `output_bytes`. Failed PNG scans omit all frame counts. A display driver is required; `--headless` is never passed. `res://` outputs are resolved into the project before inspection. |
 | `perf sample` | experimental | `benchmark{entries,total_seconds,top[]{name,seconds}}`, `bounded_by` in `{engine_exit, timeout}`, `headless`. Godot 4.7.2 ignores `--quit-after` under benchmark flags, so `timeout` is a normal outcome (default bound 30 s) and exit `0` means the JSON was read, not that the examined game run succeeded. |
 | `docs dump` | experimental | `mode` in `{xml, json, scripts}`, `output_dir`, `files`+`bytes` (XML modes) or `output_file`+`output_bytes` (json), `engine{}`. A destination holding `*.xml` is refused (`output_not_empty`) and an existing `extension_api.json` is refused (`output_exists`) unless `--force`; JSON mode also fails with `json_artifact_missing` when no regular non-empty file was produced, `json_artifact_stale` when the file was not replaced, and XML mode with `docs_output_empty` when nothing was generated, `docs_scan_failed` when the destination could not be scanned, and `xml_verification: "inconclusive"` when no XML artifact changed size or modification time (a same-size rewrite inside one timestamp interval is indistinguishable from no work) or when the pre-run state could not be observed. |
 | `classdb dump` | experimental | `output_dir`, `files[]{name,path,bytes,ok,error}`, `file_count`, `failed_copies`, `engine{}`. Exit `1` with `class_db_json_missing` (engine produced nothing), `class_db_copy_failed` (publication failed) or `class_db_publish_failed` (walk failed). |
@@ -412,13 +412,44 @@ DAP responses are only valid for the current stop.
 
 Known limits: a response whose `command` field is empty is accepted; the
 `initialized` event is consumed when present but not awaited before breakpoint
-configuration; concurrent `debug attach`/`debug detach` share one `latest`
-pointer without a single-writer lock, so a detach can clear a newer session's
-pointer and later default-session commands fail until the next attach; endpoint
+configuration; concurrent attaches publish `latest` with last-publication-wins
+semantics. Detach deletes only its record, never the shared pointer; if that pointer
+names a detached record, default-session commands fail until another attach (an
+explicit `--session ID` can select another retained record). Endpoint
 continuity cannot be proven; and a stop's `attribution` is reported as unproven
 because the adapter provides no causal request boundary, except an
 `already_paused` observation (which Hera did not cause) that reports
 `not_applicable`.
+
+### Operational and verification limits
+
+- Native termination/close calls are not deadline-bounded. Refusal performs them
+  synchronously before the bounded reap; cancellation uses a worker. If that worker
+  never returns, it retains the guard until process teardown rather than closing
+  a handle still in use. Unix launches are unsuspended and only the direct child
+  is owned; descendants are never enrolled, not merely missed during assignment.
+- The CLI globals and test delay/guard factory are serialized package state, not
+  a concurrency-safe embedding API. Tests that replace these seams must restore
+  them and must not run in parallel.
+- Metadata comparisons for frames, containers and XML cannot establish writer
+  identity or distinguish identical-metadata rewrites. Export verification is
+  existence-only. Destination scans/stat/publication are synchronous filesystem
+  work outside the engine-process timeout; repeated XML walks can be expensive.
+  Scan depth is bounded, but breadth and filesystem-call latency are not.
+- `perf sample` deliberately judges the benchmark JSON, not engine completion;
+  CLI exit 0 can accompany engine `exit_code: -1`. It must not be interpreted as
+  a successful engine exit or successful process cleanup.
+- DAP empty/missing response commands are accepted only alongside matching request
+  sequence and success checks; strict initialized-event sequencing is not provided.
+  This handshake is specific to the experimental adapter integration. Stack and
+  resume/step use thread 1, without thread discovery/selection. Supporting other
+  threads or generic adapters requires a separate product decision. A variables
+  recovery retry never resumes again; it fails if the program is no longer paused.
+- Build/vet coverage on arm64 is not runtime evidence. Unix runtime/race coverage
+  comes from platform CI; Windows race tests can also run locally when cgo and a
+  C compiler are available. Fake guards exercise ownership/termination failures;
+  they do not inject failures into the production Windows native calls. These are
+  verification boundaries, not claims that every native failure was reproduced.
 
 ## Known gaps (tracked in ROADMAP Phase 7)
 

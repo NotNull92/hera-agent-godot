@@ -160,11 +160,25 @@ func TestDebugSessionRoundTrip(t *testing.T) {
 	if _, _, err := loadDebugSession("../victim"); err == nil {
 		t.Fatal("a traversal id must fail")
 	}
-	if err := removeDebugSession(session.ID, recordPath); err != nil {
+	if err := removeDebugSession(recordPath); err != nil {
 		t.Fatal(err)
 	}
 	if _, _, err := loadDebugSession(""); err == nil {
-		t.Fatal("the latest pointer must be cleared with the record")
+		t.Fatal("a detached record must not be loadable through latest")
+	}
+	// Detach never writes the shared pointer, including when it names this record.
+	if data, err := os.ReadFile(filepath.Join(root, "latest")); err != nil || string(data) != session.ID {
+		t.Fatalf("detach must leave latest untouched: %q err=%v", data, err)
+	}
+	session.ID = "1234-2"
+	if err := writeDebugSession(session); err != nil {
+		t.Fatal(err)
+	}
+	if err := removeDebugSession(recordPath); err != nil {
+		t.Fatal(err)
+	}
+	if loaded, _, err := loadDebugSession(""); err != nil || loaded.ID != session.ID {
+		t.Fatalf("an older detach must preserve the new latest session: %+v err=%v", loaded, err)
 	}
 }
 

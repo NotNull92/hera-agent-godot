@@ -497,6 +497,13 @@ in CI or on a machine where no editor is open. They share one contract:
   within the wait bound`) instead of
   hanging the caller. The bound covers waiting for the process to exit; it does not
   bound a native termination call itself.
+  Refused launches terminate and close synchronously before the bounded reap.
+  A cancellation worker that never returns retains its guard until process teardown;
+  closing it while the native call uses it would violate handle ownership. Unix
+  launches are not suspended, and descendants are never enrolled in an owned tree:
+  this is a persistent limitation, not merely a pre-assignment window.
+  The test-only delay/factory seams and CLI globals require serialized in-process
+  command execution; they are not a concurrent library API.
 - **Failure vocabulary.** Any of `engine_timeout`, `engine_abandoned` (the process
   exit was never observed, so nothing about its work is proven), `engine_exit_nonzero`,
   `output_incomplete` (the process exited but something kept its pipes open, so
@@ -530,6 +537,17 @@ in CI or on a machine where no editor is open. They share one contract:
   `-1` is never a successful exit. `project export` omits the raw log unless
   `--verbose` is passed, because signing tools and export plugins can log
   credential-bearing arguments.
+  This describes the engine status: `perf sample` can still exit the CLI with 0
+  when benchmark JSON is readable, even with engine `exit_code: -1`.
+  On a failed PNG scan, all frame counts are omitted. For containers, an unavailable
+  pre-run stat makes freshness inconclusive when output is present; an unavailable
+  post-run stat fails with `artifact_stat_failed` and omits existence/byte fields.
+  Metadata differences in containers or XML, like frame differences, cannot identify
+  which concurrent writer made a change. Use a dedicated destination for attribution.
+- **Filesystem work.** Destination scans, stat calls and publication are synchronous
+  filesystem operations outside the engine-process timeout. Large or slow destinations
+  can delay the CLI; XML output is walked repeatedly for protection, counts and stamps.
+  The depth cap limits recursion, not file count or elapsed time.
 - **Failures.** A structured pre-flight failure prints its JSON with
   `ok:false`/`error` on stdout, a one-line `error: <code>` diagnostic on stderr,
   and exits `1`. Missing and unreadable inputs are reported apart
@@ -611,13 +629,20 @@ Verified behavior behind these commands (Godot 4.7.2, see
   `debug detach` only closes the connection.
 - **Known DAP limits.** A response whose `command` field is empty is accepted (only
   a different non-empty name is rejected); the `initialized` event is consumed
-  when present but not awaited before breakpoint configuration; concurrent
-  `debug attach`/`debug detach` share one `latest` pointer without a single-writer
-  lock, so a detach can clear a newer session's pointer and later default-session
-  commands then fail until the next attach; endpoint continuity cannot be proven;
+  when present but not awaited before breakpoint configuration. This is the current
+  experimental Godot adapter handshake, not a promise of generic DAP compatibility.
+  Concurrent attaches publish `latest` with last-publication-wins semantics, without
+  a single-writer lock. Detach deletes only its session record and never touches
+  `latest`, so it cannot erase a newer attach. If `latest` names a detached record,
+  default-session commands fail until another attach; use `--session ID` for another
+  retained record. Endpoint continuity cannot be proven;
   and Godot's adapter provides no causal request boundary, so a stop's
   `attribution` is reported as unproven rather than guaranteed (an `already_paused`
   observation, which Hera did not cause, reports `not_applicable` instead).
+  Stack and resume/step requests address thread 1; other debugger threads are not
+  discovered or selectable. Multi-thread/general-adapter support is outside this
+  experimental surface. The one `variables` recovery retry is read-only: it never
+  resumes again, and fails if the debuggee is no longer paused.
 
 ## Editor log evidence
 

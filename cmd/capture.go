@@ -141,7 +141,7 @@ func runCaptureMovie(params map[string]any) int {
 	// identified by change rather than by a timestamp comparison. A failed
 	// observation is recorded and reported as inconclusive, never as freshness.
 	before, beforeErr := snapshotMovieFrames(output)
-	containerBefore, containerSeen := statFileStamp(output)
+	containerBefore, containerSeen, containerBeforeErr := statFileStamp(output)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	notes := []string{
@@ -176,7 +176,9 @@ func runCaptureMovie(params map[string]any) int {
 				result["detail"] = verdict.Detail
 			}
 		}
-		result["frames_present"] = present
+		if scanErr == nil {
+			result["frames_present"] = present
+		}
 		if verdict.ClaimCounts {
 			result["frames_written"] = written
 			if written < present {
@@ -196,9 +198,14 @@ func runCaptureMovie(params map[string]any) int {
 			result["notes"] = notes
 		}
 	} else {
-		after, afterSeen := statFileStamp(output)
-		code, inconclusive := containerVerification(containerBefore, containerSeen, after, afterSeen)
+		after, afterSeen, afterErr := statFileStamp(output)
+		code, inconclusive := containerVerification(containerBefore, containerSeen, after, afterSeen, containerBeforeErr, afterErr)
 		switch {
+		case afterErr != nil:
+			delete(result, "output_exists")
+			delete(result, "output_bytes")
+			result["error"] = code
+			result["detail"] = "the recording could not be observed: " + afterErr.Error()
 		case code != "":
 			result["error"] = code
 			result["detail"] = "the engine exited without writing the recording: " + filepath.ToSlash(output)
@@ -206,7 +213,11 @@ func runCaptureMovie(params map[string]any) int {
 			// The file is unchanged since before the run, which is either an
 			// identical rewrite or no work at all; the difference is not observable.
 			result["output_verification"] = "inconclusive"
-			notes = append(notes, "output_verification inconclusive: the recording file is unchanged since before this run")
+			if containerBeforeErr != nil {
+				result["output_verification_detail"] = "the recording could not be observed before the run: " + containerBeforeErr.Error()
+			} else {
+				notes = append(notes, "output_verification inconclusive: the recording file has unchanged size and modification time")
+			}
 			result["notes"] = notes
 		}
 	}
@@ -293,11 +304,14 @@ func movieFramePatternMeasurable(output string) bool {
 // taken before and after the run: a missing target fails, an unchanged one is
 // inconclusive (an identical rewrite and no work are indistinguishable), and a
 // changed or newly created one is verified.
-func containerVerification(before fileStamp, beforeSeen bool, after fileStamp, afterSeen bool) (errorCode string, inconclusive bool) {
+func containerVerification(before fileStamp, beforeSeen bool, after fileStamp, afterSeen bool, beforeErr, afterErr error) (errorCode string, inconclusive bool) {
+	if afterErr != nil {
+		return "artifact_stat_failed", false
+	}
 	if !afterSeen {
 		return "no_artifact_produced", false
 	}
-	if beforeSeen && before == after {
+	if beforeErr != nil || (beforeSeen && before == after) {
 		return "", true
 	}
 	return "", false
@@ -350,12 +364,18 @@ func movieVerification(written, present int) (errorCode string, inconclusive boo
 
 // statFileStamp records a regular file's identity, so a container that this run
 // did not replace can be reported instead of assumed fresh.
-func statFileStamp(path string) (fileStamp, bool) {
+func statFileStamp(path string) (fileStamp, bool, error) {
 	info, err := os.Stat(path)
-	if err != nil || info.IsDir() {
-		return fileStamp{}, false
+	if os.IsNotExist(err) {
+		return fileStamp{}, false, nil
 	}
-	return fileStamp{bytes: info.Size(), mod: info.ModTime()}, true
+	if err != nil {
+		return fileStamp{}, false, err
+	}
+	if !info.Mode().IsRegular() {
+		return fileStamp{}, false, fmt.Errorf("recording target is not a regular file: %s", path)
+	}
+	return fileStamp{bytes: info.Size(), mod: info.ModTime()}, true, nil
 }
 
 // movieFrameCounts separates frames whose metadata changed from older files with
