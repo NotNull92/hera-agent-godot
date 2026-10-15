@@ -490,11 +490,14 @@ in CI or on a machine where no editor is open. They share one contract:
   deliberate: a numeric group kill after reaping could hit an unrelated group).
   `termination_error` reports incomplete cleanup — a failed job termination, a
   missing job, or a start that could only be stopped alone. Windows children are
-  launched suspended, so a descendant cannot be spawned before the job assignment;
-  what remains is a termination mechanism that fails, and that is reported
-  (`...outlived the bounded wait`) instead of blocking the caller — the wait after
-  a termination attempt is bounded like the rest of the command.
-- **Failure vocabulary.** Any of `engine_timeout`, `engine_exit_nonzero`,
+  launched suspended, so a descendant cannot be spawned before the job assignment.
+  The bound applies only **after** the command context is cancelled: a healthy run
+  is never cut short, while waiting for a process that termination could not stop
+  is bounded and reported (`abandoned: true`, `...outlived termination`) instead of
+  hanging the caller. The bound covers waiting for the process to exit; it does not
+  bound a native termination call itself.
+- **Failure vocabulary.** Any of `engine_timeout`, `engine_abandoned` (the process
+  exit was never observed, so nothing about its work is proven), `engine_exit_nonzero`,
   `output_incomplete` (the process exited but something kept its pipes open, so
   captured output may be truncated), or a launch error fails the command; the
   JSON result carries `error` and a one-line `error: <code>` diagnostic goes to
@@ -505,11 +508,15 @@ in CI or on a machine where no editor is open. They share one contract:
   ANSI-colored, so **status is never parsed from it**. Success comes from the
   exit code plus observed artifacts (files, sizes, counts), and from
   machine-readable artifacts such as `--benchmark-file` when the engine writes
-  one: a clean exit that produced no artifact of its own fails the command
-  (`no_frame_produced`, `no_artifact_produced`, `docs_output_stale`,
-  `docs_scan_failed`). `project export` omits the raw log unless `--verbose` is
-  passed, because signing tools and export plugins can log credential-bearing
-  arguments.
+  one: artifacts that are missing after a clean exit fail the command
+  (`no_frame_produced`, `no_artifact_produced`, `docs_output_empty`,
+  `docs_scan_failed`), while freshness that cannot be observed is reported as
+  `frames_verification`/`output_verification`/`xml_verification: "inconclusive"`
+  rather than claimed (`docs_output_stale` covers the certain case of a destination
+  that this run did not change at all). `exit_code` is `-1` when no exit status was
+  observed, so `-1` is never a successful exit. `project export` omits the raw log
+  unless `--verbose` is passed, because signing tools and export plugins can log
+  credential-bearing arguments.
 - **Failures.** A structured pre-flight failure prints its JSON with
   `ok:false`/`error` on stdout, a one-line `error: <code>` diagnostic on stderr,
   and exits `1`. Missing and unreadable inputs are reported apart
@@ -562,9 +569,11 @@ Verified behavior behind these commands (Godot 4.7.2, see
   appears once the program continues through DAP, so attach observes the current
   state first (`already_paused` or `running`), `stack` never resumes, and only
   `variables`/`evaluate` resume a running debuggee to its next stop because they
-  cannot read a running program. Every stop carries `attribution: "unproven: …"`:
-  the quiet window before an action and the adapter's own resume event reduce,
-  but do not prove, that a stop belongs to this request. A resume the adapter
+  cannot read a running program. A stop carries `attribution: "unproven: …"`: the
+  quiet window before an action and the adapter's own resume event reduce, but do
+  not prove, that a stop belongs to this request. The one exception is an
+  `already_paused` attach observation, which Hera did not cause and which therefore
+  reports `attribution: "not_applicable: …"`. A resume the adapter
   never confirms is a failure, not a result. Reconciliation uses a floor of
   20 ms, so `--wait-ms` values below that still reconcile before the action.
 - **Checksums have provenance.** `setBreakpoints` carries the script's MD5 and
@@ -594,7 +603,8 @@ Verified behavior behind these commands (Godot 4.7.2, see
   lock, so a detach can clear a newer session's pointer and later default-session
   commands then fail until the next attach; endpoint continuity cannot be proven;
   and Godot's adapter provides no causal request boundary, so a stop's
-  `attribution` is always reported as unproven rather than guaranteed.
+  `attribution` is reported as unproven rather than guaranteed (an `already_paused`
+  observation, which Hera did not cause, reports `not_applicable` instead).
 
 ## Editor log evidence
 

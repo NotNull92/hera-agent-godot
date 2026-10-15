@@ -367,10 +367,10 @@ release until they are promoted.
 | `engine info` / `engine doctor` | experimental | Identity answers carry `engine{path,source,bytes}`, `version{string,status,mono,commit}`, and `help_available`. `editor_build` and `help_flags{}` appear **only when the help probe completed** (exit 0, non-empty, untruncated, not timed out); otherwise `help_probe_error` explains why and no build claim is made. `engine doctor` adds `checks[]{name,ok,detail}` and `warnings[]`, and exits `0` for a healthy engine even when individual checks are `false`. |
 | `script run` | experimental | `exit_code`, `timed_out`, `duration_ms`, `output` (+`output_truncated`), `arguments[]`, `path`, `project_path`, `engine{path,source,version}`, `source: "engine_process"`. Exit `1` when the engine exits non-zero or the bound is hit; a pre-flight refusal is `not_a_harness` (only bases known to be incompatible are refused). |
 | `project import` | experimental | `exit_code`, `duration_ms`, `output`, `cache{}`, `script_uid_files`, `engine{}`. Engine progress text is localized and not part of the contract. |
-| `project export` | experimental | Success: `project_path`, `kind`, `preset`, `output_path`, `output_exists`, `output_bytes`, `available_presets[]`, `engine{path,source,version}` (+`export_templates_dir`/`export_template_files` when the usual directory was found), optional `warnings[]`. The raw log is omitted by default: `output_omitted:true` plus a reason; `--verbose` restores `output`/`output_truncated` at the caller's risk. Pre-flight failure: `ok:false`, `error` in `{preset_not_found, export_presets_missing, export_presets_unreadable, output_directory_missing, output_directory_unreadable, pack_extension, editor_build_required}`, with a stderr diagnostic; exit `1`. A clean exit that produced no export artifact fails with `no_artifact_produced` (a file for pack, the target directory for release/debug). Template lookup is advisory and never blocks an export. |
-| `capture movie` | experimental | `output_path`, `output_exists`, `output_bytes`, `frames_requested`, `frames_written`/`frames_present` (PNG sequences), `frame_size` (PNG sequences), `fps`, `engine{}`. Frames are identified by change against a snapshot taken before the run, so coarse filesystem timestamps cannot hide a fresh frame; a clean exit that wrote no frame of its own fails with `no_frame_produced`, and a container target that was never written fails with `no_artifact_produced`. A display driver is required; `--headless` is never passed. `res://` outputs are resolved into the project before inspection. |
+| `project export` | experimental | Success: `project_path`, `kind`, `preset`, `output_path`, `output_exists`, `output_is_dir` (target type, since Godot takes a file for ordinary binary/pack/patch exports and some plugin-driven targets write a directory), `output_bytes` (regular files), `available_presets[]`, `engine{path,source,version}` (+`export_templates_dir`/`export_template_files` when the usual directory was found), optional `warnings[]`. The raw log is omitted by default: `output_omitted:true` plus a reason; `--verbose` restores `output`/`output_truncated` at the caller's risk. Pre-flight failure: `ok:false`, `error` in `{preset_not_found, export_presets_missing, export_presets_unreadable, output_directory_missing, output_directory_unreadable, pack_extension, editor_build_required}`, with a stderr diagnostic; exit `1`. A clean exit whose target is absent fails with `no_artifact_produced`; Hera checks existence, not platform-specific completeness. Template lookup is advisory and never blocks an export. |
+| `capture movie` | experimental | `output_path`, `output_exists`, `output_bytes`, `frames_requested`, `frames_written`/`frames_present` (PNG sequences), `frame_size` (PNG sequences), `fps`, `engine{}`. Frames are identified by change against a pre-run snapshot: a sequence with no frame at all fails with `no_frame_produced`, a sequence whose frames are all unchanged is reported as `frames_verification: "inconclusive"` (a same-size rewrite inside one timestamp interval is indistinguishable from no work), an unchanged container is reported as `output_verification: "inconclusive"`, a missing container fails with `no_artifact_produced`, and a sequence that cannot be listed fails with `sequence_scan_failed`. A display driver is required; `--headless` is never passed. `res://` outputs are resolved into the project before inspection. |
 | `perf sample` | experimental | `benchmark{entries,total_seconds,top[]{name,seconds}}`, `bounded_by` in `{engine_exit, timeout}`, `headless`. Godot 4.7.2 ignores `--quit-after` under benchmark flags, so `timeout` is a normal outcome (default bound 30 s) and exit `0` means the JSON was read, not that the examined game run succeeded. |
-| `docs dump` | experimental | `mode` in `{xml, json, scripts}`, `output_dir`, `files`+`bytes` (XML modes) or `output_file`+`output_bytes` (json), `engine{}`. A destination holding `*.xml` is refused (`output_not_empty`) and an existing `extension_api.json` is refused (`output_exists`) unless `--force`; JSON mode also fails with `json_artifact_missing` when no regular non-empty file was produced, and XML mode with `docs_output_empty` when nothing was generated, `docs_output_stale` when the destination is unchanged since before the run (an old file cannot satisfy this run's verification) and `docs_scan_failed` when the destination could not be scanned. |
+| `docs dump` | experimental | `mode` in `{xml, json, scripts}`, `output_dir`, `files`+`bytes` (XML modes) or `output_file`+`output_bytes` (json), `engine{}`. A destination holding `*.xml` is refused (`output_not_empty`) and an existing `extension_api.json` is refused (`output_exists`) unless `--force`; JSON mode also fails with `json_artifact_missing` when no regular non-empty file was produced, `json_artifact_stale` when the file was not replaced, and XML mode with `docs_output_empty` when nothing was generated, `docs_output_stale` when no XML artifact was added or changed by this run (compared per file with the same link-following traversal the count uses), `docs_scan_failed` when the destination could not be scanned, and `xml_verification: "inconclusive"` when the pre-run state could not be observed. |
 | `classdb dump` | experimental | `output_dir`, `files[]{name,path,bytes,ok,error}`, `file_count`, `failed_copies`, `engine{}`. Exit `1` with `class_db_json_missing` (engine produced nothing), `class_db_copy_failed` (publication failed) or `class_db_publish_failed` (walk failed). |
 
 Shared facts for all engine-backed commands: engine resolution is
@@ -379,12 +379,16 @@ context per command; an already-expired context starts nothing; output text is
 captured to 64 KiB and never parsed for status; a timeout terminates work
 through an owned identity (Windows Job Object + process handle, Unix the started
 process only, so Unix descendants are not signalled) and reports
-`termination_error` when cleanup was incomplete; a nonzero engine exit
-(`engine_exit_nonzero`) or a `WaitDelay` drain (`output_incomplete`) fails the
-command **except** for `perf sample`, whose documented exception is that a parsed
-benchmark JSON decides success. Identity commands and pre-flight refusals are the
-remaining exception to the `engine` block shape: they carry either no `engine`
-block or one without a `version`.
+`termination_error` when cleanup was incomplete. The wait for a process that
+termination could not stop is bounded and reported (`abandoned`, `engine_abandoned`)
+instead of hanging the caller; a healthy run is never cut short by that bound. A
+nonzero engine exit (`engine_exit_nonzero`) or a `WaitDelay` drain
+(`output_incomplete`) fails the command **except** for `perf sample`, whose
+documented exception is that a parsed benchmark JSON decides success.
+`exit_code: -1` means no exit status was observed (pre-launch refusal, or an
+abandoned process) and is never a successful exit. Identity commands and
+pre-flight refusals are the remaining exception to the `engine` block shape: they
+carry either no `engine` block or one without a `version`.
 
 ## Debug sessions (experimental)
 
@@ -408,8 +412,10 @@ Known limits: a response whose `command` field is empty is accepted; the
 configuration; concurrent `debug attach`/`debug detach` share one `latest`
 pointer without a single-writer lock, so a detach can clear a newer session's
 pointer and later default-session commands fail until the next attach; endpoint
-continuity cannot be proven; and a stop's `attribution` is always reported as
-unproven because the adapter provides no causal request boundary.
+continuity cannot be proven; and a stop's `attribution` is reported as unproven
+because the adapter provides no causal request boundary, except an
+`already_paused` observation (which Hera did not cause) that reports
+`not_applicable`.
 
 ## Known gaps (tracked in ROADMAP Phase 7)
 

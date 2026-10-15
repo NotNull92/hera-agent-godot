@@ -216,7 +216,10 @@ func TestMovieFrameCounts(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	written, present, ok := movieFrameCounts(filepath.Join(dir, "shot.png"), before)
+	written, present, ok, scanErr := movieFrameCounts(filepath.Join(dir, "shot.png"), before)
+	if scanErr != nil {
+		t.Fatalf("an existing sequence must be listable: %v", scanErr)
+	}
 	if !ok || written != 2 || present != 3 {
 		t.Fatalf("written=%d present=%d ok=%v", written, present, ok)
 	}
@@ -225,12 +228,56 @@ func TestMovieFrameCounts(t *testing.T) {
 	if err := os.WriteFile(stale, []byte("new-and-longer"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	written, present, ok = movieFrameCounts(filepath.Join(dir, "shot.png"), before)
+	written, present, ok, scanErr = movieFrameCounts(filepath.Join(dir, "shot.png"), before)
 	if !ok || written != 3 || present != 3 {
 		t.Fatalf("rewritten: written=%d present=%d ok=%v", written, present, ok)
 	}
-	if _, _, ok := movieFrameCounts(filepath.Join(dir, "shot.avi"), before); ok {
+	if _, _, ok, _ := movieFrameCounts(filepath.Join(dir, "shot.avi"), before); ok {
 		t.Fatal("containers must report no measurable frame count")
+	}
+}
+
+func TestMovieVerificationClassification(t *testing.T) {
+	// No frame at all is the only certain failure.
+	if code, inconclusive, _ := movieVerification(0, 0); code != "no_frame_produced" || inconclusive {
+		t.Fatalf("missing frames: code=%q inconclusive=%v", code, inconclusive)
+	}
+	// Frames exist but none changed: a rewrite inside one timestamp interval is
+	// indistinguishable from no work, so it must not be failed or claimed.
+	code, inconclusive, note := movieVerification(0, 3)
+	if code != "" || !inconclusive || note == "" {
+		t.Fatalf("unchanged frames: code=%q inconclusive=%v note=%q", code, inconclusive, note)
+	}
+	// A partial rewrite is reported as the stale remainder.
+	code, inconclusive, note = movieVerification(2, 5)
+	if code != "" || inconclusive || !strings.Contains(note, "stale_frames_present: 3") {
+		t.Fatalf("partial rewrite: code=%q inconclusive=%v note=%q", code, inconclusive, note)
+	}
+	if code, inconclusive, note := movieVerification(4, 4); code != "" || inconclusive || note != "" {
+		t.Fatalf("a full rewrite needs no remark: code=%q inconclusive=%v note=%q", code, inconclusive, note)
+	}
+}
+
+func TestExportArtifactProblem(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "game.exe")
+	if err := os.WriteFile(file, []byte("MZ"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// A regular-file target is what ordinary binary, pack and patch exports use;
+	// a directory is accepted too because plugin-driven targets write one.
+	if info, err := os.Stat(file); err != nil {
+		t.Fatal(err)
+	} else if code := exportArtifactProblem(nil); code != "" || info.IsDir() {
+		t.Fatalf("a regular-file export target must be accepted: code=%q isDir=%v", code, info.IsDir())
+	}
+	if _, err := os.Stat(dir); err != nil {
+		t.Fatal(err)
+	} else if code := exportArtifactProblem(err); code != "" {
+		t.Fatalf("a directory export target must be accepted: %q", code)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "absent.pck")); exportArtifactProblem(err) != "no_artifact_produced" {
+		t.Fatalf("a missing export target must fail: %v", err)
 	}
 }
 
@@ -596,9 +643,40 @@ func TestRunEngineBoundedRefusesExecutionWithoutOwnership(t *testing.T) {
 	}
 }
 
+// TestRunEngineBoundedWaitsForHealthyWorkloads pins the invariant the merged-state
+// review caught: the termination bound must never apply to a run that is still
+// working. A child that outlives the delay but finishes inside its own deadline
+// must report its own exit code.
+func TestRunEngineBoundedWaitsForHealthyWorkloads(t *testing.T) {
+	installFakeGuard(t, &fakeGuard{})
+	previousDelay := engineWaitDelay
+	engineWaitDelay = 200 * time.Millisecond
+	t.Cleanup(func() { engineWaitDelay = previousDelay })
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=700")
+	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
+	if result.TimedOut || result.Abandoned {
+		t.Fatalf("a healthy run must not be cut short: %+v", result)
+	}
+	if result.Duration < 600*time.Millisecond {
+		t.Fatalf("the run returned before the child finished: %s", result.Duration)
+	}
+	if result.ExitCode != 0 {
+		t.Fatalf("the child's own exit code must be reported: %+v", result)
+	}
+	if result.Termination != "" {
+		t.Fatalf("a healthy run needs no termination: %+v", result)
+	}
+	if code := runFailureCode(result); code != "" {
+		t.Fatalf("a healthy run must not fail: %s", code)
+	}
+}
+
 // TestRunEngineBoundedReportsIncompleteTermination pins the honest-failure path:
 // a termination that cannot stop the process is reported instead of hanging the
-// caller, and a child that outlives the bounded wait is called out.
+// caller, and a child that outlives the bound is called out.
 func TestRunEngineBoundedReportsIncompleteTermination(t *testing.T) {
 	guard := &fakeGuard{terminateResult: "job termination failed; nothing could be terminated"}
 	installFakeGuard(t, guard)
@@ -615,14 +693,17 @@ func TestRunEngineBoundedReportsIncompleteTermination(t *testing.T) {
 	started := time.Now()
 	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
 	elapsed := time.Since(started)
-	if !result.TimedOut {
-		t.Fatalf("the run should have timed out: %+v", result)
+	if !result.TimedOut || !result.Abandoned {
+		t.Fatalf("the run should have timed out without observing the exit: %+v", result)
+	}
+	if code := runFailureCode(result); code != "engine_abandoned" {
+		t.Fatalf("an unobserved exit must never look like success: %q", code)
 	}
 	if result.Termination == "" || !strings.Contains(result.Termination, "nothing could be terminated") {
 		t.Fatalf("incomplete termination must be reported: %+v", result)
 	}
-	if !strings.Contains(result.Termination, "outlived the bounded wait") {
-		t.Fatalf("a process that outlived the wait must be called out: %+v", result)
+	if !strings.Contains(result.Termination, "outlived termination") {
+		t.Fatalf("a process that outlived termination must be called out: %+v", result)
 	}
 	if result.ExitCode != -1 {
 		t.Fatalf("a process that never exited must not report an exit code: %+v", result)

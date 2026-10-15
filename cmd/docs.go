@@ -154,7 +154,9 @@ func runDocsDump(params map[string]any) int {
 	}
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	dirBefore := snapshotDirectory(outAbs)
+	// The XML artifacts are stamped before the run with the same traversal the
+	// verification uses, so an old file cannot satisfy this run's check.
+	xmlBefore, xmlBeforeErr := xmlFileStamps(outAbs, maxDocsScanDepth)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, workDir, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
@@ -193,7 +195,6 @@ func runDocsDump(params map[string]any) int {
 			result["xml_scan_error"] = xmlErr.Error()
 		}
 		result["xml_files"] = xmlFiles
-		dirAfter := snapshotDirectory(outAbs)
 		switch {
 		case xmlErr != nil:
 			// A destination that cannot be scanned cannot be verified either.
@@ -202,10 +203,21 @@ func runDocsDump(params map[string]any) int {
 		case format == "xml" && xmlFiles == 0:
 			result["error"] = "docs_output_empty"
 			result["detail"] = "the engine produced no XML class reference"
-		case format == "xml" && countErr == nil && dirAfter.bytes == dirBefore.bytes && !dirAfter.newest.After(dirBefore.newest):
-			// Files that predate the run must not satisfy this run's verification.
-			result["error"] = "docs_output_stale"
-			result["detail"] = "no documentation file in the destination was replaced by this run"
+		case xmlBeforeErr != nil:
+			// Without a usable pre-run observation, freshness is unknowable.
+			result["xml_verification"] = "inconclusive"
+			result["xml_verification_detail"] = "the destination could not be observed before the run: " + xmlBeforeErr.Error()
+		default:
+			xmlAfter, afterErr := xmlFileStamps(outAbs, maxDocsScanDepth)
+			switch {
+			case afterErr != nil:
+				result["error"] = "docs_scan_failed"
+				result["detail"] = "the generated documentation could not be re-read: " + afterErr.Error()
+			case format == "xml" && !anyFileChanged(xmlBefore, xmlAfter):
+				// Files that predate the run must not satisfy this run's check.
+				result["error"] = "docs_output_stale"
+				result["detail"] = "no XML documentation file was replaced or added by this run"
+			}
 		}
 	}
 	if failure := runFailureCode(run); failure != "" && resultError(result) == "" {
@@ -221,32 +233,88 @@ func runDocsDump(params map[string]any) int {
 // directories while looking for existing XML documentation.
 const maxDocsScanDepth = 12
 
-// directoryStamp is the state of a destination directory before or after a run.
-type directoryStamp struct {
-	bytes  int64
-	newest time.Time
-}
-
-// snapshotDirectory records a destination's size and newest modification time, so
-// files that predate a run cannot satisfy that run's verification.
-func snapshotDirectory(dir string) directoryStamp {
-	var stamp directoryStamp
-	if info, err := os.Stat(dir); err != nil || !info.IsDir() {
-		return stamp
+// xmlFilesFollowingLinks returns every XML file the destination scan sees. Linked
+// directories are followed (visited set plus depth cap), so counting and
+// verification observe exactly the same files.
+func xmlFilesFollowingLinks(root string, maxDepth int) ([]string, error) {
+	if _, err := os.Stat(root); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return nil, nil
+		}
+		return nil, err
 	}
-	if _, bytes, err := dirSize(dir); err == nil {
-		stamp.bytes = bytes
-	}
-	_ = filepath.WalkDir(dir, func(_ string, entry fs.DirEntry, walkErr error) error {
-		if walkErr != nil || entry.IsDir() {
+	files := []string{}
+	visited := map[string]bool{}
+	var walk func(dir string, depth int) error
+	walk = func(dir string, depth int) error {
+		if depth > maxDepth {
+			// An incomplete scan must never be reported as a clean destination.
+			return fmt.Errorf("directory tree exceeds the %d-level scan depth at %s", maxDepth, filepath.ToSlash(dir))
+		}
+		resolved, err := filepath.EvalSymlinks(dir)
+		if err != nil {
+			return err
+		}
+		if visited[resolved] {
 			return nil
 		}
-		if info, infoErr := entry.Info(); infoErr == nil && info.ModTime().After(stamp.newest) {
-			stamp.newest = info.ModTime()
+		visited[resolved] = true
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			return err
+		}
+		for _, entry := range entries {
+			full := filepath.Join(dir, entry.Name())
+			info, infoErr := os.Stat(full)
+			if infoErr != nil {
+				return infoErr
+			}
+			if info.IsDir() {
+				if err := walk(full, depth+1); err != nil {
+					return err
+				}
+				continue
+			}
+			if strings.EqualFold(filepath.Ext(entry.Name()), ".xml") {
+				files = append(files, full)
+			}
 		}
 		return nil
-	})
-	return stamp
+	}
+	if err := walk(root, 0); err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+// xmlFileStamps records the identity of every XML file the destination scan sees,
+// so verification compares the same artifacts the count reports.
+func xmlFileStamps(root string, maxDepth int) (map[string]fileStamp, error) {
+	files, err := xmlFilesFollowingLinks(root, maxDepth)
+	if err != nil {
+		return nil, err
+	}
+	stamps := make(map[string]fileStamp, len(files))
+	for _, file := range files {
+		info, infoErr := os.Stat(file)
+		if infoErr != nil {
+			return nil, infoErr
+		}
+		stamps[file] = fileStamp{bytes: info.Size(), mod: info.ModTime()}
+	}
+	return stamps, nil
+}
+
+// anyFileChanged reports whether the destination gained an XML file or one of its
+// XML files changed size or modification time.
+func anyFileChanged(before, after map[string]fileStamp) bool {
+	for path, stamp := range after {
+		previous, seen := before[path]
+		if !seen || previous != stamp {
+			return true
+		}
+	}
+	return false
 }
 
 // fileSnapshot records the state of one destination path.

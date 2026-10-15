@@ -223,9 +223,12 @@ func runProjectExport(params map[string]any) int {
 	result["engine"] = identity
 	result["notes"] = []string{"export_presets.cfg and .godot/export_credentials.cfg can contain secrets and are never printed"}
 	result["source"] = "engine_process"
-	result["output_exists"] = statErr == nil && !stat.IsDir()
-	if statErr == nil && !stat.IsDir() {
-		result["output_bytes"] = stat.Size()
+	result["output_exists"] = statErr == nil
+	if statErr == nil {
+		result["output_is_dir"] = stat.IsDir()
+		if !stat.IsDir() {
+			result["output_bytes"] = stat.Size()
+		}
 	}
 	if verbose, _ := params["verbose"].(bool); !verbose {
 		// Signing tools and export plugins can log credential-bearing arguments.
@@ -238,16 +241,24 @@ func runProjectExport(params map[string]any) int {
 		result["warnings"] = warnings
 	}
 	if run.ExitCode == 0 {
-		// A clean exit that produced no artifact is not a successful export: pack
-		// writes a file, release/debug write into the target directory.
-		expectsDirectory := kind == "release" || kind == "debug"
-		artifactPresent := statErr == nil && stat.IsDir() == expectsDirectory
-		if !artifactPresent {
-			result["error"] = "no_artifact_produced"
-			result["detail"] = "the engine exited without writing the requested export artifact: " + filepath.ToSlash(outputAbs)
+		if code := exportArtifactProblem(statErr); code != "" {
+			result["error"] = code
+			result["detail"] = "the engine exited without writing the requested export target: " + filepath.ToSlash(outputAbs)
 		}
 	}
 	return finishEngineResult(result, run)
+}
+
+// exportArtifactProblem names the failure for a clean export exit whose target is
+// absent. Godot takes an output file for ordinary binary, pack, patch and
+// archive exports (some plugin-driven targets write a directory), so existence
+// decides here and the target type is reported as output_is_dir instead of being
+// assumed from the export kind.
+func exportArtifactProblem(statErr error) string {
+	if statErr != nil {
+		return "no_artifact_produced"
+	}
+	return ""
 }
 
 // exportDirectoryProblem reports why the engine could not write into dir,

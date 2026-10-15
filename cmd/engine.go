@@ -152,11 +152,14 @@ var engineGuardFactory = func(pid int, process *os.Process) processGuarder {
 
 // engineRunResult is one bounded engine process run.
 type engineRunResult struct {
-	Started     bool
-	ExitCode    int
-	Output      string
-	Truncated   bool
-	TimedOut    bool
+	Started   bool
+	ExitCode  int
+	Output    string
+	Truncated bool
+	TimedOut  bool
+	// Abandoned reports that the process exit was never observed: termination
+	// could not stop it inside the bound, so nothing about its work is proven.
+	Abandoned   bool
 	Duration    time.Duration
 	RunErr      error
 	Termination string
@@ -229,59 +232,74 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 
 	var mu sync.Mutex
 	finished := false
-	outlived := false
 	termination := ""
 	stopped := make(chan struct{})
 	cleanupDone := make(chan struct{})
 	go func() {
+		// The cleanup worker waits for cancellation and then terminates. The mutex
+		// is not held across terminate(), so a blocking native call cannot also
+		// block the caller returning.
 		defer close(cleanupDone)
 		select {
 		case <-ctx.Done():
-			mu.Lock()
-			defer mu.Unlock()
-			if finished {
-				return
-			}
-			termination = guard.terminate()
 		case <-stopped:
+			return
 		}
+		mu.Lock()
+		alreadyFinished := finished
+		mu.Unlock()
+		if alreadyFinished {
+			return
+		}
+		failure := guard.terminate()
+		mu.Lock()
+		termination = failure
+		mu.Unlock()
 	}()
 
-	waitErr := func() error {
-		// A termination that cannot stop the engine must not block the caller:
-		// the wait is bounded like the refusal path, and an engine that outlives
-		// the bound is reported as incomplete cleanup rather than hanging Hera.
-		waited := make(chan error, 1)
-		go func() { waited <- command.Wait() }()
+	// A healthy run is never cut short: the caller waits for the process to exit on
+	// its own. The bound applies only after the command context is cancelled and
+	// termination is under way, so a kill that cannot stop the engine still cannot
+	// hang Hera.
+	waited := make(chan error, 1)
+	go func() { waited <- command.Wait() }()
+	var waitErr error
+	exitObserved := false
+	select {
+	case waitErr = <-waited:
+		exitObserved = true
+	case <-ctx.Done():
 		select {
-		case err := <-waited:
-			return err
+		case waitErr = <-waited:
+			exitObserved = true
 		case <-time.After(engineWaitDelay):
-			outlived = true
-			return nil
 		}
-	}()
+	}
 	mu.Lock()
 	finished = true
 	mu.Unlock()
 	close(stopped)
+	terminationObserved := false
 	select {
 	case <-cleanupDone:
+		terminationObserved = true
 	case <-time.After(engineWaitDelay):
-		outlived = true
 	}
 	mu.Lock()
-	if outlived {
-		termination = strings.TrimSpace(termination + "; the started process outlived the bounded wait")
+	if !exitObserved {
+		termination = strings.TrimSpace(termination + "; the started process outlived termination")
+	} else if !terminationObserved {
+		termination = strings.TrimSpace(termination + "; termination did not report back")
 	}
 	finalTermination := termination
 	mu.Unlock()
 
-	if !outlived && command.ProcessState != nil {
+	if exitObserved && command.ProcessState != nil {
 		// ProcessState belongs to Wait; reading it while Wait runs would race.
 		result.ExitCode = command.ProcessState.ExitCode()
 	}
 	result.TimedOut = ctx.Err() != nil
+	result.Abandoned = !exitObserved
 	result.RunErr = waitErr
 	text, truncated := output.snapshot()
 	result.Output = strings.TrimSpace(text)
@@ -439,6 +457,9 @@ func runResultFields(run engineRunResult) map[string]any {
 		// output may be incomplete.
 		fields["output_incomplete"] = true
 	}
+	if run.Abandoned {
+		fields["abandoned"] = true
+	}
 	return fields
 }
 
@@ -453,6 +474,9 @@ func mergeResult(result map[string]any, run engineRunResult) map[string]any {
 // runFailureCode classifies an engine run that must not be reported as success.
 func runFailureCode(run engineRunResult) string {
 	switch {
+	case run.Abandoned:
+		// The exit status was never observed, so no work can be claimed.
+		return "engine_abandoned"
 	case run.TimedOut:
 		return "engine_timeout"
 	case errors.Is(run.RunErr, exec.ErrWaitDelay):
