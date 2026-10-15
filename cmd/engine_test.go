@@ -258,6 +258,56 @@ func TestMovieVerificationClassification(t *testing.T) {
 	}
 }
 
+func TestXmlVerificationTracksArtifactsIndividually(t *testing.T) {
+	dir := t.TempDir()
+	write := func(rel, body string) string {
+		t.Helper()
+		path := filepath.Join(dir, rel)
+		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		return path
+	}
+	write("A.xml", "<a/>")
+	write("notes.txt", "unrelated")
+	before, err := xmlFileStamps(dir, maxDocsScanDepth)
+	if err != nil || len(before) != 1 {
+		t.Fatalf("stamps=%v err=%v", before, err)
+	}
+	// An unrelated change must not make stale XML look fresh.
+	write("notes.txt", "unrelated and longer")
+	after, err := xmlFileStamps(dir, maxDocsScanDepth)
+	if err != nil || anyFileChanged(before, after) {
+		t.Fatal("an unrelated file change must not satisfy XML verification")
+	}
+	// A grown XML artifact counts as this run's output.
+	write("A.xml", "<aaaaaaaa/>")
+	after, err = xmlFileStamps(dir, maxDocsScanDepth)
+	if err != nil || !anyFileChanged(before, after) {
+		t.Fatal("a changed XML artifact must satisfy XML verification")
+	}
+	// A new XML file counts too.
+	write("B.xml", "<b/>")
+	if count, err := countXMLFilesFollowingLinks(dir, maxDocsScanDepth); err != nil || count != 2 {
+		t.Fatalf("count=%d err=%v", count, err)
+	}
+	// Counting and verification must see the same files through a linked directory.
+	linked := filepath.Join(dir, "linked")
+	if err := os.Mkdir(linked, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(linked, "C.xml"), []byte("<c/>"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	stamps, err := xmlFileStamps(dir, maxDocsScanDepth)
+	if err != nil || len(stamps) != 3 {
+		t.Fatalf("nested XML must be stamped: %d err=%v", len(stamps), err)
+	}
+	if _, err := countXMLFilesFollowingLinks(dir, 0); err == nil {
+		t.Fatal("an over-depth destination must fail the scan rather than under-count")
+	}
+}
+
 func TestExportArtifactProblem(t *testing.T) {
 	dir := t.TempDir()
 	file := filepath.Join(dir, "game.exe")
