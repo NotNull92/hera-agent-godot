@@ -71,6 +71,24 @@ These take the engine from `--engine <path>`, `HERA_GODOT_ENGINE`, or
 `GODOT_BIN`; nothing here needs a heartbeat. `--timeout <ms>` bounds the engine
 process too, and its stdout/stderr is never parsed for status (it is localized).
 
+Debug sessions (DAP client; you start the editor and game):
+
+```
+# editor:  godot --headless --path . --editor --debug-server tcp://127.0.0.1:6007 --dap-port 6006
+# game:    godot --path . --remote-debug tcp://127.0.0.1:6007
+hera-godot debug attach --project . --dap-port 6006 --break res://main.gd:12
+hera-godot debug stack | variables | evaluate counter
+hera-godot debug continue | next | step-in | step-out | detach
+```
+
+A stop reports `source.sha256` (`checksums_source: adapter_reported`) for the
+script revision the adapter bound; the checksums Hera sends are local disk
+hashes, and neither proves which revision the running game loaded. `stack` never
+resumes; `variables`/`evaluate` resume a running debuggee to its next breakpoint
+first, because the adapter arms breakpoints on resume. A session record is an
+endpoint recipe, not proof that the original editor, game or paused state still
+exists.
+
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
 only paths for `scene tree` / `node find` / `game ui tree`), `--instance <pid>`
 (explicitly target a pid shown by `status`), `--timeout <ms>` (per-request HTTP

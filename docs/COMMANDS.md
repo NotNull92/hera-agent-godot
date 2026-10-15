@@ -275,6 +275,11 @@ mutation a new ID merely to force it to run.
 | `perf sample [--headless] [--top N]` | engine | ☐ | Run the engine with `--benchmark-file` and report the costliest phases. Godot 4.7.2 ignores `--quit-after` while benchmark flags are set, so `--timeout` (default 30 s) stops the run and `bounded_by` says whether the engine exited or the timeout ended it. Exit `0` means the benchmark JSON was read, not that the game run succeeded (`engine_error` carries a non-timeout engine failure). |
 | `docs dump --out <dir> [--format xml\|json] [--scripts] [--force]` | engine | ☐ | Write documentation with the engine's doctool: engine class-reference XML, `extension_api.json` including docs, or the project's own GDScript reference (`--scripts`). `--out` is required and is created when missing. The destination is resolved through links before the guards run, and scanning follows linked directories (bounded depth; an incomplete scan refuses as `output_scan_failed`), because Godot regenerates XML in place and **erases existing XML documentation** in its documentation directories: existing `*.xml` is refused as `output_not_empty`, an unscannable destination as `output_scan_failed`, and an existing `extension_api.json` as `output_exists` — each unless `--force`. JSON mode fails as `json_artifact_missing` when no usable file was produced and as `json_artifact_stale` when the file was not replaced by this run; XML mode reports `xml_files` and fails as `docs_output_empty` when no XML was generated. |
 | `classdb dump --out <dir>` | engine | ☐ | Dump the engine ClassDB to JSON. The engine always writes into `user://`, so Hera runs it with an isolated user directory and publishes `class_db_api.json` (`class_db_api_editor.json` adds editor-only classes) into `--out`. Generation and publication are reported separately: `files[]` carries `ok`/`error` per file, `failed_copies` counts failures, and any failed copy is a command failure (`class_db_copy_failed`) instead of a false `class_db_json_missing`; a nonzero engine exit still fails the command. Destinations are replaced through a temporary file, never truncated first. |
+| `debug attach [--break res://f.gd:N ...] [--dap-port N] [--wait-ms N] [--project DIR]` | dap | ☐ | Attach to a **running** editor debug server (the editor must be started with `--debug-server` and `--dap-port`; the game with `--remote-debug`, see below). Records a session, sends each breakpoint with MD5/SHA256 checksums, reports what the adapter verified (`breakpoint_results[].verified`), and waits for the next stop: `stopped.frame`/`source.sha256` or `running:true`. Hera never starts or stops the editor or the game. |
+| `debug session [--session ID]` | dap | ☐ | Show the recorded session (host, port, project, breakpoints, `attached_at`). `--session` defaults to the most recent attach. |
+| `debug stack` / `debug variables [--frame N]` / `debug evaluate <expr> [--frame N]` | dap | ☐ | `stack` is a pure observation: it reports the current stop's frame or `running:true`, and never resumes. `variables` and `evaluate` need a paused program, so a running debuggee is resumed through DAP — the adapter arms breakpoints on resume — and the command waits for the next stop before answering; that side effect is documented in the debug section. `variables` lists locals and members (capped, with `variables_truncated`) as `{scope,name,value}`. Expressions that start with `-` are passed after `--`. |
+| `debug continue \| next \| step-in \| step-out [--wait-ms N]` | dap | ☐ | Resume or step, then report the next stop (`stopped.frame`/`source.sha256`) or `running:true`. `step-in`/`step-out` map to DAP `stepIn`/`stepOut`. |
+| `debug detach [--session ID]` | dap | ☐ | Disconnect and drop the session record. The editor and game keep running. |
 
 > **Note (`run`):** use `project set-main-scene <res://scene.tscn>` when changing
 > the main scene from Hera. Newly added scenes can still require a filesystem
@@ -529,6 +534,54 @@ Verified constraints of Godot 4.7.2 that shape these commands (see
 | `--script` hangs on non-`MainLoop` scripts instead of erroring | `script run` pre-flights the script's base type (`not_a_harness`) |
 | `--doctool` needs an existing directory; `--gdscript-docs` needs a project-relative path | `docs dump` creates `--out` and passes `res://` for `--scripts` |
 | Movie Maker sizes the recording from the project viewport | PNG sequences report the observed `frame_size` instead of echoing `--resolution` |
+
+## Debug sessions (GDScript DAP)
+
+`debug` attaches to a running editor's debug server; it is a DAP client, not a
+launcher. Start the two ends yourself (or from a script):
+
+```
+godot --headless --path <project> --editor --debug-server tcp://127.0.0.1:6007 --dap-port 6006
+godot --path <project> --remote-debug tcp://127.0.0.1:6007      # the game, windowed
+hera-godot debug attach --project <project> --dap-port 6006 --break res://main.gd:12
+```
+
+Verified behavior behind these commands (Godot 4.7.2, see
+[GODOT_EDITOR_ANALYSIS.md](./GODOT_EDITOR_ANALYSIS.md) §2):
+
+- **`attach` works, `launch` does not.** The adapter answered `initialize`,
+  `attach`, `setBreakpoints` and `configurationDone`, and a real breakpoint then
+  stopped the program with its source checksums; a `launch` request produced no
+  response in headless or windowed editors.
+- **The adapter arms breakpoints on resume.** A stop after `setBreakpoints`
+  appears once the program continues through DAP, so attach observes the current
+  state first (`already_paused` or `running`), `stack` never resumes, and only
+  `variables`/`evaluate` resume a running debuggee to its next stop because they
+  cannot read a running program. Every stop carries `attribution: "unproven: …"`:
+  the quiet window before an action and the adapter's own resume event reduce,
+  but do not prove, that a stop belongs to this request. A resume the adapter
+  never confirms is a failure, not a result. Reconciliation uses a floor of
+  20 ms, so `--wait-ms` values below that still reconcile before the action.
+- **Checksums have provenance.** `setBreakpoints` carries the script's MD5 and
+  SHA256 **as local disk hashes** (`checksums_source: local_disk`), and a stop's
+  `source.sha256` is **adapter-reported** (`checksums_source:
+  adapter_reported`, `sha256_available` says whether it arrived). Neither proves
+  which revision the running game loaded: editing the file after launch can make
+  disk and executing code differ, and Hera performs no revision comparison.
+- **Adapter verdicts are checked.** A response with `success:false`, a response
+  addressed to another command, a rejected adapter message or a partial frame all
+  fail the command instead of being reported as a result.
+- **Sessions are endpoint recipes.** Each command reconnects to the recorded
+  host/port, re-attaches and re-applies the recorded breakpoints
+  (`~/.hera-agent-godot/debug/<id>.json`, `latest` points at the newest). A session
+  record is not proof that the original editor, game or paused state still
+  exists: reconnecting addresses whatever now answers on that endpoint, and an
+  explicit `--host`/`--dap-port` override is reported through
+  `limits.host_override` / `limits.port_override`. Session ids are validated, a record that does
+  not describe itself correctly is refused, and the store never falls back to a
+  shared temporary directory.
+- **Hera owns no debuggee.** The editor and game are started and stopped by you;
+  `debug detach` only closes the connection.
 
 ## Editor log evidence
 

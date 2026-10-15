@@ -386,6 +386,23 @@ benchmark JSON decides success. Identity commands and pre-flight refusals are th
 remaining exception to the `engine` block shape: they carry either no `engine`
 block or one without a `version`.
 
+## Debug sessions (experimental)
+
+New in the unreleased v1.3 line. `debug` is a DAP client for a running editor
+debug server; it does not start or stop the editor or the game.
+
+| Command | Tier | Notes |
+|---------|------|-------|
+| `debug attach` | experimental | `session_id`, `host`, `port`, `project`, `breakpoints[]`, `breakpoint_results[]{path,line,verified,unavailable,checksums_source,checksums_available}` (with `unverified_breakpoints[]` when the adapter could not bind one), `limits{host_override,port_override,identity_check}`, and either `stopped{frame,reason,observed}` or `running:true`. `observed` is `already_paused` or `after_arming`. Exit `1` when the endpoint is unreachable, `initialize`/`attach` is rejected, observation fails, or the session record cannot be persisted (`session_store_failed`). |
+| `debug session` | experimental | The recorded attach state: `session_id`, `host`, `port`, `project`, `breakpoints[]`, `attached_at`. Unknown or missing sessions fail with exit `1`. |
+| `debug stack` / `debug variables` / `debug evaluate` | experimental | `stack`: `frames[]{id,name,line,source{name,path,md5,sha256,sha256_available,checksums_source}}` or `frames:[]`+`running:true`; it never resumes. `variables`: `variables[]{scope,name,value}` (capped at 50, with `variables_truncated`) — a running debuggee is resumed to its next stop first, because the adapter arms breakpoints on resume; one retry is allowed only when the adapter rejected a `variables`/`scopes` read and the first attempt's paused state was certain (no resume, or a confirmed resume), never after a transport failure or an unconfirmed resume. `evaluate`: `expression`+`result` with the same resume behavior, and expressions starting with `-` are passed after `--`. A command that cannot observe a usable stop fails with `not_paused` or `dap_request_failed` (exit 1) instead of claiming `running`. |
+| `debug continue \| next \| step-in \| step-out` | experimental | Same `stopped{frame,frame_count,reason,resume_confirmed,attribution}` shape as attach, or `running:true` with `resume_confirmed:true`. Before acting, the connection is drained to a quiet window (idle window derived from `--wait-ms`, absolute budget: steady output fails the command instead of hanging) and stops observed earlier are discarded. That quiet window **does not prove** attribution, so a `stopped` event is only accepted after the adapter's own `continued`/`resumed` event and every stop carries `attribution: "unproven: …"`; a resume the adapter never confirms is a failure, not a success. |
+| `debug detach` | experimental | `detached:true` and the session record is removed; the editor and game keep running. |
+
+Session records live under `~/.hera-agent-godot/debug/`, are plain JSON, and are
+not a stable integration point: build on the CLI, not on the files. Frame ids in
+DAP responses are only valid for the current stop.
+
 ## Known gaps (tracked in ROADMAP Phase 7)
 
 - Detailed field-level schemas (types, optionality) for every subcommand are
