@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -408,6 +409,30 @@ func TestContainerVerification(t *testing.T) {
 	}
 	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false); code != "no_artifact_produced" {
 		t.Fatalf("a missing container must fail: %q", code)
+	}
+}
+
+func TestClassifySequence(t *testing.T) {
+	beforeErr := os.ErrPermission
+	// A destination that could not be observed before the run must still fail when
+	// the recording is missing: freshness is unknown, absence is not.
+	if verdict := classifySequence(0, 0, nil, beforeErr); verdict.ErrorCode != "no_frame_produced" || verdict.Inconclusive {
+		t.Fatalf("missing frames must fail: %+v", verdict)
+	}
+	if verdict := classifySequence(0, 0, errors.New("list failed"), beforeErr); verdict.ErrorCode != "sequence_scan_failed" {
+		t.Fatalf("an unlistable sequence must fail: %+v", verdict)
+	}
+	// With frames present, an unobserved past withholds the comparison fields.
+	verdict := classifySequence(5, 5, nil, beforeErr)
+	if verdict.ErrorCode != "" || !verdict.Inconclusive || verdict.ClaimCounts {
+		t.Fatalf("an unobservable past must be inconclusive without counts: %+v", verdict)
+	}
+	// With an observable past the normal classification applies.
+	if verdict := classifySequence(0, 3, nil, nil); verdict.ErrorCode != "" || !verdict.Inconclusive || !verdict.ClaimCounts {
+		t.Fatalf("unchanged frames must be inconclusive with counts: %+v", verdict)
+	}
+	if verdict := classifySequence(3, 3, nil, nil); verdict.ErrorCode != "" || verdict.Inconclusive {
+		t.Fatalf("a full rewrite needs no remark: %+v", verdict)
 	}
 }
 

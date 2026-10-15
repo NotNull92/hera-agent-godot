@@ -519,8 +519,12 @@ in CI or on a machine where no editor is open. They share one contract:
   `docs dump`). `project export` verifies existence only and therefore reports no
   verification field; `perf sample` decides on its machine-readable artifact. A
   run's own output is claimed only as far as the observation shows
-  (`frames_written` counts frames whose metadata changed), so a same-metadata
-  rewrite is never claimed as this run's work and never failed as stale.
+  (`frames_written` counts frames whose metadata changed), so for the
+  metadata-compared destinations (PNG frames, containers, XML documentation) a
+  same-metadata rewrite is never claimed as this run's work and never failed as
+  stale; `docs dump --format json` still rejects an unreplaced
+  `extension_api.json` as `json_artifact_stale`, and a sequence that cannot be
+  listed still fails as `sequence_scan_failed`.
   `exit_code` is `-1` when no numeric exit status is available — a pre-launch
   refusal, an abandoned process, or a process reaped after a signal on Unix — so
   `-1` is never a successful exit. `project export` omits the raw log unless

@@ -167,37 +167,35 @@ func runCaptureMovie(params map[string]any) int {
 	if width, height, ok := firstFrameSize(output, before); ok {
 		result["frame_size"] = fmt.Sprintf("%dx%d", width, height)
 	}
-	switch {
-	case beforeErr != nil:
-		// Without a pre-run observation, authorship cannot be claimed.
-		result["frames_verification"] = "inconclusive"
-		result["frames_verification_detail"] = "the destination could not be observed before the run: " + beforeErr.Error()
-	case movieFramePatternMeasurable(output):
+	if movieFramePatternMeasurable(output) {
 		written, present, scanErr := movieFrameCounts(output, before)
-		if scanErr != nil {
-			// A sequence that cannot be listed cannot be verified either.
-			result["error"] = "sequence_scan_failed"
-			result["detail"] = "the frame sequence could not be listed: " + scanErr.Error()
-			break
+		verdict := classifySequence(written, present, scanErr, beforeErr)
+		if verdict.ErrorCode != "" {
+			result["error"] = verdict.ErrorCode
+			if verdict.Detail != "" {
+				result["detail"] = verdict.Detail
+			}
 		}
-		result["frames_written"], result["frames_present"] = written, present
-		code, inconclusive, note := movieVerification(written, present)
-		if code != "" {
-			result["error"] = code
+		result["frames_present"] = present
+		if verdict.ClaimCounts {
+			result["frames_written"] = written
+			if written < present {
+				// Frames whose metadata did not change may be older files or rewrites
+				// that this observation cannot tell apart.
+				result["frames_unchanged"] = present - written
+			}
 		}
-		if inconclusive {
+		if verdict.Inconclusive {
 			result["frames_verification"] = "inconclusive"
+			if verdict.Detail != "" {
+				result["frames_verification_detail"] = verdict.Detail
+			}
 		}
-		if written < present {
-			// Frames whose metadata did not change may be older files or rewrites
-			// that this observation cannot tell apart.
-			result["frames_unchanged"] = present - written
+		if verdict.Note != "" {
+			notes = append(notes, verdict.Note)
+			result["notes"] = notes
 		}
-		if note != "" {
-			notes = append(notes, note)
-		}
-		result["notes"] = notes
-	default:
+	} else {
 		after, afterSeen := statFileStamp(output)
 		code, inconclusive := containerVerification(containerBefore, containerSeen, after, afterSeen)
 		switch {
@@ -303,6 +301,35 @@ func containerVerification(before fileStamp, beforeSeen bool, after fileStamp, a
 		return "", true
 	}
 	return "", false
+}
+
+// sequenceVerdict is the PNG sequence verification verdict for one run.
+type sequenceVerdict struct {
+	ErrorCode    string
+	Detail       string
+	Inconclusive bool
+	// ClaimCounts reports whether frames_written/frames_unchanged may be claimed:
+	// that needs a pre-run observation to compare against.
+	ClaimCounts bool
+	Note        string
+}
+
+// classifySequence decides the sequence verdict. A sequence that cannot be listed
+// or holds no frame fails whatever the pre-run state was, so an unobservable
+// destination never hides a missing recording; only the comparison-derived fields
+// are withheld when the pre-run state is unknown.
+func classifySequence(written, present int, scanErr, beforeErr error) sequenceVerdict {
+	switch {
+	case scanErr != nil:
+		return sequenceVerdict{ErrorCode: "sequence_scan_failed", Detail: "the frame sequence could not be listed: " + scanErr.Error()}
+	case present == 0:
+		return sequenceVerdict{ErrorCode: "no_frame_produced", Detail: "the engine exited without writing a frame", ClaimCounts: true}
+	case beforeErr != nil:
+		return sequenceVerdict{Inconclusive: true,
+			Detail: "the destination could not be observed before the run: " + beforeErr.Error()}
+	}
+	code, inconclusive, note := movieVerification(written, present)
+	return sequenceVerdict{ErrorCode: code, Inconclusive: inconclusive, ClaimCounts: true, Note: note}
 }
 
 // movieVerification classifies a frame-count comparison. Missing frames are a
