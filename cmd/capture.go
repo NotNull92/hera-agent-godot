@@ -120,6 +120,12 @@ func runCaptureMovie(params map[string]any) int {
 
 	output := fmt.Sprint(params["output"])
 	output = resolveOutputPath(project, output)
+	destination := output
+	stage, err := stageArtifacts(filepath.Dir(destination))
+	if err != nil {
+		return failStructured(map[string]any{"error": "artifact_stage_failed", "detail": err.Error()})
+	}
+	output = filepath.Join(stage, filepath.Base(destination))
 	engineArgs := []string{"--path", project}
 	if method := stringParam(params, "rendering_method"); method != "" {
 		engineArgs = append(engineArgs, "--rendering-method", method)
@@ -148,11 +154,11 @@ func runCaptureMovie(params map[string]any) int {
 		"Movie Maker requires a working display driver; --headless uses the dummy renderer and crashed in testing",
 		"the recording size follows the project viewport setting; --resolution only requests the window size",
 		"the recording is fixed-FPS, so frame N always maps to the same simulated time",
-		"frames_written counts frames whose size or modification time changed since before this run; frames whose metadata did not change are counted in frames_unchanged and may be older files or same-metadata rewrites",
+		"artifacts are generated in an isolated empty directory; counts describe this run, not older files left in the destination",
 	}
 	result := mergeResult(map[string]any{
 		"project_path":     filepath.ToSlash(project),
-		"output_path":      filepath.ToSlash(output),
+		"output_path":      filepath.ToSlash(destination),
 		"frames_requested": intValue(params, "frames", 60), "fps": intValue(params, "fps", 30),
 		"engine": engineIdentity(ref, version),
 		"notes":  notes,
@@ -224,7 +230,7 @@ func runCaptureMovie(params map[string]any) int {
 	if failure := runFailureCode(run); failure != "" && resultError(result) == "" {
 		result["error"] = failure
 	}
-	return finishEngineResult(result, run)
+	return finishArtifactPublication(result, run, stage, filepath.Dir(destination), true)
 }
 
 // resolveOutputPath maps a res:// output into the project directory so local

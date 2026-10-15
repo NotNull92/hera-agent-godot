@@ -263,53 +263,38 @@ func TestMovieVerificationClassification(t *testing.T) {
 	}
 }
 
-func TestXmlVerificationTracksArtifactsIndividually(t *testing.T) {
-	dir := t.TempDir()
-	write := func(rel, body string) string {
-		t.Helper()
-		path := filepath.Join(dir, rel)
-		if err := os.WriteFile(path, []byte(body), 0o644); err != nil {
-			t.Fatal(err)
-		}
-		return path
-	}
-	write("A.xml", "<a/>")
-	write("notes.txt", "unrelated")
-	before, err := xmlFileStamps(dir, maxDocsScanDepth)
-	if err != nil || len(before) != 1 {
-		t.Fatalf("stamps=%v err=%v", before, err)
-	}
-	// An unrelated change must not make stale XML look fresh.
-	write("notes.txt", "unrelated and longer")
-	after, err := xmlFileStamps(dir, maxDocsScanDepth)
-	if err != nil || anyFileChanged(before, after) {
-		t.Fatal("an unrelated file change must not satisfy XML verification")
-	}
-	// A grown XML artifact counts as this run's output.
-	write("A.xml", "<aaaaaaaa/>")
-	after, err = xmlFileStamps(dir, maxDocsScanDepth)
-	if err != nil || !anyFileChanged(before, after) {
-		t.Fatal("a changed XML artifact must satisfy XML verification")
-	}
-	// A new XML file counts too.
-	write("B.xml", "<b/>")
-	if count, err := countXMLFilesFollowingLinks(dir, maxDocsScanDepth); err != nil || count != 2 {
-		t.Fatalf("count=%d err=%v", count, err)
-	}
-	// Counting and verification must see the same files through a linked directory.
-	linked := filepath.Join(dir, "linked")
-	if err := os.Mkdir(linked, 0o755); err != nil {
+func TestXmlGenerationIgnoresDestinationArtifacts(t *testing.T) {
+	destination := t.TempDir()
+	if err := os.WriteFile(filepath.Join(destination, "A.xml"), []byte("old"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(linked, "C.xml"), []byte("<c/>"), 0o644); err != nil {
+	stage, err := stageArtifacts(destination)
+	if err != nil {
 		t.Fatal(err)
 	}
-	stamps, err := xmlFileStamps(dir, maxDocsScanDepth)
-	if err != nil || len(stamps) != 3 {
-		t.Fatalf("nested XML must be stamped: %d err=%v", len(stamps), err)
+	if err := os.WriteFile(filepath.Join(stage, "notes.txt"), []byte("unrelated"), 0o600); err != nil {
+		t.Fatal(err)
 	}
-	if _, err := countXMLFilesFollowingLinks(dir, 0); err == nil {
-		t.Fatal("an over-depth destination must fail the scan rather than under-count")
+	if n, err := countXMLFilesFollowingLinks(stage, maxDocsScanDepth); err != nil || n != 0 {
+		t.Fatalf("old XML or unrelated output accepted: %d %v", n, err)
+	}
+	if err := os.WriteFile(filepath.Join(stage, "A.xml"), []byte("old"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := countXMLFilesFollowingLinks(stage, maxDocsScanDepth); err != nil || n != 1 {
+		t.Fatalf("identical generated XML lost: %d %v", n, err)
+	}
+	if err := os.Mkdir(filepath.Join(stage, "nested"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(stage, "nested", "B.xml"), []byte("new"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := countXMLFilesFollowingLinks(stage, maxDocsScanDepth); err != nil || n != 2 {
+		t.Fatalf("nested generated XML lost: %d %v", n, err)
+	}
+	if _, err := countXMLFilesFollowingLinks(stage, 0); err == nil {
+		t.Fatal("over-depth scan must fail")
 	}
 }
 
@@ -1114,5 +1099,79 @@ func TestUnescapeGodotString(t *testing.T) {
 		if got := unescapeGodotString(input); got != want {
 			t.Fatalf("unescape(%q)=%q want=%q", input, got, want)
 		}
+	}
+}
+
+// lifecycleBlockingGuard injects native stalls without leaving helper processes alive.
+type lifecycleBlockingGuard struct {
+	delegate                 processGuarder
+	refusal                  bool
+	blockTerminate           bool
+	entered, release, closed chan struct{}
+}
+
+func (g *lifecycleBlockingGuard) resume() string {
+	if g.refusal {
+		return "injected ownership refusal"
+	}
+	return g.delegate.resume()
+}
+func (g *lifecycleBlockingGuard) terminate() string {
+	if g.blockTerminate {
+		close(g.entered)
+		<-g.release
+	}
+	return g.delegate.terminate()
+}
+func (g *lifecycleBlockingGuard) close() {
+	if !g.blockTerminate {
+		close(g.entered)
+		<-g.release
+	}
+	g.delegate.close()
+	close(g.closed)
+}
+func TestRunEngineBoundedNativeStalls(t *testing.T) {
+	for _, name := range []string{"refusal termination", "natural close", "cancel close"} {
+		t.Run(name, func(t *testing.T) {
+			guard := &lifecycleBlockingGuard{refusal: name == "refusal termination", blockTerminate: name == "refusal termination", entered: make(chan struct{}), release: make(chan struct{}), closed: make(chan struct{})}
+			oldFactory, oldDelay := engineGuardFactory, engineWaitDelay
+			engineWaitDelay = 100 * time.Millisecond
+			engineGuardFactory = func(pid int, process *os.Process) processGuarder {
+				guard.delegate = newProcessGuard(pid, process)
+				return guard
+			}
+			t.Cleanup(func() { engineGuardFactory, engineWaitDelay = oldFactory, oldDelay })
+			timeout, sleep := 5*time.Second, "80"
+			if name == "cancel close" {
+				timeout, sleep = 200*time.Millisecond, "6000"
+			}
+			if guard.refusal {
+				sleep = "6000"
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+			env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS="+sleep)
+			result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
+			// Always unblock the worker, including on an assertion failure.
+			close(guard.release)
+			select {
+			case <-guard.closed:
+			case <-time.After(3 * time.Second):
+				t.Fatal("worker did not finish cleanup")
+			}
+			if !result.CleanupPending || runFailureCode(result) == "" {
+				t.Fatalf("native stall hidden: %+v", result)
+			}
+			if result.Duration > 3*time.Second {
+				t.Fatalf("native call blocked caller: %s", result.Duration)
+			}
+			if name == "natural close" && (result.Abandoned || result.ExitCode != 0 || runFailureCode(result) != "engine_cleanup_incomplete") {
+				t.Fatalf("lost observed exit: %+v", result)
+			}
+			if guard.refusal && (result.ExitCode != -1 || result.RunErr == nil) {
+				t.Fatalf("lost refusal: %+v", result)
+			}
+		})
 	}
 }

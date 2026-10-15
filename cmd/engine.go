@@ -160,10 +160,11 @@ type engineRunResult struct {
 	// Abandoned reports that the wait for the process was not observed to finish
 	// (including its pipe drain) inside the bound after cancellation, so nothing
 	// about its work or its exit status is proven.
-	Abandoned   bool
-	Duration    time.Duration
-	RunErr      error
-	Termination string
+	Abandoned      bool
+	CleanupPending bool
+	Duration       time.Duration
+	RunErr         error
+	Termination    string
 }
 
 // runEngineBounded runs the engine with bounded output. Ownership of the
@@ -206,142 +207,70 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 	}
 	result.Started = true
 	guard := engineGuardFactory(command.Process.Pid, command.Process)
-	// Ownership closes the guard on every path below: the refusal branch closes it
-	// after terminating, and the normal path uses closeGuard, which hands the close
-	// to a termination worker that is still running instead of racing it.
-	// The child was launched suspended so ownership is established before it can
-	// create descendants; resume it now. A child that could not be owned is never
-	// allowed to run, and the failure path is bounded so a failed kill cannot
-	// block the caller.
-	if failure := guard.resume(); failure != "" {
-		termination := guard.terminate()
-		guard.close()
-		waited := make(chan struct{})
-		go func() { _ = command.Wait(); close(waited) }()
-		select {
-		case <-waited:
-		case <-time.After(engineWaitDelay):
-			termination = strings.TrimSpace(termination + "; the started process did not exit after termination")
-		}
-		message := "engine launch failed: " + failure
-		if termination != "" {
-			message += " (" + termination + ")"
-		}
-		result.RunErr = errors.New(message)
-		result.Termination = termination
-		result.Duration = time.Since(started)
-		return result
-	}
-
-	var mu sync.Mutex
-	finished := false
-	terminating := false
-	guardClosed := false
-	workerOwnsClose := false
-	termination := ""
+	// One worker owns termination and close, including refusal. The caller never
+	// touches the guard again, even if a native call outlives its wait bound.
+	failure := guard.resume()
 	stopped := make(chan struct{})
-	cleanupDone := make(chan struct{})
-
-	// closeGuard closes the guard exactly once, and never while the termination
-	// worker is using it: ownership moves to that worker, which closes it when it
-	// finishes. This keeps a timed-out caller from closing a handle the worker is
-	// still passing to a native call.
-	closeGuard := func() {
-		mu.Lock()
-		if guardClosed {
-			mu.Unlock()
-			return
-		}
-		if terminating {
-			workerOwnsClose = true
-			mu.Unlock()
-			return
-		}
-		guardClosed = true
-		mu.Unlock()
-		guard.close()
-	}
-	defer closeGuard()
-
+	cleanup := make(chan string, 1)
 	go func() {
-		defer close(cleanupDone)
-		select {
-		case <-ctx.Done():
-		case <-stopped:
-			return
+		termination := ""
+		if failure != "" {
+			termination = guard.terminate()
+		} else {
+			select {
+			case <-ctx.Done():
+				termination = guard.terminate()
+			case <-stopped:
+			}
 		}
-		mu.Lock()
-		if finished {
-			mu.Unlock()
-			return
+		if failure == "" {
+			<-stopped
 		}
-		terminating = true
-		mu.Unlock()
-
-		failure := guard.terminate()
-
-		mu.Lock()
-		termination = failure
-		terminating = false
-		ownsClose := workerOwnsClose
-		if ownsClose {
-			guardClosed = true
-		}
-		mu.Unlock()
-		if ownsClose {
-			guard.close()
-		}
+		guard.close()
+		cleanup <- termination
 	}()
 
-	// A healthy run is never cut short: the caller waits for the process to exit on
-	// its own. The bound applies only after the command context is cancelled and
-	// termination is under way, so a kill that cannot stop the engine still cannot
-	// hang Hera.
 	waited := make(chan error, 1)
 	go func() { waited <- command.Wait() }()
 	var waitErr error
 	exitObserved := false
-	select {
-	case waitErr = <-waited:
-		exitObserved = true
-	case <-ctx.Done():
+	if failure == "" {
+		select {
+		case waitErr = <-waited:
+			exitObserved = true
+		case <-ctx.Done():
+		}
+	}
+	if !exitObserved {
 		select {
 		case waitErr = <-waited:
 			exitObserved = true
 		case <-time.After(engineWaitDelay):
 		}
 	}
-	mu.Lock()
-	finished = true
-	mu.Unlock()
 	close(stopped)
-	terminationObserved := false
 	select {
-	case <-cleanupDone:
-		terminationObserved = true
+	case result.Termination = <-cleanup:
 	case <-time.After(engineWaitDelay):
+		result.CleanupPending = true
+		result.Termination = "termination or guard close did not report back within the wait bound"
 	}
-	mu.Lock()
 	if !exitObserved {
-		termination = strings.TrimSpace(termination + "; the process exit was not observed within the wait bound")
-	} else if !terminationObserved {
-		termination = strings.TrimSpace(termination + "; termination did not report back")
+		result.Termination = strings.TrimSpace(result.Termination + "; the process exit was not observed within the wait bound")
 	}
-	finalTermination := termination
-	mu.Unlock()
-
-	if exitObserved && command.ProcessState != nil {
-		// ProcessState belongs to Wait; reading it while Wait runs would race.
+	if exitObserved && failure == "" && command.ProcessState != nil {
 		result.ExitCode = command.ProcessState.ExitCode()
 	}
 	result.TimedOut = ctx.Err() != nil
 	result.Abandoned = !exitObserved
 	result.RunErr = waitErr
+	if failure != "" {
+		result.RunErr = errors.New("engine launch failed: " + failure)
+	}
 	text, truncated := output.snapshot()
 	result.Output = strings.TrimSpace(text)
 	result.Truncated = truncated
 	result.Duration = time.Since(started)
-	result.Termination = finalTermination
 	return result
 }
 
@@ -380,8 +309,8 @@ func parseEngineVersion(raw string) engineVersion {
 // readEngineVersion runs --version and parses the first non-empty line.
 func readEngineVersion(ctx context.Context, executable string) (engineVersion, error) {
 	run := runEngineBounded(ctx, executable, []string{"--version"}, "", nil, 4096)
-	if run.ExitCode != 0 {
-		return engineVersion{}, fmt.Errorf("--version exited %d: %s", run.ExitCode, firstLine(run.Output))
+	if failure := runFailureCode(run); failure != "" {
+		return engineVersion{}, fmt.Errorf("--version failed (%s), exit %d: %s", failure, run.ExitCode, firstLine(run.Output))
 	}
 	for _, line := range strings.Split(run.Output, "\n") {
 		line = strings.TrimSpace(line)
@@ -420,7 +349,7 @@ type engineHelp struct {
 
 func readEngineHelp(ctx context.Context, executable string) engineHelp {
 	run := runEngineBounded(ctx, executable, []string{"--help"}, "", nil, 256*1024)
-	if run.ExitCode != 0 || !run.Started || run.TimedOut || run.Output == "" || run.Truncated ||
+	if runFailed(run) || !run.Started || run.Output == "" || run.Truncated ||
 		errors.Is(run.RunErr, exec.ErrWaitDelay) {
 		reason := "engine --help did not complete"
 		switch {
@@ -493,6 +422,9 @@ func runResultFields(run engineRunResult) map[string]any {
 		// output may be incomplete.
 		fields["output_incomplete"] = true
 	}
+	if run.CleanupPending {
+		fields["cleanup_pending"] = true
+	}
 	if run.Abandoned {
 		fields["abandoned"] = true
 	}
@@ -515,6 +447,8 @@ func runFailureCode(run engineRunResult) string {
 		return "engine_abandoned"
 	case run.TimedOut:
 		return "engine_timeout"
+	case run.CleanupPending:
+		return "engine_cleanup_incomplete"
 	case errors.Is(run.RunErr, exec.ErrWaitDelay):
 		return "output_incomplete"
 	case run.ExitCode > 0:

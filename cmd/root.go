@@ -220,8 +220,9 @@ commands:
   capture    movie <out.avi|.png|.ogv> [--frames N] [--fps N] [--resolution WxH]  deterministic frames
   perf       sample [--headless] [--top N]  engine benchmark phases as JSON
   docs       dump --out <dir> [--format xml|json] [--scripts] [--force]  engine or project API reference
-  debug      attach [--break res://f.gd:N ...] [--dap-port N] [--wait-ms N]  attach to a running editor debug server
+  debug      attach [--break res://f.gd:N ...] [--dap-port N] [--wait-ms N] [--thread ID]  attach to a running editor debug server
              session | stack | variables | evaluate <expr> | continue | next | step-in | step-out | detach
+             --thread ID selects a discovered thread for stack/variables/evaluate/resume/step
   instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
   eval       evaluate a GDScript expression in the editor
   guidance   ui | game-feel

@@ -240,6 +240,7 @@ func fileChecksums(path string) ([]map[string]any, error) {
 
 // stopState is what a command learned about the debuggee.
 type stopState struct {
+	ThreadID        int
 	Stopped         bool
 	Frames          []map[string]any
 	Reason          string
@@ -255,14 +256,90 @@ func (s stopState) topFrame() map[string]any {
 	return s.Frames[0]
 }
 
+const maxDebugThreadID = 1<<31 - 1
+
+func debugThreadID(raw any) (int, error) {
+	value, ok := raw.(float64)
+	if !ok || value <= 0 || value > maxDebugThreadID || value != math.Trunc(value) {
+		return 0, fmt.Errorf("the adapter returned an invalid thread id")
+	}
+	return int(value), nil
+}
+
+func debugThread(client *dap.Client, wait time.Duration, requested ...int) (int, error) {
+	response, err := client.Request("threads", nil, wait)
+	if err != nil {
+		return 0, err
+	}
+	raw, ok := response.Map("body")["threads"].([]any)
+	if !ok || len(raw) == 0 {
+		return 0, fmt.Errorf("the adapter reported no usable threads")
+	}
+	ids := make(map[int]bool)
+	for i, entry := range raw {
+		object, ok := entry.(map[string]any)
+		if !ok {
+			return 0, fmt.Errorf("invalid thread entry %d", i)
+		}
+		id, err := debugThreadID(object["id"])
+		if err != nil {
+			return 0, err
+		}
+		if ids[id] {
+			return 0, fmt.Errorf("duplicate thread id")
+		}
+		ids[id] = true
+	}
+	id := 0
+	if len(requested) > 0 {
+		id = requested[0]
+	}
+	if id == 0 {
+		for _, event := range client.DrainEvents("stopped") {
+			raw, present := event.Map("body")["threadId"]
+			if !present {
+				continue
+			}
+			candidate, err := debugThreadID(raw)
+			if err != nil {
+				return 0, err
+			}
+			if ids[candidate] {
+				id = candidate
+			}
+		}
+	}
+	if id != 0 {
+		if !ids[id] {
+			return 0, fmt.Errorf("thread %d is not reported by the adapter", id)
+		}
+		return id, nil
+	}
+	if len(ids) == 1 {
+		for id := range ids {
+			return id, nil
+		}
+	}
+	available := make([]int, 0, len(ids))
+	for id := range ids {
+		available = append(available, id)
+	}
+	sort.Ints(available)
+	return 0, fmt.Errorf("multiple threads %v: select --thread ID", available)
+}
+
 // observeStop returns the current stop evidence without resuming anything. An
 // empty frame list only counts as running when the adapter actually reported an
 // empty list and no terminal event is pending.
-func observeStop(client *dap.Client, wait time.Duration) (stopState, error) {
+func observeStop(client *dap.Client, wait time.Duration, thread ...int) (stopState, error) {
 	if events := client.DrainEvents("terminated", "exited"); len(events) > 0 {
 		return stopState{}, fmt.Errorf("the debuggee already terminated (%s)", events[0].String("event"))
 	}
-	response, err := client.Request("stackTrace", map[string]any{"threadId": 1}, wait)
+	id, err := debugThread(client, wait, thread...)
+	if err != nil {
+		return stopState{}, err
+	}
+	response, err := client.Request("stackTrace", map[string]any{"threadId": id}, wait)
 	if err != nil {
 		return stopState{}, err
 	}
@@ -282,7 +359,7 @@ func observeStop(client *dap.Client, wait time.Duration) (stopState, error) {
 		if events := client.DrainEvents("terminated", "exited"); len(events) > 0 {
 			return stopState{}, fmt.Errorf("the debuggee terminated while observing it (%s)", events[0].String("event"))
 		}
-		return stopState{Running: true}, nil
+		return stopState{Running: true, ThreadID: id}, nil
 	}
 	observed := make([]map[string]any, 0, len(frames))
 	for index, entry := range frames {
@@ -296,7 +373,7 @@ func observeStop(client *dap.Client, wait time.Duration) (stopState, error) {
 		}
 		observed = append(observed, frameSummary(frame))
 	}
-	return stopState{Stopped: true, Frames: observed}, nil
+	return stopState{Stopped: true, Frames: observed, ThreadID: id}, nil
 }
 
 // maxFrameID bounds a frame identifier: DAP ids are small integers, so a huge or
@@ -345,7 +422,11 @@ func frameSummary(frame dap.Message) map[string]any {
 // unread events from earlier configuration can be reported as this action's
 // result, and a resume the adapter never confirms is a failure rather than a
 // success or an inferred running state.
-func resumeAndObserve(client *dap.Client, command string, wait time.Duration) (stopState, error) {
+func resumeAndObserve(client *dap.Client, command string, wait time.Duration, thread ...int) (stopState, error) {
+	id, err := debugThread(client, wait, thread...)
+	if err != nil {
+		return stopState{}, err
+	}
 	// The idle window must fit inside the budget, so a small --wait-ms still runs.
 	idle := actionIdle
 	if budget := actionBudget(wait); idle > budget/4 {
@@ -359,7 +440,7 @@ func resumeAndObserve(client *dap.Client, command string, wait time.Duration) (s
 		return stopState{}, fmt.Errorf("the debuggee already terminated (%s)", terminal.String("event"))
 	}
 	client.DrainEvents("stopped", "continued", "resumed")
-	if _, err := client.Request(command, map[string]any{"threadId": 1}, wait); err != nil {
+	if _, err := client.Request(command, map[string]any{"threadId": id}, wait); err != nil {
 		return stopState{}, err
 	}
 	deadline := time.Now().Add(wait)
@@ -378,14 +459,25 @@ func resumeAndObserve(client *dap.Client, command string, wait time.Duration) (s
 		}
 		switch event.String("event") {
 		case "continued", "resumed":
-			confirmed = true
+			body := event.Map("body")
+			if body["allThreadsContinued"] != false || body.Int("threadId") == id {
+				confirmed = true
+			}
 		case "stopped":
 			if !confirmed {
 				// A stop without a resume is not this action's result.
 				return stopState{}, fmt.Errorf("the adapter reported a stop without confirming the resume, so the action's outcome is unknown")
 			}
 			state := stopState{Stopped: true, Reason: event.Map("body").String("reason"), ResumeConfirmed: true}
-			observed, frameErr := observeStop(client, wait)
+			stoppedThread := id
+			if raw, present := event.Map("body")["threadId"]; present {
+				var err error
+				stoppedThread, err = debugThreadID(raw)
+				if err != nil {
+					return stopState{}, err
+				}
+			}
+			observed, frameErr := observeStop(client, wait, stoppedThread)
 			if frameErr != nil {
 				return stopState{}, frameErr
 			}
@@ -393,14 +485,14 @@ func resumeAndObserve(client *dap.Client, command string, wait time.Duration) (s
 				// The adapter reported a stop but no frame: contradictory evidence.
 				return stopState{}, fmt.Errorf("the adapter reported a stop without any stack frame, so the stop is not usable")
 			}
-			state.Frames = observed.Frames
+			state.Frames, state.ThreadID = observed.Frames, observed.ThreadID
 			return state, nil
 		case "exited", "terminated":
 			return stopState{}, fmt.Errorf("the debuggee terminated during the action (%s)", event.String("event"))
 		}
 	}
 	if confirmed {
-		return stopState{Running: true, ResumeConfirmed: true}, nil
+		return stopState{Running: true, ResumeConfirmed: true, ThreadID: id}, nil
 	}
 	return stopState{}, fmt.Errorf("the adapter sent no resume evidence within %s, so the debuggee's state is unknown", wait)
 }
@@ -427,8 +519,8 @@ func actionBudget(wait time.Duration) time.Duration {
 // the paused state is certain: either no resume was needed, or the resume was
 // confirmed by the adapter, so a recovery attempt cannot repeat an uncertain
 // mutation.
-func pausedFrameFor(client *dap.Client, frameIndex int, wait time.Duration, allowResume bool) (int, bool, error) {
-	state, err := observeStop(client, wait)
+func pausedFrameFor(client *dap.Client, frameIndex int, wait time.Duration, allowResume bool, thread ...int) (int, bool, error) {
+	state, err := observeStop(client, wait, thread...)
 	if err != nil {
 		return 0, false, err
 	}
@@ -436,7 +528,7 @@ func pausedFrameFor(client *dap.Client, frameIndex int, wait time.Duration, allo
 		if !allowResume {
 			return 0, false, errDebuggeeRunning
 		}
-		state, err = resumeAndObserve(client, "continue", wait)
+		state, err = resumeAndObserve(client, "continue", wait, state.ThreadID)
 		if err != nil {
 			return 0, false, err
 		}
@@ -541,6 +633,17 @@ func parseDebugArgsWithExpression(args []string, allowBreakpoints bool, allowExp
 				return nil, fmt.Errorf("--wait-ms must be between 1 and %d", maxWaitMS)
 			}
 			params["wait_ms"], params["wait_ms_set"] = millis, true
+			i = next - 1
+		case isFlag(args[i], "--thread"):
+			value, next, err := takeFlagValue(args, i, "--thread")
+			if err != nil {
+				return nil, err
+			}
+			id, err := strconv.Atoi(value)
+			if err != nil || id <= 0 || id > maxDebugThreadID {
+				return nil, fmt.Errorf("--thread must be a positive thread id")
+			}
+			params["thread"], params["thread_set"] = id, true
 			i = next - 1
 		case isFlag(args[i], "--frame"):
 			value, next, err := takeFlagValue(args, i, "--frame")
@@ -660,7 +763,7 @@ func runDebug(args []string) int {
 			fmt.Fprintln(os.Stderr, "debug session: --frame is not used by session")
 			return 2
 		}
-		for _, unused := range []string{"host", "port", "wait_ms"} {
+		for _, unused := range []string{"host", "port", "wait_ms", "thread"} {
 			if argsChanged(params, unused) {
 				fmt.Fprintf(os.Stderr, "debug session: --%s is not used by session\n", strings.ReplaceAll(unused, "_", "-"))
 				return 2
@@ -767,20 +870,20 @@ func runDebugAttach(params map[string]any) int {
 			"an unverified breakpoint means the adapter could not bind it to executable code; check the line number")
 	}
 	// Observe before acting: an already-paused debuggee is reported as paused.
-	state, observeErr := observeStop(client, wait)
+	state, observeErr := observeStop(client, wait, intValue(params, "thread", 0))
 	switch {
 	case observeErr != nil:
 		return debugFail(result, "dap_observe_failed", observeErr.Error())
 	case state.Stopped:
-		result["stopped"] = map[string]any{"frame": state.topFrame(), "frame_count": len(state.Frames), "observed": "already_paused",
+		result["stopped"] = map[string]any{"thread_id": state.ThreadID, "frame": state.topFrame(), "frame_count": len(state.Frames), "observed": "already_paused",
 			"attribution": "not_applicable: the debuggee was paused before Hera asked for a resume"}
 	default:
-		stopState, resumeErr := resumeAndObserve(client, "continue", wait)
+		stopState, resumeErr := resumeAndObserve(client, "continue", wait, state.ThreadID)
 		switch {
 		case resumeErr != nil:
 			return debugFail(result, "dap_resume_failed", resumeErr.Error())
 		case stopState.Stopped:
-			result["stopped"] = map[string]any{"frame": stopState.topFrame(), "frame_count": len(stopState.Frames),
+			result["stopped"] = map[string]any{"thread_id": stopState.ThreadID, "frame": stopState.topFrame(), "frame_count": len(stopState.Frames),
 				"reason": stopState.Reason, "observed": "after_arming", "resume_confirmed": stopState.ResumeConfirmed,
 				"attribution": "unproven: the stop followed an observed resume event, but the adapter provides no causal request boundary"}
 		default:
@@ -836,6 +939,9 @@ func runDebugAction(params map[string]any) int {
 		fmt.Fprintf(os.Stderr, "debug %s: --frame is only used by variables and evaluate\n", action)
 		return 2
 	}
+	if action == "detach" && argsChanged(params, "thread") {
+		return debugFail(map[string]any{}, "invalid_argument", "--thread is not used by detach")
+	}
 	client, _, err := connectDebug(session, wait)
 	if err != nil {
 		return debugFail(map[string]any{"session_id": session.ID, "action": action, "source": "dap"},
@@ -853,10 +959,11 @@ func runDebugAction(params map[string]any) int {
 
 	switch action {
 	case "stack":
-		state, err := observeStop(client, wait)
+		state, err := observeStop(client, wait, intValue(params, "thread", 0))
 		if err != nil {
 			return debugFail(result, "dap_observe_failed", err.Error())
 		}
+		result["thread_id"] = state.ThreadID
 		if state.Running {
 			result["frames"] = []map[string]any{}
 			result["running"] = true
@@ -865,7 +972,7 @@ func runDebugAction(params map[string]any) int {
 		}
 		result["frames"] = state.Frames
 	case "variables":
-		values, truncated, err := readVariables(client, intValue(params, "frame", 0), wait)
+		values, truncated, err := readVariables(client, intValue(params, "frame", 0), wait, intValue(params, "thread", 0))
 		if err != nil {
 			return debugActionFailure(result, "variables", err)
 		}
@@ -875,7 +982,7 @@ func runDebugAction(params map[string]any) int {
 		}
 	case "evaluate":
 		expression := fmt.Sprint(params["expression"])
-		frameID, _, err := pausedFrameFor(client, intValue(params, "frame", 0), wait, true)
+		frameID, _, err := pausedFrameFor(client, intValue(params, "frame", 0), wait, true, intValue(params, "thread", 0))
 		if err != nil {
 			return debugActionFailure(result, "evaluate", err)
 		}
@@ -886,12 +993,12 @@ func runDebugAction(params map[string]any) int {
 		result["expression"], result["result"] = expression, response.Map("body").String("result")
 	case "continue", "next", "step-in", "step-out":
 		command := map[string]string{"continue": "continue", "next": "next", "step-in": "stepIn", "step-out": "stepOut"}[action]
-		state, err := resumeAndObserve(client, command, wait)
+		state, err := resumeAndObserve(client, command, wait, intValue(params, "thread", 0))
 		if err != nil {
 			return debugActionFailure(result, action, err)
 		}
 		if state.Stopped {
-			result["stopped"] = map[string]any{"frame": state.topFrame(), "frame_count": len(state.Frames), "reason": state.Reason, "resume_confirmed": state.ResumeConfirmed,
+			result["stopped"] = map[string]any{"thread_id": state.ThreadID, "frame": state.topFrame(), "frame_count": len(state.Frames), "reason": state.Reason, "resume_confirmed": state.ResumeConfirmed,
 				"attribution": "unproven: the stop followed an observed resume event, but the adapter provides no causal request boundary"}
 		} else {
 			result["running"] = true
@@ -924,8 +1031,8 @@ func removeDebugSession(recordPath string) error {
 // resume the adapter confirmed). Transport failures, unconfirmed resumes and
 // protocol corruption are never retried, because a retry could repeat a mutation
 // whose outcome is unknown.
-func readVariables(client *dap.Client, frameIndex int, wait time.Duration) ([]map[string]any, bool, error) {
-	entries, truncated, certain, err := collectVariables(client, frameIndex, wait, true)
+func readVariables(client *dap.Client, frameIndex int, wait time.Duration, thread ...int) ([]map[string]any, bool, error) {
+	entries, truncated, certain, err := collectVariables(client, frameIndex, wait, true, thread...)
 	if err == nil {
 		return entries, truncated, nil
 	}
@@ -934,7 +1041,7 @@ func readVariables(client *dap.Client, frameIndex int, wait time.Duration) ([]ma
 	}
 	// Recovery must be read-only: no second implicit resume is allowed, so a
 	// target that resumed in the meantime reports its own failure (not_paused).
-	entries, truncated, _, retryErr := collectVariables(client, frameIndex, wait, false)
+	entries, truncated, _, retryErr := collectVariables(client, frameIndex, wait, false, thread...)
 	if retryErr != nil {
 		return nil, false, fmt.Errorf("recovery after %v failed: %w", err, retryErr)
 	}
@@ -952,8 +1059,8 @@ func isStaleReferenceRejection(err error) bool {
 }
 
 // collectVariables resolves the frame and reads every scope once.
-func collectVariables(client *dap.Client, frameIndex int, wait time.Duration, allowResume bool) ([]map[string]any, bool, bool, error) {
-	frameID, certain, err := pausedFrameFor(client, frameIndex, wait, allowResume)
+func collectVariables(client *dap.Client, frameIndex int, wait time.Duration, allowResume bool, thread ...int) ([]map[string]any, bool, bool, error) {
+	frameID, certain, err := pausedFrameFor(client, frameIndex, wait, allowResume, thread...)
 	if err != nil {
 		return nil, false, certain, err
 	}

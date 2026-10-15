@@ -153,6 +153,9 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 실행 시간을 제한하며, 엔진 stdout은 로컬라이즈되므로 상태 판정에 쓰지 않습니다.
 [엔진 기반 명령](docs/COMMANDS.md#engine-backed-commands-no-live-editor)을 참고하세요.
 
+캡처와 문서는 실행별 독립 디렉터리에서 생성·검증한 뒤 목적지에 게시합니다. 실패하면 `staging_dir`를 보존하며, `published:true`가 게시 완료를 뜻합니다. 디버그 명령은 스레드를 조회하며 선택이 모호하면 `--thread ID`를 사용합니다. 네이티브 종료·핸들 해제의 호출자 대기는 제한하고 미완료 정리를 보고합니다.
+
+
 `hera-godot status`는 `editor_session_id`와 Game Feel / C# 에디터 플래그를 반환합니다.
 `hera-godot status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
 `unsupported`, `unverified`)를 추가합니다. API 존재만으로 디버거 연결이나 SDK

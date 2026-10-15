@@ -19,9 +19,8 @@ const docsDumpTimeout = 300 * time.Second
 //
 // xml (default) writes the engine class reference, json writes a single
 // extension_api.json including documentation, and --scripts writes only the
-// project's own GDScript reference. Godot's doctool regenerates XML in place and
-// can erase existing XML documentation in its documentation directories, so a
-// non-empty destination requires --force.
+// project's own GDScript reference. Existing documentation requires --force to
+// publish matching files from this run's isolated output directory.
 func parseDocsDumpArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"format": "xml", "scripts": false, "force": false}
 	for i := 0; i < len(args); i++ {
@@ -75,9 +74,8 @@ func parseDocsDumpArgs(args []string) (map[string]any, error) {
 }
 
 // runDocsDump writes engine or project API documentation with the engine's
-// doctool. The output directory is created when missing because --doctool
-// requires an existing directory, and existing XML is protected because Godot's
-// regeneration step erases XML in its documentation directories.
+// doctool in an isolated directory, then publishes verified output. Existing
+// destination files are protected unless --force permits replacement.
 func runDocsDump(params map[string]any) int {
 	out := stringParam(params, "out")
 	outAbs, err := filepath.Abs(out)
@@ -121,7 +119,7 @@ func runDocsDump(params map[string]any) int {
 		case scanErr == nil && existing > 0 && !force:
 			return failStructured(map[string]any{"mode": mode, "output_dir": filepath.ToSlash(outAbs),
 				"error": "output_not_empty", "xml_files": existing,
-				"detail": "Godot regenerates XML in place and erases existing XML documentation in its documentation directories; pass --force to overwrite, or choose an empty directory"})
+				"detail": "XML documentation already exists; pass --force to replace matching generated files, or choose an empty directory"})
 		}
 	}
 	if err := os.MkdirAll(outAbs, 0o755); err != nil {
@@ -135,28 +133,32 @@ func runDocsDump(params map[string]any) int {
 	}
 	defer cancel()
 
+	scriptProject := ""
+	if params["scripts"] == true {
+		scriptProject, err = resolveProjectDir(stringParam(params, "project"))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "docs dump: %v\n", err)
+			return 1
+		}
+	}
 	engineArgs := []string{"--headless"}
-	workDir := outAbs
+	stage, err := stageArtifacts(outAbs)
+	if err != nil {
+		return failStructured(map[string]any{"error": "artifact_stage_failed", "detail": err.Error()})
+	}
+	workDir := stage
 	switch {
 	case format == "json":
 		engineArgs = append(engineArgs, "--dump-extension-api-with-docs")
 	case params["scripts"] == true:
 		mode = "scripts"
-		project, projectErr := resolveProjectDir(stringParam(params, "project"))
-		if projectErr != nil {
-			fmt.Fprintf(os.Stderr, "docs dump: %v\n", projectErr)
-			return 1
-		}
-		engineArgs = append(engineArgs, "--doctool", outAbs, "--no-docbase", "--gdscript-docs", "res://")
-		workDir = project
+		engineArgs = append(engineArgs, "--doctool", stage, "--no-docbase", "--gdscript-docs", "res://")
+		workDir = scriptProject
 	default:
-		engineArgs = append(engineArgs, "--doctool", outAbs)
+		engineArgs = append(engineArgs, "--doctool", stage)
 	}
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	// The XML artifacts are stamped before the run with the same traversal the
-	// verification uses, so an old file cannot satisfy this run's check.
-	xmlBefore, xmlBeforeErr := xmlFileStamps(outAbs, maxDocsScanDepth)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, workDir, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
@@ -165,36 +167,35 @@ func runDocsDump(params map[string]any) int {
 		"notes": []string{
 			"Godot requires the output directory to exist and the GDScript path to be project-relative",
 			"generated XML/JSON is written by the engine; Hera reports counts and bytes only",
-			"Godot regenerates XML in place and can erase existing XML documentation in the destination",
+			"generation uses an isolated empty directory; publication replaces matching files only and retains other destination files",
 		},
 		"source": "engine_process",
 	}, run)
 	switch {
 	case format == "json":
-		apiPath := filepath.Join(outAbs, "extension_api.json")
+		apiPath := filepath.Join(stage, "extension_api.json")
 		after := snapshotFile(apiPath)
-		result["output_file"] = filepath.ToSlash(apiPath)
+		result["output_file"] = filepath.ToSlash(filepath.Join(outAbs, "extension_api.json"))
 		switch {
 		case after.IsDir || !after.Exists || after.Bytes == 0:
 			result["error"] = "json_artifact_missing"
 			result["detail"] = "the engine exited without writing a usable extension_api.json"
-		case jsonBefore.Exists && !after.Mod.After(jsonBefore.Mod) && after.Bytes == jsonBefore.Bytes:
-			// An old file must not satisfy this run's verification.
-			result["error"] = "json_artifact_stale"
-			result["detail"] = "extension_api.json was not replaced by this run"
+
 		default:
 			result["output_bytes"] = after.Bytes
 		}
 	default:
-		xmlFiles, xmlErr := countXMLFilesFollowingLinks(outAbs, maxDocsScanDepth)
-		files, bytes, countErr := dirSize(outAbs)
+		xmlFiles, xmlErr := countXMLFilesFollowingLinks(stage, maxDocsScanDepth)
+		files, bytes, countErr := dirSize(stage)
 		if countErr == nil {
 			result["files"], result["bytes"] = files, bytes
 		}
 		if xmlErr != nil {
 			result["xml_scan_error"] = xmlErr.Error()
 		}
-		result["xml_files"] = xmlFiles
+		if xmlErr == nil {
+			result["xml_files"] = xmlFiles
+		}
 		switch {
 		case xmlErr != nil:
 			// A destination that cannot be scanned cannot be verified either.
@@ -203,31 +204,13 @@ func runDocsDump(params map[string]any) int {
 		case format == "xml" && xmlFiles == 0:
 			result["error"] = "docs_output_empty"
 			result["detail"] = "the engine produced no XML class reference"
-		case xmlBeforeErr != nil:
-			// Without a usable pre-run observation, freshness is unknowable.
-			result["xml_verification"] = "inconclusive"
-			result["xml_verification_detail"] = "the destination could not be observed before the run: " + xmlBeforeErr.Error()
-		default:
-			xmlAfter, afterErr := xmlFileStamps(outAbs, maxDocsScanDepth)
-			switch {
-			case afterErr != nil:
-				result["error"] = "docs_scan_failed"
-				result["detail"] = "the generated documentation could not be re-read: " + afterErr.Error()
-			case format == "xml" && !anyFileChanged(xmlBefore, xmlAfter):
-				// Unchanged metadata cannot distinguish a same-size rewrite inside one
-				// timestamp interval from no work at all, so neither is claimed.
-				result["xml_verification"] = "inconclusive"
-				result["xml_verification_detail"] = "no XML artifact changed size or modification time; the destination may have been rewritten with identical metadata"
-			}
 		}
+
 	}
 	if failure := runFailureCode(run); failure != "" && resultError(result) == "" {
 		result["error"] = failure
 	}
-	if resultError(result) != "" {
-		return failEngineResult(result)
-	}
-	return finishEngineResult(result, run)
+	return finishArtifactPublication(result, run, stage, outAbs, force)
 }
 
 // maxDocsScanDepth bounds how deep the destination scan follows linked
@@ -288,36 +271,6 @@ func xmlFilesFollowingLinks(root string, maxDepth int) ([]string, error) {
 	return files, nil
 }
 
-// xmlFileStamps records the identity of every XML file the destination scan sees,
-// so verification compares the same artifacts the count reports.
-func xmlFileStamps(root string, maxDepth int) (map[string]fileStamp, error) {
-	files, err := xmlFilesFollowingLinks(root, maxDepth)
-	if err != nil {
-		return nil, err
-	}
-	stamps := make(map[string]fileStamp, len(files))
-	for _, file := range files {
-		info, infoErr := os.Stat(file)
-		if infoErr != nil {
-			return nil, infoErr
-		}
-		stamps[file] = fileStamp{bytes: info.Size(), mod: info.ModTime()}
-	}
-	return stamps, nil
-}
-
-// anyFileChanged reports whether the destination gained an XML file or one of its
-// XML files changed size or modification time.
-func anyFileChanged(before, after map[string]fileStamp) bool {
-	for path, stamp := range after {
-		previous, seen := before[path]
-		if !seen || previous != stamp {
-			return true
-		}
-	}
-	return false
-}
-
 // fileSnapshot records the state of one destination path.
 type fileSnapshot struct {
 	Exists bool
@@ -351,54 +304,8 @@ func resolveDestination(path string) (string, error) {
 // links (symlinks, junctions) so a linked documentation tree cannot hide
 // existing XML from the guard. A missing root counts as empty.
 func countXMLFilesFollowingLinks(root string, maxDepth int) (int, error) {
-	if _, err := os.Stat(root); err != nil {
-		if errors.Is(err, fs.ErrNotExist) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	count := 0
-	visited := map[string]bool{}
-	var walk func(dir string, depth int) error
-	walk = func(dir string, depth int) error {
-		if depth > maxDepth {
-			// An incomplete scan must never be reported as a clean destination.
-			return fmt.Errorf("directory tree exceeds the %d-level scan depth at %s", maxDepth, filepath.ToSlash(dir))
-		}
-		resolved, err := filepath.EvalSymlinks(dir)
-		if err != nil {
-			return err
-		}
-		if visited[resolved] {
-			return nil
-		}
-		visited[resolved] = true
-		entries, err := os.ReadDir(dir)
-		if err != nil {
-			return err
-		}
-		for _, entry := range entries {
-			full := filepath.Join(dir, entry.Name())
-			info, infoErr := os.Stat(full)
-			if infoErr != nil {
-				return infoErr
-			}
-			if info.IsDir() {
-				if err := walk(full, depth+1); err != nil {
-					return err
-				}
-				continue
-			}
-			if strings.EqualFold(filepath.Ext(entry.Name()), ".xml") {
-				count++
-			}
-		}
-		return nil
-	}
-	if err := walk(root, 0); err != nil {
-		return count, err
-	}
-	return count, nil
+	files, err := xmlFilesFollowingLinks(root, maxDepth)
+	return len(files), err
 }
 
 func dirSize(dir string) (int, int64, error) {

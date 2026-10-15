@@ -271,9 +271,9 @@ mutation a new ID merely to force it to run.
 | `script run <res://tool.gd> [--quit-after N] [-- <args>...]` | engine | ☐ | Run a project script through the engine's headless harness. The script must extend `SceneTree` or `MainLoop`; arguments after `--` arrive via `OS.get_cmdline_user_args()`. Reports `exit_code`, bounded `output`, `duration_ms`, and the resolved engine. Non-harness scripts fail fast as `not_a_harness` because Godot 4.7.2 hangs instead of erroring on them. |
 | `project import` | engine | ☐ | Run the engine's import pass (`--import`) to completion and summarize observed artifacts (`.godot` cache, `.uid` sidecars). Engine progress text is localized and is never parsed; the exit code and artifacts decide. |
 | `project export <preset> <output> [--kind pack\|release\|debug\|patch] [--patches a,b] [--verbose]` | engine | ☐ | Export with the engine after a fail-fast preflight: preset existence (`available_presets`), target directory, pack extension, and a completed help probe before claiming the build is not an editor build. `pack` needs no templates; a release/debug export only warns when the usual template directory is missing, because a preset can point at custom templates. The raw engine log is **omitted by default** (`output_omitted`) since signing tools and export plugins can log credential-bearing arguments; `--verbose` includes it. Preset contents and `.godot/export_credentials.cfg` are never printed. |
-| `capture movie <out.avi\|.png\|.ogv> [--frames N] [--fps N] [--resolution WxH] [--scene <p>]` | engine | ☐ | Record deterministic frames with Movie Maker (`--write-movie` + `--fixed-fps`, bounded by `--frames`). A display driver is required: `--headless` crashed Movie Maker in testing and is never passed. A `res://` output is resolved into the project for inspection. PNG sequences report `frames_written` (frames whose size or modification time changed since before the run), `frames_present` (all files with the prefix), `frames_unchanged` (the rest, which may be older files or same-metadata rewrites) and the observed `frame_size`; the recording follows the project viewport, not `--resolution`. Containers report `output_bytes` only — zero frames means unmeasured, not no frames. |
+| `capture movie <out.avi\|.png\|.ogv> [--frames N] [--fps N] [--resolution WxH] [--scene <p>]` | engine | ☐ | Record deterministic frames with Movie Maker (`--write-movie` + `--fixed-fps`, bounded by `--frames`). A display driver is required: `--headless` crashed Movie Maker in testing and is never passed. A `res://` output is resolved into the project for inspection. PNG sequences report `frames_written` and `frames_present` from this run's isolated directory (excluding old destination files) and the observed `frame_size`; the recording follows the project viewport, not `--resolution`. Containers report `output_bytes` only — zero frames means unmeasured, not no frames. |
 | `perf sample [--headless] [--top N]` | engine | ☐ | Run the engine with `--benchmark-file` and report the costliest phases. Godot 4.7.2 ignores `--quit-after` while benchmark flags are set, so `--timeout` (default 30 s) stops the run and `bounded_by` says whether the engine exited or the timeout ended it. Exit `0` means the benchmark JSON was read, not that the game run succeeded (`engine_error` carries a non-timeout engine failure). |
-| `docs dump --out <dir> [--format xml\|json] [--scripts] [--force]` | engine | ☐ | Write documentation with the engine's doctool: engine class-reference XML, `extension_api.json` including docs, or the project's own GDScript reference (`--scripts`). `--out` is required and is created when missing. The destination is resolved through links before the guards run, and scanning follows linked directories (bounded depth; an incomplete scan refuses as `output_scan_failed`), because Godot regenerates XML in place and **erases existing XML documentation** in its documentation directories: existing `*.xml` is refused as `output_not_empty`, an unscannable destination as `output_scan_failed`, and an existing `extension_api.json` as `output_exists` — each unless `--force`. JSON mode fails as `json_artifact_missing` when no usable file was produced and as `json_artifact_stale` when the file was not replaced by this run; XML mode reports `xml_files` and fails as `docs_output_empty` when no XML was generated. |
+| `docs dump --out <dir> [--format xml\|json] [--scripts] [--force]` | engine | ☐ | Write documentation with the engine's doctool: engine class-reference XML, `extension_api.json` including docs, or the project's own GDScript reference (`--scripts`). `--out` is required and is created when missing. The destination is resolved through links before the guards run, and scanning follows linked directories (bounded depth; an incomplete scan refuses as `output_scan_failed`), to protect existing documentation before publication: existing `*.xml` is refused as `output_not_empty`, an unscannable destination as `output_scan_failed`, and an existing `extension_api.json` as `output_exists` — each unless `--force`. JSON mode fails as `json_artifact_missing` when no usable file was produced; XML mode reports `xml_files` and fails as `docs_output_empty` when no XML was generated. |
 | `classdb dump --out <dir>` | engine | ☐ | Dump the engine ClassDB to JSON. The engine always writes into `user://`, so Hera runs it with an isolated user directory and publishes `class_db_api.json` (`class_db_api_editor.json` adds editor-only classes) into `--out`. Generation and publication are reported separately: `files[]` carries `ok`/`error` per file, `failed_copies` counts failures, and any failed copy is a command failure (`class_db_copy_failed`) instead of a false `class_db_json_missing`; a nonzero engine exit still fails the command. Destinations are replaced through a temporary file, never truncated first. |
 | `debug attach [--break res://f.gd:N ...] [--dap-port N] [--wait-ms N] [--project DIR]` | dap | ☐ | Attach to a **running** editor debug server (the editor must be started with `--debug-server` and `--dap-port`; the game with `--remote-debug`, see below). Records a session, sends each breakpoint with MD5/SHA256 checksums, reports what the adapter verified (`breakpoint_results[].verified`), and waits for the next stop: `stopped.frame`/`source.sha256` or `running:true`. Hera never starts or stops the editor or the game. |
 | `debug session [--session ID]` | dap | ☐ | Show the recorded session (host, port, project, breakpoints, `attached_at`). `--session` defaults to the most recent attach. |
@@ -495,16 +495,20 @@ in CI or on a machine where no editor is open. They share one contract:
   is never cut short, while waiting for a process that termination could not stop
   is bounded and reported (`abandoned: true`, `...the process exit was not observed
   within the wait bound`) instead of
-  hanging the caller. The bound covers waiting for the process to exit; it does not
-  bound a native termination call itself.
-  Refused launches terminate and close synchronously before the bounded reap.
-  A cancellation worker that never returns retains its guard until process teardown;
+  hanging the caller. Refusal, cancellation and natural-exit cleanup use one
+  worker owning termination and close. The caller waits at most 5 s for exit after
+  refusal/cancellation, then at most 5 s for cleanup. Otherwise-successful runs with unfinished
+  cleanup fail `engine_cleanup_incomplete` (timeout/abandonment take precedence);
+  `cleanup_pending:true` reports any
+  unfinished worker. Native calls cannot be interrupted but no termination/close
+  call runs on the returning caller. Launch, ownership setup and resume remain
+  synchronous. A stuck worker retains its guard until CLI teardown;
   closing it while the native call uses it would violate handle ownership. Unix
   launches are not suspended, and descendants are never enrolled in an owned tree:
   this is a persistent limitation, not merely a pre-assignment window.
   The test-only delay/factory seams and CLI globals require serialized in-process
   command execution; they are not a concurrent library API.
-- **Failure vocabulary.** Any of `engine_timeout`, `engine_abandoned` (the process
+- **Failure vocabulary.** Any of `engine_timeout`, `engine_cleanup_incomplete`, `engine_abandoned` (the process
   exit was never observed, so nothing about its work is proven), `engine_exit_nonzero`,
   `output_incomplete` (the process exited but something kept its pipes open, so
   captured output may be truncated), or a launch error fails the command; the
@@ -518,20 +522,27 @@ in CI or on a machine where no editor is open. They share one contract:
   machine-readable artifacts such as `--benchmark-file` when the engine writes
   one: artifacts that are missing after a clean exit fail the command
   (`no_frame_produced`, `no_artifact_produced`, `docs_output_empty`,
-  `docs_scan_failed`), while a metadata comparison that cannot tell a rewrite from
-  no work is reported rather than claimed — `frames_verification`,
-  `output_verification` or `xml_verification: "inconclusive"`, plus
-  `frames_unchanged` for the unchanged remainder — and those fields only appear
-  for the commands that measure a destination this way (`capture movie`,
-  `docs dump`). `project export` verifies existence only and therefore reports no
-  verification field; `perf sample` decides on its machine-readable artifact. A
-  run's own output is claimed only as far as the observation shows
-  (`frames_written` counts frames whose metadata changed), so for the
-  metadata-compared destinations (PNG frames, containers, XML documentation) a
-  same-metadata rewrite is never claimed as this run's work and never failed as
-  stale; `docs dump --format json` still rejects an unreplaced
-  `extension_api.json` as `json_artifact_stale`, and a sequence that cannot be
-  listed still fails as `sequence_scan_failed`.
+  `docs_scan_failed`, `json_artifact_missing`). Capture and docs generate into an
+  empty `.hera-run-*` directory inside the destination (inside the output file's
+  parent for capture). Existing destination files cannot satisfy verification,
+  even when a new artifact has identical bytes/timestamps. Destination metadata
+  comparisons and `json_artifact_stale` are no longer used. An unlistable PNG
+  sequence fails `sequence_scan_failed` and omits all frame counts; an unavailable
+  container stat fails `artifact_stat_failed` and omits existence/byte fields.
+  `artifact_source:"isolated_run_directory"` describes provenance, not protection
+  against another process deliberately modifying that staging directory. Counts,
+  sizes and `output_exists` describe generated artifacts; output paths name intended
+  destinations. Only `published:true` confirms publication and staging removal.
+  Failure retains `staging_dir` with `published:false`; do not delete it while an
+  abandoned engine may still use it. `files_published` counts completed file
+  publications. Publication is per-file, not transactional: failures can leave a
+  partially published set. `artifact_stage_failed` and `artifact_publish_failed`
+  fail the command. Capture replaces matching names including WAV sidecars; docs
+  requires `--force` to replace existing output. Neither removes older unmatched
+  files, so shorter recordings can leave older destination frames. Concurrent
+  publishers can replace the same final file. Publication refuses non-regular
+  generated files and confines destination traversal with `os.Root`.
+  Export remains existence-only; `perf sample` judges its benchmark artifact.
   `exit_code` is `-1` when no numeric exit status is available — a pre-launch
   refusal, an abandoned process, or a process reaped after a signal on Unix — so
   `-1` is never a successful exit. `project export` omits the raw log unless
@@ -539,14 +550,9 @@ in CI or on a machine where no editor is open. They share one contract:
   credential-bearing arguments.
   This describes the engine status: `perf sample` can still exit the CLI with 0
   when benchmark JSON is readable, even with engine `exit_code: -1`.
-  On a failed PNG scan, all frame counts are omitted. For containers, an unavailable
-  pre-run stat makes freshness inconclusive when output is present; an unavailable
-  post-run stat fails with `artifact_stat_failed` and omits existence/byte fields.
-  Metadata differences in containers or XML, like frame differences, cannot identify
-  which concurrent writer made a change. Use a dedicated destination for attribution.
 - **Filesystem work.** Destination scans, stat calls and publication are synchronous
   filesystem operations outside the engine-process timeout. Large or slow destinations
-  can delay the CLI; XML output is walked repeatedly for protection, counts and stamps.
+  can delay the CLI; XML is walked for destination protection and generated-artifact counts.
   The depth cap limits recursion, not file count or elapsed time.
 - **Failures.** A structured pre-flight failure prints its JSON with
   `ok:false`/`error` on stdout, a one-line `error: <code>` diagnostic on stderr,
@@ -556,12 +562,11 @@ in CI or on a machine where no editor is open. They share one contract:
 - **Project scope.** `--project <dir>` selects the project; the working directory
   is used when it holds a `project.godot`. There is no implicit search.
 - **Writes.** `project import`, `project export`, `capture movie`, `docs dump`,
-  and `classdb dump` create files. Hera itself only writes the paths you name,
+  and `classdb dump` create files. Hera writes the named destinations and their per-run staging directories,
   and `classdb dump` replaces a destination through a temporary file instead of
   truncating it first. The **engine**, however, is a separate writer: `--import`
-  and export regenerate `.godot/**` and `.uid` sidecars, and `docs dump` runs a
-  regeneration step that erases existing XML documentation in the destination —
-  which is why a non-empty `--out` needs `--force`.
+  and export regenerate `.godot/**` and `.uid` sidecars, while `docs dump` regenerates in staging and publishes matching output files;
+  replacing existing documentation requires `--force`.
 - **Secrets.** `export_presets.cfg` and `.godot/export_credentials.cfg` can hold
   keys and passwords. Hera reads preset **names** only, never prints option
   values or platform signing flags, and omits export logs unless `--verbose`.
@@ -639,9 +644,13 @@ Verified behavior behind these commands (Godot 4.7.2, see
   and Godot's adapter provides no causal request boundary, so a stop's
   `attribution` is reported as unproven rather than guaranteed (an `already_paused`
   observation, which Hera did not cause, reports `not_applicable` instead).
-  Stack and resume/step requests address thread 1; other debugger threads are not
-  discovered or selectable. Multi-thread/general-adapter support is outside this
-  experimental surface. The one `variables` recovery retry is read-only: it never
+  Stack and resume/step discover `threads`. Use `--thread ID` on attach, stack,
+  variables, evaluate, continue or step commands to select per invocation (not
+  persisted in the session). Otherwise a buffered stopped event selects its thread,
+  or a sole reported thread is used. Ambiguity fails with available IDs before a
+  resume. Post-resume stacks follow the stopped event's thread; stacks and stops
+  expose `thread_id`. The adapter may resume all threads despite selecting one.
+  Generic-adapter compatibility remains unpromised. The one `variables` recovery retry is read-only: it never
   resumes again, and fails if the debuggee is no longer paused.
 
 ## Editor log evidence

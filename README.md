@@ -143,6 +143,9 @@ benchmark phases), `docs dump` (engine or project API reference), and
 `--timeout`, and never parse engine stdout for status. See
 [engine-backed commands](docs/COMMANDS.md#engine-backed-commands-no-live-editor).
 
+Capture and docs generate in isolated directories before publishing verified artifacts. Failed runs retain `staging_dir`; `published:true` confirms publication. Debug commands discover threads; use `--thread ID` when selection is ambiguous. Native termination and close use bounded caller waits and report incomplete cleanup.
+
+
 `hera-godot status` reports `editor_session_id` and Game Feel / C# editor flags.
 `hera-godot status --capabilities` adds the engine commit and API capability states
 (`supported`, `unsupported`, or `unverified`). API presence does not certify a

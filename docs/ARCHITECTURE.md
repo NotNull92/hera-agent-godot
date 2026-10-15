@@ -337,3 +337,9 @@ See [ROADMAP.md](./ROADMAP.md) for the phased plan, [COMMANDS.md](./COMMANDS.md)
 for the command surface as it lands, and
 [GODOT_EDITOR_ANALYSIS.md](./GODOT_EDITOR_ANALYSIS.md) for the source/API/debug
 analysis workflow used instead of Unity-style binary-first inspection.
+
+Engine-backed capture/docs generation uses an empty per-run staging directory
+inside the destination root. Verification precedes per-file publication through
+`os.Root`; failures retain staging. One worker owns each engine guard's termination
+and close; the caller bounds its waits and reports unfinished cleanup. DAP targets
+are discovered through `threads`, with per-command `--thread` selection.
