@@ -10,6 +10,13 @@ class Target extends Node:
 		calls += 1
 		return calls
 
+	func qa_dict() -> Dictionary:
+		return {"nested": [true, null], "pos": Vector2(1, 2), 7: "slot"}
+	func qa_nan() -> float:
+		return NAN
+	func qa_big() -> int:
+		return 9007199254740993
+
 func _initialize() -> void:
 	call_deferred("_run")
 
@@ -42,6 +49,25 @@ func _run() -> void:
 	await inspector._handle_file(inspector._request_dir() + "/published.json", inspector._response_dir() + "/published.json")
 	_check(target.calls == 2, "published request executes")
 	tool._read_response(OS.get_process_id(), "published")
+	for method in ["qa_dict", "qa_nan", "qa_big"]:
+		var structured: Dictionary = request.duplicate()
+		structured.id = method
+		structured.method = method
+		_check(tool._write_request(structured, OS.get_process_id()) == "", "structured request publication")
+		var started: int = Time.get_ticks_msec()
+		await inspector._handle_file(inspector._request_dir() + "/%s.json" % method, inspector._response_dir() + "/%s.json" % method)
+		var decoded: Dictionary = tool._read_response(OS.get_process_id(), method)
+		_check(bool(decoded.get("ok", false)) and decoded.has("result_value") and not decoded.has("result_value_omitted"), "structured response is immediately readable: " + method)
+		if method == "qa_dict":
+			_check(decoded.get("result_value") == {"nested": [true, null], "pos": "Vector2(1, 2)", "7": "slot"}, "Dictionary survives file relay")
+		elif method == "qa_nan":
+			_check(decoded.get("result_value") == "nan" and Time.get_ticks_msec() - started < 2000, "NaN cannot stall response polling")
+		else:
+			_check(decoded.get("result_value") == "9007199254740993", "large int remains exact through JSON parse")
+	# An older runtime response must pass through without synthesized fields.
+	_write(response_path, JSON.stringify({"id": "partial", "ok": true, "result": "3", "type": "int"}))
+	var legacy: Dictionary = tool._read_response(OS.get_process_id(), "partial")
+	_check(legacy.get("result") == "3" and not legacy.has("result_value") and not legacy.has("result_value_omitted"), "old runtime response remains unchanged")
 	request.target_pid = OS.get_process_id() + 1
 	_write(request_path, JSON.stringify(request))
 	await inspector._handle_file(request_path, response_path)
