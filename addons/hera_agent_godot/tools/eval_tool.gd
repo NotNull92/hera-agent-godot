@@ -7,6 +7,7 @@ extends RefCounted
 # `get_node("Player").position`. Powerful (can call methods with side effects),
 # hence it lives in the mutation phase.
 
+const VariantJson = preload("res://addons/hera_agent_godot/core/variant_json.gd")
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 class EditorInterfaceProxy:
@@ -50,8 +51,8 @@ func execute(params: Dictionary) -> Dictionary:
 	if expression.has_execute_failed():
 		return ToolResponse.failure("execute error: %s" % expression.get_error_text())
 
-	return ToolResponse.success({
+	return ToolResponse.success(VariantJson.attach_result({
 		"result": str(result),
 		"type": type_string(typeof(result)),
 		"undoable": false,
-	})
+	}, result))
