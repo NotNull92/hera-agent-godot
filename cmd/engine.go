@@ -157,8 +157,9 @@ type engineRunResult struct {
 	Output    string
 	Truncated bool
 	TimedOut  bool
-	// Abandoned reports that the process exit was never observed: termination
-	// could not stop it inside the bound, so nothing about its work is proven.
+	// Abandoned reports that the wait for the process was not observed to finish
+	// (including its pipe drain) inside the bound after cancellation, so nothing
+	// about its work or its exit status is proven.
 	Abandoned   bool
 	Duration    time.Duration
 	RunErr      error
@@ -205,7 +206,9 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 	}
 	result.Started = true
 	guard := engineGuardFactory(command.Process.Pid, command.Process)
-	defer guard.close()
+	// Ownership closes the guard on every path below: the refusal branch closes it
+	// after terminating, and the normal path uses closeGuard, which hands the close
+	// to a termination worker that is still running instead of racing it.
 	// The child was launched suspended so ownership is established before it can
 	// create descendants; resume it now. A child that could not be owned is never
 	// allowed to run, and the failure path is bounded so a failed kill cannot
@@ -232,13 +235,35 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 
 	var mu sync.Mutex
 	finished := false
+	terminating := false
+	guardClosed := false
+	workerOwnsClose := false
 	termination := ""
 	stopped := make(chan struct{})
 	cleanupDone := make(chan struct{})
+
+	// closeGuard closes the guard exactly once, and never while the termination
+	// worker is using it: ownership moves to that worker, which closes it when it
+	// finishes. This keeps a timed-out caller from closing a handle the worker is
+	// still passing to a native call.
+	closeGuard := func() {
+		mu.Lock()
+		if guardClosed {
+			mu.Unlock()
+			return
+		}
+		if terminating {
+			workerOwnsClose = true
+			mu.Unlock()
+			return
+		}
+		guardClosed = true
+		mu.Unlock()
+		guard.close()
+	}
+	defer closeGuard()
+
 	go func() {
-		// The cleanup worker waits for cancellation and then terminates. The mutex
-		// is not held across terminate(), so a blocking native call cannot also
-		// block the caller returning.
 		defer close(cleanupDone)
 		select {
 		case <-ctx.Done():
@@ -246,15 +271,26 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 			return
 		}
 		mu.Lock()
-		alreadyFinished := finished
-		mu.Unlock()
-		if alreadyFinished {
+		if finished {
+			mu.Unlock()
 			return
 		}
+		terminating = true
+		mu.Unlock()
+
 		failure := guard.terminate()
+
 		mu.Lock()
 		termination = failure
+		terminating = false
+		ownsClose := workerOwnsClose
+		if ownsClose {
+			guardClosed = true
+		}
 		mu.Unlock()
+		if ownsClose {
+			guard.close()
+		}
 	}()
 
 	// A healthy run is never cut short: the caller waits for the process to exit on
@@ -287,7 +323,7 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 	}
 	mu.Lock()
 	if !exitObserved {
-		termination = strings.TrimSpace(termination + "; the started process outlived termination")
+		termination = strings.TrimSpace(termination + "; the process exit was not observed within the wait bound")
 	} else if !terminationObserved {
 		termination = strings.TrimSpace(termination + "; termination did not report back")
 	}

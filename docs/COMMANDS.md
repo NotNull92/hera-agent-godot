@@ -271,7 +271,7 @@ mutation a new ID merely to force it to run.
 | `script run <res://tool.gd> [--quit-after N] [-- <args>...]` | engine | ☐ | Run a project script through the engine's headless harness. The script must extend `SceneTree` or `MainLoop`; arguments after `--` arrive via `OS.get_cmdline_user_args()`. Reports `exit_code`, bounded `output`, `duration_ms`, and the resolved engine. Non-harness scripts fail fast as `not_a_harness` because Godot 4.7.2 hangs instead of erroring on them. |
 | `project import` | engine | ☐ | Run the engine's import pass (`--import`) to completion and summarize observed artifacts (`.godot` cache, `.uid` sidecars). Engine progress text is localized and is never parsed; the exit code and artifacts decide. |
 | `project export <preset> <output> [--kind pack\|release\|debug\|patch] [--patches a,b] [--verbose]` | engine | ☐ | Export with the engine after a fail-fast preflight: preset existence (`available_presets`), target directory, pack extension, and a completed help probe before claiming the build is not an editor build. `pack` needs no templates; a release/debug export only warns when the usual template directory is missing, because a preset can point at custom templates. The raw engine log is **omitted by default** (`output_omitted`) since signing tools and export plugins can log credential-bearing arguments; `--verbose` includes it. Preset contents and `.godot/export_credentials.cfg` are never printed. |
-| `capture movie <out.avi\|.png\|.ogv> [--frames N] [--fps N] [--resolution WxH] [--scene <p>]` | engine | ☐ | Record deterministic frames with Movie Maker (`--write-movie` + `--fixed-fps`, bounded by `--frames`). A display driver is required: `--headless` crashed Movie Maker in testing and is never passed. A `res://` output is resolved into the project for inspection. PNG sequences report `frames_written` (files this run produced), `frames_present` (all files with the prefix, with `stale_frames_present` in `notes` when they differ) and the observed `frame_size`; the recording follows the project viewport, not `--resolution`. Containers report `output_bytes` only — zero frames means unmeasured, not no frames. |
+| `capture movie <out.avi\|.png\|.ogv> [--frames N] [--fps N] [--resolution WxH] [--scene <p>]` | engine | ☐ | Record deterministic frames with Movie Maker (`--write-movie` + `--fixed-fps`, bounded by `--frames`). A display driver is required: `--headless` crashed Movie Maker in testing and is never passed. A `res://` output is resolved into the project for inspection. PNG sequences report `frames_written` (frames whose size or modification time changed since before the run), `frames_present` (all files with the prefix), `frames_unchanged` (the rest, which may be older files or same-metadata rewrites) and the observed `frame_size`; the recording follows the project viewport, not `--resolution`. Containers report `output_bytes` only — zero frames means unmeasured, not no frames. |
 | `perf sample [--headless] [--top N]` | engine | ☐ | Run the engine with `--benchmark-file` and report the costliest phases. Godot 4.7.2 ignores `--quit-after` while benchmark flags are set, so `--timeout` (default 30 s) stops the run and `bounded_by` says whether the engine exited or the timeout ended it. Exit `0` means the benchmark JSON was read, not that the game run succeeded (`engine_error` carries a non-timeout engine failure). |
 | `docs dump --out <dir> [--format xml\|json] [--scripts] [--force]` | engine | ☐ | Write documentation with the engine's doctool: engine class-reference XML, `extension_api.json` including docs, or the project's own GDScript reference (`--scripts`). `--out` is required and is created when missing. The destination is resolved through links before the guards run, and scanning follows linked directories (bounded depth; an incomplete scan refuses as `output_scan_failed`), because Godot regenerates XML in place and **erases existing XML documentation** in its documentation directories: existing `*.xml` is refused as `output_not_empty`, an unscannable destination as `output_scan_failed`, and an existing `extension_api.json` as `output_exists` — each unless `--force`. JSON mode fails as `json_artifact_missing` when no usable file was produced and as `json_artifact_stale` when the file was not replaced by this run; XML mode reports `xml_files` and fails as `docs_output_empty` when no XML was generated. |
 | `classdb dump --out <dir>` | engine | ☐ | Dump the engine ClassDB to JSON. The engine always writes into `user://`, so Hera runs it with an isolated user directory and publishes `class_db_api.json` (`class_db_api_editor.json` adds editor-only classes) into `--out`. Generation and publication are reported separately: `files[]` carries `ok`/`error` per file, `failed_copies` counts failures, and any failed copy is a command failure (`class_db_copy_failed`) instead of a false `class_db_json_missing`; a nonzero engine exit still fails the command. Destinations are replaced through a temporary file, never truncated first. |
@@ -493,7 +493,8 @@ in CI or on a machine where no editor is open. They share one contract:
   launched suspended, so a descendant cannot be spawned before the job assignment.
   The bound applies only **after** the command context is cancelled: a healthy run
   is never cut short, while waiting for a process that termination could not stop
-  is bounded and reported (`abandoned: true`, `...outlived termination`) instead of
+  is bounded and reported (`abandoned: true`, `...the process exit was not observed
+  within the wait bound`) instead of
   hanging the caller. The bound covers waiting for the process to exit; it does not
   bound a native termination call itself.
 - **Failure vocabulary.** Any of `engine_timeout`, `engine_abandoned` (the process
@@ -510,12 +511,20 @@ in CI or on a machine where no editor is open. They share one contract:
   machine-readable artifacts such as `--benchmark-file` when the engine writes
   one: artifacts that are missing after a clean exit fail the command
   (`no_frame_produced`, `no_artifact_produced`, `docs_output_empty`,
-  `docs_scan_failed`), while freshness that cannot be observed is reported as
-  `frames_verification`/`output_verification`/`xml_verification: "inconclusive"`
-  rather than claimed (`docs_output_stale` covers the certain case of a destination
-  that this run did not change at all). `exit_code` is `-1` when no exit status was
-  observed, so `-1` is never a successful exit. `project export` omits the raw log
-  unless `--verbose` is passed, because signing tools and export plugins can log
+  `docs_scan_failed`), while a metadata comparison that cannot tell a rewrite from
+  no work is reported rather than claimed — `frames_verification`,
+  `output_verification` or `xml_verification: "inconclusive"`, plus
+  `frames_unchanged` for the unchanged remainder — and those fields only appear
+  for the commands that measure a destination this way (`capture movie`,
+  `docs dump`). `project export` verifies existence only and therefore reports no
+  verification field; `perf sample` decides on its machine-readable artifact. A
+  run's own output is claimed only as far as the observation shows
+  (`frames_written` counts frames whose metadata changed), so a same-metadata
+  rewrite is never claimed as this run's work and never failed as stale.
+  `exit_code` is `-1` when no numeric exit status is available — a pre-launch
+  refusal, an abandoned process, or a process reaped after a signal on Unix — so
+  `-1` is never a successful exit. `project export` omits the raw log unless
+  `--verbose` is passed, because signing tools and export plugins can log
   credential-bearing arguments.
 - **Failures.** A structured pre-flight failure prints its JSON with
   `ok:false`/`error` on stdout, a one-line `error: <code>` diagnostic on stderr,

@@ -138,15 +138,17 @@ func runCaptureMovie(params map[string]any) int {
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
 	// The sequence state is captured before the run, so this run's frames are
-	// identified by change rather than by a timestamp comparison.
-	before := snapshotMovieFrames(output)
+	// identified by change rather than by a timestamp comparison. A failed
+	// observation is recorded and reported as inconclusive, never as freshness.
+	before, beforeErr := snapshotMovieFrames(output)
+	containerBefore, containerSeen := statFileStamp(output)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	notes := []string{
 		"Movie Maker requires a working display driver; --headless uses the dummy renderer and crashed in testing",
 		"the recording size follows the project viewport setting; --resolution only requests the window size",
 		"the recording is fixed-FPS, so frame N always maps to the same simulated time",
-		"frames_written counts only files this invocation created or rewrote; unchanged files with the same prefix are reported as frames_present",
+		"frames_written counts frames whose size or modification time changed since before this run; frames whose metadata did not change are counted in frames_unchanged and may be older files or same-metadata rewrites",
 	}
 	result := mergeResult(map[string]any{
 		"project_path":     filepath.ToSlash(project),
@@ -165,35 +167,46 @@ func runCaptureMovie(params map[string]any) int {
 	if width, height, ok := firstFrameSize(output, before); ok {
 		result["frame_size"] = fmt.Sprintf("%dx%d", width, height)
 	}
-	containerBefore, containerSeen := statFileStamp(output)
-	if written, present, measurable, scanErr := movieFrameCounts(output, before); measurable {
-		switch {
-		case scanErr != nil:
+	switch {
+	case beforeErr != nil:
+		// Without a pre-run observation, authorship cannot be claimed.
+		result["frames_verification"] = "inconclusive"
+		result["frames_verification_detail"] = "the destination could not be observed before the run: " + beforeErr.Error()
+	case movieFramePatternMeasurable(output):
+		written, present, scanErr := movieFrameCounts(output, before)
+		if scanErr != nil {
 			// A sequence that cannot be listed cannot be verified either.
 			result["error"] = "sequence_scan_failed"
 			result["detail"] = "the frame sequence could not be listed: " + scanErr.Error()
-		default:
-			result["frames_written"], result["frames_present"] = written, present
-			code, inconclusive, note := movieVerification(written, present)
-			if code != "" {
-				result["error"] = code
-			}
-			if inconclusive {
-				result["frames_verification"] = "inconclusive"
-			}
-			if note != "" {
-				notes = append(notes, note)
-			}
-			result["notes"] = notes
+			break
 		}
-	} else if result["output_exists"] != true {
-		// Containers are written once; a clean exit without the file is a failure.
-		result["error"] = "no_artifact_produced"
-		result["detail"] = "the engine exited without writing the recording: " + filepath.ToSlash(output)
-	} else if containerSeen {
-		if stamp, ok := statFileStamp(output); ok && stamp == containerBefore {
-			// An unchanged container is either an identical rewrite or nothing at
-			// all; the difference is not observable, so it is not claimed.
+		result["frames_written"], result["frames_present"] = written, present
+		code, inconclusive, note := movieVerification(written, present)
+		if code != "" {
+			result["error"] = code
+		}
+		if inconclusive {
+			result["frames_verification"] = "inconclusive"
+		}
+		if written < present {
+			// Frames whose metadata did not change may be older files or rewrites
+			// that this observation cannot tell apart.
+			result["frames_unchanged"] = present - written
+		}
+		if note != "" {
+			notes = append(notes, note)
+		}
+		result["notes"] = notes
+	default:
+		after, afterSeen := statFileStamp(output)
+		code, inconclusive := containerVerification(containerBefore, containerSeen, after, afterSeen)
+		switch {
+		case code != "":
+			result["error"] = code
+			result["detail"] = "the engine exited without writing the recording: " + filepath.ToSlash(output)
+		case inconclusive:
+			// The file is unchanged since before the run, which is either an
+			// identical rewrite or no work at all; the difference is not observable.
 			result["output_verification"] = "inconclusive"
 			notes = append(notes, "output_verification inconclusive: the recording file is unchanged since before this run")
 			result["notes"] = notes
@@ -235,26 +248,30 @@ func movieFramePattern(output string) (string, *regexp.Regexp, bool) {
 	return dir, regexp.MustCompile(`^` + regexp.QuoteMeta(base) + `\d+\.png$`), true
 }
 
-// snapshotMovieFrames records the PNG sequence state before a run.
-func snapshotMovieFrames(output string) frameSnapshot {
+// snapshotMovieFrames records the PNG sequence state before a run. A destination
+// that cannot be observed is an error, so verification reports inconclusive
+// instead of treating unobserved files as this run's output.
+func snapshotMovieFrames(output string) (frameSnapshot, error) {
 	before := frameSnapshot{}
 	dir, pattern, measurable := movieFramePattern(output)
 	if !measurable {
-		return before
+		return before, nil
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return before
+		return before, err
 	}
 	for _, entry := range entries {
 		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
 			continue
 		}
-		if info, infoErr := entry.Info(); infoErr == nil {
-			before[entry.Name()] = fileStamp{bytes: info.Size(), mod: info.ModTime()}
+		info, infoErr := entry.Info()
+		if infoErr != nil {
+			return before, infoErr
 		}
+		before[entry.Name()] = fileStamp{bytes: info.Size(), mod: info.ModTime()}
 	}
-	return before
+	return before, nil
 }
 
 // changed reports whether a frame is this run's output: it is new, or its size or
@@ -267,6 +284,27 @@ func (s frameSnapshot) changed(name string, info os.FileInfo) bool {
 	return stamp.bytes != info.Size() || !stamp.mod.Equal(info.ModTime())
 }
 
+// movieFramePatternMeasurable reports whether an output path is a PNG sequence,
+// which is the only case in which frames are measured.
+func movieFramePatternMeasurable(output string) bool {
+	_, _, measurable := movieFramePattern(output)
+	return measurable
+}
+
+// containerVerification classifies a single-file recording target from stamps
+// taken before and after the run: a missing target fails, an unchanged one is
+// inconclusive (an identical rewrite and no work are indistinguishable), and a
+// changed or newly created one is verified.
+func containerVerification(before fileStamp, beforeSeen bool, after fileStamp, afterSeen bool) (errorCode string, inconclusive bool) {
+	if !afterSeen {
+		return "no_artifact_produced", false
+	}
+	if beforeSeen && before == after {
+		return "", true
+	}
+	return "", false
+}
+
 // movieVerification classifies a frame-count comparison. Missing frames are a
 // failure; frames that are all unchanged may be a rewrite inside one filesystem
 // timestamp interval or no work at all, which is reported as inconclusive rather
@@ -276,9 +314,9 @@ func movieVerification(written, present int) (errorCode string, inconclusive boo
 	case present == 0:
 		return "no_frame_produced", false, "no_frame_produced: the engine exited without writing a frame"
 	case written == 0:
-		return "", true, "frames_verification inconclusive: every frame predates this run with unchanged size and modification time"
+		return "", true, "frames_verification inconclusive: every frame has unchanged size and modification time"
 	case present > written:
-		return "", false, fmt.Sprintf("stale_frames_present: %d frame file(s) with the same prefix are unchanged since before this run", present-written)
+		return "", false, fmt.Sprintf("%d frame file(s) have unchanged size and modification time; they may predate this run or be rewrites this observation cannot tell apart", present-written)
 	}
 	return "", false, ""
 }
@@ -293,17 +331,16 @@ func statFileStamp(path string) (fileStamp, bool) {
 	return fileStamp{bytes: info.Size(), mod: info.ModTime()}, true
 }
 
-// movieFrameCounts separates frames this run produced from older files with the
-// same prefix. measurable is false for non-PNG containers, where no frame is
-// measured; scanErr reports a sequence directory that could not be listed.
-func movieFrameCounts(output string, before frameSnapshot) (written int, present int, measurable bool, scanErr error) {
+// movieFrameCounts separates frames whose metadata changed from older files with
+// the same prefix. A sequence that cannot be listed is an error.
+func movieFrameCounts(output string, before frameSnapshot) (written int, present int, scanErr error) {
 	dir, pattern, measurable := movieFramePattern(output)
 	if !measurable {
-		return 0, 0, false, nil
+		return 0, 0, nil
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return 0, 0, true, err
+		return 0, 0, err
 	}
 	for _, entry := range entries {
 		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
@@ -312,13 +349,13 @@ func movieFrameCounts(output string, before frameSnapshot) (written int, present
 		present++
 		info, infoErr := entry.Info()
 		if infoErr != nil {
-			return 0, present, true, infoErr
+			return 0, present, infoErr
 		}
 		if before.changed(entry.Name(), info) {
 			written++
 		}
 	}
-	return written, present, true, nil
+	return written, present, nil
 }
 
 // firstFrameSize reads the first PNG frame this run produced. Movie Maker sizes

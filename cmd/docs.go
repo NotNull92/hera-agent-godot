@@ -214,9 +214,10 @@ func runDocsDump(params map[string]any) int {
 				result["error"] = "docs_scan_failed"
 				result["detail"] = "the generated documentation could not be re-read: " + afterErr.Error()
 			case format == "xml" && !anyFileChanged(xmlBefore, xmlAfter):
-				// Files that predate the run must not satisfy this run's check.
-				result["error"] = "docs_output_stale"
-				result["detail"] = "no XML documentation file was replaced or added by this run"
+				// Unchanged metadata cannot distinguish a same-size rewrite inside one
+				// timestamp interval from no work at all, so neither is claimed.
+				result["xml_verification"] = "inconclusive"
+				result["xml_verification_detail"] = "no XML artifact changed size or modification time; the destination may have been rewritten with identical metadata"
 			}
 		}
 	}

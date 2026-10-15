@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -210,29 +211,32 @@ func TestMovieFrameCounts(t *testing.T) {
 	if err := os.WriteFile(stale, []byte("old"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	before := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
+	before, snapshotErr := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
+	if snapshotErr != nil {
+		t.Fatalf("the destination must be observable: %v", snapshotErr)
+	}
 	for _, name := range []string{"shot00000001.png", "shot00000002.png", "shot.wav", "other00000003.png"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	written, present, ok, scanErr := movieFrameCounts(filepath.Join(dir, "shot.png"), before)
+	written, present, scanErr := movieFrameCounts(filepath.Join(dir, "shot.png"), before)
 	if scanErr != nil {
 		t.Fatalf("an existing sequence must be listable: %v", scanErr)
 	}
-	if !ok || written != 2 || present != 3 {
-		t.Fatalf("written=%d present=%d ok=%v", written, present, ok)
+	if written != 2 || present != 3 {
+		t.Fatalf("written=%d present=%d", written, present)
 	}
 	// A frame this run rewrote counts as its output; a frame it left alone does
 	// not, whatever the filesystem says about timestamps.
 	if err := os.WriteFile(stale, []byte("new-and-longer"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	written, present, ok, scanErr = movieFrameCounts(filepath.Join(dir, "shot.png"), before)
-	if !ok || written != 3 || present != 3 {
-		t.Fatalf("rewritten: written=%d present=%d ok=%v", written, present, ok)
+	written, present, scanErr = movieFrameCounts(filepath.Join(dir, "shot.png"), before)
+	if scanErr != nil || written != 3 || present != 3 {
+		t.Fatalf("rewritten: written=%d present=%d err=%v", written, present, scanErr)
 	}
-	if _, _, ok, _ := movieFrameCounts(filepath.Join(dir, "shot.avi"), before); ok {
+	if _, present, _ := movieFrameCounts(filepath.Join(dir, "shot.avi"), before); present != 0 {
 		t.Fatal("containers must report no measurable frame count")
 	}
 }
@@ -248,9 +252,9 @@ func TestMovieVerificationClassification(t *testing.T) {
 	if code != "" || !inconclusive || note == "" {
 		t.Fatalf("unchanged frames: code=%q inconclusive=%v note=%q", code, inconclusive, note)
 	}
-	// A partial rewrite is reported as the stale remainder.
+	// A partial rewrite is reported as the unchanged remainder.
 	code, inconclusive, note = movieVerification(2, 5)
-	if code != "" || inconclusive || !strings.Contains(note, "stale_frames_present: 3") {
+	if code != "" || inconclusive || !strings.Contains(note, "3 frame file(s) have unchanged size") {
 		t.Fatalf("partial rewrite: code=%q inconclusive=%v note=%q", code, inconclusive, note)
 	}
 	if code, inconclusive, note := movieVerification(4, 4); code != "" || inconclusive || note != "" {
@@ -305,6 +309,105 @@ func TestXmlVerificationTracksArtifactsIndividually(t *testing.T) {
 	}
 	if _, err := countXMLFilesFollowingLinks(dir, 0); err == nil {
 		t.Fatal("an over-depth destination must fail the scan rather than under-count")
+	}
+}
+
+// blockingGuard blocks termination so the test can prove the guard is not closed
+// while a termination worker is still using it.
+type blockingGuard struct {
+	mu       sync.Mutex
+	delegate processGuarder
+	entered  chan struct{}
+	release  chan struct{}
+	closes   int
+}
+
+func (g *blockingGuard) resume() string {
+	if g.delegate != nil {
+		return g.delegate.resume()
+	}
+	return ""
+}
+
+func (g *blockingGuard) terminate() string {
+	close(g.entered)
+	<-g.release
+	return "termination blocked past the bound"
+}
+
+func (g *blockingGuard) close() {
+	g.mu.Lock()
+	g.closes++
+	g.mu.Unlock()
+	if g.delegate != nil {
+		g.delegate.close()
+	}
+}
+
+func (g *blockingGuard) closeCount() int {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.closes
+}
+
+// TestRunEngineBoundedDefersCloseToARunningTerminationWorker pins NEW-1: a caller
+// that times out must not close the guard a termination worker is still using.
+func TestRunEngineBoundedDefersCloseToARunningTerminationWorker(t *testing.T) {
+	guard := &blockingGuard{entered: make(chan struct{}), release: make(chan struct{})}
+	previousFactory := engineGuardFactory
+	previousDelay := engineWaitDelay
+	engineGuardFactory = func(pid int, process *os.Process) processGuarder {
+		guard.delegate = newProcessGuard(pid, process)
+		return guard
+	}
+	engineWaitDelay = 200 * time.Millisecond
+	t.Cleanup(func() {
+		engineGuardFactory = previousFactory
+		engineWaitDelay = previousDelay
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=6000")
+	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
+	if !result.Abandoned {
+		t.Fatalf("the caller should have returned with an unobserved exit: %+v", result)
+	}
+	select {
+	case <-guard.entered:
+	default:
+		t.Fatal("termination was never attempted")
+	}
+	if closes := guard.closeCount(); closes != 0 {
+		t.Fatalf("the guard was closed %d time(s) while termination is still running", closes)
+	}
+	// Releasing termination hands the close to the worker, exactly once.
+	close(guard.release)
+	deadline := time.Now().Add(5 * time.Second)
+	for guard.closeCount() == 0 && time.Now().Before(deadline) {
+		time.Sleep(20 * time.Millisecond)
+	}
+	if closes := guard.closeCount(); closes != 1 {
+		t.Fatalf("the worker must close the guard exactly once, got %d", closes)
+	}
+}
+
+func TestContainerVerification(t *testing.T) {
+	before := fileStamp{bytes: 10, mod: time.Unix(100, 0)}
+	after := fileStamp{bytes: 10, mod: time.Unix(100, 0)}
+	if code, inconclusive := containerVerification(before, true, after, true); code != "" || !inconclusive {
+		t.Fatalf("an unchanged container must be inconclusive: code=%q inconclusive=%v", code, inconclusive)
+	}
+	changed := fileStamp{bytes: 20, mod: time.Unix(200, 0)}
+	if code, inconclusive := containerVerification(before, true, changed, true); code != "" || inconclusive {
+		t.Fatalf("a changed container is this run's output: code=%q inconclusive=%v", code, inconclusive)
+	}
+	// A brand-new file was not present before the run: it is this run's output.
+	if code, inconclusive := containerVerification(fileStamp{}, false, changed, true); code != "" || inconclusive {
+		t.Fatalf("a new container is this run's output: code=%q inconclusive=%v", code, inconclusive)
+	}
+	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false); code != "no_artifact_produced" {
+		t.Fatalf("a missing container must fail: %q", code)
 	}
 }
 
@@ -557,7 +660,10 @@ func TestFirstFrameSize(t *testing.T) {
 	if err := os.WriteFile(stale, header, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	before := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
+	before, snapshotErr := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
+	if snapshotErr != nil {
+		t.Fatalf("the destination must be observable: %v", snapshotErr)
+	}
 	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.png"), before); ok {
 		t.Fatal("an unchanged frame must not report this run's size")
 	}
@@ -752,8 +858,8 @@ func TestRunEngineBoundedReportsIncompleteTermination(t *testing.T) {
 	if result.Termination == "" || !strings.Contains(result.Termination, "nothing could be terminated") {
 		t.Fatalf("incomplete termination must be reported: %+v", result)
 	}
-	if !strings.Contains(result.Termination, "outlived termination") {
-		t.Fatalf("a process that outlived termination must be called out: %+v", result)
+	if !strings.Contains(result.Termination, "exit was not observed within the wait bound") {
+		t.Fatalf("an unobserved exit must be called out: %+v", result)
 	}
 	if result.ExitCode != -1 {
 		t.Fatalf("a process that never exited must not report an exit code: %+v", result)
