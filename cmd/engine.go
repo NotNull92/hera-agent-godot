@@ -121,6 +121,20 @@ func (o *boundedOutput) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
+// processGuarder is the ownership contract runEngineBounded relies on. Tests
+// replace engineGuardFactory to inject setup, resume and termination failures
+// deterministically.
+type processGuarder interface {
+	resume() string
+	terminate() string
+	close()
+}
+
+// engineGuardFactory creates the guard for a started process.
+var engineGuardFactory = func(pid int, process *os.Process) processGuarder {
+	return newProcessGuard(pid, process)
+}
+
 // engineRunResult is one bounded engine process run.
 type engineRunResult struct {
 	Started     bool
@@ -172,7 +186,7 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 		return result
 	}
 	result.Started = true
-	guard := newProcessGuard(command.Process.Pid, command.Process)
+	guard := engineGuardFactory(command.Process.Pid, command.Process)
 	defer guard.close()
 	// The child was launched suspended so ownership is established before it can
 	// create descendants; resume it now. A child that could not be owned is never

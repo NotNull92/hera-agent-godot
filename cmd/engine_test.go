@@ -499,8 +499,113 @@ func TestHelperProcessSleep(t *testing.T) {
 		}
 		os.Exit(0)
 	}
+	if millis := os.Getenv("HERA_HELPER_SLEEP_MS"); millis != "" {
+		if parsed, err := strconv.Atoi(millis); err == nil && parsed > 0 {
+			time.Sleep(time.Duration(parsed) * time.Millisecond)
+			os.Exit(0)
+		}
+	}
 	time.Sleep(60 * time.Second)
 	os.Exit(0)
+}
+
+// fakeGuard injects ownership outcomes while delegating the real launch/reap
+// behaviour: `resume` and `close` act on the process Hera started, so an injected
+// failure simulates a real one instead of leaving a suspended child behind.
+type fakeGuard struct {
+	resumeResult    string
+	terminateResult string
+	delegate        processGuarder
+	resumed         bool
+	terminated      bool
+}
+
+func (g *fakeGuard) resume() string {
+	g.resumed = true
+	if g.resumeResult != "" {
+		return g.resumeResult
+	}
+	if g.delegate != nil {
+		return g.delegate.resume()
+	}
+	return ""
+}
+
+func (g *fakeGuard) terminate() string {
+	g.terminated = true
+	return g.terminateResult
+}
+
+func (g *fakeGuard) close() {
+	if g.delegate != nil {
+		g.delegate.close()
+	}
+}
+
+// installFakeGuard routes the runner through a fake guard for one test.
+func installFakeGuard(t *testing.T, guard *fakeGuard) {
+	t.Helper()
+	previous := engineGuardFactory
+	engineGuardFactory = func(pid int, process *os.Process) processGuarder {
+		guard.delegate = newProcessGuard(pid, process)
+		return guard
+	}
+	t.Cleanup(func() { engineGuardFactory = previous })
+}
+
+// TestRunEngineBoundedRefusesExecutionWithoutOwnership pins the invariant: when
+// ownership cannot be established the child must not be left running and the
+// command must fail.
+func TestRunEngineBoundedRefusesExecutionWithoutOwnership(t *testing.T) {
+	guard := &fakeGuard{resumeResult: "job ownership was not established"}
+	installFakeGuard(t, guard)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=4000")
+	started := time.Now()
+	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
+	elapsed := time.Since(started)
+	if !result.Started {
+		t.Fatalf("the helper should have started: %+v", result)
+	}
+	if !guard.resumed || !guard.terminated {
+		t.Fatalf("the refused launch must be terminated: %+v", guard)
+	}
+	if result.RunErr == nil || !strings.Contains(result.RunErr.Error(), "engine launch failed") ||
+		!strings.Contains(result.RunErr.Error(), "job ownership was not established") {
+		t.Fatalf("the refusal must be a launch error naming the ownership failure: %+v", result)
+	}
+	if result.Termination != "" {
+		t.Fatalf("a clean termination after a refused launch reports no termination error: %q", result.Termination)
+	}
+	if elapsed > 8*time.Second {
+		t.Fatalf("the refusal path was not bounded: %s", elapsed)
+	}
+}
+
+// TestRunEngineBoundedReportsIncompleteTermination pins the honest-failure path:
+// a termination that cannot stop the process is reported instead of being
+// silently treated as a clean timeout.
+func TestRunEngineBoundedReportsIncompleteTermination(t *testing.T) {
+	guard := &fakeGuard{terminateResult: "job termination failed; nothing could be terminated"}
+	installFakeGuard(t, guard)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Millisecond)
+	defer cancel()
+	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SLEEP_MS=1200")
+	started := time.Now()
+	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
+	elapsed := time.Since(started)
+	if !result.TimedOut {
+		t.Fatalf("the run should have timed out: %+v", result)
+	}
+	if result.Termination == "" || !strings.Contains(result.Termination, "nothing could be terminated") {
+		t.Fatalf("incomplete termination must be reported: %+v", result)
+	}
+	if elapsed > 8*time.Second {
+		t.Fatalf("a failed termination must not block the caller: %s", elapsed)
+	}
 }
 
 func TestRunEngineBoundedRejectsExpiredContext(t *testing.T) {
