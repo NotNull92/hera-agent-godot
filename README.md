@@ -132,6 +132,17 @@ shares ownership across its children; client timeouts do not unlock running work
 See [the editor gate](docs/COMMANDS.md#editor-mutation-gate) for import readiness
 and engine capability limits.
 
+The unreleased v1.3 line adds an **engine-backed surface** that needs no open
+editor: `engine info`/`doctor`, `script run` (headless `SceneTree` harness with
+passthrough args), `project import`, `project export` (`pack` needs no export
+templates; `release`/`debug` fail fast when templates are missing),
+`capture movie` (deterministic Movie Maker frames), `perf sample` (engine
+benchmark phases), `docs dump` (engine or project API reference), and
+`classdb dump` (offline ClassDB JSON). They take the engine from
+`--engine <path>`, `HERA_GODOT_ENGINE`, or `GODOT_BIN`, bound it with
+`--timeout`, and never parse engine stdout for status. See
+[engine-backed commands](docs/COMMANDS.md#engine-backed-commands-no-live-editor).
+
 `hera-godot status` reports `editor_session_id` and Game Feel / C# editor flags.
 `hera-godot status --capabilities` adds the engine commit and API capability states
 (`supported`, `unsupported`, or `unverified`). API presence does not certify a

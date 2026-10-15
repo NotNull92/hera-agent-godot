@@ -102,16 +102,21 @@ See [MIGRATING_TO_V1.md](MIGRATING_TO_V1.md) for the 0.x upgrade path.
 ## Invocation
 
 ```
-hera-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] <command> [args]
+hera-godot [--json|--ids] [--instance <pid>] [--timeout <ms>] [--engine <path>] <command> [args]
 ```
 
-- Global flags come **before** the command. `--instance` and `--timeout`
-  accept both `--flag N` and `--flag=N`.
+- Global flags come **before** the command. `--instance`, `--timeout`, and
+  `--engine` accept both `--flag N` and `--flag=N`.
 - `--timeout <ms>` bounds **each HTTP request** (default 5000 ms); it does not
   bound a whole command — `--wait` polls send many requests. A timed-out
   request is a runtime failure (exit `1`).
   For `script validate`, the same value separately bounds the native engine
   child process after context discovery, with up to one second to close pipes.
+  For engine-backed commands (below) it bounds the engine child process itself.
+- `--engine <path>` selects the engine executable for commands that do not need
+  a live editor (also `HERA_GODOT_ENGINE`, then `GODOT_BIN`). It accepts the flag
+  after those commands as well. A missing or non-file path fails on stderr with
+  exit `1` before any process starts.
 - Unknown commands and malformed flags/arguments never reach the editor; they
   fail fast with exit code `2`.
 - With opt-in shared-token auth enabled ([SECURITY.md](./SECURITY.md)), a
@@ -350,6 +355,53 @@ dependencies, then restored to the editor after export.
 | `guidance ui` / `guidance game-feel` | experimental | ✓ (`ui`) `mode`, `setting`, `instruction`, `checklist[]`. Guidance **text is content, not contract** — it changes freely; only the envelope fields are candidates for stabilization. |
 | `game_feel [topic]` | experimental | topic index / topic body; knowledge-base content evolves freely |
 | `smoke` | experimental | check-by-check progress; exit code is the contract, output shape is not |
+
+## Engine-backed commands (experimental, no live editor)
+
+New in the unreleased v1.3 line. These run the engine binary as a bounded child
+process and are **experimental**: names and fields may change in a minor
+release until they are promoted.
+
+| Command | Tier | Notes |
+|---------|------|-------|
+| `engine info` / `engine doctor` | experimental | Identity answers carry `engine{path,source,bytes}`, `version{string,status,mono,commit}`, and `help_available`. `editor_build` and `help_flags{}` appear **only when the help probe completed** (exit 0, non-empty, untruncated, not timed out); otherwise `help_probe_error` explains why and no build claim is made. `engine doctor` adds `checks[]{name,ok,detail}` and `warnings[]`, and exits `0` for a healthy engine even when individual checks are `false`. |
+| `script run` | experimental | `exit_code`, `timed_out`, `duration_ms`, `output` (+`output_truncated`), `arguments[]`, `path`, `project_path`, `engine{path,source,version}`, `source: "engine_process"`. Exit `1` when the engine exits non-zero or the bound is hit; a pre-flight refusal is `not_a_harness` (only bases known to be incompatible are refused). |
+| `project import` | experimental | `exit_code`, `duration_ms`, `output`, `cache{}`, `script_uid_files`, `engine{}`. Engine progress text is localized and not part of the contract. |
+| `project export` | experimental | Success: `project_path`, `kind`, `preset`, `output_path`, `output_exists`, `output_bytes`, `available_presets[]`, `engine{path,source,version}` (+`export_templates_dir`/`export_template_files` when the usual directory was found), optional `warnings[]`. The raw log is omitted by default: `output_omitted:true` plus a reason; `--verbose` restores `output`/`output_truncated` at the caller's risk. Pre-flight failure: `ok:false`, `error` in `{preset_not_found, export_presets_missing, export_presets_unreadable, output_directory_missing, output_directory_unreadable, pack_extension, editor_build_required}`, with a stderr diagnostic; exit `1`. Template lookup is advisory and never blocks an export. |
+| `capture movie` | experimental | `output_path`, `output_exists`, `output_bytes`, `frames_requested`, `frames_written`/`frames_present` (PNG sequences), `frame_size` (PNG sequences), `fps`, `engine{}`. A display driver is required; `--headless` is never passed. `res://` outputs are resolved into the project before inspection. |
+| `perf sample` | experimental | `benchmark{entries,total_seconds,top[]{name,seconds}}`, `bounded_by` in `{engine_exit, timeout}`, `headless`. Godot 4.7.2 ignores `--quit-after` under benchmark flags, so `timeout` is a normal outcome (default bound 30 s) and exit `0` means the JSON was read, not that the examined game run succeeded. |
+| `docs dump` | experimental | `mode` in `{xml, json, scripts}`, `output_dir`, `files`+`bytes` (XML modes) or `output_file`+`output_bytes` (json), `engine{}`. A destination holding `*.xml` is refused (`output_not_empty`) and an existing `extension_api.json` is refused (`output_exists`) unless `--force`; JSON mode also fails with `json_artifact_missing` when no regular non-empty file was produced, and XML mode with `docs_output_empty` when nothing was generated. |
+| `classdb dump` | experimental | `output_dir`, `files[]{name,path,bytes,ok,error}`, `file_count`, `failed_copies`, `engine{}`. Exit `1` with `class_db_json_missing` (engine produced nothing), `class_db_copy_failed` (publication failed) or `class_db_publish_failed` (walk failed). |
+
+Shared facts for all engine-backed commands: engine resolution is
+`--engine` → `HERA_GODOT_ENGINE` → `GODOT_BIN`; `--timeout` bounds one shared
+context per command; an already-expired context starts nothing; output text is
+captured to 64 KiB and never parsed for status; a timeout terminates work
+through an owned identity (Windows Job Object + process handle, Unix the started
+process only, so Unix descendants are not signalled) and reports
+`termination_error` when cleanup was incomplete; a nonzero engine exit
+(`engine_exit_nonzero`) or a `WaitDelay` drain (`output_incomplete`) fails the
+command **except** for `perf sample`, whose documented exception is that a parsed
+benchmark JSON decides success. Identity commands and pre-flight refusals are the
+remaining exception to the `engine` block shape: they carry either no `engine`
+block or one without a `version`.
+
+## Debug sessions (experimental)
+
+New in the unreleased v1.3 line. `debug` is a DAP client for a running editor
+debug server; it does not start or stop the editor or the game.
+
+| Command | Tier | Notes |
+|---------|------|-------|
+| `debug attach` | experimental | `session_id`, `host`, `port`, `project`, `breakpoints[]`, `breakpoint_results[]{path,line,verified,unavailable,checksums_source,checksums_available}` (with `unverified_breakpoints[]` when the adapter could not bind one), `limits{host_override,port_override,identity_check}`, and either `stopped{frame,reason,observed}` or `running:true`. `observed` is `already_paused` or `after_arming`. Exit `1` when the endpoint is unreachable, `initialize`/`attach` is rejected, observation fails, or the session record cannot be persisted (`session_store_failed`). |
+| `debug session` | experimental | The recorded attach state: `session_id`, `host`, `port`, `project`, `breakpoints[]`, `attached_at`. Unknown or missing sessions fail with exit `1`. |
+| `debug stack` / `debug variables` / `debug evaluate` | experimental | `stack`: `frames[]{id,name,line,source{name,path,md5,sha256,sha256_available,checksums_source}}` or `frames:[]`+`running:true`; it never resumes. `variables`: `variables[]{scope,name,value}` (capped at 50, with `variables_truncated`) — a running debuggee is resumed to its next stop first, because the adapter arms breakpoints on resume; one retry is allowed only when the adapter rejected a `variables`/`scopes` read and the first attempt's paused state was certain (no resume, or a confirmed resume), never after a transport failure or an unconfirmed resume. `evaluate`: `expression`+`result` with the same resume behavior, and expressions starting with `-` are passed after `--`. A command that cannot observe a usable stop fails with `not_paused` or `dap_request_failed` (exit 1) instead of claiming `running`. |
+| `debug continue \| next \| step-in \| step-out` | experimental | Same `stopped{frame,frame_count,reason,resume_confirmed,attribution}` shape as attach, or `running:true` with `resume_confirmed:true`. Before acting, the connection is drained to a quiet window (idle window derived from `--wait-ms`, absolute budget: steady output fails the command instead of hanging) and stops observed earlier are discarded. That quiet window **does not prove** attribution, so a `stopped` event is only accepted after the adapter's own `continued`/`resumed` event and every stop carries `attribution: "unproven: …"`; a resume the adapter never confirms is a failure, not a success. |
+| `debug detach` | experimental | `detached:true` and the session record is removed; the editor and game keep running. |
+
+Session records live under `~/.hera-agent-godot/debug/`, are plain JSON, and are
+not a stable integration point: build on the CLI, not on the files. Frame ids in
+DAP responses are only valid for the current stop.
 
 ## Known gaps (tracked in ROADMAP Phase 7)
 

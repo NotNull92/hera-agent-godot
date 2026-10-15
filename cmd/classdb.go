@@ -6,6 +6,14 @@ import (
 )
 
 func runClassDB(args []string) int {
+	if len(args) > 0 && args[0] == "dump" {
+		params, err := parseClassDBDumpArgs(args[1:])
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "classdb dump: %v\n", err)
+			return 2
+		}
+		return runClassDBDump(params)
+	}
 	params, err := parseClassDBArgs(args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "classdb: %v\n", err)
@@ -16,7 +24,7 @@ func runClassDB(args []string) int {
 
 func parseClassDBArgs(args []string) (map[string]any, error) {
 	if len(args) == 0 {
-		return nil, fmt.Errorf("usage: classdb <info|methods|properties|signals|constants|enums|inherits> <Class> ...")
+		return nil, fmt.Errorf("usage: classdb <info|methods|properties|signals|constants|enums|inherits|dump> <Class> ...")
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
@@ -33,7 +41,7 @@ func parseClassDBArgs(args []string) (map[string]any, error) {
 		}
 		return map[string]any{"action": "inherits", "class": rest[0], "base": rest[1]}, nil
 	default:
-		return nil, fmt.Errorf("unknown classdb subcommand %q (want info|methods|properties|signals|constants|enums|inherits)", sub)
+		return nil, fmt.Errorf("unknown classdb subcommand %q (want info|methods|properties|signals|constants|enums|inherits|dump)", sub)
 	}
 }
 

@@ -43,6 +43,31 @@ until `git tag v1.2.0` runs the release workflow. Record:
 - Published npm/release channels and external Homebrew tap await separate updates.
   See [command migration](../packaging/README.md#command-name-migration).
 
+## In development — v1.3 no-editor engine surface (2026-10-15)
+
+- Landed locally in the working tree: `engine info`/`doctor`, `script run`
+  (headless `SceneTree` harness with passthrough args), `project import`,
+  `project export` (`pack` without templates, advisory template preflight, raw
+  log omitted unless `--verbose`), `capture movie` (deterministic frames with
+  `frames_written`/`frames_present`/`frame_size`), `perf sample`
+  (`--benchmark-file`, timeout-bounded), `docs dump` (XML/JSON/project with a
+  non-empty-destination guard) and `classdb dump` (published from an isolated
+  user directory).
+- Engine resolution stays explicit: `--engine <path>` or `HERA_GODOT_ENGINE` /
+  `GODOT_BIN`, so nothing requires a live editor. `--timeout` bounds one shared
+  context per command, an expired context launches nothing, and the started
+  process is owned (Windows handle, Unix process group) so a timeout cannot
+  signal a recycled PID.
+- Two independent Codex reviews (headless + pane) drove a fix pass that closed
+  four P1s (PID ownership, tree-kill/pipe bounding, credential-bearing export
+  logs, destructive XML regeneration) and all P2 correctness/contract findings.
+- Verified 4.7.2 constraints (no renderer under `--headless`, `--headless` +
+  `--write-movie` crash, localized engine text) stay documented in
+  [GODOT_EDITOR_ANALYSIS.md](./GODOT_EDITOR_ANALYSIS.md).
+- Later arcs: DAP debug sessions over `--dap-port`, LSP diagnostics for unsaved
+  buffers, and converging the runtime inspector onto `EditorDebuggerPlugin` +
+  `scene:*` channels so Hera stops injecting a project autoload.
+
 ## In development — compact observation (2026-09-15)
 
 - [x] Default `status` omits experimental `capabilities`/`godot_commit`;

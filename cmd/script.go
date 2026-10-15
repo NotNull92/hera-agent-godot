@@ -16,6 +16,9 @@ func runScript(args []string) int {
 	if params["action"] == "validate" {
 		return runScriptValidate(params)
 	}
+	if params["action"] == "run" {
+		return runScriptRun(params)
+	}
 	if scriptActionMutates(params["action"]) {
 		return dialMutationPostPrint("script", params, "script")
 	}
@@ -37,6 +40,8 @@ func parseScriptArgs(args []string) (map[string]any, error) {
 	}
 	sub, rest := args[0], args[1:]
 	switch sub {
+	case "run":
+		return parseScriptRunArgs(rest)
 	case "current":
 		if len(rest) != 0 {
 			return nil, fmt.Errorf("usage: script current")
