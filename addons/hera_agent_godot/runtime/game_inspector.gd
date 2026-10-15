@@ -7,6 +7,7 @@ const GameUIInspector = preload("res://addons/hera_agent_godot/runtime/game_ui_i
 const GameUIAuditor = preload("res://addons/hera_agent_godot/runtime/game_ui_auditor.gd")
 const GameViewportActions = preload("res://addons/hera_agent_godot/runtime/game_viewport_actions.gd")
 const GameInputSequence = preload("res://addons/hera_agent_godot/runtime/game_input_sequence.gd")
+const VariantJson = preload("res://addons/hera_agent_godot/core/variant_json.gd")
 const OperationRecords = preload("res://addons/hera_agent_godot/core/operation_records.gd")
 
 const INSTANCE_DIR := "user://hera_game_instances"
@@ -254,12 +255,13 @@ func _call_node(request: Dictionary) -> Dictionary:
 	var call_args := GameValueCodec.call_args(request)
 	var resolved_path := String(node.get_path())
 	var result: Variant = node.callv(method, call_args)
-	return _response(request, true, {
+	var payload: Dictionary = {
 		"path": resolved_path,
 		"method": method,
 		"result": str(result),
 		"type": type_string(typeof(result)),
-	})
+	}
+	return _response(request, true, VariantJson.attach_result(payload, result))
 
 func _qa_discover(request: Dictionary) -> Dictionary:
 	var path := String(request.get("path", ""))

@@ -182,6 +182,8 @@ timeout, default 5000). Default output is compact JSON.
 
 ## Verify your work (Hera)
 
+For `game node call` / `eval`, read `result_value` directly without reparsing `result`; handle `result_value_omitted`, and treat both fields absent as an older producing addon/runtime.
+
 Use `--evidence` on script validate, captures, scene save and resource set when
 proof provenance matters. Disk validation does not observe buffers/running code;
 captures sample separate frames/times from runtime state reads. Capture

@@ -252,7 +252,7 @@ mutation a new ID merely to force it to run.
 | `game clock [--pause\|--resume] [--time-scale N] [--step] [--physics]` | `game` | ☑ | Read or change the live `SceneTree.paused` flag and `Engine.time_scale`. No flags returns `{paused, time_scale, process_frames, physics_frames}`. `--step` unpauses for one `process_frame` (or `physics_frame` with `--physics`) and leaves the tree paused. `time_scale` must be greater than 0; use `--pause` to stop the clock. The runtime inspector uses `PROCESS_MODE_ALWAYS` so later `game` commands still run while paused. |
 | `game node get <path> [--prop <name>\|--props <a,b>]` | `game` | ☑ | Dump a live runtime node's editor-visible properties, or selected properties for low-token QA. Selected names may use dotted paths such as `player.position` or `state.score`. Absolute paths like `/root/Main` are accepted. |
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
-| `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified result. Runtime-only and may have side effects. |
+| `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified `result` and, from v1.2.0, a structured `result_value` (or `result_value_omitted`). Runtime-only and may have side effects. |
 | `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
 | `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helpers and `Qa` followed by an uppercase letter (e.g. `QaReady`); method names are case-sensitive. Discover methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
 | `game qa diagnose [--lines N] [--max-errors N] [--max-warnings N] [--path user://capture.png]` | local + tools | ☑ | Run a read-only, project-agnostic runtime health check. It reports editor diagnostic counts, live game-process ambiguity, runtime/UI tree truncation, and screenshot blankness, low detail, or likely clipping. Capture width/height and `size_matches_project` are reported without failing a healthy image that is simply smaller than the project viewport. It does not assume nodes, controls, rules, or QA helper names. |
@@ -260,7 +260,7 @@ mutation a new ID merely to force it to run.
 | `guidance ui` | `guidance` | ☑ | Read the live editor's Game Feel UI Mode setting and return agent-facing UI implementation guidance. When enabled, UI work should favor snappy feedback, expressive state changes, satisfying motion, and runtime visual QA. |
 | `guidance game-feel` | `guidance` | ☑ | Read the live editor's Game Feel Mode setting and return gameplay-wide feel guidance: control feel, camera, hit stop, screen shake, sound, particles, rewards, Honest Juice, accessibility, runtime QA, and compact `game_qa_patterns` for reusable prompt-game checks such as ordered QA, primary input, stable inspection, visible state sync, live viewport layout, deterministic helpers, shared route geometry, typed collections, and observable feedback evidence. |
 | `game_feel [topic]` | `game_feel` | ☑ | Query the bundled Game Feel knowledge base. No topic or `list` returns the topic index; a topic such as `screen_shake`, `control_feel`, `camera`, `ui_bar`, or `ethics_checklist` returns concrete parameters and constraints. |
-| `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression in either project language (`Expression` class, scene root as base) and return the result. |
+| `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression in either project language (`Expression` class, scene root as base) and return the stringified `result` and, from v1.2.0, a structured `result_value` (or `result_value_omitted`). |
 | `instances` | local | ☑ | List live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. Expired heartbeat files are listed under `stale` (with `age_sec`) instead of being dropped silently. |
 | `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--width`/`--height` size the off-screen editor render only; runtime captures refuse those flags and do not upscale. `--analyze` is supported for runtime captures and returns generic image/layout metrics, including per-edge content ratios and possible clipping. |
 | `screenshot diff <before.png> <after.png> [--threshold N]` | local | ☐ | Compare two captures and report `changed_pixels`, `changed_ratio`, `max_delta` and a `changed_bounds` box locating the change. Runs entirely locally on files already on disk — **no editor needed**. `--threshold` (default 4, per channel 0..255) absorbs anti-aliasing wobble between captures; the two frames must share dimensions. |
@@ -505,3 +505,19 @@ Runtime Control bounds and click centers include canvas transforms. Node-targete
 QA `run` steps with `wait:true` wait for the requested play action, or for stopped editor/runtime state when `action:"stop"`. `action:"state"` remains a snapshot even when `wait:true`. The dedicated `stop` step uses the same stop-wait behavior.
 
 The v1.2.0 installed command is `hera-godot` (`hera-agent-godot` remains an alias). New installs do not register `hera`; see [upgrade steps](MIGRATING_TO_V1.md#upgrade) before updating scripts or removing old binaries.
+
+## Structured results from call and eval
+
+```sh
+hera-godot game node call /root/Main qa_state
+# {"method":"qa_state","path":"/root/Main","result":"{ \"hp\": 3 }","result_value":{"hp":3},"type":"Dictionary"}
+hera-godot eval 'Vector2(1, 2)'
+# {"result":"(1.0, 2.0)","result_value":"Vector2(1, 2)","type":"Vector2","undoable":false}
+```
+
+Read `result_value` directly; do not parse the legacy `result` string as JSON.
+`result_value_omitted` reports `depth_limit`, `item_limit`, `size_limit`, or
+`key_collision`. If both fields are absent, the producing editor/runtime is
+older. `null` and `false` values still count as present. The text in `result`
+can differ by engine version. See the experimental
+[encoding and compatibility rules](CONTRACT.md#structured-call-and-eval-results-experimental).

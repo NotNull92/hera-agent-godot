@@ -19,6 +19,16 @@ Addon manifest `1.2.0`. Not tagged. Published CLI channels remain `v1.1.0`
 until `git tag v1.2.0` runs the release workflow. Record:
 [v1.2.0-asset-store-upload.md](releases/v1.2.0-asset-store-upload.md).
 
+### Structured call and eval results (2026-10-15)
+
+- v1.2.0 adds experimental `result_value` / `result_value_omitted` to runtime
+  method calls and editor eval, retaining the stable `result` string.
+- Shared bounded Variant encoding handles nonfinite values, precise large
+  integers, cyclic containers and normalized-key collisions. CLI behavior is
+  unchanged; field presence identifies support across editor/runtime versions.
+- Branch preparation is local until Phase 7 approval. The merged candidate
+  must repeat C2 and release validation before any v1.2.0 tag.
+
 ### Collision-free CLI name (2026-10-06)
 
 - Canonical command: `hera-godot`; retain `hera-agent-godot`, stop registering `hera`.

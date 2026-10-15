@@ -1,0 +1,1 @@
+{"method":"qa_state","path":"/root/Main","result":"{ \"hp\": 3, \"nested\": { \"big\": 9007199254740993, \"ratio\": nan }, \"pos\": (1.0, 2.0) }","result_value":{"hp":3,"nested":{"big":"9007199254740993","ratio":"nan"},"pos":"Vector2(1, 2)"},"type":"Dictionary"}

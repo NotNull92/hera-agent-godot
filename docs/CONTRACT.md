@@ -272,7 +272,7 @@ refusal is exit `1`.
 | `node reparent` | experimental | undoable; uses `Node.reparent` and defaults to keeping the global transform; undo restores the original name after a sibling-name collision |
 | `signal connect` / `signal disconnect` | stable | undoable, `CONNECT_PERSIST` |
 | `scene open` / `scene save` | stable | |
-| `eval` | stable | stringified expression result |
+| `eval` | stable | stringified expression `result`; experimental `result_value` / `result_value_omitted` from v1.2.0 |
 | `batch` | stable | sequential results array; `--continue` keeps going past failures |
 | `node instance` / `node set-resource` / `node attach-script` / `node detach-script` | experimental | attach-script responses include dependency diagnostics whose shape may evolve; C# requires .NET and a loaded class, and adds `language`/`build_warning` inside `script_diagnostics` |
 | `scene create` / `scene save-as` / `scene reload` | experimental | persistent filesystem changes |
@@ -317,7 +317,7 @@ without fallback.
 | Command | Tier | Key fields |
 |---------|------|-----------|
 | `game tree` | stable | `scene` + compact node list |
-| `game node get/set/call` | stable | `get` mirrors `node get` (stringified values); `call` returns a stringified result |
+| `game node get/set/call` | stable | `get` mirrors `node get` (stringified values); `call` returns the stable stringified `result`; experimental `result_value` / `result_value_omitted` from v1.2.0 |
 | `game assert` | stable | ✓ pass: `{prop, op, actual, expected}`; fail: stderr + exit 1 |
 | `game instances` | experimental | `instances[]` with pid, scene, heartbeat age, `user_data_dir`, viewport sizes; optional `stale[]`; `shared_user_data` when live processes share `user://` |
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
@@ -377,3 +377,49 @@ Scenario diagnostics require readable evidence and nonnegative integral counts. 
 `project set-main-scene` persists through the editor and retains `main_scene` and `project_path` output fields. Default `run` uses that editor setting immediately. Resource property validation rejects incompatible native JSON types and fractional/nonfinite/out-of-range values for integer properties; integral JSON numbers remain accepted. A rejected mixed resource/theme property batch applies no setters; this does not promise rollback after a disk save error. Node removal and reparent undo preserve original subtree ownership, and resolved root aliases are rejected. Runtime UI rectangles and click centers use viewport coordinates including canvas transforms.
 
 Scenario `run` actions `stop` and `state` do not wait for play: `stop` with `wait:true` waits for stopped editor state and runtime heartbeats, while `state` returns its snapshot directly.
+
+## Structured call and eval results (experimental)
+
+From v1.2.0, successful `game node call` and `eval` responses add exactly one
+of `result_value` or `result_value_omitted`. The existing `result` string stays
+stable throughout v1.x; `type` still names the root Godot Variant type, not
+nested element types. `path`, `method`, and `undoable` keep their meanings.
+
+Read `result_value` directly after parsing stdout once. Test field presence:
+`null` and `false` are valid values. A method that returns a JSON string still
+has a string `result_value`; Hera does not parse it automatically. Return a
+Dictionary or Array from QA helpers when structured data is intended.
+
+| Godot value | Structured JSON value |
+|-------------|-----------------------|
+| Nil, bool, String, finite float | null, boolean, unchanged string, number |
+| int in −9007199254740991…9007199254740991 | number |
+| Other int | exact decimal string, avoiding float precision loss in editor/CLI JSON parsing |
+| NaN, positive/negative infinity | variant-text strings `nan`, `inf`, `inf_neg` |
+| StringName, NodePath | plain string |
+| Array and packed arrays | recursively encoded JSON array |
+| Dictionary | recursively encoded JSON object; String/StringName keys use plain text, other keys use `var_to_str` |
+| Valid Object / freed Object | `str(object)` string / null; object properties are not dumped as returned values |
+| Other leaves (vectors, colors, transforms, RID, Callable, Signal) | `var_to_str` string |
+
+Limits apply to the additional value: root depth 0, maximum depth 32,
+10,000 container entries across traversal, and 65,536 UTF-8 bytes in its
+compact `JSON.stringify` representation. A dictionary pair counts as an entry;
+container keys are also checked before variant-text formatting. If a limit is
+exceeded, the entire value is omitted, with `result_value_omitted` set to
+`depth_limit`, `item_limit`, or `size_limit`. Distinct keys that normalize to
+the same JSON key omit the entire value with `key_collision`. Partial values
+are never returned. These limits do not cap the legacy `result` string.
+
+No capability is advertised: response fields are the signal. An older CLI
+passes the new fields through unchanged. A new CLI does not synthesize them
+for an older addon. For runtime calls, a new editor relaying an older runtime
+still returns only legacy fields; an older editor can relay new runtime
+fields. `eval` depends only on the editor addon. If both new fields are absent,
+the component producing that response is older. Do not infer runtime support
+from the editor's version or capabilities.
+
+Batch eval children and QA call-step data retain the new fields. Operation
+receipts retain their existing 16 KiB response-evidence limit: the additional
+value can make `result_byte_limit` more likely, without changing lifecycle or
+effect. Use `--verbose` to inspect retained response evidence.

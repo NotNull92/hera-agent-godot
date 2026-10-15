@@ -7,6 +7,10 @@ these tests pin).
   Captured live from a Godot 4.7-stable editor on 2026-07-13, except the
   `game`/`run` runtime shapes, which are synthesized from the addon source
   (capturing them would require a real play session).
+  `game:call` structured, legacy, omitted and pretty-output cases and
+  `eval_structured` are synthesized inline from the structured-result addon
+  contract. The original `eval.json` capture remains unchanged to test older
+  addons without new fields.
   Editor-log and conditional-node fixtures are also synthesized from their
   tested addon shapes; identity strings deliberately use fixed sample values.
 - `*.golden` — the expected CLI stdout, byte-for-byte (trailing newline
