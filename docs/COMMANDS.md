@@ -266,6 +266,15 @@ mutation a new ID merely to force it to run.
 | `screenshot diff <before.png> <after.png> [--threshold N]` | local | ☐ | Compare two captures and report `changed_pixels`, `changed_ratio`, `max_delta` and a `changed_bounds` box locating the change. Runs entirely locally on files already on disk — **no editor needed**. `--threshold` (default 4, per channel 0..255) absorbs anti-aliasing wobble between captures; the two frames must share dimensions. |
 | `batch [--file <p>] [--continue]` | `batch` | ☑ | Run a JSON array of `{tool, params}` (stdin or `--file`) in one request, sequentially, including async tools such as `game` and `screenshot`. |
 | `smoke [--run-game\|--skip-game]` | local + tools | ☑ | Run a quick live-editor smoke check. `--run-game` also plays the current scene, checks `game tree`, captures/analyzes a runtime screenshot, then stops. |
+| `engine info [--project DIR]` | engine | ☐ | Report engine identity without an editor: resolved `path`/`source`, bytes, parsed `version` (`string`, `status`, `mono`, `commit`), `editor_build`, and `help_flags` (which engine flags this build documents). Resolution order is `--engine` → `HERA_GODOT_ENGINE` → `GODOT_BIN`. |
+| `engine doctor [--project DIR]` | engine | ☐ | Report engine, export-template, and project checks as `checks[]` (`name`, `ok`, `detail`) plus `warnings[]`: build kind, the `<version>` template directory, `.godot` cache state, and whether the Hera addon is installed and enabled in `project.godot`. |
+| `script run <res://tool.gd> [--quit-after N] [-- <args>...]` | engine | ☐ | Run a project script through the engine's headless harness. The script must extend `SceneTree` or `MainLoop`; arguments after `--` arrive via `OS.get_cmdline_user_args()`. Reports `exit_code`, bounded `output`, `duration_ms`, and the resolved engine. Non-harness scripts fail fast as `not_a_harness` because Godot 4.7.2 hangs instead of erroring on them. |
+| `project import` | engine | ☐ | Run the engine's import pass (`--import`) to completion and summarize observed artifacts (`.godot` cache, `.uid` sidecars). Engine progress text is localized and is never parsed; the exit code and artifacts decide. |
+| `project export <preset> <output> [--kind pack\|release\|debug\|patch] [--patches a,b] [--verbose]` | engine | ☐ | Export with the engine after a fail-fast preflight: preset existence (`available_presets`), target directory, pack extension, and a completed help probe before claiming the build is not an editor build. `pack` needs no templates; a release/debug export only warns when the usual template directory is missing, because a preset can point at custom templates. The raw engine log is **omitted by default** (`output_omitted`) since signing tools and export plugins can log credential-bearing arguments; `--verbose` includes it. Preset contents and `.godot/export_credentials.cfg` are never printed. |
+| `capture movie <out.avi\|.png\|.ogv> [--frames N] [--fps N] [--resolution WxH] [--scene <p>]` | engine | ☐ | Record deterministic frames with Movie Maker (`--write-movie` + `--fixed-fps`, bounded by `--frames`). A display driver is required: `--headless` crashed Movie Maker in testing and is never passed. A `res://` output is resolved into the project for inspection. PNG sequences report `frames_written` (files this run produced), `frames_present` (all files with the prefix, with `stale_frames_present` in `notes` when they differ) and the observed `frame_size`; the recording follows the project viewport, not `--resolution`. Containers report `output_bytes` only — zero frames means unmeasured, not no frames. |
+| `perf sample [--headless] [--top N]` | engine | ☐ | Run the engine with `--benchmark-file` and report the costliest phases. Godot 4.7.2 ignores `--quit-after` while benchmark flags are set, so `--timeout` (default 30 s) stops the run and `bounded_by` says whether the engine exited or the timeout ended it. Exit `0` means the benchmark JSON was read, not that the game run succeeded (`engine_error` carries a non-timeout engine failure). |
+| `docs dump --out <dir> [--format xml\|json] [--scripts] [--force]` | engine | ☐ | Write documentation with the engine's doctool: engine class-reference XML, `extension_api.json` including docs, or the project's own GDScript reference (`--scripts`). `--out` is required and is created when missing. The destination is resolved through links before the guards run, and scanning follows linked directories (bounded depth; an incomplete scan refuses as `output_scan_failed`), because Godot regenerates XML in place and **erases existing XML documentation** in its documentation directories: existing `*.xml` is refused as `output_not_empty`, an unscannable destination as `output_scan_failed`, and an existing `extension_api.json` as `output_exists` — each unless `--force`. JSON mode fails as `json_artifact_missing` when no usable file was produced and as `json_artifact_stale` when the file was not replaced by this run; XML mode reports `xml_files` and fails as `docs_output_empty` when no XML was generated. |
+| `classdb dump --out <dir>` | engine | ☐ | Dump the engine ClassDB to JSON. The engine always writes into `user://`, so Hera runs it with an isolated user directory and publishes `class_db_api.json` (`class_db_api_editor.json` adds editor-only classes) into `--out`. Generation and publication are reported separately: `files[]` carries `ok`/`error` per file, `failed_copies` counts failures, and any failed copy is a command failure (`class_db_copy_failed`) instead of a false `class_db_json_missing`; a nonzero engine exit still fails the command. Destinations are replaced through a temporary file, never truncated first. |
 
 > **Note (`run`):** use `project set-main-scene <res://scene.tscn>` when changing
 > the main scene from Hera. Newly added scenes can still require a filesystem
@@ -448,6 +457,78 @@ Global flags go **before** the command (e.g. `hera-godot --ids node find`,
 | (default) | ☑ | Compact JSON — minimal tokens. |
 | `--instance <pid>` | ☑ | Explicitly target an editor by pid (from `status`); also satisfies the single-editor mutation guard. Accepts `--instance N` or `--instance=N`. |
 | `--timeout <ms>` | ☑ | Per-request HTTP timeout in milliseconds (default 5000); also separately bounds the engine child process for `script validate`. It does not bound a whole polling command (`--wait` sends many requests). Accepts `--timeout N` or `--timeout=N`. |
+| `--engine <path>` | ☐ | Godot engine executable for commands that do not need a live editor (`engine`, `script run`, `project import/export`, `capture movie`, `perf sample`, `docs dump`, `classdb dump`). Accepts `--engine PATH` or `--engine=PATH`; the same flag is accepted after those commands. Resolution order: flag → `HERA_GODOT_ENGINE` → `GODOT_BIN`. Missing or non-file paths fail before any engine process starts. |
+
+## Engine-backed commands (no live editor)
+
+These commands run the real Godot engine as a bounded child process, so they work
+in CI or on a machine where no editor is open. They share one contract:
+
+- **Engine resolution.** `--engine <path>` (global, or after the command) wins,
+  then `HERA_GODOT_ENGINE`, then `GODOT_BIN`. A missing or non-file path fails on
+  stderr with exit `1` before any process starts. On Windows a `*_console.exe`
+  path is resolved to the sibling engine executable when it exists, because the
+  console wrapper starts the real engine as a child process. Nothing here
+  requires a live editor, an addon, or a heartbeat.
+- **Bounding.** `--timeout <ms>` bounds the engine process, and one context is
+  shared by the metadata probes and the workload of a single command.
+  Per-command defaults: `engine info`/`doctor` 10 s, `script run` 60 s,
+  `perf sample` 30 s, `capture movie` 180 s, `project import`,
+  `project export`, `docs dump` and `classdb dump` 300 s. An already-expired
+  context launches nothing, and pipe draining is bounded (`WaitDelay`).
+- **Process ownership.** A timeout terminates work through an owned identity, not
+  a recycled numeric id. Windows resolves a `*_console.exe` wrapper to the real
+  engine executable, assigns the child to a Job Object (kill-on-close) right
+  after launch and keeps a process handle, so the tree is reachable even when the
+  started process already exited; Unix signals only the started process through
+  Go's own bookkeeping, so **Unix descendants are not terminated** (that is
+  deliberate: a numeric group kill after reaping could hit an unrelated group).
+  `termination_error` reports incomplete cleanup — a failed job termination, a
+  missing job, or a start that could only be stopped alone. Comments in the
+  source state the remaining window: a Windows descendant spawned before the job
+  assignment is not enrolled.
+- **Failure vocabulary.** Any of `engine_timeout`, `engine_exit_nonzero`,
+  `output_incomplete` (the process exited but something kept its pipes open, so
+  captured output may be truncated), or a launch error fails the command; the
+  JSON result carries `error` and a one-line `error: <code>` diagnostic goes to
+  stderr. `perf sample` is the documented exception: it exits `0` when the
+  benchmark JSON parsed, and reports a nonzero engine exit as `engine_error`.
+- **Reading results.** Engine stdout/stderr is captured, bounded to 64 KiB, and
+  reported as `output` with `output_truncated`. That text is localized and
+  ANSI-colored, so **status is never parsed from it**. Success comes from the
+  exit code plus observed artifacts (files, sizes, counts), and from
+  machine-readable artifacts such as `--benchmark-file` when the engine writes
+  one. `project export` omits the raw log unless `--verbose` is passed, because
+  signing tools and export plugins can log credential-bearing arguments.
+- **Failures.** A structured pre-flight failure prints its JSON with
+  `ok:false`/`error` on stdout, a one-line `error: <code>` diagnostic on stderr,
+  and exits `1`. Missing and unreadable inputs are reported apart
+  (`export_presets_missing` vs `export_presets_unreadable`,
+  `output_directory_missing` vs `output_directory_unreadable`).
+- **Project scope.** `--project <dir>` selects the project; the working directory
+  is used when it holds a `project.godot`. There is no implicit search.
+- **Writes.** `project import`, `project export`, `capture movie`, `docs dump`,
+  and `classdb dump` create files. Hera itself only writes the paths you name,
+  and `classdb dump` replaces a destination through a temporary file instead of
+  truncating it first. The **engine**, however, is a separate writer: `--import`
+  and export regenerate `.godot/**` and `.uid` sidecars, and `docs dump` runs a
+  regeneration step that erases existing XML documentation in the destination —
+  which is why a non-empty `--out` needs `--force`.
+- **Secrets.** `export_presets.cfg` and `.godot/export_credentials.cfg` can hold
+  keys and passwords. Hera reads preset **names** only, never prints option
+  values or platform signing flags, and omits export logs unless `--verbose`.
+
+Verified constraints of Godot 4.7.2 that shape these commands (see
+[GODOT_EDITOR_ANALYSIS.md](./GODOT_EDITOR_ANALYSIS.md) §2 for the evidence):
+
+| Constraint | Consequence |
+|---|---|
+| `--headless` uses the dummy renderer (null viewport textures, 64×64 visible rect) | capture and screenshots need a real display driver |
+| `--headless` + `--write-movie` crashed (signal 11) | `capture movie` never passes `--headless` |
+| `--benchmark`/`--benchmark-file` ignore `--quit-after` | `perf sample` is bounded by the timeout and reports `bounded_by` |
+| `--script` hangs on non-`MainLoop` scripts instead of erroring | `script run` pre-flights the script's base type (`not_a_harness`) |
+| `--doctool` needs an existing directory; `--gdscript-docs` needs a project-relative path | `docs dump` creates `--out` and passes `res://` for `--scripts` |
+| Movie Maker sizes the recording from the project viewport | PNG sequences report the observed `frame_size` instead of echoing `--resolution` |
 
 ## Editor log evidence
 

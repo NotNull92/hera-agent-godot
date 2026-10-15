@@ -143,6 +143,16 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 작업을 해제하지 않습니다. import 준비 상태와 엔진별 한계는
 [수정 gate](docs/COMMANDS.md#editor-mutation-gate)를 참고하세요.
 
+아직 릴리스되지 않은 v1.3 라인은 **에디터 없이 동작하는 엔진 표면**을 추가합니다:
+`engine info`/`doctor`, `script run`(헤드리스 `SceneTree` 하니스 + 인자 전달),
+`project import`, `project export`(`pack`은 export 템플릿 없이 동작하고
+`release`/`debug`는 템플릿이 없으면 미리 실패), `capture movie`(Movie Maker로
+결정론적 프레임 기록), `perf sample`(엔진 벤치마크 단계), `docs dump`(엔진 또는
+프로젝트 API 문서), `classdb dump`(오프라인 ClassDB JSON). 엔진 경로는
+`--engine <path>`, `HERA_GODOT_ENGINE`, `GODOT_BIN` 순으로 찾고 `--timeout`으로
+실행 시간을 제한하며, 엔진 stdout은 로컬라이즈되므로 상태 판정에 쓰지 않습니다.
+[엔진 기반 명령](docs/COMMANDS.md#engine-backed-commands-no-live-editor)을 참고하세요.
+
 `hera-godot status`는 `editor_session_id`와 Game Feel / C# 에디터 플래그를 반환합니다.
 `hera-godot status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
 `unsupported`, `unverified`)를 추가합니다. API 존재만으로 디버거 연결이나 SDK

@@ -53,10 +53,29 @@ hera-godot --ids game ui tree                      # Control paths only
 hera-godot guidance ui                             # UI mode before building UI
 ```
 
+Engine-backed surface (no live editor, CI-friendly; see
+[Engine-backed commands](docs/COMMANDS.md#engine-backed-commands-no-live-editor)):
+
+```
+hera-godot engine info | doctor                    # identity, build kind, templates, project cache
+hera-godot script run res://tools/probe.gd -- a b  # headless SceneTree harness
+hera-godot project import                          # engine import pass
+hera-godot project export <preset> out.pck         # pack needs no templates; release/debug preflight
+hera-godot capture movie frames.png --frames 60    # deterministic Movie Maker frames
+hera-godot perf sample [--headless]                # engine benchmark phases as JSON
+hera-godot docs dump --out docs [--format xml|json] [--scripts]
+hera-godot classdb dump --out api                  # offline ClassDB JSON
+```
+
+These take the engine from `--engine <path>`, `HERA_GODOT_ENGINE`, or
+`GODOT_BIN`; nothing here needs a heartbeat. `--timeout <ms>` bounds the engine
+process too, and its stdout/stderr is never parsed for status (it is localized).
+
 Global flags go **before** the command: `--json` (pretty-print), `--ids` (print
 only paths for `scene tree` / `node find` / `game ui tree`), `--instance <pid>`
 (explicitly target a pid shown by `status`), `--timeout <ms>` (per-request HTTP
-timeout, default 5000). Default output is compact JSON.
+timeout, default 5000; also bounds engine processes), `--engine <path>` (engine
+executable for the no-editor commands). Default output is compact JSON.
 
 ## Conventions & safety
 
