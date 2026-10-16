@@ -13,6 +13,12 @@ npm whoami --registry=https://registry.npmjs.org/
 
 본인의 npm 계정이 나오면 다음으로 진행합니다. 인증 오류라면 `npm login --registry=https://registry.npmjs.org/`을 실행하고 브라우저에서 로그인·2FA를 마친 후 `npm whoami`를 다시 확인하세요. OTP나 인증 토큰을 채팅에 보내지 마세요.
 
+검증된 파일: `packaging/npm/hera-godot-2.0.2.tgz` (4,108 bytes). 기대 integrity:
+
+```text
+sha512-gd/9ZVGXy2rJf9qqNnZ4dKu1MRgFAyNYGxxSSlt4RHFpDCBKieVZpsR/JlIxTFU6Gw9Wtb6icPeXiGffSAMPOw==
+```
+
 ## 2. 배포 파일 확인
 
 ```powershell

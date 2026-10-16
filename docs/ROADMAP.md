@@ -1,6 +1,6 @@
 # Roadmap
 
-Preparing **v2.0.2**: owner-supplied Hera portrait replaces panel, README logos and store thumbnails. Full source: `docs/assets/hera_new.png`; addon uses a fitted 192×192 copy. Historical released ZIPs/captures remain unchanged. Homebrew 2.0.1 PR #3 merged on 2026-10-16; the 2.0.2 channel update follows verified release hashes. npm remains owner-published; recording waits for npm 2.0.2.
+Current GitHub release: **v2.0.2** (2026-10-16): owner-supplied Hera portrait replaces panel, README logos and store thumbnails. Full source: `docs/assets/hera_new.png`; addon uses a fitted 192×192 copy. [Release/upload record](releases/v2.0.2-asset-store-upload.md) · [gates](reports/2026-10-16-v2.0.2-release-gates.md). All seven candidate CI jobs and release workflow passed. Downloaded ZIP/CLI and all eight archive hashes verified; five fresh actual-addon screenshots prepared. Scoop updated; Homebrew 2.0.1 PR #3 merged and 2.0.2 PR #4 merged with the verified hashes. npm 2.0.2 is packed only; [owner publish guide](releases/npm-publish-v2.0.2.ko.md). Store submission and recording remain manual; recording waits for public npm 2.0.2.
 
 Previous GitHub release: **v2.0.1**, addon manifest `2.0.1` (2026-10-16).
 

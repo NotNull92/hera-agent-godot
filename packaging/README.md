@@ -12,11 +12,7 @@ URLs and checksum pins keep working. Installers expose that payload as
 `hera-godot`; the npm launcher keeps it private in vendor/. No protocol, token,
 heartbeat directory or Godot addon name changes are involved.
 
-v2.0.1 CLI archives are published and all eight archive hashes were verified.
-Scoop main and the npm manifest pin those hashes. npm 2.0.1 is packed only;
-publishing remains with Victor/Claude and the owner's OTP. Homebrew
-[PR #3](https://github.com/NotNull92/homebrew-hera/pull/3) is open, not merged.
-See the [release record](../docs/releases/v2.0.1-asset-store-upload.md).
+v2.0.2 CLI archives are published; all eight archive hashes were verified. Scoop and npm manifests pin the verified hashes. npm 2.0.2 is packed only; [Victor's publish guide](../docs/releases/npm-publish-v2.0.2.ko.md). Homebrew 2.0.1 PR #3 merged; [2.0.2 PR #4](https://github.com/NotNull92/homebrew-hera/pull/4) merged with the four verified hashes. See the [release record](../docs/releases/v2.0.2-asset-store-upload.md).
 Package managers do not bundle the helper.
 
 Verification: `npm test --prefix packaging/npm` builds a scratch native CLI, packs
