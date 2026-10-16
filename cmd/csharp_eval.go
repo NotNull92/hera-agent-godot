@@ -26,7 +26,7 @@ func resolveCSharpHost() (string, error) {
 			return "", err
 		}
 		if !fileExists(abs) {
-			return "", fmt.Errorf("csharp_host_unavailable: host file not found")
+			return "", fmt.Errorf("csharp_host_unavailable: host file not found; run hera-godot csharp-host install")
 		}
 		return abs, nil
 	}
@@ -37,7 +37,7 @@ func resolveCSharpHost() (string, error) {
 			return path, nil
 		}
 	}
-	return "", fmt.Errorf("csharp_host_unavailable: install the compiler helper or set --csharp-host / HERA_GODOT_CSHARP_HOST")
+	return "", fmt.Errorf("csharp_host_unavailable: run hera-godot csharp-host install or set --csharp-host / HERA_GODOT_CSHARP_HOST")
 }
 
 func prepareEvalRequests(c *client.Client, tool string, params map[string]any) error {

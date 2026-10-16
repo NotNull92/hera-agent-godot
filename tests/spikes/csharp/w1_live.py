@@ -1,6 +1,8 @@
 """Owned editor integration for the in-progress C# W1 implementation."""
 import argparse
 import hashlib
+import http.server
+import threading
 import json
 import os
 from pathlib import Path
@@ -12,7 +14,9 @@ import urllib.request
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--engine", type=Path, required=True)
-parser.add_argument("--host", type=Path, required=True)
+hosts = parser.add_mutually_exclusive_group(required=True)
+hosts.add_argument("--host", type=Path)
+hosts.add_argument("--host-archive", type=Path, help="install a locally published zip through the real CLI and a loopback release fixture")
 args = parser.parse_args()
 repo = Path(__file__).resolve().parents[3]
 work = Path(tempfile.mkdtemp(prefix="hera-csharp-w1-"))
@@ -24,8 +28,11 @@ for key in ("HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "XDG_CONFIG_HOME",
     target = work / "home" / key.lower()
     target.mkdir(parents=True)
     env[key] = str(target)
-env.update(HERA_AGENT_GODOT_TOKEN="", DOTNET_GENERATE_ASPNET_CERTIFICATE="false", MSBuildEnableWorkloadResolver="false", HERA_GODOT_CSHARP_HOST=str(args.host.resolve()))
+env.update(HERA_AGENT_GODOT_TOKEN="", DOTNET_GENERATE_ASPNET_CERTIFICATE="false", MSBuildEnableWorkloadResolver="false")
 env.pop("HERA_GODOT_EVAL_LANG", None)
+env.pop("HERA_GODOT_CSHARP_HOST", None)
+if args.host:
+    env["HERA_GODOT_CSHARP_HOST"] = str(args.host.resolve())
 engine = args.engine.resolve()
 feed = engine.parent / "GodotSharp/Tools/nupkgs"
 (project / "NuGet.Config").write_text(f'<configuration><packageSources><clear/><add key="godot" value="{feed}"/></packageSources></configuration>')
@@ -45,7 +52,34 @@ def command(argv, name, cwd=project, timeout=120):
 
 
 cli = work / "hera.exe"
-command(["go", "build", "-o", cli, "."], "cli-build", repo)
+if args.host_archive:
+    payload = args.host_archive.read_bytes()
+    class ReleaseFixture(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/v2.0.0/hera-csharp-host.zip":
+                data = payload
+            elif self.path == "/v2.0.0/checksums.txt":
+                data = (hashlib.sha256(payload).hexdigest() + "  hera-csharp-host.zip\n").encode()
+            else:
+                self.send_error(404)
+                return
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(data)
+        def log_message(self, *unused):
+            pass
+    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), ReleaseFixture)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        flags = f"-X github.com/NotNull92/hera-agent-godot/cmd.csharpReleaseBase=http://127.0.0.1:{server.server_port}"
+        command(["go", "build", "-ldflags", flags, "-o", cli, "."], "cli-build", repo)
+        command([cli, "csharp-host", "install", "--version", "v2.0.0"], "host-install")
+    finally:
+        server.shutdown()
+        server.server_close()
+else:
+    command(["go", "build", "-o", cli, "."], "cli-build", repo)
 command(["dotnet", "build", "Probe.csproj", "--nologo"], "project-build")
 command([engine, "--headless", "--editor", "--path", project, "--import"], "import")
 with (project / "project.godot").open("a") as f:
@@ -71,7 +105,11 @@ with (work / "editor.log").open("w", encoding="utf-8") as log:
             assert editor.poll() is None, "editor exited"
             time.sleep(0.2)
         assert heartbeat.exists(), "editor not ready"
-        call(["scene", "open", "res://Main.tscn"])
+        for _ in range(100):
+            if call(["status"])["scene"] == "res://Main.tscn": break
+            time.sleep(0.2)
+        else:
+            raise AssertionError("startup scene did not finish loading")
         endpoint = json.loads(heartbeat.read_text())["port"]
         request = urllib.request.Request(f"http://127.0.0.1:{endpoint}/rpc", data=json.dumps({"tool": "eval", "params": {"lang": "csharp", "action": "csharp-context"}}).encode(), headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(request) as response:

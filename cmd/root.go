@@ -127,6 +127,8 @@ func Execute(args []string) int {
 	}
 
 	switch args[0] {
+	case "csharp-host":
+		return runCSharpHost(args[1:])
 	case "status":
 		return runStatus(args[1:])
 	case "operation":
@@ -235,6 +237,7 @@ commands:
              session | stack | variables | evaluate <expr> | continue | next | step-in | step-out | detach
              --thread ID selects a discovered thread for stack/variables/evaluate/resume/step
   instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
+  csharp-host install [--version vX.Y.Z]  install the SHA256-checked C# compiler helper
   eval       [--lang csharp|gdscript] evaluate an expression (default C#; HERA_GODOT_EVAL_LANG override)
   guidance   ui | game-feel
   game_feel  list bundled Game Feel topics, or query one topic

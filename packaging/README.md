@@ -94,3 +94,10 @@ separate distribution focus for an addon whose supported installation path is
 the Godot Asset Store or the addon release ZIP. Keep the CLI installation
 paths above; do not use `winget` as an installation option. Reopen this
 decision only after a new explicit user product decision.
+
+## C# compiler helper
+
+npm, Scoop and Homebrew distribute only the CLI. Run
+`hera-godot csharp-host install --version v2.0.0` separately for C# eval.
+The command verifies the release checksum before replacing the home-directory
+helper. It does not edit the Godot project. See [C# setup](../docs/CSHARP_SUPPORT.md).

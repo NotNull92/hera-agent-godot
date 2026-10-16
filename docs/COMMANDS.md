@@ -770,3 +770,28 @@ Read `result_value` directly; do not parse the legacy `result` string as JSON.
 older. `null` and `false` values still count as present. The text in `result`
 can differ by engine version. See the experimental
 [encoding and compatibility rules](CONTRACT.md#structured-call-and-eval-results-experimental).
+
+## Install the compiler helper / 컴파일러 헬퍼 설치
+
+```sh
+hera-godot csharp-host install --version v2.0.0
+```
+
+Release builds default to their own tag; development builds require `--version`.
+The explicit command downloads `hera-csharp-host.zip` and `checksums.txt` from
+GitHub, verifies SHA256, and replaces `~/.hera-agent-godot/csharp/` after staging.
+Existing helper files are replaced as a directory; close active helper processes
+before upgrading. Failures before replacement preserve the old installation.
+It needs no live editor and does not change project files. Default download
+budget is 120 seconds; global `--timeout MS` overrides it. Success is compact
+JSON (`installed`, `version`, `path`); usage errors exit 2, installation failures
+exit 1 with `csharp_host_install_failed` on stderr. Checksums provide integrity
+against the downloaded release list, not an independent signature.
+
+npm, Scoop and Homebrew install only the CLI. Install the helper separately;
+`eval` never downloads it automatically. .NET 8 or a compatible newer runtime
+is required to execute the framework-dependent helper.
+
+패키지 매니저는 CLI만 설치합니다. 위 명령으로 헬퍼를 별도 설치하세요. SHA256을
+검증한 후 사용자 홈의 헬퍼 폴더를 교체하며 사용자 프로젝트는 변경하지 않습니다.
+eval은 자동 다운로드하지 않습니다. 헬퍼 실행에는 .NET 8 이상 호환 런타임이 필요합니다.

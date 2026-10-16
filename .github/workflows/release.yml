@@ -20,6 +20,10 @@ jobs:
           go-version-file: go.mod
           cache: false
 
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0 (2026-07-16)
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Test
         run: go test -race -shuffle=on -count=1 ./...
 
@@ -75,6 +79,13 @@ jobs:
           if any(name.startswith(".claude/") or name == ".claude" for name in names):
               raise SystemExit("addon archive must not include .claude")
           PY
+
+      - name: Publish compiler helper
+        run: |
+          set -euo pipefail
+          dotnet publish csharp-host/Hera.CSharpHost.csproj -c Release -f net8.0 --self-contained false -p:UseAppHost=false -o dist/csharp-host
+          (cd dist/csharp-host && zip -qr ../hera-csharp-host.zip .)
+          rm -rf dist/csharp-host
 
       - name: Checksums
         run: |
