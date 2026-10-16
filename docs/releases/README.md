@@ -1,7 +1,7 @@
 # Release records
 
 Current GitHub release: **[v2.0.0](v2.0.0-asset-store-upload.md)** (2026-10-16).
-Scoop is updated; npm publication awaits authentication; Homebrew PR #2 merged 2026-10-16.
+Scoop is updated; `hera-godot@2.0.0` is on npm (2026-10-16); Homebrew PR #2 merged 2026-10-16.
 Asset Store v2 submission remains Victor's task. The untagged unstable v1.2.0
 upload from 2026-09-15 remains untouched.
 
