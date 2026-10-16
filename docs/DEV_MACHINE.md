@@ -7,6 +7,18 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **Demo recording setup (2026-10-16)**: .NET SDK **8.0.426** is installed
+  machine-wide (winget `Microsoft.DotNet.SDK.8`) next to SDK 7.0.101 and
+  10.0.204; Godot 4.7.2 .NET's build/reload tooling needs SDK 8, the runtime
+  alone is not enough. The **released** CLI 2.0.0 lives in its own npm prefix
+  at `%LOCALAPPDATA%\hera-godot-release\node_modules\.bin\hera-godot.cmd`,
+  because PATH resolves `hera-godot` to the development shim and the global
+  npm `hera-godot@0.9.0` (with its preserved `hera` bins) is left untouched.
+  Pass that path to `demo/td-csharp/prepare.ps1 -HeraCli` and use it in the
+  recording terminal so the panel shows a version match. The compiler helper
+  v2.0.0 is installed at `~/.hera-agent-godot/csharp`. Verified: prepare build
+  0 warnings/errors, isolated headless editor `--build-solutions` clean.
+
 - **W2 validation (2026-10-16)**: official 4.2 does not advertise `--import`.
   Passing that flag leaves the editor running; the earlier timeout was not
   evidence of a slow import. `tests/spikes/editor_ui_checks.py` checks `--help`
