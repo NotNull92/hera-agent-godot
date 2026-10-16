@@ -7,7 +7,7 @@ Channel publication is recorded in [the v2 record](releases/v2.0.0-asset-store-u
 
 Release tag `v2.0.0` points to `87368e3`. CI 7/7, HOL and release workflow passed.
 Scoop main pins the verified assets. npm v2 is ready but blocked by E401 credentials;
-[Homebrew PR #2](https://github.com/NotNull92/homebrew-hera/pull/2) is open (not merged).
+[Homebrew PR #2](https://github.com/NotNull92/homebrew-hera/pull/2) merged 2026-10-16 (`db92ac8`).
 Store submission remains Victor's task. See the release record for exact hashes.
 
 ## Prepared — v1.2.0 (2026-09-15)
