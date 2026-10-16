@@ -10,10 +10,12 @@ func _initialize() -> void:
 func _run() -> void:
 	var ledger := Records.new()
 	ledger.session = "session"
-	var deadline := int(Time.get_unix_time_from_system() * 1000) + 60000
+	# This tests capacity, so avoid the upper deadline boundary and a second clock.
+	var deadline := ledger._now() + 30000
 	var input := {"tool": "game", "params": {"path": "x".repeat(20000)}}
 	for i in Records.MAX_RECORDS:
-		_check(ledger.accept("session:%d:n%d" % [deadline, i], input).has("accepted"), "bounded fixture admitted")
+		var admission: Dictionary = ledger.accept("session:%d:n%d" % [deadline, i], input)
+		_check(admission.has("accepted"), "bounded fixture admitted: " + str(admission))
 	for id: String in ledger.records.keys():
 		ledger.begin(id)
 		ledger.finish(id, {"ok": true, "data": "y".repeat(15000)})
