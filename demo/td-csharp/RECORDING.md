@@ -7,7 +7,7 @@
 - 에이전트: Codex, `gpt-6.1-sol` medium (Codex 기본 설정에 이미 저장됨)
 - 엔진: Godot 4.7.2 .NET, 이 폴더(`demo/td-csharp`) 프로젝트
 - CLI: **공개 릴리스 2.0.0** (개발 shim 아님)
-- 녹화: ScreenToGif, 1920×1080, MP4로 내보내기
+- 녹화: Windows 캡처 도구(Win+Shift+R), 1920×1080 영역, MP4
 
 ## 촬영 1번이 곧 최종 리허설이다
 
@@ -89,16 +89,11 @@ codex -c features.hooks=false -c features.plugin_hooks=false -c features.plugins
 
 알림(Discord, 메신저 등)은 끈다. Windows 집중 모드를 켜면 편하다.
 
-### 1-7. ScreenToGif 설정
+### 1-7. 캡처 도구 확인
 
-1. `C:\Program Files\ScreenToGif\ScreenToGif.exe` 실행 → **옵션 → 추가 기능(Extras)**에서
-   FFmpeg 경로를 지정한다.
-   `C:\Users\PC\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-8.1.1-full_build\bin\ffmpeg.exe`
-2. **녹화기(Recorder)**를 연다. 프레임 속도 **15fps**, 녹화 영역을 (0,0)에서 1920×1080에 맞춘다.
-3. 단축키는 기본값 **F7 녹화/일시정지, F8 정지**를 쓴다.
-4. 5분 녹화면 프레임 캐시가 수 GB가 된다. C 드라이브 여유 공간이 10GB 이상인지 본다.
-5. 예비 수단: ScreenToGif가 버벅이면 Windows 캡처 도구(**Win+Shift+R**)로 같은 영역을
-   녹화하면 MP4가 바로 나온다.
+Windows 캡처 도구의 화면 녹화를 쓴다. 따로 설정할 것은 없다. 녹화 전에
+**Win+Shift+R**을 한 번 눌러 영역 선택 화면이 뜨는지만 확인하고 Esc로 닫는다.
+마이크와 시스템 소리는 끈다(게임 소리가 없고, 내레이션은 편집에서 넣는다).
 
 ## 2. 촬영
 
@@ -106,7 +101,7 @@ codex -c features.hooks=false -c features.plugin_hooks=false -c features.plugins
 
 | 시간 | 할 일 | 화면에서 보여야 하는 것 |
 |---|---|---|
-| 0:00 | **F7**로 녹화 시작. 2초간 가만히 | HeraAgent 패널 전체, 오른쪽 Codex 빈 화면 |
+| 0:00 | **Win+Shift+R** → 주 모니터 위쪽 1920×1080을 드래그로 선택 → **시작**. 2초간 가만히 | HeraAgent 패널 전체, 오른쪽 Codex 빈 화면 |
 | 0:03 | 마우스로 패널을 천천히 훑는다 | 한영 문구, 상태 4줄 |
 | 0:08 | **Game Feel Mode**, **Game Feel UI Mode** 토글을 켠다 (이미 켜져 있으면 가리키기만) | 토글 2개 켜짐 |
 | 0:13 | **에이전트 설정 복사 Copy agent setup** 클릭 | 버튼 옆 "복사됨 Copied" |
@@ -142,7 +137,7 @@ Codex가 질문을 하면 그대로 답한다: `Proceed with your best judgment.
 2. 에디터에서 **F5**(또는 오른쪽 위 재생 버튼)로 게임을 직접 실행한다.
 3. 타워 2~3개를 클릭으로 배치하고 웨이브를 시작한다. 적이 맞고 쓰러지는 장면을
    10~15초 보여준다.
-4. 게임을 끄고 **F8**로 녹화를 멈춘다.
+4. 게임을 끄고 캡처 도구 막대의 **정지(■)**를 누른다.
 
 ### 2-5. 이럴 땐 다시 찍는다
 
@@ -157,12 +152,14 @@ Codex가 질문을 하면 그대로 답한다: `Proceed with your best judgment.
 
 ### 3-1. MP4로 저장
 
-ScreenToGif 편집기가 열리면 **파일 → 다른 이름으로 저장 → 형식: MP4(FFmpeg)**.
-품질은 기본값, 파일 이름은 `hera-v2.0.0-td-csharp-take1.mp4`처럼 테이크 번호를 붙인다.
+정지하면 캡처 도구 창에 녹화가 열린다. **저장(Ctrl+S)**으로
+`hera-v2.0.0-td-csharp-take1.mp4`처럼 테이크 번호를 붙여 저장한다.
+영역을 조금 넘게 잡았으면 편집할 때 1920×1080으로 자르면 된다.
 
-### 3-2. README용 GIF 2개 (같은 녹화에서 잘라내기)
+### 3-2. README용 GIF 2개
 
-같은 편집기에서 프레임 범위를 골라 GIF로 따로 저장한다. 가로 960으로 줄여 10MB 아래로 맞춘다.
+캡처 도구는 GIF를 만들지 않는다. MP4를 Claude에게 넘기면 ffmpeg로 아래 두 컷을
+잘라 가로 960, 10MB 이하 GIF로 만든다.
 
 1. **인트로 컷 (약 10초)**: 토글 켜기 → 설정 복사 → 버전 줄이 "버전 일치"로 바뀌는 순간까지.
 2. **전투 컷 (약 8초)**: 타워가 쏘고 적이 쓰러지고 골드가 오르는 장면.
