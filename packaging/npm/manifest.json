@@ -4,27 +4,27 @@
   "assets": {
     "darwin-x64": {
       "name": "hera-darwin-amd64.tar.gz",
-      "sha256": "5045873d262904d8487a5f006dfe484ae4fe9424fa0a523e4e7d742af7f6a7ed"
+      "sha256": "dbeb7e409ffc99b42d2e8e2271f6eebdc2a47643949c87e51681f43c8aed4414"
     },
     "darwin-arm64": {
       "name": "hera-darwin-arm64.tar.gz",
-      "sha256": "dc31b9c90ff8c7cae5a93f3b9635398b9d7e7f75f297409a79077b5a5e912510"
+      "sha256": "f5798b397305e658a7f44cce8f651d0dcee4af83455dfba1bdda95bdb0dd6fc6"
     },
     "linux-x64": {
       "name": "hera-linux-amd64.tar.gz",
-      "sha256": "0e00ce89a2f306adc92f811602c376a3e51673cde873ea4778b90bc074f233b4"
+      "sha256": "d74683ff84df61a55e557a8056bca1d2f73c325c87a01307de11fd3891288e97"
     },
     "linux-arm64": {
       "name": "hera-linux-arm64.tar.gz",
-      "sha256": "36b14b1250c2041b16dfce5f436a370715e7416b08fd6a097870a8f79510965f"
+      "sha256": "50cb806b98bf03802f93e3233d4bb60af75d754995dba4f3f3b13882fdd29847"
     },
     "win32-x64": {
       "name": "hera-windows-amd64.zip",
-      "sha256": "7ff49b5aa0b5df71c5e22d3fac75a998263bccc1203dad618c13f51121eb2709"
+      "sha256": "2eef239c13d004b07d1bc08f7114c61c3087e120c8f076c1e3059e82c0649110"
     },
     "win32-arm64": {
       "name": "hera-windows-arm64.zip",
-      "sha256": "b358e58d11c60ab3e060aa4437639a0f39035bc84c4cfe6e1d9235c7d9020661"
+      "sha256": "15228bf39a6b11fde981fcda6f84733a6d22dfcf0c0c455b80e41cc6375f420a"
     }
   }
 }
