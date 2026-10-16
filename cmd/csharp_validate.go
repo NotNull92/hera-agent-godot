@@ -84,6 +84,13 @@ func csharpBuildPaths(stage string) []string {
 	}
 }
 
+func csharpValidateTimeout() time.Duration {
+	if requestTimeout != 0 {
+		return requestTimeout
+	}
+	return 60 * time.Second
+}
+
 func runCSharpValidate(project, path string, evidence bool) int {
 	result := map[string]any{"path": path, "lang": "csharp", "valid": false, "source": "disk", "validation_scope": "project_build"}
 	fail := func(code, detail string) int {
@@ -95,11 +102,7 @@ func runCSharpValidate(project, path string, evidence bool) int {
 	if err != nil {
 		return fail("csproj_not_found", err.Error())
 	}
-	timeout := requestTimeout
-	if timeout == 0 {
-		timeout = 5 * time.Second
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), csharpValidateTimeout())
 	defer cancel()
 	dotnet, version, state := dotnetSDK(ctx)
 	if state != "supported" {

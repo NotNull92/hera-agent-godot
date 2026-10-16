@@ -13,6 +13,21 @@ import (
 	"time"
 )
 
+func TestCSharpValidateTimeout(t *testing.T) {
+	previous := requestTimeout
+	t.Cleanup(func() { requestTimeout = previous })
+	for _, timeout := range []time.Duration{0, 5 * time.Second, 90 * time.Second} {
+		requestTimeout = timeout
+		want := timeout
+		if want == 0 {
+			want = 60 * time.Second
+		}
+		if got := csharpValidateTimeout(); got != want {
+			t.Fatalf("timeout %v: got %v, want %v", timeout, got, want)
+		}
+	}
+}
+
 func TestCSharpDiagnostics(t *testing.T) {
 	project := t.TempDir()
 	path := filepath.Join(project, "한글 file.cs")

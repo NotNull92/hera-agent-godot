@@ -306,6 +306,10 @@ mutation a new ID merely to force it to run.
 
 ## Fresh GDScript validation
 
+C# `script validate res://Script.cs` uses a 60-second default deadline for SDK
+discovery, input query, restore and build together. Explicit `--timeout MS`
+overrides it; the separate editor HTTP request still defaults to five seconds.
+
 `hera-godot script validate res://scripts/player.gd` selects a live editor (use
 `--instance` when several are open), obtains its engine/project paths, and runs
 that engine with `--headless --check-only --script` in a separate process.
