@@ -15,6 +15,7 @@ import (
 var csharpHostPath string
 
 func resolveCSharpHost() (string, error) {
+	// Build csharp-host/ separately; source checkouts do not imply an installed helper.
 	path := csharpHostPath
 	if path == "" {
 		path = os.Getenv("HERA_GODOT_CSHARP_HOST")
