@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -83,5 +84,19 @@ func TestCSharpHostOverride(t *testing.T) {
 	csharpHostPath = path + ".missing"
 	if _, err := resolveCSharpHost(); err == nil {
 		t.Fatal("flag did not override environment")
+	}
+}
+
+func TestCSharpEvalMissingAssembly(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "missing.dll")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"ok": true, "data": map[string]any{
+			"project_reference": path, "project_mvid": "revision", "references": []string{path},
+		}})
+	}))
+	defer server.Close()
+	err := prepareEvalRequests(client.New(server.URL), "eval", map[string]any{"expr": "1", "lang": "csharp"})
+	if err == nil || !strings.HasPrefix(err.Error(), "csharp_build_required:") {
+		t.Fatal(err)
 	}
 }

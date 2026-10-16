@@ -85,6 +85,9 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 	if !ok || len(refs) == 0 || project == "" || mvid == "" {
 		return fmt.Errorf("csharp_build_required: incomplete loader context")
 	}
+	if !fileExists(project) {
+		return fmt.Errorf("csharp_build_required: project assembly is missing; build and reload the project")
+	}
 	references := []string{}
 	for _, ref := range refs {
 		value, ok := ref.(string)
