@@ -1,0 +1,306 @@
+{
+  "requirements": [
+    "path-protected",
+    "placement-spends-money",
+    "click-builds-tower",
+    "hud-sync",
+    "occupied-tile-rejected",
+    "no-overspending",
+    "wave-spawning",
+    "auto-target-shoot",
+    "health-and-kills",
+    "kill-rewards",
+    "ui-audit",
+    "sprites-map-health-hud",
+    "leaks-cost-lives",
+    "loss-state",
+    "restart"
+  ],
+  "steps": [
+    {
+      "tool": "game.node.call",
+      "path": "/root/Main",
+      "method": "QaReset"
+    },
+    {
+      "tool": "game.click",
+      "x": 224,
+      "y": 336
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "TowerCount",
+      "op": "eq",
+      "value": 0,
+      "covers": [
+        "path-protected"
+      ]
+    },
+    {
+      "tool": "game.click",
+      "x": 160,
+      "y": 272
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Money",
+      "op": "eq",
+      "value": 120,
+      "covers": [
+        "placement-spends-money"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "TowerCount",
+      "op": "eq",
+      "value": 1,
+      "covers": [
+        "click-builds-tower"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main/HUD/Stats",
+      "prop": "text",
+      "op": "contains",
+      "value": "GOLD  120",
+      "covers": [
+        "hud-sync"
+      ]
+    },
+    {
+      "tool": "game.click",
+      "x": 160,
+      "y": 272
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Money",
+      "op": "eq",
+      "value": 120,
+      "covers": [
+        "occupied-tile-rejected"
+      ]
+    },
+    {
+      "tool": "game.click",
+      "x": 352,
+      "y": 272
+    },
+    {
+      "tool": "game.click",
+      "x": 480,
+      "y": 272
+    },
+    {
+      "tool": "game.click",
+      "x": 736,
+      "y": 336
+    },
+    {
+      "tool": "game.click",
+      "x": 864,
+      "y": 336
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Money",
+      "op": "eq",
+      "value": 0,
+      "covers": [
+        "no-overspending"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "TowerCount",
+      "op": "eq",
+      "value": 4,
+      "covers": [
+        "no-overspending"
+      ]
+    },
+    {
+      "tool": "game.click",
+      "text": "START WAVE"
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Wave",
+      "op": "eq",
+      "value": 1,
+      "covers": [
+        "wave-spawning"
+      ]
+    },
+    {
+      "tool": "wait",
+      "duration_ms": 4000
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Shots",
+      "op": "gt",
+      "value": 0,
+      "covers": [
+        "auto-target-shoot"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Kills",
+      "op": "gt",
+      "value": 0,
+      "covers": [
+        "health-and-kills"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Money",
+      "op": "gt",
+      "value": 0,
+      "covers": [
+        "kill-rewards"
+      ]
+    },
+    {
+      "tool": "game.ui.audit",
+      "covers": [
+        "ui-audit"
+      ]
+    },
+    {
+      "tool": "screenshot.runtime",
+      "path": "res://qa-combat.png",
+      "analyze": true,
+      "evidence": true,
+      "covers": [
+        "sprites-map-health-hud"
+      ]
+    },
+    {
+      "tool": "game.node.call",
+      "path": "/root/Main",
+      "method": "QaReset"
+    },
+    {
+      "tool": "game.node.call",
+      "path": "/root/Main",
+      "method": "QaLeak"
+    },
+    {
+      "tool": "wait",
+      "duration_ms": 100
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Lives",
+      "op": "eq",
+      "value": 9,
+      "covers": [
+        "leaks-cost-lives"
+      ]
+    },
+    {
+      "tool": "game.node.set",
+      "path": "/root/Main",
+      "prop": "Lives",
+      "value": 1
+    },
+    {
+      "tool": "game.node.call",
+      "path": "/root/Main",
+      "method": "QaLeak"
+    },
+    {
+      "tool": "wait",
+      "duration_ms": 100
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Lives",
+      "op": "eq",
+      "value": 0,
+      "covers": [
+        "loss-state"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main/HUD/WaveButton",
+      "prop": "disabled",
+      "op": "eq",
+      "value": true,
+      "covers": [
+        "loss-state"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main/HUD/Message",
+      "prop": "text",
+      "op": "contains",
+      "value": "GATE LOST",
+      "covers": [
+        "loss-state"
+      ]
+    },
+    {
+      "tool": "screenshot.runtime",
+      "path": "res://qa-loss.png",
+      "analyze": true,
+      "evidence": true,
+      "covers": [
+        "loss-state"
+      ]
+    },
+    {
+      "tool": "game.click",
+      "text": "RESTART"
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Money",
+      "op": "eq",
+      "value": 160,
+      "covers": [
+        "restart"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "Lives",
+      "op": "eq",
+      "value": 10,
+      "covers": [
+        "restart"
+      ]
+    },
+    {
+      "tool": "game.assert",
+      "path": "/root/Main",
+      "prop": "TowerCount",
+      "op": "eq",
+      "value": 0,
+      "covers": [
+        "restart"
+      ]
+    }
+  ]
+}
