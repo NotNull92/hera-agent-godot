@@ -12,11 +12,11 @@ URLs and checksum pins keep working. Installers expose that payload as
 `hera-godot`; the npm launcher keeps it private in vendor/. No protocol, token,
 heartbeat directory or Godot addon name changes are involved.
 
-The v2.0.1 candidate bundles the panel character inside the addon. Refresh npm
-and Scoop hashes from the verified release checksums before packing/updating.
-npm 2.0.0 and the Homebrew v2 update were published on 2026-10-16; the 2.0.1
-npm package is pack-only until owner publication. See the
-[release records](../docs/releases/README.md) for current channel state.
+v2.0.1 CLI archives are published and all eight archive hashes were verified.
+Scoop main and the npm manifest pin those hashes. npm 2.0.1 is packed only;
+publishing remains with Victor/Claude and the owner's OTP. Homebrew
+[PR #3](https://github.com/NotNull92/homebrew-hera/pull/3) is open, not merged.
+See the [release record](../docs/releases/v2.0.1-asset-store-upload.md).
 Package managers do not bundle the helper.
 
 Verification: `npm test --prefix packaging/npm` builds a scratch native CLI, packs

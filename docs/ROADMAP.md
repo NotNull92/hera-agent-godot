@@ -1,21 +1,30 @@
 # Roadmap
 
-## Prepared — v2.0.1 (2026-10-16)
+Current GitHub release: **v2.0.1**, addon manifest `2.0.1` (2026-10-16).
 
 Fix: the Hera character in the editor panel now ships with the addon (it was missing in installed projects).
-The addon manifest and npm candidate are 2.0.1. Release gates and channel updates
-are in progress; the published v2.0.0 record below is historical.
+The 192×192 alpha image is addon-local; regression and capture fixtures have no
+docs folder or copied docs image. The demo prepare script now compares its CLI
+against the copied addon manifest instead of hard-coding a release version.
 
+Tag `v2.0.1` points to `ddbf365`. [Candidate CI 38865712568](https://github.com/NotNull92/hera-agent-godot/actions/runs/38865712568)
+passes 7/7; [release workflow 38865990632](https://github.com/NotNull92/hera-agent-godot/actions/runs/38865990632)
+passes. All nine assets downloaded; all eight archive hashes verified. Local
+Go build/vet/test/race/shuffle, 4.2/4.7 checks, 31 standalone regressions and
+no-docs GUI capture pass. A startup-only CI import race was corrected by bounded
+read-only smoke retries for editor_busy; other errors still fail immediately.
 
-Current GitHub release: **v2.0.0**, addon manifest `2.0.0`. W1 and W2
-are merged on main; baseline `ae8c8c4` passed CI and HOL. Victor accepted legacy
-CLI `unknown` with upgrade guidance and authorized direct main release work.
-Channel publication is recorded in [the v2 record](releases/v2.0.0-asset-store-upload.md).
+Scoop main pins v2.0.1. [Homebrew PR #3](https://github.com/NotNull92/homebrew-hera/pull/3)
+is open for Claude to merge. npm 2.0.1 is packed only (owner publication pending);
+registry still reports 2.0.0 at the check. Store ZIP, unchanged description/footer,
+patch changelog and five real-addon screenshots are prepared, not submitted.
+[Release and upload record](releases/v2.0.1-asset-store-upload.md) ·
+[gate evidence](reports/2026-10-16-v2.0.1-release-gates.md).
 
-Release tag `v2.0.0` points to `87368e3`. CI 7/7, HOL and release workflow passed.
-Scoop main pins the verified assets. `hera-godot@2.0.0` published to npm 2026-10-16;
-[Homebrew PR #2](https://github.com/NotNull92/homebrew-hera/pull/2) merged 2026-10-16 (`db92ac8`).
-Asset Store v2.0.0 submitted 2026-10-16. See the release record for exact hashes.
+Recording preparation is paused until npm 2.0.1 is published. Only the recording
+editor/terminal were closed; the demo was not re-prepared. The frozen prompt is
+unchanged. v2.0.0's publication and Victor's 2026-10-16 store submission remain
+recorded in [its historical record](releases/v2.0.0-asset-store-upload.md).
 
 ## Prepared — v1.2.0 (2026-09-15)
 

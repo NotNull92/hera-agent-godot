@@ -7,6 +7,13 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **v2.0.1 recording hold (2026-10-16)**: recording editor/terminal closed for
+  the panel-character patch. The normal-profile npm release prefix and helper
+  remain 2.0.0; they were not upgraded/re-prepared. GitHub/Scoop 2.0.1 is
+  verified, but wait for owner npm 2.0.1 publication before repeating the
+  recording setup below. The patch checks/captures used isolated profiles and
+  the downloaded CLI under `dist/v2.0.1-work/released-cli/`.
+
 - **Demo recording setup (2026-10-16)**: .NET SDK **8.0.426** is installed
   machine-wide (winget `Microsoft.DotNet.SDK.8`) next to SDK 7.0.101 and
   10.0.204; Godot 4.7.2 .NET's build/reload tooling needs SDK 8, the runtime

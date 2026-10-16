@@ -6,6 +6,9 @@ game scripts, populated scenes and captures are produced during the run.
 
 ## Prepare
 
+Recording preparation is paused until npm **2.0.1** is published; run the steps
+below after owner publication.
+
 Install Godot **4.7.2 .NET** and the **.NET 8 SDK** (the runtime alone is not
 enough for Godot's build/reload tooling). Install the published CLI:
 

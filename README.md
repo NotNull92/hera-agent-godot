@@ -49,9 +49,10 @@ same low-token, shell-native philosophy, **designed for Godot**, not ported.
 ## Current in-repo baseline: v2.0.1
 
 Fix: the Hera character in the editor panel now ships with the addon (it was missing in installed projects).
-Addon manifest: `2.0.1`. See the [release/channel records](docs/releases/README.md)
-for publication status. The v2.0.0 npm package and Homebrew update were released
-on 2026-10-16; v2.0.1 channel updates are separate.
+Addon manifest and GitHub Release are `2.0.1` (2026-10-16). Scoop is updated;
+npm 2.0.1 is packed but not published, and Homebrew [PR #3](https://github.com/NotNull92/homebrew-hera/pull/3)
+is open. Store fields and new screenshots are prepared for Victor's submission.
+[Release/channel record](docs/releases/v2.0.1-asset-store-upload.md).
 
 `v2.0.0` changes the default eval language to C# and adds C# validation/run and
 the bilingual editor panel. Existing stable JSON field types remain unchanged.
