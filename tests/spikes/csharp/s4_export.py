@@ -9,7 +9,9 @@ parser.add_argument("--engine", type=Path, required=True)
 parser.add_argument("--evidence", type=Path, required=True)
 args = parser.parse_args()
 work = args.evidence.resolve()
-assert work.name.startswith("hera-csharp-s1-") and (work / "unloaded-2").exists()
+is_w1 = work.name.startswith("hera-csharp-w1-") and (work / "calls.jsonl").exists()
+assert is_w1 or (work.name.startswith("hera-csharp-s1-") and (work / "unloaded-2").exists())
+assembly_name = "Probe" if is_w1 else "Spike"
 project = work / "project"
 env = os.environ.copy()
 for key in ("HOME", "USERPROFILE", "APPDATA", "LOCALAPPDATA", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "DOTNET_CLI_HOME"):
@@ -26,9 +28,9 @@ def run(command, name, cwd=project):
 
 
 # Only the disposable fixture gets build files; production must never create them.
-if not (project / "Spike.sln").exists():
-    run(["dotnet", "new", "sln", "--format", "sln", "--name", "Spike"], "s4-solution")
-    run(["dotnet", "sln", "Spike.sln", "add", "Spike.csproj"], "s4-solution-add")
+if not (project / (assembly_name + ".sln")).exists():
+    run(["dotnet", "new", "sln", "--format", "sln", "--name", assembly_name], "s4-solution")
+    run(["dotnet", "sln", assembly_name + ".sln", "add", assembly_name + ".csproj"], "s4-solution-add")
 (project / "Main.tscn").write_text('[gd_scene format=3]\n[node name="Main" type="Node"]\n')
 settings = (project / "project.godot").read_text()
 if 'run/main_scene=' not in settings:
@@ -41,7 +43,7 @@ if "api.nuget.org" not in text:
     config.write_text(text.replace('</packageSources>', '<add key="nuget" value="https://api.nuget.org/v3/index.json"/></packageSources>'))
 output = run([args.engine.resolve(), "--headless", "--path", project, "--export-pack", "Windows", work / "probe-final.pck"], "s4-export-final")
 assert "ERROR:" not in output, output
-assemblies = list((project / ".godot/mono/temp/bin/ExportRelease").rglob("Spike.dll"))
+assemblies = list((project / ".godot/mono/temp/bin/ExportRelease").rglob(assembly_name + ".dll"))
 assert assemblies, "No export-compiled assembly"
 inspector = work / "inspect"
 inspector.mkdir(exist_ok=True)
@@ -56,8 +58,8 @@ var metadata = pe.GetMetadataReader();
 bool control = false;
 foreach (var handle in metadata.TypeDefinitions) {
     var name = metadata.GetString(metadata.GetTypeDefinition(handle).Name);
-    if (name.Contains("ProbePlugin") || name.Contains("EvaluationContext")) throw new Exception("TOOLS loader leaked into export");
-    if (name == "ProbeStamp") control = true;
+    if (name.Contains("ProbePlugin") || name.Contains("HeraCSharpEval") || name.Contains("EvaluationContext")) throw new Exception("TOOLS loader leaked into export");
+    if (name == "ProbeStamp" || name == "Stamp") control = true;
 }
 if (!control) throw new Exception("Wrong assembly: missing control type");
 Console.WriteLine("HERA_EXPORT_TYPES_OK");

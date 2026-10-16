@@ -119,3 +119,53 @@ fixture `Tool.cs` with `one two`: expected marker, exit 0, duration 317 ms.
 This run used the disposable project but inherited the invoking user's profile
 (unlike the isolated Phase 0 runs); no user project was opened or changed.
 All subsequent integration uses isolated profiles explicitly.
+
+## Phase 4 — native C# eval
+
+The CLI defaults eval (including batch children) to C#. Explicit `--lang`
+overrides `HERA_GODOT_EVAL_LANG`; `gdscript` retains its original result fields.
+The external net8 Roslyn helper compiles one expression against platform,
+Godot and project references. `--csharp-host` / `HERA_GODOT_CSHARP_HOST` selects
+an installed helper; adjacent and private-home locations are also searched.
+Packaging/downloading the helper belongs to the later release work, not W1.
+
+The native `[Tool]` loader is entirely `#if TOOLS`. It executes on the edited
+scene through a collectible ALC and checks unloading. Godot loads the project
+from bytes, so `Assembly.Location` is empty: the Debug DLL is resolved separately,
+and the helper verifies the loaded module's MVID against the exact reference
+bytes it compiles with. The loader checks MVID again before execution. A rebuild
+between observations fails rather than silently evaluating against a different
+project revision. External dependency freshness is not independently certified.
+
+Results use the existing Variant serializer; unsupported CLR result types fail
+instead of being stringified as successful values. Expressions and compiler
+output are bounded. The editor expression itself is arbitrary synchronous code,
+not sandboxed or forcibly interruptible by an HTTP timeout. It can mutate state,
+retain delegates or register handlers; unload failure reports effects may have
+occurred. A retained ALC can still require an editor restart. This must be carried
+into Phase 7 security and migration documentation before release.
+
+Validation:
+
+- `host_checks.py`: scalar/member/void expressions compile, malformed statements,
+  oversized/empty expressions and mismatched MVID fail. Helper build: zero
+  warnings/errors. Tests ran using installed .NET 10 roll-forward; .NET 8-only
+  runtime execution remains unverified.
+- `w1_live.py`: actual CLI → HTTP → native loader on 4.7.2 .NET passes scalar,
+  Vector2, dictionary, NaN, large integer, void mutation/readback, parse failure,
+  mixed-language batch, env fallback, real C# disk validation and direct .cs run.
+  A non-Tool C# scene is a Node2D placeholder: `SceneRoot is Probe` is false and
+  casting fails honestly. Same-editor rebuild changes `Stamp.Value` from 1 to 2;
+  engine log confirms successful project ALC unload. Editor quits with exit 0;
+  the quit request itself loses its HTTP reply, as explicitly asserted.
+- Evidence: `%TEMP%/hera-csharp-w1-7tyolj9c`. `s4_export.py` on this fixture
+  performs a real PCK export and inspects ExportRelease metadata: project control
+  type remains, HeraCSharpEval/EvaluationContext types are absent.
+- Go parser/env/batch/host tests, error/help goldens, full uncached tests,
+  build and vet pass. No stable result fields or version numbers changed.
+
+The first integration failed because Assembly.Location was empty, then cleanup
+used an invalid EditorInterface.GetTree call and finally assumed a quit reply;
+all three are corrected in the reproducible harness. Standard-editor checks use
+separate projects per engine and only the relevant test, avoiding 4.7-import
+cache reuse and unrelated newer test APIs on 4.2.

@@ -87,6 +87,8 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "eval_csharp_unavailable", args: []string{"eval", "1+1"}, responses: map[string]string{"eval:csharp-context": `{"ok":false,"error":"csharp_unavailable: use --lang gdscript"}`}, wantExit: 1, wantStderrPrefix: "error: csharp_unavailable:", golden: "eval_csharp_unavailable"},
+		{name: "eval_csharp_build_required", args: []string{"eval", "1+1"}, responses: map[string]string{"eval:csharp-context": `{"ok":false,"error":"csharp_build_required: build and reload the project"}`}, wantExit: 1, wantStderrPrefix: "error: csharp_build_required:", golden: "eval_csharp_build_required"},
 		{name: "editor_busy", args: []string{"project", "scan"}, responses: map[string]string{"project": `{"ok":false,"error":"editor_busy: editor mutation or import in progress"}`}, wantExit: 1, wantStderrPrefix: "project: editor_busy:"},
 		{name: "operation_status", args: []string{"operation", "status", "session:1:x"}, responses: map[string]string{"operation:status": `{"ok":true,"data":{"id":"session:1:x","lifecycle":"completed","effect":"applied","verification":"not_requested","persistence":"unknown","error_code":"","cancellable":false,"evidence":{"complete":true}}}`}, golden: "operation_status"},
 		{name: "operation_cancel", args: []string{"operation", "cancel", "session:1:x"}, responses: map[string]string{"operation:cancel": `{"ok":true,"data":{"id":"session:1:x","lifecycle":"cancelled","effect":"not_applied","verification":"not_requested","persistence":"not_requested","error_code":"operation_cancelled","cancellable":false,"cancelled":true}}`}, golden: "operation_cancel"},
@@ -121,7 +123,7 @@ func contractCases() []contractCase {
 		{name: "editor_cursor_expired", args: []string{"output", "--source", "editor", "--since", "old:0"}, responses: map[string]string{"status": editorLogStatus, "output": "@editor_cursor_expired"}, golden: "editor_cursor_expired"},
 		{name: "editor_evidence_unavailable", args: []string{"diagnostics", "--source", "editor"}, responses: map[string]string{"status": `{"ok":true,"data":{}}`}, golden: "editor_evidence_unavailable"},
 		{name: "editor_status_error", args: []string{"output", "--source", "editor"}, responses: map[string]string{"status": `{"ok":false,"error":"unauthorized"}`}, wantExit: 1, wantStderrPrefix: "output: unauthorized"},
-		{name: "eval", args: []string{"eval", "1+1"}, responses: map[string]string{"eval": "@eval"}, golden: "eval"},
+		{name: "eval", args: []string{"eval", "--lang", "gdscript", "1+1"}, responses: map[string]string{"eval": "@eval"}, golden: "eval"},
 		{name: "batch", args: []string{"batch", "--file", filepath.Join("testdata", "contract", "batch_input.json")}, responses: map[string]string{"batch": "@batch"}, golden: "batch"},
 
 		// Stable commands, synthesized fixtures (shapes from the addon source;
@@ -133,7 +135,7 @@ func contractCases() []contractCase {
 		{name: "game_node_call_legacy", args: []string{"game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCallLegacy}, golden: "game_node_call_legacy"},
 		{name: "game_node_call_omitted", args: []string{"game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCallOmitted}, golden: "game_node_call_omitted"},
 		{name: "game_node_call_json", args: []string{"--json", "game", "node", "call", "/root/Main", "qa_state"}, responses: map[string]string{"game:call": gameNodeCall}, golden: "game_node_call_json"},
-		{name: "eval_structured", args: []string{"eval", "1+1"}, responses: map[string]string{"eval": `{"ok":true,"data":{"result":"2","result_value":2,"type":"int","undoable":false}}`}, golden: "eval_structured"},
+		{name: "eval_structured", args: []string{"eval", "--lang", "gdscript", "1+1"}, responses: map[string]string{"eval": `{"ok":true,"data":{"result":"2","result_value":2,"type":"int","undoable":false}}`}, golden: "eval_structured"},
 		{name: "game_node_get", args: []string{"game", "node", "get", "/root/Main"}, responses: map[string]string{"game": gameNodeGet}, golden: "game_node_get"},
 		{name: "game_assert_pass", args: []string{"game", "assert", "/root/Main", "visible", "eq", "true"}, responses: map[string]string{"game": gameAssert}, golden: "game_assert_pass"},
 		{name: "game_ui_audit_clean", args: []string{"game", "ui", "audit"}, responses: map[string]string{"game:ui_audit": gameUIAuditClean}, golden: "game_ui_audit_clean"},

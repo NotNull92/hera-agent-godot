@@ -32,7 +32,7 @@ commands:
              session | stack | variables | evaluate <expr> | continue | next | step-in | step-out | detach
              --thread ID selects a discovered thread for stack/variables/evaluate/resume/step
   instances  list live Hera-enabled Godot editors; expired heartbeats listed as stale
-  eval       evaluate a GDScript expression in the editor
+  eval       [--lang csharp|gdscript] evaluate an expression (default C#; HERA_GODOT_EVAL_LANG override)
   guidance   ui | game-feel
   game_feel  list bundled Game Feel topics, or query one topic
   output     tail logs (--type log|error|warning|all, --lines N, --source file|editor, --since cursor)
@@ -56,6 +56,7 @@ global flags (before the command):
                  also bounds the engine process for script validate and every
                  engine-backed command (script run, project import/export,
                  capture movie, perf sample, docs dump, classdb dump)
+  --csharp-host PATH  C# compiler helper; HERA_GODOT_CSHARP_HOST override
   --engine PATH  Godot engine executable for commands that do not need a live
                  editor; also read from HERA_GODOT_ENGINE or GODOT_BIN
 

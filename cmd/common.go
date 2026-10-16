@@ -58,6 +58,13 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
+	if err := prepareEvalRequests(c, request.tool, request.params); err != nil {
+		code, detail, found := strings.Cut(err.Error(), ":")
+		if !found {
+			code, detail = "csharp_compile_failed", err.Error()
+		}
+		return failStructured(map[string]any{"error": code, "detail": strings.TrimSpace(detail)})
+	}
 	needed := make([]string, 0, 3)
 	guard := requiresNodeGuard(request.tool, request.params)
 	evidenceRequested := wantsLinkedEvidence(request.tool, request.params)
