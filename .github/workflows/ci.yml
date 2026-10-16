@@ -430,9 +430,27 @@ jobs:
             exit 1
           fi
 
-          "$HERA_BIN" --instance "$heartbeat_pid" smoke --skip-game \
-            >"$HERA_CI_LOG_DIR/smoke.stdout.log" \
-            2>"$HERA_CI_LOG_DIR/smoke.stderr.log"
+          smoke_ok=0
+          attempts=0
+          while [ "$attempts" -lt 150 ]; do
+            if "$HERA_BIN" --instance "$heartbeat_pid" smoke --skip-game \
+              >"$HERA_CI_LOG_DIR/smoke.stdout.log" \
+              2>"$HERA_CI_LOG_DIR/smoke.stderr.log"; then
+              smoke_ok=1
+              break
+            fi
+            # Status is available during imports; this smoke is read-only.
+            if ! grep -q 'editor_busy' "$HERA_CI_LOG_DIR/smoke.stderr.log"; then
+              cat "$HERA_CI_LOG_DIR/smoke.stderr.log" >&2
+              exit 1
+            fi
+            sleep 0.2
+            attempts=$((attempts + 1))
+          done
+          if [ "$smoke_ok" -ne 1 ]; then
+            echo "::error::editor import did not become ready for smoke" >&2
+            exit 1
+          fi
           "$HERA_BIN" --instance "$heartbeat_pid" game qa --file tests/headless/runtime-logic.json \
             >"$HERA_CI_LOG_DIR/scenario.stdout.log" \
             2>"$HERA_CI_LOG_DIR/scenario.stderr.log"
