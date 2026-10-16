@@ -70,6 +70,7 @@ jobs:
               "addons/hera_agent_godot/LICENSE",
               "addons/hera_agent_godot/plugin.cfg",
               "addons/hera_agent_godot/hera_agent_plugin.gd",
+              "addons/hera_agent_godot/assets/hera-pointing.png",
           }
           missing = sorted(required - names)
           if missing:

@@ -21,8 +21,7 @@ work = Path(tempfile.mkdtemp(prefix="hera-w2-visual-"))
 print(f"Evidence: {work}", flush=True)
 project = work / "project"
 shutil.copytree(repo / "addons", project / "addons", ignore=shutil.ignore_patterns("*.import"))
-(project / "docs/assets").mkdir(parents=True)
-shutil.copyfile(repo / "docs/assets/hera-pointing.png", project / "docs/assets/hera-pointing.png")
+assert not (project / "docs").exists(), "capture must match an addon-only installation"
 (project / "addons/capture").mkdir()
 shutil.copyfile(Path(__file__).with_suffix(".gd"), project / "addons/capture/capture.gd")
 (project / "addons/capture/plugin.cfg").write_text('[plugin]\nname="Capture"\ndescription="Owned UI QA"\nauthor="Hera"\nversion="1"\nscript="capture.gd"\n')

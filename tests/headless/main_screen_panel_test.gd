@@ -31,6 +31,11 @@ func _run() -> void:
 	print("panel test: created")
 	var panel: Control = refs["panel"]
 	check(panel.content.get_child(0).name == "Header", "header first")
+	check(not DirAccess.dir_exists_absolute("res://docs"), "installed-addon fixture must not contain docs/")
+	var character := panel.content.get_child(0).find_child("HeaderCharacter", true, false) as TextureRect
+	check(character != null and character.texture != null, "header character ships with the addon")
+	if character != null and character.texture != null:
+		check(character.texture.resource_path == "res://addons/hera_agent_godot/assets/hera-pointing.png", "character uses addon asset")
 	check(panel.content.get_child(1).name == "Status", "status second")
 	check(panel.content.get_child(2).name == "CopySetup", "copy third")
 	check(panel.content.get_child(3).name == "GameFeel", "settings last")

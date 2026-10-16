@@ -3,6 +3,7 @@ extends MarginContainer
 
 const PANEL_NAME := "HeraAgentMainScreen"
 const TITLE_FONT_PATH := "res://addons/hera_agent_godot/assets/fonts/cormorant-italic.woff2"
+const CHARACTER_PATH := "res://addons/hera_agent_godot/assets/hera-pointing.png"
 const STRINGS := {
 	"title": ["Hera", "Hera"],
 	"intro": ["I help your agent see and edit this editor.", "에이전트가 이 에디터를 보고 편집하도록 도와줄게요."],
@@ -103,10 +104,11 @@ func build(ui_enabled: bool, game_feel_enabled: bool, ui_callback: Callable, gam
 	content.add_child(header)
 	var branding := HBoxContainer.new()
 	header.add_child(branding)
-	if FileAccess.file_exists("res://docs/assets/hera-pointing.png"):
-		var image: Texture2D = load("res://docs/assets/hera-pointing.png") as Texture2D
+	if FileAccess.file_exists(CHARACTER_PATH):
+		var image: Texture2D = load(CHARACTER_PATH) as Texture2D
 		if image != null:
 			var logo := TextureRect.new()
+			logo.name = "HeaderCharacter"
 			logo.texture = image
 			logo.custom_minimum_size = Vector2(64, 64) * scale
 			logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
