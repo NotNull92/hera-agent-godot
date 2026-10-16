@@ -50,8 +50,8 @@ same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
 Refresh: the editor character, README logos and store thumbnails use the new Hera portrait.
 Addon manifest and GitHub Release are `2.0.2` (2026-10-16). Scoop is updated;
-npm 2.0.2 is packed but not published, and Homebrew [PR #4](https://github.com/NotNull92/homebrew-hera/pull/4)
-is merged. Store fields and new screenshots are prepared for Victor's submission.
+npm 2.0.2 is published, and Homebrew [PR #4](https://github.com/NotNull92/homebrew-hera/pull/4)
+is merged. Victor confirmed the store upload is complete; approval is unverified.
 [Release/channel record](docs/releases/v2.0.2-asset-store-upload.md).
 
 `v2.0.0` changes the default eval language to C# and adds C# validation/run and
