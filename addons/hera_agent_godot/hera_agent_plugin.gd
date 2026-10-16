@@ -42,8 +42,6 @@ var _game_autoload_injected := false
 var _game_autoload_suspended := false
 var _game_export_guard: EditorExportPlugin
 var _main_panel: Control
-var _main_status_label: Label
-var _main_status_dot: PanelContainer
 var _ui_juicy_mode_toggle: CheckButton
 var _game_feel_mode_toggle: CheckButton
 
@@ -101,22 +99,24 @@ func _enter_tree() -> void:
 	_queue.set_filesystem(EditorInterface.get_resource_filesystem())
 	var token_result := HttpServer.load_shared_token()
 	if token_result.has("error"):
-		_set_main_status("Not connected: shared token read failed", false)
+		_set_main_status("token_error", false)
 		push_error("[hera] refusing HTTP startup: %s" % token_result["error"])
 		return
 	_server = HttpServer.new()
 	_server.auth_token = String(token_result["token"])
+	_update_main_observations()
 	var bound: int = _server.start(8770)
 	if bound == 0:
 		_server = null
-		_set_main_status("Not connected on 127.0.0.1:8770", false)
+		_set_main_status("bind_error", false)
 		push_error("[hera] failed to bind HTTP server on 127.0.0.1 (8770-8785)")
 		return
 
 	var auth_note := " (token auth on)" if _server.auth_token != "" else ""
 	_heartbeat = Heartbeat.new()
 	_heartbeat.start(bound, status_tool.editor_session_id)
-	_set_main_status("Listening on 127.0.0.1:%d%s" % [bound, auth_note], true)
+	_update_main_observations()
+	_set_main_status("listening", true)
 	print("[hera] Hera Agent Godot listening on 127.0.0.1:%d%s" % [bound, auth_note])
 
 func _process(delta: float) -> void:
@@ -133,6 +133,7 @@ func _process(delta: float) -> void:
 		if _heartbeat_accum >= HEARTBEAT_INTERVAL:
 			_heartbeat_accum = 0.0
 			_heartbeat.write()
+			_update_main_observations()
 
 func _exit_tree() -> void:
 	set_process(false)
@@ -159,8 +160,6 @@ func _exit_tree() -> void:
 	if _main_panel != null:
 		_main_panel.queue_free()
 		_main_panel = null
-		_main_status_label = null
-		_main_status_dot = null
 		_ui_juicy_mode_toggle = null
 		_game_feel_mode_toggle = null
 	print("[hera] Hera Agent Godot exited")
@@ -256,14 +255,16 @@ func _create_main_screen() -> void:
 		Callable(self, "_on_game_feel_mode_toggled")
 	)
 	_main_panel = refs["panel"]
-	_main_status_label = refs["status_label"]
-	_main_status_dot = refs["status_dot"]
 	_ui_juicy_mode_toggle = refs["ui_toggle"]
 	_game_feel_mode_toggle = refs["game_feel_toggle"]
 	_make_visible(false)
 
 func _set_main_status(text: String, connected: bool = false) -> void:
-	MainScreenPanel.set_status(_main_status_label, _main_status_dot, text, connected)
+	_main_panel.set_connection(text, connected)
+
+func _update_main_observations() -> void:
+	if _main_panel != null and _server != null:
+		_main_panel.update_observations(_server.last_cli_version, _server.last_cli_seen_msec > 0, _server.port, _server.auth_token != "")
 
 func _on_ui_juicy_mode_toggled(enabled: bool) -> void:
 	HeraSettings.set_game_feel_ui_mode_enabled(enabled)
