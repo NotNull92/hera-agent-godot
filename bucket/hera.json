@@ -1,16 +1,16 @@
 {
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Low-token CLI that lets AI coding agents inspect and control a live Godot editor over localhost HTTP",
   "homepage": "https://github.com/NotNull92/hera-agent-godot",
   "license": "MIT",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v2.0.1/hera-windows-amd64.zip",
-      "hash": "2eef239c13d004b07d1bc08f7114c61c3087e120c8f076c1e3059e82c0649110"
+      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v2.0.2/hera-windows-amd64.zip",
+      "hash": "0017b5a21b9bbc99b2d12c909d4912e94d83794c4c1215fbfc83947efda88d07"
     },
     "arm64": {
-      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v2.0.1/hera-windows-arm64.zip",
-      "hash": "15228bf39a6b11fde981fcda6f84733a6d22dfcf0c0c455b80e41cc6375f420a"
+      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v2.0.2/hera-windows-arm64.zip",
+      "hash": "0575a0645b848b175454dc259b4edc473585882ebb9104ca3a05cd78b015831a"
     }
   },
   "bin": [
