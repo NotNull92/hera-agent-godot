@@ -320,7 +320,7 @@ refusal is exit `1`.
 | `node reparent` | experimental | undoable; uses `Node.reparent` and defaults to keeping the global transform; undo restores the original name after a sibling-name collision |
 | `signal connect` / `signal disconnect` | stable | undoable, `CONNECT_PERSIST` |
 | `scene open` / `scene save` | stable | |
-| `eval` | stable | stringified expression `result`; experimental `result_value` / `result_value_omitted` from v1.2.0 |
+| `eval` | stable | stringified expression `result`; experimental `result_value` / `result_value_omitted` from v2.0.0 |
 | `batch` | stable | sequential results array; `--continue` keeps going past failures |
 | `node instance` / `node set-resource` / `node attach-script` / `node detach-script` | experimental | attach-script responses include dependency diagnostics whose shape may evolve; C# requires .NET and a loaded class, and adds `language`/`build_warning` inside `script_diagnostics` |
 | `scene create` / `scene save-as` / `scene reload` | experimental | persistent filesystem changes |
@@ -365,7 +365,7 @@ without fallback.
 | Command | Tier | Key fields |
 |---------|------|-----------|
 | `game tree` | stable | `scene` + compact node list |
-| `game node get/set/call` | stable | `get` mirrors `node get` (stringified values); `call` returns the stable stringified `result`; experimental `result_value` / `result_value_omitted` from v1.2.0 |
+| `game node get/set/call` | stable | `get` mirrors `node get` (stringified values); `call` returns the stable stringified `result`; experimental `result_value` / `result_value_omitted` from v2.0.0 |
 | `game assert` | stable | ✓ pass: `{prop, op, actual, expected}`; fail: stderr + exit 1 |
 | `game instances` | experimental | `instances[]` with pid, scene, heartbeat age, `user_data_dir`, viewport sizes; optional `stale[]`; `shared_user_data` when live processes share `user://` |
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
@@ -539,7 +539,7 @@ Scenario `run` actions `stop` and `state` do not wait for play: `stop` with `wai
 
 ## Structured call and eval results (experimental)
 
-From v1.2.0, successful `game node call` and `eval` responses add exactly one
+From v2.0.0, successful `game node call` and `eval` responses add exactly one
 of `result_value` or `result_value_omitted`. The existing `result` string stays
 stable throughout v1.x; `type` still names the root Godot Variant type, not
 nested element types. `path`, `method`, and `undoable` keep their meanings.

@@ -252,7 +252,7 @@ mutation a new ID merely to force it to run.
 | `game clock [--pause\|--resume] [--time-scale N] [--step] [--physics]` | `game` | ☑ | Read or change the live `SceneTree.paused` flag and `Engine.time_scale`. No flags returns `{paused, time_scale, process_frames, physics_frames}`. `--step` unpauses for one `process_frame` (or `physics_frame` with `--physics`) and leaves the tree paused. `time_scale` must be greater than 0; use `--pause` to stop the clock. The runtime inspector uses `PROCESS_MODE_ALWAYS` so later `game` commands still run while paused. |
 | `game node get <path> [--prop <name>\|--props <a,b>]` | `game` | ☑ | Dump a live runtime node's editor-visible properties, or selected properties for low-token QA. Selected names may use dotted paths such as `player.position` or `state.score`. Absolute paths like `/root/Main` are accepted. |
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
-| `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified `result` and, from v1.2.0, a structured `result_value` (or `result_value_omitted`). Runtime-only and may have side effects. |
+| `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified `result` and, from v2.0.0, a structured `result_value` (or `result_value_omitted`). Runtime-only and may have side effects. |
 | `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
 | `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helpers and `Qa` followed by an uppercase letter (e.g. `QaReady`); method names are case-sensitive. Discover methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
 | `game qa diagnose [--lines N] [--max-errors N] [--max-warnings N] [--path user://capture.png]` | local + tools | ☑ | Run a read-only, project-agnostic runtime health check. It reports editor diagnostic counts, live game-process ambiguity, runtime/UI tree truncation, and screenshot blankness, low detail, or likely clipping. Capture width/height and `size_matches_project` are reported without failing a healthy image that is simply smaller than the project viewport. It does not assume nodes, controls, rules, or QA helper names. |
@@ -753,7 +753,7 @@ Runtime Control bounds and click centers include canvas transforms. Node-targete
 
 QA `run` steps with `wait:true` wait for the requested play action, or for stopped editor/runtime state when `action:"stop"`. `action:"state"` remains a snapshot even when `wait:true`. The dedicated `stop` step uses the same stop-wait behavior.
 
-The v1.2.0 installed command is `hera-godot` (`hera-agent-godot` remains an alias). New installs do not register `hera`; see [upgrade steps](MIGRATING_TO_V1.md#upgrade) before updating scripts or removing old binaries.
+From v2.0.0 the installed command is `hera-godot` (`hera-agent-godot` remains an alias). New installs do not register `hera`; see [upgrade steps](MIGRATING_TO_V1.md#upgrade) before updating scripts or removing old binaries.
 
 ## Structured results from call and eval
 
