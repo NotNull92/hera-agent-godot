@@ -19,6 +19,12 @@ until separately released. See [migration notes](packaging/README.md#command-nam
 
 > Hera gives agents eyes, hands, and proof in the live Godot editor.
 
+## Watch the v2.0.2 demo
+
+Codex builds and QA-tests a C# tower defense game in a live Godot editor with Hera.
+
+https://github.com/user-attachments/assets/0f37c092-8223-449f-88d5-32efeb27d509
+
 <p align="center">
   <img src="docs/assets/hera-agent-godot-playtest_v0.9.0.gif" alt="Hera driving a live Godot editor from the shell: build a scene, run it, and QA the running game" width="820">
 </p>
