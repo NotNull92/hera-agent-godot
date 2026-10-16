@@ -1,0 +1,13 @@
+/.godot/
+/bin/
+/obj/
+/addons/
+*.cs
+*.cs.uid
+*.tscn
+!Main.tscn
+*.tscn.uid
+*.png
+!assets/*.png
+*.import
+/rehearsal-qa.json
