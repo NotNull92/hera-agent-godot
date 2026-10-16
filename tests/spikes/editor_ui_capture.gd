@@ -25,6 +25,15 @@ func _run() -> void:
 	await get_tree().create_timer(2.0).timeout
 	var panel: Control = EditorInterface.get_editor_main_screen().get_node("HeraAgentMainScreen")
 	assert(panel.is_visible_in_tree())
+	# Python sends status from the release CLI while the editor keeps processing.
+	for attempt: int in range(100):
+		if panel.rows["version"].text.contains("Versions match"):
+			break
+		await get_tree().create_timer(0.1).timeout
+	var version_text: String = panel.rows["version"].text
+	assert(version_text.contains("Versions match"))
+	assert(version_text.contains("CLI v2.0.0") and version_text.contains("Addon 2.0.0"))
+	print("RELEASE_VERSION_MATCH ", version_text.replace("\n", " | "))
 	var expected_scale := float(OS.get_environment("HERA_UI_SCALE"))
 	print("OBSERVED_SCALE ", EditorInterface.get_editor_scale())
 	assert(is_equal_approx(EditorInterface.get_editor_scale(), expected_scale))

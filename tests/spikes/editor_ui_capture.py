@@ -5,13 +5,17 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--engine", type=Path, required=True)
 parser.add_argument("--out", type=Path, required=True)
+parser.add_argument("--cli", type=Path, required=True, help="released v2.0.0 CLI")
 parser.add_argument("--theme", choices=["Default", "Light"], default="Default")
 parser.add_argument("--scale", choices=["1", "1.5"], default="1")
 args = parser.parse_args()
+cli = str(args.cli.resolve())
+assert subprocess.check_output([cli, "version"]).decode().strip() == "v2.0.0"
 repo = Path(__file__).resolve().parents[2]
 work = Path(tempfile.mkdtemp(prefix="hera-w2-visual-"))
 print(f"Evidence: {work}", flush=True)
@@ -34,9 +38,28 @@ args.out.parent.mkdir(parents=True, exist_ok=True)
 
 def run(name, extra, timeout=90):
     with (work / (name + ".log")).open("wb") as log:
-        result = subprocess.run([str(args.engine.resolve()), "--editor", "--path", str(project)] + extra, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=timeout)
+        process = subprocess.Popen([str(args.engine.resolve()), "--editor", "--path", str(project)] + extra, env=env, stdout=log, stderr=subprocess.STDOUT)
+        try:
+            if name == "capture":
+                heartbeat = Path(env["USERPROFILE"]) / ".hera-agent-godot/instances" / f"{process.pid}.json"
+                for _ in range(150):
+                    if heartbeat.exists():
+                        break
+                    assert process.poll() is None, "editor exited before heartbeat"
+                    time.sleep(0.2)
+                assert heartbeat.exists(), "editor heartbeat unavailable"
+                status = subprocess.run([cli, "--instance", str(process.pid), "status"], env=env, capture_output=True, timeout=15)
+                (work / "cli-status.json").write_bytes(status.stdout)
+                assert status.returncode == 0, status.stderr
+            returncode = process.wait(timeout=timeout)
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait(timeout=10)
     output = (work / (name + ".log")).read_text(encoding="utf-8", errors="replace")
-    assert result.returncode == 0 and "SCRIPT ERROR" not in output, output
+    assert returncode == 0 and "SCRIPT ERROR" not in output, output
+    if name == "capture":
+        assert "HERA_UI_CAPTURE_OK" in output, output
     print(name + ": " + output[-350:], flush=True)
 
 help_text = subprocess.check_output([str(args.engine.resolve()), "--help"], env=env).decode("utf-8", errors="replace")
