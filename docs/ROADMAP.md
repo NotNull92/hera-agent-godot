@@ -13,6 +13,17 @@ standardization arc from v0.8 to v1.0: contract, distribution, then a
 stability declaration — the goal is that agents treat Hera as the default way
 to drive Godot from a shell.
 
+## Development — C# and editor UI (2026-10-16)
+
+`feat/v2-editor-ui` carries W1 C# eval/validate/run and W2 bilingual editor
+status/setup UI. The default eval language changes to C#; existing GDScript
+automation must select `--lang gdscript` or the documented environment default.
+See [migration](MIGRATING_TO_V2.md) and
+[integration evidence](releases/v2-development-validation-2026-10-16.md).
+Local gates pass; new remote CI remains pending because PR/main actions are not
+authorized. This is development work, not a release or version bump. Helper
+packaging, release channels and tags remain separate approval work.
+
 ## Prepared — v1.2.0 (2026-09-15)
 
 Addon manifest `1.2.0`. Not tagged. Published CLI channels remain `v1.1.0`
