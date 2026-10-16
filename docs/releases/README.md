@@ -10,7 +10,7 @@ store copy is not kept in-tree.
 
 | Version | GitHub Release | Store |
 |---------|----------------|-------|
-| [v2.0.0](v2.0.0-asset-store-upload.md) | 2026-10-16 | prepared; Victor submission pending |
+| [v2.0.0](v2.0.0-asset-store-upload.md) | 2026-10-16 | submitted 2026-10-16 |
 | [v1.2.0](v1.2.0-asset-store-upload.md) | untagged | unstable upload 2026-09-15 |
 | [v1.1.0](v1.1.0-asset-store-upload.md) | 2026-09-08 | submitted 2026-09-08 |
 | [v1.0.0](v1.0.0-asset-store-upload.md) | 2026-07-21 | submitted 2026-07-21 |
