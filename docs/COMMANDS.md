@@ -260,7 +260,7 @@ mutation a new ID merely to force it to run.
 | `guidance ui` | `guidance` | ☑ | Read the live editor's Game Feel UI Mode setting and return agent-facing UI implementation guidance. When enabled, UI work should favor snappy feedback, expressive state changes, satisfying motion, and runtime visual QA. |
 | `guidance game-feel` | `guidance` | ☑ | Read the live editor's Game Feel Mode setting and return gameplay-wide feel guidance: control feel, camera, hit stop, screen shake, sound, particles, rewards, Honest Juice, accessibility, runtime QA, and compact `game_qa_patterns` for reusable prompt-game checks such as ordered QA, primary input, stable inspection, visible state sync, live viewport layout, deterministic helpers, shared route geometry, typed collections, and observable feedback evidence. |
 | `game_feel [topic]` | `game_feel` | ☑ | Query the bundled Game Feel knowledge base. No topic or `list` returns the topic index; a topic such as `screen_shake`, `control_feel`, `camera`, `ui_bar`, or `ethics_checklist` returns concrete parameters and constraints. |
-| `eval <expression>` | `eval` | ☑ | Evaluate one GDScript expression in either project language (`Expression` class, scene root as base) and return the stringified `result` and, from v1.2.0, a structured `result_value` (or `result_value_omitted`). |
+| `eval [--lang csharp\|gdscript] <expression>` | `eval` | ☑ | Default C# (`SceneRoot` is the edited root); explicit GDScript uses `Expression` with the scene root as base. Returns string `result` and structured `result_value` (or `result_value_omitted`); C# adds `lang:"csharp"`. See C# setup below. |
 | `instances` | local | ☑ | List live Hera-enabled Godot editors discovered from `~/.hera-agent-godot/instances/`. Expired heartbeat files are listed under `stale` (with `age_sec`) instead of being dropped silently. |
 | `screenshot [--path <p>] [--width N] [--height N] [--transparent] [--runtime] [--analyze]` | `screenshot` | ☑ | Render the edited scene off-screen to PNG, or capture the running game viewport with `--runtime`. `--width`/`--height` size the off-screen editor render only; runtime captures refuse those flags and do not upscale. `--analyze` is supported for runtime captures and returns generic image/layout metrics, including per-edge content ratios and possible clipping. |
 | `screenshot diff <before.png> <after.png> [--threshold N]` | local | ☐ | Compare two captures and report `changed_pixels`, `changed_ratio`, `max_delta` and a `changed_bounds` box locating the change. Runs entirely locally on files already on disk — **no editor needed**. `--threshold` (default 4, per channel 0..255) absorbs anti-aliasing wobble between captures; the two frames must share dimensions. |
@@ -297,12 +297,53 @@ mutation a new ID merely to force it to run.
 > file, import, resource, scene, and project setting changes are persistent
 > filesystem/project changes. `signal connect` uses `CONNECT_PERSIST`, so the wiring is saved with
 > the scene like the editor's "Connect a Signal" dialog. `eval` runs a single
-> expression via the `Expression` class (not full GDScript statements), with the
-> edited scene root as the base instance. Expressions can call methods with side
+> expression in C# by default (`SceneRoot`), or via the GDScript `Expression`
+> class with `--lang gdscript` and the edited scene root as base. Both can have side
 > effects and are not registered with UndoRedo. `game node set/call`, `game click`, `game input`, `game clock` (except a snapshot with no flags), and `game input-log --clear` target the
 > running game process, so it is not undoable and its effects disappear when play
 > stops. Hera assumes one live editor per project; mutation commands enforce that
 > precondition unless `--instance <pid>` is passed explicitly.
+
+## C# eval, validation and run
+
+This development branch defaults `eval` to C# (Godot 4.7+ .NET); standard editors
+fail as `csharp_unavailable` and suggest `--lang gdscript`. Explicit language wins
+against `HERA_GODOT_EVAL_LANG`; the same rule applies to batch eval children.
+Build and reload the project with the Hera native loader, then build the separate
+[compiler helper](CSHARP_SUPPORT.md#compiler-helper). Global `--csharp-host PATH`
+overrides `HERA_GODOT_CSHARP_HOST`; adjacent/private-home fallback paths are in the
+C# guide. Missing helper/project errors do not silently select GDScript.
+
+```sh
+hera-godot --csharp-host dist/csharp/Hera.CSharpHost.dll eval '((Node2D)SceneRoot).Position'
+hera-godot eval --lang gdscript 'get_child_count()'
+hera-godot script validate res://Player.cs
+hera-godot --engine /path/to/Godot.NET script run res://Tool.cs -- one two
+```
+
+`SceneRoot` is the edited root. C# success adds `lang:"csharp"` and reuses the
+existing result encoding. Arbitrary expressions can block the editor, retain
+an ALC, and mutate without undo; timeout does not cancel editor execution.
+Non-Tool C# scripts can be placeholders rather than user-class instances.
+
+Validation redirects restore/build output and intermediates, requires exactly
+one root csproj with no ProjectReference items, and rejects an excluded Compile
+item. It reports requested-file diagnostics and `other_files_errors`; `valid`
+requires a successful complete build and unchanged requested disk bytes.
+MSBuild targets/generators execute code; output redirection is not a sandbox.
+Global `--timeout MS` overrides its 60-second combined build deadline; separate
+editor HTTP defaults to 5 seconds. Create/open/attach/run never build for you.
+C# run requires a prebuilt Debug DLL and directly runs a SceneTree/MainLoop `.cs`
+harness. It does not certify source/assembly freshness.
+
+C# debug breakpoints fail before connection with `csharp_debug_unsupported`
+(exit 2), `guidance` and `docs_url`; see [IDE instructions](CSHARP_SUPPORT.md#c-debugging--c-디버깅).
+All C# failure codes and partial result fields are listed in
+[the development contract](CONTRACT.md#v2-development-changes-not-a-released-version).
+
+C# eval 기본값은 프로젝트 언어와 무관합니다. 표준 에디터는 자동 대체하지 않으며
+GDScript 식은 `--lang gdscript`로 선택합니다. C# 검증은 격리 출력 경로의 빌드이며
+실행·undo·샌드박스 보장이 아닙니다. C# 디버깅은 IDE에서 수행하세요.
 
 ## Fresh GDScript validation
 
@@ -719,7 +760,7 @@ The v1.2.0 installed command is `hera-godot` (`hera-agent-godot` remains an alia
 ```sh
 hera-godot game node call /root/Main qa_state
 # {"method":"qa_state","path":"/root/Main","result":"{ \"hp\": 3 }","result_value":{"hp":3},"type":"Dictionary"}
-hera-godot eval 'Vector2(1, 2)'
+hera-godot eval --lang gdscript 'Vector2(1, 2)'
 # {"result":"(1.0, 2.0)","result_value":"Vector2(1, 2)","type":"Vector2","undoable":false}
 ```
 

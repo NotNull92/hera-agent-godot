@@ -10,6 +10,20 @@ concepts.
 
 ---
 
+## Development C# path and editor panel
+
+C# eval compiles through the separate `csharp-host` Roslyn process, then runs
+through the native `[Tool]` C# loader in the editor. The loader is enclosed in
+`#if TOOLS`. Validation builds one root project with redirected output paths;
+script run uses the existing Debug assembly. Neither path generates user project
+files. See [C# support and execution limits](CSHARP_SUPPORT.md).
+
+The main-screen panel reads bridge state and the most recently observed CLI
+version. Matching major/minor numbers are an advisory comparison, not a feature
+probe. Missing headers produce unknown. C# rows observe editor support and root
+csproj presence, not SDK readiness. Copy setup exports English instructions and
+the project path, with authentication state but no token value or token path.
+
 ## 1. High-level model
 
 Opt-in evidence stays in the existing CLI/HTTP/runtime-file flow. Disk validation

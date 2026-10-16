@@ -106,7 +106,7 @@ Every link in the loop resolves to an existing Hera primitive:
 | Enumerate UI | `scene tree`, `node find --type Control` | `node_tool.gd:59` | ✅ |
 | Read layout geometry | `game ui tree` rect x/y/w/h | `game_ui_inspector.gd:113` | ✅ (runtime) |
 | Read design tokens | `node get --props theme_override_*` | `node_value_codec.gd:45` | ✅ (edited scene) |
-| Read *effective* color | `eval "get_node(p).get_theme_color('font_color')"` | `eval_tool.gd:48` | ✅ read-only |
+| Read *effective* color | `eval --lang gdscript "get_node(p).get_theme_color('font_color')"` | `eval_tool.gd:48` | ✅ read-only |
 | Contrast math | skill-side WCAG on the read colors | — | ✅ values only |
 | Enforce token | `node set --prop theme_override_*` (undoable) | `node_tool.gd:134` | ✅ scalars |
 | Re-inspect | `node get` again (same predicate) | `node_value_codec.gd:72` | ✅ |
@@ -276,7 +276,7 @@ earned its keep against a real UI before any code existed.
   the edited scene statically and runs the game only for the render stage.
 - **G4 — Effective vs override colors.** `node get theme_override_colors/...`
   returns the *override* (empty when unset), not the *rendered* color. Contrast
-  checks must read the effective color via `eval get_theme_color`.
+  checks must read the effective color via `eval --lang gdscript get_theme_color`.
 
 ---
 
@@ -356,7 +356,7 @@ Go value coercion:
 2. Three checks, each a live predicate:
    - `spacing` — distinct separation/margin values vs ladder rungs.
    - `type-scale` — distinct `font_size` values vs type-scale rungs.
-   - `contrast` — `eval get_theme_color('font_color')` vs background → WCAG.
+   - `contrast` — `eval --lang gdscript get_theme_color('font_color')` vs background → WCAG.
 3. Enforce with `node set --prop theme_override_*` (undoable).
 4. Verify with a `node get` re-measure + `screenshot --runtime --analyze`.
 

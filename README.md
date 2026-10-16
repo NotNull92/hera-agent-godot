@@ -4,6 +4,12 @@
 
 # hera-agent-godot
 
+The development editor panel shows bilingual connection, version, C# and auth
+observations, with theme/DPI-aware layout and English **Copy agent setup**.
+Version matching compares major/minor; it does not prove feature compatibility.
+The copied block includes the project path but never token values or token paths.
+See [development validation](docs/releases/v2-development-validation-2026-10-16.md).
+
 **CLI command migration (unreleased):** this checkout installs `hera-godot`, with
 `hera-agent-godot` retained as an alias. It no longer registers `hera`, so other
 tools can use that name. Published packages/Homebrew may still expose the old name
@@ -22,7 +28,7 @@ until separately released. See [migration notes](packaging/README.md#command-nam
 
 A **low-token CLI** that lets AI coding agents inspect and control a **live
 Godot 4.7+ editor** in real time — read the output/errors, run a scene, walk and
-edit the node tree, evaluate GDScript, and more. The agent acts on the *real*
+edit the node tree, evaluate C# or explicit GDScript expressions, and more. The agent acts on the *real*
 editor and checks the result instead of guessing from stale training data.
 
 **Why a CLI, not MCP?** Godot already has a healthy MCP-addon ecosystem — Hera
@@ -163,7 +169,8 @@ See [editor log evidence](docs/COMMANDS.md#editor-log-evidence).
 Check on-disk GDScript with `hera-godot script validate res://Player.gd`.
 Validation uses the connected editor's engine in a bounded headless process,
 prints the engine output as JSON, and exits nonzero on failure. It does not
-compile C# or certify warning-free code; loading dependencies can execute code.
+certify warning-free code; loading dependencies can execute code. `.cs` validation
+uses an isolated .NET project build with a 60-second default (see the C# guide).
 Replay input actions with `hera-godot game input sequence --file events.json`, where
 the array contains `{ "frame": 0, "action": "ui_accept", "pressed": true }`
 events. Frames are relative physics frames; held actions are released on exit.
@@ -174,9 +181,14 @@ or `hera-godot script create res://Player.cs --ready --export Speed:float=3.5f`.
 Optional `--lang gdscript|csharp` must agree with the extension. C# creation,
 opening, and attachment require Godot .NET; `status.csharp_supported` reports
 editor support, not whether the .NET SDK is installed. Build and reload the C#
-assembly before attaching a new script. Hera does not build or generate solution
-files, and C# inspection reflects the loaded assembly, which may be stale.
-The addon stays GDScript, and `eval` uses GDScript expressions in either project.
+assembly before attaching a new script. Hera never generates solution files;
+C# validation redirects build outputs away from editor artifacts. C# inspection
+reflects the loaded assembly, which may be stale. `eval` now defaults to C#;
+use `--lang gdscript` or `HERA_GODOT_EVAL_LANG=gdscript` for old expressions.
+New C# eval/validate/run require Godot 4.7+ .NET. The small native C# eval loader
+is entirely `#if TOOLS` and excluded from export builds. The editor bridge
+remains GDScript. Build the separate helper using the C# guide below; release
+asset packaging is pending. See [migration](docs/MIGRATING_TO_V2.md).
 See [C# support](docs/CSHARP_SUPPORT.md) for setup and limitations.
 
 Externally launched and parallel game processes can be selected independently

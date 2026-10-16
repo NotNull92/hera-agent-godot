@@ -62,7 +62,8 @@ authentication credentials or proof that an action caused an error.
   and edit project files directly. Hera does not try to defend against a
   compromised user account.
 - *`eval` and mutation misuse by an authorized client.* `eval` executes a
-  GDScript expression in the editor; treat any process allowed to reach Hera
+  C# expression by default, or an explicit GDScript expression, in the editor;
+  treat any process allowed to reach Hera
   as having editor-level control. There is no sandbox and no per-command
   permission tiering (all-or-nothing by design — see the CLI-first identity).
 - *Timing side channels on token comparison* — accepted as irrelevant for a
@@ -120,3 +121,30 @@ advisory on the repo) with reproduction steps.
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) §7 for where these boundaries live in
 code, and [CONTRACT.md](./CONTRACT.md) for the failure semantics.
+
+## C# build and evaluation / C# 빌드와 평가
+
+C# validation runs MSBuild input evaluation, restore and build. **MSBuild targets
+and source generators execute code; path redirection is not a sandbox.** Custom
+project logic can write outside the isolated output directory or access network
+and user files. Use trusted projects or an isolated account/container. Hera never
+modifies csproj/solution files or builds into the editor's standard output paths;
+this is not a restriction on arbitrary project code.
+
+The Roslyn helper compiles outside the editor, then the native `#if TOOLS` loader
+executes the expression inside it. Editor expressions are arbitrary synchronous
+code: they can block, retain callbacks, change files and mutate scenes without
+undo. HTTP timeout does not stop execution or establish that no effects occurred.
+ALC unload checks can fail after side effects; an editor restart may be necessary.
+The helper and DLL references must be trusted. Module-ID checks detect a project
+revision mismatch but do not provide a sandbox or certify dependency freshness.
+
+The panel shows auth On/Off (Unknown if reading failed), never token values or
+paths. Copy setup includes the project path, port and addon version, not token
+values, paths or environment values. Treat project paths as private when sharing.
+Version headers are client-supplied observations and do not authenticate a CLI.
+
+MSBuild 타깃과 소스 생성기는 코드를 실행합니다. 출력 경로 격리는 샌드박스가
+아니며 사용자 코드는 다른 파일·네트워크에 접근할 수 있습니다. eval은 동기 실행으로
+에디터를 멈추거나 콜백을 유지할 수 있고, 실패·타임아웃은 변경 취소가 아닙니다.
+상태 패널과 복사 텍스트에는 토큰 값·경로·환경변수 값이 없지만 프로젝트 경로는 포함됩니다.

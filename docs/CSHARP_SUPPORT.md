@@ -2,8 +2,9 @@
 
 Choose the language by `.gd` or `.cs`;
 `script create --lang gdscript|csharp` must agree with that extension. Keep
-the existing GDScript behavior and the GDScript editor bridge. Do not infer
-a default language from project files or invoke a build automatically.
+the existing GDScript script-file behavior and editor bridge. `eval` separately
+defaults to C#, regardless of the project language. Only explicit C# validation
+invokes a build, with isolated output paths; create/open/attach never build.
 
 ## Use
 
@@ -17,7 +18,7 @@ hera-godot script create res://helper.gd --lang gdscript --ready
 it does not check for the .NET SDK. C# creation/opening/attachment require the
 Godot .NET editor. Initialize the C# solution using Godot's C# tooling if the
 project does not have one yet, and install the SDK required by that Godot
-version. Hera writes script files only.
+version. Hera never generates or modifies csproj/solution files.
 
 Build using Godot's Build action or `dotnet build` in the project directory.
 Reload the assembly (restart the editor if needed), then:
@@ -57,10 +58,13 @@ methods. Call them using `hera-godot game node call /root/Main QaReady`.
 With the v1.2.0 addon, a true return includes:
 `{"method":"QaReady","path":"/root/Main","result":"true","result_value":true,"type":"bool"}`.
 The stable text `result` is unchanged; read experimental `result_value` directly.
-`Qa` must be followed by an uppercase ASCII letter. `eval` continues to use
-Godot's GDScript expression evaluator for both project languages.
+`Qa` must be followed by an uppercase ASCII letter. `eval --lang gdscript`
+selects Godot's GDScript expression evaluator; the new default is C#.
 
 ## Verification (2026-09-07)
+
+The following is historical evidence, not proof of the new eval path. Current
+branch evidence is in [W1](reports/2026-10-16-csharp-w1.md) and the W2 report.
 
 - Go build, vet, and `go test -race -shuffle=on -count=1 ./...` passed;
   `gofmt` and contract goldens were refreshed.
@@ -101,3 +105,76 @@ Engine references:
 
 - [C# setup, script naming, and rebuilding](https://github.com/godotengine/godot-docs/blob/master/tutorials/scripting/c_sharp/c_sharp_basics.rst)
 - [CSharpScript metadata implementation](https://github.com/godotengine/godot/blob/master/modules/mono/csharp_script.cpp)
+
+## Compiler helper
+
+New C# eval/validate/run require Godot 4.7+ .NET; the general addon floor remains
+4.2. Build the CLI and the external Roslyn helper from matching source:
+
+```sh
+go build -o hera-godot .
+dotnet build csharp-host/Hera.CSharpHost.csproj -c Release -o dist/csharp
+hera-godot --csharp-host dist/csharp/Hera.CSharpHost.dll eval '1+1'
+```
+
+Keep the entire helper output directory, including dependencies and runtimeconfig.
+It targets .NET 8 with roll-forward to newer major runtimes. Only .NET 10 execution
+has been verified locally. Resolve order: `--csharp-host`, `HERA_GODOT_CSHARP_HOST`,
+`csharp/Hera.CSharpHost.dll` beside the CLI, then
+`~/.hera-agent-godot/csharp/Hera.CSharpHost.dll`. Hera does not download the helper.
+Release-asset packaging remains separate work. Roslyn is not added to user projects.
+The native addon loader is entirely `#if TOOLS`, with nullable enabled locally;
+export builds exclude its types. Build/reload the project after installing it.
+
+새 C# 기능은 4.7+ .NET 전용이며 애드온 지원 하한 4.2는 유지됩니다. 헬퍼 출력
+폴더 전체를 보관하세요. 사용자 csproj에 Roslyn을 추가하거나 솔루션을 생성하지
+않습니다. 로더는 에디터용으로만 컴파일되며 설치 후 프로젝트 빌드·리로드가 필요합니다.
+
+## Eval and validation limits / 평가·검증 제한
+
+- C# `eval` executes one expression with `SceneRoot` and Godot/System imports.
+  Non-Tool C# scene scripts are editor placeholders: native Node API access works,
+  but casting to the user's C# class can fail. This is editor eval, not game eval.
+- The disk project DLL's module ID is checked against the loaded assembly before
+  compilation and execution. This is not proof of dependency freshness or source
+  equivalence. Debug output paths must be the standard Godot SDK layout.
+- The collectible ALC is unloaded and checked. Retained delegates/handlers can
+  prevent unloading (`csharp_unload_failed`) and require an editor restart.
+  Failure does not undo already executed effects. Arbitrary expressions may block
+  the editor; an HTTP timeout does not forcibly stop them. There is no sandbox.
+- Variant-compatible results reuse the existing structured serializer. Unsupported
+  CLR types fail; Godot container/size/depth limits can omit `result_value`.
+- C# validation restores and builds exactly one root csproj, refusing
+  ProjectReference graphs and sources excluded from Compile items. The default
+  combined SDK/query/restore/build deadline is 60 seconds; HTTP context selection
+  retains its independent 5-second default. Global `--timeout MS` overrides both.
+  Build/intermediate outputs are redirected; custom targets may still write
+  elsewhere. It does not observe unsaved buffers, update editor assemblies or
+  certify warning-free code. Requested-file diagnostics and other-file errors
+  are distinguished. A changed source or truncated output fails verification.
+- `script run` requires the existing Debug DLL and a SceneTree/MainLoop C# harness;
+  it invokes `.cs` directly and never builds. The built revision may be stale.
+
+에디터 placeholder는 사용자 C# 클래스가 아닐 수 있습니다. eval은 undo·샌드박스·
+강제 중단을 제공하지 않으며 ALC 언로드 실패 후 에디터 재시작이 필요할 수 있습니다.
+검증은 루트 csproj 하나와 ProjectReference 없는 프로젝트만 지원하며, 출력 경로
+격리는 사용자 MSBuild 타깃의 임의 파일 쓰기를 막지 않습니다. 실행은 빌드된 리비전을
+사용하므로 최신 소스인지 별도로 확인하세요.
+
+## C# debugging / C# 디버깅
+
+`debug attach --break res://Player.cs:12` returns `csharp_debug_unsupported`,
+exit 2, and IDE guidance before reading the project or connecting to DAP.
+Hera's Godot DAP commands do not implement .NET debugging. Follow the official
+[Godot C# external-editor setup](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html#configuring-an-external-editor):
+
+- Rider: select Rider in Godot's external-editor settings and enable its Godot
+  support (built in since Rider 2024.2).
+- Visual Studio: open the generated solution, create an Executable debug profile
+  pointing to the main Godot .NET executable, and set the working directory to `.`.
+- VS Code: install C# tooling, configure `tasks.json`/`launch.json` per the official
+  guide, then launch or attach the .NET debugger. Hera creates no IDE settings.
+
+C# 중단점은 Rider·Visual Studio·VS Code의 .NET 디버거에서 설정하세요. 실행 중인
+Godot 게임 프로세스에 연결하거나 IDE의 Godot 실행 구성을 사용합니다. Hera는
+IDE 설정을 만들거나 사용자 프로젝트를 수정하지 않습니다.

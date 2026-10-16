@@ -9,6 +9,48 @@ CI pipelines, wrappers — may rely on: invocation shape, output streams, exit
 codes, error shapes, and per-command response fields. (`hera-agent-godot` is
 the transitional alias for the same binary; the contract is identical.)
 
+## v2 development changes (not a released version)
+
+The stable v1 field-type promises remain as recorded below. This branch changes
+`eval`'s default language to C#; explicit `--lang gdscript` preserves GDScript
+behavior. `HERA_GODOT_EVAL_LANG=gdscript` applies when no language is explicit,
+including batch children. New C# paths require Godot 4.7+ .NET. Success retains
+string `result`, `type`, boolean `undoable:false`, and the existing structured
+value/omission rules, with `lang:"csharp"` added. No existing field type changes.
+
+The standard editor refuses C# with `csharp_unavailable` and GDScript guidance.
+Missing/unloaded project loader or missing DLL yields `csharp_build_required`.
+CLI helper preparation can report `csharp_host_unavailable`, `dotnet_unavailable`,
+`csharp_compile_timeout`, `csharp_compile_incomplete`, `csharp_compile_failed`,
+`compile_failed` or `parse_error` (JSON stdout, exit 1). Loader execution errors
+use the existing tool-error stderr/exit-1 path, including `state_conflict` and
+`csharp_unload_failed`; an unload failure does not imply no effects occurred.
+Unknown CLI language is a usage error (exit 2); batch invalid language fails
+preparation (exit 1). Batch C# expressions compile before the batch is submitted.
+
+C# validation is experimental: `lang:"csharp"`, `source:"disk"`,
+`validation_scope:"project_build"`, `path`, `valid`, and, when observed,
+`dotnet:{path,sdk_version}`, `disk_hash`, `changed_during_validation`,
+`diagnostics[]{path,line,column,severity,code,message}`, `other_files_errors`
+and engine-worker output/status fields. Errors include `csproj_not_found`,
+`project_references_unsupported`, `script_not_compiled`, `build_context_failed`,
+`restore_failed`, `build_failed`, `build_timeout`, `source_changed`,
+`diagnostics_incomplete`, `artifact_stage_failed` and `evidence_unavailable`.
+Unfinished workers retain staging. Early failures need not contain build results.
+Default combined build deadline: 60 seconds; explicit `--timeout MS` overrides it.
+
+C# script run executes the built SceneTree/MainLoop harness directly. It does not
+certify DLL freshness. C# debug breakpoint requests fail before DAP with
+`error:"csharp_debug_unsupported"`, `guidance`, `docs_url`, and exit 2.
+Status capability probes remain observations, not proof of a built loader:
+`csharp_eval` is unverified on .NET; `dotnet_sdk` is measured by the CLI only
+on `status --capabilities`. The panel's major.minor comparison is informational,
+not wire compatibility negotiation. See [migration](MIGRATING_TO_V2.md).
+
+v2 개발 브랜치에서는 eval 기본 언어만 C#으로 전환하고 기존 결과 필드 타입은 유지합니다.
+C# 검증은 실험적 프로젝트 빌드이며, 타임아웃·실패가 변경 취소를 뜻하지 않습니다.
+상세 언어 선택, 요구 환경, 오류와 보안 경계는 연결된 문서를 따르세요.
+
 ## What is public, what is internal
 
 - **Public contract:** the CLI — its arguments, stdout/stderr, and exit codes.
@@ -263,8 +305,9 @@ C# create/open/attach require Godot .NET. Create uses a filename-matching partia
 class, rejects a conflicting `--class-name`, and returns `build_required: true`
 with a build warning. Attach rejects an unloaded C# class until build/reload;
 success includes `language` and `build_warning` in `script_diagnostics`, whose
-preload arrays remain GDScript-only diagnostics. Hera does not create `.csproj`/solution files or automatically build. `eval` remains a GDScript expression in
-either project language. See [C# support](CSHARP_SUPPORT.md).
+preload arrays remain GDScript-only diagnostics. Hera does not create `.csproj`/solution files.
+Explicit C# validation builds into isolated outputs; other script operations do
+not build. The v2 development default for `eval` is C#, with explicit GDScript opt-in. See [C# support](CSHARP_SUPPORT.md).
 
 ### Editor mutations
 
@@ -531,7 +574,8 @@ No capability is advertised: response fields are the signal. An older CLI
 passes the new fields through unchanged. A new CLI does not synthesize them
 for an older addon. For runtime calls, a new editor relaying an older runtime
 still returns only legacy fields; an older editor can relay new runtime
-fields. `eval` depends only on the editor addon. If both new fields are absent,
+fields. GDScript `eval` serialization depends on the editor addon; C# eval also
+requires the compiler helper and native loader. If both new fields are absent,
 the component producing that response is older. Do not infer runtime support
 from the editor's version or capabilities.
 

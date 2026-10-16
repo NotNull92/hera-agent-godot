@@ -110,18 +110,22 @@ executable for the no-editor commands). Default output is compact JSON.
   require Godot .NET (`status.csharp_supported` reports editor capability, not
   SDK installation). C# templates use a filename-matching partial class;
   `--class-name`, if supplied, must match that filename. Build and reload the
-  assembly before attachment; Hera does not build or generate solution files.
+  assembly before attachment; Hera never generates solution files. C# validation
+  builds only into isolated output paths.
   C# inspect/current metadata comes from the loaded assembly and may be stale;
   empty metadata with `assembly_loaded: false` is not proof of an empty script.
   `script current` cannot observe an external IDE's focused document. Runtime
   QA discovery accepts `qa_*` and `Qa` followed by an uppercase letter, such as
-  `QaReady`; call C# methods with their exact case. `eval` stays a GDScript
-  expression in both project languages. See [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
+  `QaReady`; call C# methods with their exact case. `eval` defaults to C# on
+  this development branch; use `--lang gdscript` or
+  `HERA_GODOT_EVAL_LANG=gdscript` for GDScript (including batch children). See [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
 - **Validate disk code before running it.** `script validate res://file.gd`
   uses the selected editor's engine in a separate bounded process. It does not
-  check unsaved editor text or compile C#. Native dependency loading may execute
+  check unsaved editor text. `.cs` uses an isolated project build (60-second
+  default; one root csproj, no ProjectReference). MSBuild targets, generators and
+  native dependency loading may execute
   initializers; success is not a warning-free guarantee. `--timeout` also bounds
   this process (default 5 seconds). Validation requires explicit `--instance`
   when multiple editors are live.
@@ -147,10 +151,12 @@ executable for the no-editor commands). Default output is compact JSON.
   and `batch`) enforce that by
   refusing to run when several editors are live unless `--instance <pid>` is
   passed explicitly.
-- **`eval` is powerful.** It runs one GDScript expression (not statements) with
-  the edited scene root as base, so `get_node("X").something()` works — and can
-  have side effects. It is **not** registered with undo. Prefer `node set` for
-  property changes.
+- **`eval` is powerful.** C# requires Godot 4.7+ .NET, a built/reloaded Hera
+  loader and the external compiler helper; `SceneRoot` names the edited root.
+  `eval --lang gdscript` uses the edited root as expression base. Both can have
+  side effects, block the editor and bypass undo. HTTP timeout does not cancel
+  an expression. Prefer `node set` for property changes. C# debug breakpoints
+  are refused; use an IDE .NET debugger. See the C# guide for helper setup.
 - **Opt-in token auth.** If commands fail with `unauthorized: ...`, the editor
   requires the shared token; the CLI reads it automatically from
   `HERA_AGENT_GODOT_TOKEN` or `~/.hera-agent-godot/token`
