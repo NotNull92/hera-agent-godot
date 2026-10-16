@@ -7,6 +7,16 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **W2 validation (2026-10-16)**: official 4.2 does not advertise `--import`.
+  Passing that flag leaves the editor running; the earlier timeout was not
+  evidence of a slow import. `tests/spikes/editor_ui_checks.py` checks `--help`
+  and uses the editor filesystem/font probe on 4.2, with a 300-second outer
+  deadline. Fresh isolated 4.2 import completed in 6.548 seconds.
+  MSYS background PIDs differ from Windows native PIDs; `script_languages.sh`
+  uses `ps` WINPID for heartbeat/CLI selection and the shell PID for cleanup.
+  GUI captures use a normal editor plugin, isolated profiles and clipboard
+  restoration, rather than a custom SceneTree replacing the editor main loop.
+
 - **CLI name separation (2026-10-06)**: `%USERPROFILE%\.local\bin\hera.cmd`
   launches the sibling `heraAgent\bin\hera.mjs` with the existing Node executable.
   `hera-godot.cmd` launches this checkout's ignored

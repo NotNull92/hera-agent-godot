@@ -10,6 +10,7 @@ repo=$(cd "$(dirname "$0")/../.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/hera-script-languages.XXXXXX")
 work=$(cd "$work" && pwd -P)
 editor_pid=
+editor_instance=
 editor_args=(--headless)
 if [[ ${GODOT_EDITOR_GUI:-0} == 1 ]]; then editor_args=(); fi
 cleanup() {
@@ -40,7 +41,7 @@ project/assembly_name="Smoke"
 [rendering]
 renderer/rendering_method="gl_compatibility"
 PROJECT
-hera() { "$HERA_BIN" --instance "$editor_pid" --timeout 2000 "$@"; }
+hera() { "$HERA_BIN" --instance "$editor_instance" --timeout 2000 "$@"; }
 check() { local query=$1; shift; hera "$@" | tee "$work/last.json" | jq -e "$query" >/dev/null; }
 reject() {
     if hera "$@" >"$work/rejected.log" 2>&1; then echo "Unexpected success: $*" >&2; exit 1; fi
@@ -48,9 +49,16 @@ reject() {
 start_editor() {
     "$GODOT_BIN" "${editor_args[@]}" --editor --path "$work" --log-file "$work/editor.log" >"$work/editor.stdout" 2>&1 &
     editor_pid=$!
+    editor_instance=$editor_pid
+    case "${OSTYPE:-}" in
+        msys*|cygwin*)
+            editor_instance=$(ps -p "$editor_pid" | awk 'NR==1 {for(i=1;i<=NF;i++) if($i=="WINPID") col=i} NR==2 && col {print $col}')
+            [[ -n "$editor_instance" ]] || { echo 'Cannot map editor job to Windows PID' >&2; return 1; }
+            ;;
+    esac
     for ((attempt=0; attempt<60; attempt++)); do
         kill -0 "$editor_pid" 2>/dev/null || { cat "$work/editor.stdout" >&2; return 1; }
-        if hera status >"$work/status.json" 2>/dev/null && jq -e --argjson pid "$editor_pid" '.pid == $pid' "$work/status.json" >/dev/null; then return; fi
+        if hera status >"$work/status.json" 2>/dev/null && jq -e --argjson pid "$editor_instance" '.pid == $pid' "$work/status.json" >/dev/null; then return; fi
         sleep 1
     done
     echo 'Editor did not become ready' >&2; return 1

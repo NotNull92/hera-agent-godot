@@ -38,10 +38,12 @@ func _run() -> void:
 	_server.respond(pending["conn"], { "ok": true, "data": "x".repeat(32 * 1024 * 1024) + String.chr(27) })
 	_check(Time.get_ticks_msec() - started < 2000, "respond must not block on a nonreading client")
 	_check(not _server._clients.is_empty(), "large response remains tracked until written or timed out")
+	# Response serialization precedes the write deadline; retain its actual bound.
+	var output_deadline: int = _server._clients[0]["deadline"]
 	var ticks := 0
 	var stalled := false
 	var previous_offset := -1
-	while Time.get_ticks_msec() - started < 5500:
+	while Time.get_ticks_msec() <= output_deadline + 500:
 		_server.poll(_queue)
 		ticks += 1
 		if not _server._clients.is_empty():
