@@ -7,6 +7,9 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **Branding follow-up (2026-10-16)**: target release and recording CLI are now 2.0.2. Homebrew PR #3 (2.0.1) was reviewed and merged at 07:35:20 UTC. Keep recording preparation on hold until owner npm 2.0.2 publication. The full supplied portrait is `docs/assets/hera_new.png`; addon ships only the 192×192 fitted copy.
+
+
 - **v2.0.1 recording hold (2026-10-16)**: recording editor/terminal closed for
   the panel-character patch. The normal-profile npm release prefix and helper
   remain 2.0.0; they were not upgraded/re-prepared. GitHub/Scoop 2.0.1 is

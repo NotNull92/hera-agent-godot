@@ -53,14 +53,14 @@ C# 또는 명시적으로 선택한 GDScript 평가 등. 에이전트가 낡은 
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 현재 저장소 기준: v2.0.1
+## 현재 저장소 기준: v2.0.2
 
-설치한 프로젝트에서 빠졌던 패널의 Hera 캐릭터를 애드온에 포함했습니다.
-애드온과 GitHub Release는 `2.0.1`입니다(2026-10-16). Scoop은 갱신했습니다.
-npm 2.0.1은 pack만 완료했고 배포하지 않았으며, Homebrew
-[PR #3](https://github.com/NotNull92/homebrew-hera/pull/3)는 열려 있습니다.
+패널 캐릭터·README 로고·스토어 썸네일을 새 Hera 이미지로 교체했습니다.
+애드온과 GitHub Release는 `2.0.2`입니다(2026-10-16). Scoop은 갱신했습니다.
+npm 2.0.2은 pack만 완료했고 배포하지 않았으며, Homebrew
+[PR #4](https://github.com/NotNull92/homebrew-hera/pull/4)는 열려 있습니다.
 스토어 입력값과 새 스크린샷은 Victor의 제출을 위해 준비했습니다.
-[릴리스·채널 기록](docs/releases/v2.0.1-asset-store-upload.md).
+[릴리스·채널 기록](docs/releases/v2.0.2-asset-store-upload.md).
 
 `v2.0.0`은 eval 기본 언어를 C#으로 변경하며 C# 검증·실행과 한영 패널을
 추가합니다. 기존 안정 JSON 필드 타입은 유지됩니다.
@@ -360,5 +360,5 @@ Hera는 무료이며 MIT 라이선스입니다. 도움이 되었다면 개발을
 
 MIT — [LICENSE](LICENSE) 참고.
 
-C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.1`
+C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.2`
 (npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).

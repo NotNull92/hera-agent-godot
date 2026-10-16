@@ -35,7 +35,7 @@ func _run() -> void:
 		await get_tree().create_timer(0.1).timeout
 	var version_text: String = panel.rows["version"].text
 	assert(version_text.contains("Versions match"))
-	assert(version_text.contains("CLI v2.0.1") and version_text.contains("Addon 2.0.1"))
+	assert(version_text.contains("CLI v2.0.2") and version_text.contains("Addon 2.0.2"))
 	print("RELEASE_VERSION_MATCH ", version_text.replace("\n", " | "))
 	var expected_scale := float(OS.get_environment("HERA_UI_SCALE"))
 	print("OBSERVED_SCALE ", EditorInterface.get_editor_scale())

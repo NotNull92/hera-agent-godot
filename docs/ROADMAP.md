@@ -1,6 +1,8 @@
 # Roadmap
 
-Current GitHub release: **v2.0.1**, addon manifest `2.0.1` (2026-10-16).
+Preparing **v2.0.2**: owner-supplied Hera portrait replaces panel, README logos and store thumbnails. Full source: `docs/assets/hera_new.png`; addon uses a fitted 192×192 copy. Historical released ZIPs/captures remain unchanged. Homebrew 2.0.1 PR #3 merged on 2026-10-16; the 2.0.2 channel update follows verified release hashes. npm remains owner-published; recording waits for npm 2.0.2.
+
+Previous GitHub release: **v2.0.1**, addon manifest `2.0.1` (2026-10-16).
 
 Fix: the Hera character in the editor panel now ships with the addon (it was missing in installed projects).
 The 192×192 alpha image is addon-local; regression and capture fixtures have no
@@ -15,13 +17,13 @@ no-docs GUI capture pass. A startup-only CI import race was corrected by bounded
 read-only smoke retries for editor_busy; other errors still fail immediately.
 
 Scoop main pins v2.0.1. [Homebrew PR #3](https://github.com/NotNull92/homebrew-hera/pull/3)
-is open for Claude to merge. npm 2.0.1 is packed only (owner publication pending);
+merged on 2026-10-16. npm 2.0.1 is packed only (owner publication pending);
 registry still reports 2.0.0 at the check. Store ZIP, unchanged description/footer,
 patch changelog and five real-addon screenshots are prepared, not submitted.
 [Release and upload record](releases/v2.0.1-asset-store-upload.md) ·
 [gate evidence](reports/2026-10-16-v2.0.1-release-gates.md).
 
-Recording preparation is paused until npm 2.0.1 is published. Only the recording
+Recording preparation is paused until npm 2.0.2 is published. Only the recording
 editor/terminal were closed; the demo was not re-prepared. The frozen prompt is
 unchanged. v2.0.0's publication and Victor's 2026-10-16 store submission remain
 recorded in [its historical record](releases/v2.0.0-asset-store-upload.md).

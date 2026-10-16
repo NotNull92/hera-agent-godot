@@ -10,12 +10,12 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument("--engine", type=Path, required=True)
 parser.add_argument("--out", type=Path, required=True)
-parser.add_argument("--cli", type=Path, required=True, help="released v2.0.1 CLI")
+parser.add_argument("--cli", type=Path, required=True, help="released v2.0.2 CLI")
 parser.add_argument("--theme", choices=["Default", "Light"], default="Default")
 parser.add_argument("--scale", choices=["1", "1.5"], default="1")
 args = parser.parse_args()
 cli = str(args.cli.resolve())
-assert subprocess.check_output([cli, "version"]).decode().strip() == "v2.0.1"
+assert subprocess.check_output([cli, "version"]).decode().strip() == "v2.0.2"
 repo = Path(__file__).resolve().parents[2]
 work = Path(tempfile.mkdtemp(prefix="hera-w2-visual-"))
 print(f"Evidence: {work}", flush=True)
