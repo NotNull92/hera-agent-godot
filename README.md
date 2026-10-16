@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/3f22cd75-dddc-4983-b695-93969a1c6cc6
-
 <p align="center">
   <img src="docs/assets/hera_godot_logo.png" alt="hera-agent-godot logo" width="420">
 </p>
@@ -28,6 +24,8 @@ until separately released. See [migration notes](packaging/README.md#command-nam
 Codex builds and QA-tests a C# tower defense game in a live Godot editor with Hera.
 
 https://github.com/user-attachments/assets/0f37c092-8223-449f-88d5-32efeb27d509
+
+[Watch on YouTube](https://youtu.be/1YSc7_Q_Djc)
 
 <p align="center">
   <img src="docs/assets/hera-agent-godot-playtest_v0.9.0.gif" alt="Hera driving a live Godot editor from the shell: build a scene, run it, and QA the running game" width="820">

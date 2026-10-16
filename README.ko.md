@@ -32,6 +32,8 @@ Codex가 Hera로 실행 중인 Godot 에디터에서 C# 타워 디펜스 게임�
 
 https://github.com/user-attachments/assets/0f37c092-8223-449f-88d5-32efeb27d509
 
+[YouTube에서 보기](https://youtu.be/1YSc7_Q_Djc)
+
 <p align="center">
   <img src="docs/assets/hera-agent-godot-playtest_v0.9.0.gif" alt="셸만으로 실행 중인 Godot 에디터를 조작하는 Hera: 씬 조립, 실행, 라이브 게임 QA" width="820">
 </p>
