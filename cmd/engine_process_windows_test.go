@@ -37,7 +37,7 @@ func TestWindowsGuardOwnsJobObject(t *testing.T) {
 	if failure := guard.resume(); failure != "" {
 		t.Fatalf("the suspended child must resume: %q", failure)
 	}
-	if !guard.alive() {
+	if !guardAlive(guard) {
 		t.Fatal("the helper should be running when the guard is created")
 	}
 	if termination := guard.terminate(); termination != "" {
@@ -45,12 +45,17 @@ func TestWindowsGuardOwnsJobObject(t *testing.T) {
 	}
 	deadline := time.Now().Add(10 * time.Second)
 	for time.Now().Before(deadline) {
-		if !guard.alive() {
+		if !guardAlive(guard) {
 			return
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 	t.Fatal("the job termination did not stop the owned process")
+}
+
+func guardAlive(guard *processGuard) bool {
+	status, err := syscall.WaitForSingleObject(guard.handle, 0)
+	return err == nil && status == syscall.WAIT_TIMEOUT
 }
 
 // TestWindowsJobCapturesDescendant pins the ordering fix: the child is launched

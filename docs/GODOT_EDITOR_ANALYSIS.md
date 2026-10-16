@@ -37,8 +37,7 @@ surface instead of inventing one. Verified locally against
 `Godot_v4.7.2-stable_mono_win64.exe` (SHA-256 `45336315…dfab`) by running the
 binary in an isolated `HOME`/`USERPROFILE`/`APPDATA` with per-run timeouts. The
 full evidence (string RVAs, probe logs, limits) is in
-`docs/reports/2026-10-15-godot-472-engine-surface-analysis.md` (local-only:
-`docs/reports/` is gitignored).
+[`docs/reports/2026-10-15-godot-472-engine-surface-analysis.md`](reports/2026-10-15-godot-472-engine-surface-analysis.md).
 
 | Need | Engine surface | Verified result |
 |---|---|---|

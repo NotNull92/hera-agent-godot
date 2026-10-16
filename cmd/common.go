@@ -357,11 +357,6 @@ func printIDs(data any) {
 	fmt.Println(string(out))
 }
 
-func hasPathList(data map[string]any, key string) bool {
-	_, ok := data[key].([]any)
-	return ok
-}
-
 func printPathList(data map[string]any, key string) bool {
 	items, ok := data[key].([]any)
 	if !ok {

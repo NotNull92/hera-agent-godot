@@ -8,6 +8,10 @@ import (
 	"github.com/NotNull92/hera-agent-godot/internal/discovery"
 )
 
+func liveScan(instances []discovery.Instance) discovery.Scan {
+	return discovery.Scan{Live: instances}
+}
+
 func TestSelectEditor_reportsActionableMessage_whenNoInstances(t *testing.T) {
 	// Given
 	instances := []discovery.Instance{}

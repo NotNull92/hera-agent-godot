@@ -202,17 +202,6 @@ func newProcessGuard(pid int, process *os.Process) *processGuard {
 	return guard
 }
 
-func (g *processGuard) alive() bool {
-	if g.handle == 0 {
-		return false
-	}
-	status, err := syscall.WaitForSingleObject(g.handle, 0)
-	if err != nil {
-		return false
-	}
-	return status == syscall.WAIT_TIMEOUT
-}
-
 // terminate stops the owned tree and reports any incomplete cleanup. It does not
 // depend on the started process still being alive.
 func (g *processGuard) terminate() string {

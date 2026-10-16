@@ -109,7 +109,7 @@ func TestRequestCorrelatesAndBuffersEvents(t *testing.T) {
 	if response.String("command") != "initialize" || response.Int("seq") != 2 {
 		t.Fatalf("unexpected response: %v", response)
 	}
-	event, err := client.Event("initialized", 2*time.Second)
+	event, err := client.NextEvent(2 * time.Second)
 	if err != nil {
 		t.Fatalf("buffered event must be returned: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestRequestCorrelatesAndBuffersEvents(t *testing.T) {
 	}
 }
 
-func TestEventTimesOutWithoutMatch(t *testing.T) {
+func TestNextEventTimesOutWithoutEvent(t *testing.T) {
 	address, stop := fakeAdapter(t, func(reader *bufio.Reader, writer *bufio.Writer) {
 		readRequest(reader)
 		writeFrame(writer, `{"type":"response","request_seq":1,"command":"initialize","success":true,"seq":1}`)
@@ -137,7 +137,7 @@ func TestEventTimesOutWithoutMatch(t *testing.T) {
 		t.Fatal(err)
 	}
 	start := time.Now()
-	if _, err := client.Event("stopped", 300*time.Millisecond); err == nil {
+	if _, err := client.NextEvent(300 * time.Millisecond); !errors.Is(err, ErrNotObserved) {
 		t.Fatal("a missing event must time out")
 	}
 	if elapsed := time.Since(start); elapsed > 2*time.Second {
@@ -424,8 +424,8 @@ func TestDrainEventsEstablishesAnActionBoundary(t *testing.T) {
 		}
 	}
 	drained := client.DrainEvents("stopped")
-	if len(drained) != 2 || client.Buffered() != 1 {
-		t.Fatalf("drained=%d buffered=%d", len(drained), client.Buffered())
+	if len(drained) != 2 || len(client.pending) != 1 {
+		t.Fatalf("drained=%d buffered=%d", len(drained), len(client.pending))
 	}
 	if _, err := client.NextEvent(50 * time.Millisecond); err != nil {
 		t.Fatalf("the remaining output event should still be readable: %v", err)

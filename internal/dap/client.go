@@ -326,40 +326,6 @@ func (c *Client) Request(command string, arguments map[string]any, timeout time.
 	}
 }
 
-// Event returns the next event with the given name, checking buffered messages
-// first. Timeouts and transport failures are distinguishable: a timeout means
-// nothing was observed, any other error means the observation failed.
-func (c *Client) Event(name string, timeout time.Duration) (Message, error) {
-	if err := c.usable(); err != nil {
-		return nil, err
-	}
-	if message, ok := c.takeBuffered(name); ok {
-		return message, nil
-	}
-	deadline := time.Now().Add(timeout)
-	for {
-		remaining := time.Until(deadline)
-		if remaining <= 0 {
-			return nil, ErrNotObserved
-		}
-		message, err := c.read(remaining)
-		if err != nil {
-			if isTimeout(err) {
-				continue
-			}
-			return nil, err
-		}
-		if message.String("type") == "event" {
-			if message.String("event") == name {
-				return message, nil
-			}
-			if err := c.buffer(message); err != nil {
-				return nil, err
-			}
-		}
-	}
-}
-
 // NextEvent returns the next event of any name, buffered ones first, so a caller
 // can react to several possible events in arrival order.
 func (c *Client) NextEvent(timeout time.Duration) (Message, error) {
@@ -396,19 +362,6 @@ func (c *Client) NextEvent(timeout time.Duration) (Message, error) {
 // ErrNotObserved means the requested event did not arrive inside the window;
 // it says nothing about the debuggee's state.
 var ErrNotObserved = errors.New("the event was not observed within the wait window")
-
-// takeBuffered removes and returns a buffered event with the given name.
-func (c *Client) takeBuffered(name string) (Message, bool) {
-	for i, message := range c.pending {
-		if message.String("type") == "event" && message.String("event") == name {
-			encoded, _ := json.Marshal(message)
-			c.pendingBytes -= len(encoded)
-			c.pending = append(c.pending[:i], c.pending[i+1:]...)
-			return message, true
-		}
-	}
-	return nil, false
-}
 
 // ReconcileToIdle consumes unread socket data and buffered events until the
 // connection has been quiet for the idle window. It is bounded by an absolute
@@ -463,9 +416,6 @@ func (c *Client) ReconcileToIdle(idle time.Duration, budget time.Duration) (int,
 		}
 	}
 }
-
-// Buffered reports how many messages are waiting to be consumed.
-func (c *Client) Buffered() int { return len(c.pending) }
 
 // DrainEvents drops every buffered event of the given names and returns them, so
 // an action can establish a boundary before it resumes the debuggee.

@@ -8,10 +8,6 @@ import (
 	"github.com/NotNull92/hera-agent-godot/internal/discovery"
 )
 
-func liveScan(instances []discovery.Instance) discovery.Scan {
-	return discovery.Scan{Live: instances}
-}
-
 func selectEditor(scan discovery.Scan, requireSingle bool, targetPID int) (discovery.Instance, error) {
 	if targetPID != 0 {
 		for _, inst := range scan.Live {

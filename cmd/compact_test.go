@@ -28,7 +28,6 @@ func TestCompactStatusDataOmitsExperimentalDetail(t *testing.T) {
 		t.Fatal("compact status mutated the original map")
 	}
 }
-
 func TestCompactReceiptDataOmitsRetentionAndEchoedResponse(t *testing.T) {
 	in := map[string]any{
 		"id":        "session:1:x",
@@ -83,19 +82,5 @@ func TestForEachBatchChildDoesNotReplaceNonObjectParams(t *testing.T) {
 	entry := params["commands"].([]any)[0].(map[string]any)
 	if entry["params"] != "bad" {
 		t.Fatalf("batch child params = %#v, want the original string", entry["params"])
-	}
-}
-
-func TestPrintIDsWritesControlPaths(t *testing.T) {
-	// Covered via printPathList through printIDs; keep the extractor explicit.
-	data := map[string]any{"controls": []any{
-		map[string]any{"path": "/root/Main/Start", "name": "Start"},
-		map[string]any{"path": "/root/Main/Quit"},
-	}}
-	if !hasPathList(data, "controls") {
-		t.Fatal("controls path list not detected")
-	}
-	if hasPathList(data, "nodes") {
-		t.Fatal("nodes list should be absent")
 	}
 }
