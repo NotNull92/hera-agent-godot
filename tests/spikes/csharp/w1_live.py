@@ -29,7 +29,7 @@ env.pop("HERA_GODOT_EVAL_LANG", None)
 engine = args.engine.resolve()
 feed = engine.parent / "GodotSharp/Tools/nupkgs"
 (project / "NuGet.Config").write_text(f'<configuration><packageSources><clear/><add key="godot" value="{feed}"/></packageSources></configuration>')
-(project / "Probe.csproj").write_text('<Project Sdk="Godot.NET.Sdk/4.7.2"><PropertyGroup><TargetFramework>net10.0</TargetFramework><EnableDynamicLoading>true</EnableDynamicLoading><Nullable>enable</Nullable></PropertyGroup></Project>')
+(project / "Probe.csproj").write_text('<Project Sdk="Godot.NET.Sdk/4.7.2"><PropertyGroup><TargetFramework>net10.0</TargetFramework><EnableDynamicLoading>true</EnableDynamicLoading><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup></Project>')
 (project / "Probe.cs").write_text('using Godot; public partial class Probe : Node2D { public int CustomValue => 123; }')
 (project / "Stamp.cs").write_text('public static class Stamp { public static int Value => 1; }')
 (project / "Tool.cs").write_text('using Godot; public partial class Tool : SceneTree { public override void _Initialize() { GD.Print("W1_RUN:", string.Join(",", OS.GetCmdlineUserArgs())); Quit(); } }')
@@ -53,7 +53,8 @@ with (project / "project.godot").open("a") as f:
 
 
 def call(arguments, expected=0):
-    r = subprocess.run([str(cli), "--instance", str(editor.pid), "--timeout", "60000"] + arguments,
+    deadline = [] if arguments[:2] == ["script", "validate"] else ["--timeout", "60000"]
+    r = subprocess.run([str(cli), "--instance", str(editor.pid)] + deadline + arguments,
                        cwd=project, env=env, capture_output=True, timeout=80)
     with (work / "calls.jsonl").open("a", encoding="utf-8") as f:
         f.write(json.dumps({"args": arguments, "exit": r.returncode, "stdout": r.stdout.decode("utf-8", errors="replace"), "stderr": r.stderr.decode("utf-8", errors="replace")}) + "\n")

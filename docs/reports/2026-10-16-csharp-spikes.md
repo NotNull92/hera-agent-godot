@@ -227,3 +227,23 @@ User projects, csproj/solution files, main, tags, versions and CI configuration
 were not changed. Only owned temporary fixtures were built/exported; launched
 editors were shut down or killed by their owning harness. Preserve the user's
 untracked PLAN/REVIEW files and v1 HTML explainer. Stop at Phase 5; no PR opened.
+
+## Review fixes — 2026-10-16
+
+C# validation now defaults to 60 seconds for the whole SDK/query/restore/build
+workload; an explicit timeout still wins. The deadline unit test passes.
+The native loader explicitly enables nullable annotations inside `#if TOOLS`.
+Upstream [ProjectGenerator.cs](https://github.com/godotengine/godot/blob/master/modules/mono/editor/GodotTools/GodotTools.ProjectEditor/ProjectGenerator.cs)
+was checked on 2026-10-16: generated properties include TargetFramework and
+EnableDynamicLoading, but no Nullable setting. The fixture now omits Nullable
+and enables TreatWarningsAsErrors.
+
+Fresh `w1_live.py` passed on 4.7.2 .NET (SDK 10.0.204), including validation
+without an explicit timeout. Evidence directory: `%TEMP%/hera-csharp-w1-zn3rxeeo`.
+Decisive retained excerpts (temporary paths are supplementary):
+
+```text
+project-build: 0 warnings, 0 errors, elapsed 2.10 seconds
+PASS W1: C# eval/validate/run, GDScript opt-in, batch, placeholder boundary, same-editor reload
+Stamp.Value after rebuild: exit 0, {"lang":"csharp","result":"2","result_value":2,"type":"int","undoable":false}
+```
