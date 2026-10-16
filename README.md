@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/3f22cd75-dddc-4983-b695-93969a1c6cc6
+
 <p align="center">
   <img src="docs/assets/hera_godot_logo.png" alt="hera-agent-godot logo" width="420">
 </p>
