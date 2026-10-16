@@ -23,7 +23,15 @@ silent fallback: standard Godot returns `csharp_unavailable` and suggests GDScri
 
 For C#, use Godot 4.7+ .NET, build/reload the project with Hera's native `[Tool]`
 loader, and build the external [compiler helper](CSHARP_SUPPORT.md#compiler-helper).
-`SceneRoot` refers to the edited root; for example `hera-godot eval '((Node2D)SceneRoot).Position'`.
+`SceneRoot` refers to the edited root. This example works in PowerShell, cmd.exe
+and POSIX shells (cmd.exe does not strip single quotes):
+`SceneRoot`는 편집 중인 루트입니다. 다음 예제는 PowerShell·cmd.exe·POSIX 셸에서
+사용할 수 있습니다(cmd.exe는 작은따옴표를 제거하지 않습니다).
+
+```text
+hera-godot eval "((Node2D)SceneRoot).Position"
+```
+
 The string `result`, `type`, `undoable` and structured-value encoding retain their
 types; successful C# responses additionally have `lang:"csharp"`.
 C#은 4.7+ .NET, 빌드·리로드된 프로젝트와 별도 헬퍼가 필요합니다. 결과의 기존 필드 타입은 유지됩니다.
