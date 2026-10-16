@@ -51,3 +51,13 @@ repositories first:
 This repository's docs remain authoritative for Hera-specific contracts and
 policies. Use the upstream repositories to settle Godot facts rather than stale
 recollection or unofficial summaries.
+
+## Handing work to Codex (this machine)
+
+"Codex에 전달해" means: send the instruction to the **Codex pane in the herdr
+workspace**, not a new `codex exec` process. Find the pane with
+`herdr pane list` (agent `codex`, cwd this repo, same `HERDR_WORKSPACE_ID`),
+then `herdr pane run <PANE_ID> '<text>'`; the Codex TUI may leave the text in
+its input box, so follow with `herdr pane send-keys <PANE_ID> enter` and confirm
+with `herdr pane read <PANE_ID>` that the prompt was submitted. Write the durable brief under `docs/handoff/`
+first (local-only, gitignored) and point the pane at that file.
