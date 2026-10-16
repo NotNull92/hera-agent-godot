@@ -1,12 +1,12 @@
-# v2.0.0 소개 영상 촬영 대본
+# v2.0.1 소개 영상 촬영 대본
 
-이 문서는 `PROMPT.md`로 Hera v2.0.0 소개 영상을 찍는 순서다. 위에서 아래로
+이 문서는 `PROMPT.md`로 Hera v2.0.1 소개 영상을 찍는 순서다. 위에서 아래로
 그대로 따라 하면 된다. 결정 배경은 2026-10-16 그릴링(자율 시연 + 30초 수동
 인트로, 순수 C#, Game Feel ON 1회, 프롬프트 고정)이다.
 
 - 에이전트: Codex, `gpt-6.1-sol` medium (Codex 기본 설정에 이미 저장됨)
 - 엔진: Godot 4.7.2 .NET, 이 폴더(`demo/td-csharp`) 프로젝트
-- CLI: **공개 릴리스 2.0.0** (개발 shim 아님)
+- CLI: **공개 릴리스 2.0.1** (개발 shim 아님)
 - 녹화: Windows 캡처 도구(Win+Shift+R), 1920×1080 영역, MP4
 
 ## 촬영 1번이 곧 최종 리허설이다
@@ -68,7 +68,7 @@ herdr가 아니라 **새 Windows Terminal 창 하나**를 쓴다. 화면에 다�
 ```powershell
 $env:PATH = (Join-Path $env:LOCALAPPDATA 'hera-godot-release\node_modules\.bin') + ';' + $env:PATH
 cd C:\Users\PC\Desktop\Cowork\hera-agent-godot\demo\td-csharp
-hera-godot --version          # v2.0.0 이어야 한다
+hera-godot --version          # v2.0.1 이어야 한다
 Clear-Host
 codex -c features.hooks=false -c features.plugin_hooks=false -c features.plugins=false
 ```
@@ -106,7 +106,7 @@ Windows 캡처 도구의 화면 녹화를 쓴다. 따로 설정할 것은 없다
 | 0:08 | **Game Feel Mode**, **Game Feel UI Mode** 토글을 켠다 (이미 켜져 있으면 가리키기만) | 토글 2개 켜짐 |
 | 0:13 | **에이전트 설정 복사 Copy agent setup** 클릭 | 버튼 옆 "복사됨 Copied" |
 | 0:16 | Codex 창 클릭 → **Ctrl+V** → **Enter** | 설정 텍스트가 Codex에 들어감 |
-| 0:18~ | 손을 뗀다. Codex가 `hera-godot status`, `smoke --skip-game`을 실행 | 패널 버전 줄이 **"버전 일치 · CLI v2.0.0 · 애드온 2.0.0"**으로 바뀜 |
+| 0:18~ | 손을 뗀다. Codex가 `hera-godot status`, `smoke --skip-game`을 실행 | 패널 버전 줄이 **"버전 일치 · CLI v2.0.1 · 애드온 2.0.1"**으로 바뀜 |
 
 Codex가 확인 결과를 말하고 입력창이 다시 뜰 때까지 기다린다.
 
@@ -153,7 +153,7 @@ Codex가 질문을 하면 그대로 답한다: `Proceed with your best judgment.
 ### 3-1. MP4로 저장
 
 정지하면 캡처 도구 창에 녹화가 열린다. **저장(Ctrl+S)**으로
-`hera-v2.0.0-td-csharp-take1.mp4`처럼 테이크 번호를 붙여 저장한다.
+`hera-v2.0.1-td-csharp-take1.mp4`처럼 테이크 번호를 붙여 저장한다.
 영역을 조금 넘게 잡았으면 편집할 때 1920×1080으로 자르면 된다.
 
 ### 3-2. README용 GIF 2개
@@ -174,13 +174,13 @@ Godot 에디터를 닫고 1-2의 명령을 다시 실행한다. 만들어진 게
 **제목**
 
 ```text
-GPT-6.1-Sol builds a C# tower defense in a live Godot editor | Hera Agent Godot v2.0.0
+GPT-6.1-Sol builds a C# tower defense in a live Godot editor | Hera Agent Godot v2.0.1
 ```
 
 **설명 첫 문단**
 
 ```text
-Codex (GPT-6.1-Sol, medium) uses hera-agent-godot v2.0.0 to build a playable mini tower defense game in C# inside a live Godot 4.7 .NET editor from a single prompt. The agent writes C#, validates it against the real project build, evaluates C# expressions in the running editor, plays the game with real input, checks screenshots, and fixes what it finds. Game Feel Mode is ON. Same task as our GPT-5.5 / v0.7 run, now on Hera v2.0.0.
+Codex (GPT-6.1-Sol, medium) uses hera-agent-godot v2.0.1 to build a playable mini tower defense game in C# inside a live Godot 4.7 .NET editor from a single prompt. The agent writes C#, validates it against the real project build, evaluates C# expressions in the running editor, plays the game with real input, checks screenshots, and fixes what it finds. Game Feel Mode is ON. Same task as our GPT-5.5 / v0.7 run, now on Hera v2.0.1.
 ```
 
 설명 아래쪽 링크와 테스트 셋업 목록은 지난 영상 형식을 따르되 Agent·Model·Reasoning·Engine·

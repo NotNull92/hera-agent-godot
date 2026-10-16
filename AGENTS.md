@@ -35,7 +35,7 @@ enabled, commands fail with "no live Godot editor found" — ask them to enable 
 The CLI finds the editor automatically via `~/.hera-agent-godot/instances/`.
 
 Install the separate C# compiler helper with `hera-godot csharp-host install`
-(use `--version v2.0.0` with a development CLI). This downloads and replaces the
+(use `--version v2.0.1` with a development CLI). This downloads and replaces the
 helper under your home directory; eval never downloads it implicitly.
 
 ## Commands

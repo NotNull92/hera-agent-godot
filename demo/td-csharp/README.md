@@ -10,13 +10,13 @@ Install Godot **4.7.2 .NET** and the **.NET 8 SDK** (the runtime alone is not
 enough for Godot's build/reload tooling). Install the published CLI:
 
 ```powershell
-npm install -g hera-godot@2.0.0
+npm install -g hera-godot@2.0.1
 $release = Join-Path (npm prefix -g) 'hera-godot.cmd'
 ./prepare.ps1 -HeraCli $release
 ```
 
 Use an explicit npm/Scoop executable if a development shim shadows your PATH.
-`prepare.ps1` checks version 2.0.0, copies the root Hera addon, builds the empty
+`prepare.ps1` checks the CLI version against the copied addon manifest, copies the root Hera addon, builds the empty
 project, and downloads/verifies the released compiler helper. It does not
 download the engine or SDK. The addon and helper are not duplicated in Git.
 Do not run preparation while the project is open in another editor.
@@ -30,7 +30,7 @@ Use a separate profile for rehearsal, following
 the CLI/editor. Ensure `dotnet` resolves the .NET 8 SDK. Open this folder in a
 GUI editor, enable Hera, turn **Game Feel Mode** and **Game Feel UI Mode** on,
 and open `Main.tscn`. Confirm `status --capabilities` identifies this project
-and CLI/addon 2.0.0. Keep the user's other editor untouched; select the isolated
+and CLI/addon 2.0.1. Keep the user's other editor untouched; select the isolated
 editor with `--instance <pid>`.
 
 After the manual intro, start the agent timer and submit only the text inside

@@ -18,7 +18,8 @@ through the native `[Tool]` C# loader in the editor. The loader is enclosed in
 script run uses the existing Debug assembly. Neither path generates user project
 files. See [C# support and execution limits](CSHARP_SUPPORT.md).
 
-The main-screen panel reads bridge state and the most recently observed CLI
+The main-screen panel bundles its character and font under the addon assets; it
+has no dependency on the repository docs directory. It reads bridge state and the most recently observed CLI
 version. Matching major/minor numbers are an advisory comparison, not a feature
 probe. Missing headers produce unknown. C# rows observe editor support and root
 csproj presence, not SDK readiness. Copy setup exports English instructions and

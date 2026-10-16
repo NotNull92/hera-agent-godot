@@ -46,12 +46,12 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current in-repo baseline: v2.0.0
+## Current in-repo baseline: v2.0.1
 
-Addon manifest and GitHub Release are `2.0.0` (2026-10-16). Scoop is updated.
-npm v2 publication awaits authentication; Homebrew [PR #2](https://github.com/NotNull92/homebrew-hera/pull/2)
-is open. Asset Store v2 submission is pending; its unstable v1.2.0 upload remains.
-[Release/channel record](docs/releases/v2.0.0-asset-store-upload.md).
+Fix: the Hera character in the editor panel now ships with the addon (it was missing in installed projects).
+Addon manifest: `2.0.1`. See the [release/channel records](docs/releases/README.md)
+for publication status. The v2.0.0 npm package and Homebrew update were released
+on 2026-10-16; v2.0.1 channel updates are separate.
 
 `v2.0.0` changes the default eval language to C# and adds C# validation/run and
 the bilingual editor panel. Existing stable JSON field types remain unchanged.
@@ -361,5 +361,5 @@ Hera is free and MIT-licensed. If it saves you time, you can support development
 
 MIT — see [LICENSE](LICENSE).
 
-C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.0`
+C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.1`
 (npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).

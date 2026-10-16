@@ -21,7 +21,7 @@ silent fallback: standard Godot returns `csharp_unavailable` and suggests GDScri
 
 For C#, use Godot 4.7+ .NET, build/reload the project with Hera's native `[Tool]`
 loader, and install the external [compiler helper](CSHARP_SUPPORT.md#compiler-helper):
-`hera-godot csharp-host install --version v2.0.0`. Package managers do not bundle it.
+`hera-godot csharp-host install --version v2.0.1`. Package managers do not bundle it.
 `SceneRoot` refers to the edited root. This example works in PowerShell, cmd.exe
 and POSIX shells (cmd.exe does not strip single quotes):
 `SceneRoot`는 편집 중인 루트입니다. 다음 예제는 PowerShell·cmd.exe·POSIX 셸에서

@@ -774,7 +774,7 @@ can differ by engine version. See the experimental
 ## Install the compiler helper / 컴파일러 헬퍼 설치
 
 ```sh
-hera-godot csharp-host install --version v2.0.0
+hera-godot csharp-host install --version v2.0.1
 ```
 
 Release builds default to their own tag; development builds require `--version`.

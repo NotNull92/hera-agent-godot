@@ -12,10 +12,12 @@ URLs and checksum pins keep working. Installers expose that payload as
 `hera-godot`; the npm launcher keeps it private in vendor/. No protocol, token,
 heartbeat directory or Godot addon name changes are involved.
 
-v2.0.0 CLI archives are published. npm v2 is prepared but publication awaits
-owner authentication. Homebrew [PR #2](https://github.com/NotNull92/homebrew-hera/pull/2)
-updates the tap to install `hera-godot` and its transitional alias; it is not merged.
-Scoop main is pinned to the v2 release. Package managers do not bundle the helper.
+The v2.0.1 candidate bundles the panel character inside the addon. Refresh npm
+and Scoop hashes from the verified release checksums before packing/updating.
+npm 2.0.0 and the Homebrew v2 update were published on 2026-10-16; the 2.0.1
+npm package is pack-only until owner publication. See the
+[release records](../docs/releases/README.md) for current channel state.
+Package managers do not bundle the helper.
 
 Verification: `npm test --prefix packaging/npm` builds a scratch native CLI, packs
 and installs the actual npm archive, executes both installed aliases and preserves
@@ -98,6 +100,6 @@ decision only after a new explicit user product decision.
 ## C# compiler helper
 
 npm, Scoop and Homebrew distribute only the CLI. Run
-`hera-godot csharp-host install --version v2.0.0` separately for C# eval.
+`hera-godot csharp-host install --version v2.0.1` separately for C# eval.
 The command verifies the release checksum before replacing the home-directory
 helper. It does not edit the Godot project. See [C# setup](../docs/CSHARP_SUPPORT.md).

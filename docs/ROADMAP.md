@@ -1,5 +1,12 @@
 # Roadmap
 
+## Prepared — v2.0.1 (2026-10-16)
+
+Fix: the Hera character in the editor panel now ships with the addon (it was missing in installed projects).
+The addon manifest and npm candidate are 2.0.1. Release gates and channel updates
+are in progress; the published v2.0.0 record below is historical.
+
+
 Current GitHub release: **v2.0.0**, addon manifest `2.0.0`. W1 and W2
 are merged on main; baseline `ae8c8c4` passed CI and HOL. Victor accepted legacy
 CLI `unknown` with upgrade guidance and authorized direct main release work.
