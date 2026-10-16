@@ -1,43 +1,43 @@
 {
-    "version": "1.1.0",
-    "description": "Low-token CLI that lets AI coding agents inspect and control a live Godot editor over localhost HTTP",
-    "homepage": "https://github.com/NotNull92/hera-agent-godot",
-    "license": "MIT",
-    "architecture": {
-        "64bit": {
-            "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v1.1.0/hera-windows-amd64.zip",
-            "hash": "df9fb82409ce421ec5b283bd549036fe456d2581124f2c79e1c07dc19c18988c"
-        },
-        "arm64": {
-            "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v1.1.0/hera-windows-arm64.zip",
-            "hash": "3122689a60ec2a9a43453ef011cafead953f19d8d27138b1ffc4ddac610781a8"
-        }
+  "version": "2.0.0",
+  "description": "Low-token CLI that lets AI coding agents inspect and control a live Godot editor over localhost HTTP",
+  "homepage": "https://github.com/NotNull92/hera-agent-godot",
+  "license": "MIT",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v2.0.0/hera-windows-amd64.zip",
+      "hash": "7ff49b5aa0b5df71c5e22d3fac75a998263bccc1203dad618c13f51121eb2709"
     },
-    "bin": [
-        [
-            "hera.exe",
-            "hera-godot"
-        ],
-        [
-            "hera.exe",
-            "hera-agent-godot"
-        ]
-    ],
-    "notes": "The CLI drives the Hera Agent Godot editor addon. Install the addon from the Godot Asset Store or the GitHub release assets, then enable it under Project Settings > Plugins.",
-    "checkver": {
-        "github": "https://github.com/NotNull92/hera-agent-godot"
-    },
-    "autoupdate": {
-        "architecture": {
-            "64bit": {
-                "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v$version/hera-windows-amd64.zip"
-            },
-            "arm64": {
-                "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v$version/hera-windows-arm64.zip"
-            }
-        },
-        "hash": {
-            "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v$version/checksums.txt"
-        }
+    "arm64": {
+      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v2.0.0/hera-windows-arm64.zip",
+      "hash": "b358e58d11c60ab3e060aa4437639a0f39035bc84c4cfe6e1d9235c7d9020661"
     }
+  },
+  "bin": [
+    [
+      "hera.exe",
+      "hera-godot"
+    ],
+    [
+      "hera.exe",
+      "hera-agent-godot"
+    ]
+  ],
+  "notes": "The CLI drives the Hera Agent Godot editor addon. Install the addon from the Godot Asset Store or the GitHub release assets, then enable it under Project Settings > Plugins. For C# eval, install the separate helper: hera-godot csharp-host install.",
+  "checkver": {
+    "github": "https://github.com/NotNull92/hera-agent-godot"
+  },
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v$version/hera-windows-amd64.zip"
+      },
+      "arm64": {
+        "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v$version/hera-windows-arm64.zip"
+      }
+    },
+    "hash": {
+      "url": "https://github.com/NotNull92/hera-agent-godot/releases/download/v$version/checksums.txt"
+    }
+  }
 }
