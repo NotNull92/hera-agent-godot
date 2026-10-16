@@ -12,10 +12,10 @@ URLs and checksum pins keep working. Installers expose that payload as
 `hera-godot`; the npm launcher keeps it private in vendor/. No protocol, token,
 heartbeat directory or Godot addon name changes are involved.
 
-Published npm packages and the external Homebrew tap have not been updated by
-this source change. The tap's formula needs a separate reviewed change to install
-its payload as `hera-godot` and avoid a `hera` symlink before claiming the migration
-is available through Homebrew. No version bump, package or release is published.
+v2.0.0 CLI archives are published. npm v2 is prepared but publication awaits
+owner authentication. Homebrew [PR #2](https://github.com/NotNull92/homebrew-hera/pull/2)
+updates the tap to install `hera-godot` and its transitional alias; it is not merged.
+Scoop main is pinned to the v2 release. Package managers do not bundle the helper.
 
 Verification: `npm test --prefix packaging/npm` builds a scratch native CLI, packs
 and installs the actual npm archive, executes both installed aliases and preserves

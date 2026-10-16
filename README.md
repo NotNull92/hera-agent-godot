@@ -48,9 +48,10 @@ same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
 ## Current in-repo baseline: v2.0.0
 
-Addon manifest is `2.0.0`. GitHub Releases, npm, Homebrew, Scoop, and the Asset
-Store still serve **v1.1.0** until `v2.0.0` is tagged. Release notes:
-[docs/releases/v2.0.0-asset-store-upload.md](docs/releases/v2.0.0-asset-store-upload.md).
+Addon manifest and GitHub Release are `2.0.0` (2026-10-16). Scoop is updated.
+npm v2 publication awaits authentication; Homebrew [PR #2](https://github.com/NotNull92/homebrew-hera/pull/2)
+is open. Asset Store v2 submission is pending; its unstable v1.2.0 upload remains.
+[Release/channel record](docs/releases/v2.0.0-asset-store-upload.md).
 
 `v2.0.0` changes the default eval language to C# and adds C# validation/run and
 the bilingual editor panel. Existing stable JSON field types remain unchanged.

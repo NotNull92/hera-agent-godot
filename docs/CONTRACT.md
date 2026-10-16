@@ -4,7 +4,7 @@
 > Godot 4.7 editor and are protected by contract goldens. The stable markings
 > are binding compatibility commitments for the v1 major line.
 
-This document defines what consumers of the `hera` CLI — agents, scripts,
+This document defines what consumers of the `hera-godot` CLI — agents, scripts,
 CI pipelines, wrappers — may rely on: invocation shape, output streams, exit
 codes, error shapes, and per-command response fields. (`hera-agent-godot` is
 the transitional alias for the same binary; the contract is identical.)

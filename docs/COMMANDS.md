@@ -306,7 +306,7 @@ mutation a new ID merely to force it to run.
 
 ## C# eval, validation and run
 
-This development branch defaults `eval` to C# (Godot 4.7+ .NET); standard editors
+v2.0.0 defaults `eval` to C# (Godot 4.7+ .NET); standard editors
 fail as `csharp_unavailable` and suggest `--lang gdscript`. Explicit language wins
 against `HERA_GODOT_EVAL_LANG`; the same rule applies to batch eval children.
 Build and reload the project with the Hera native loader, then build the separate

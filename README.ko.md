@@ -10,7 +10,7 @@
 포함되지만 토큰 값과 토큰 경로는 포함되지 않습니다.
 [개발 검증 기록](docs/releases/v2-development-validation-2026-10-16.md)을 참고하세요.
 
-**CLI 명령 변경(아직 미배포):** 이 소스의 기본 명령은 `hera-godot`이며
+**CLI 명령 변경:** 이 소스의 기본 명령은 `hera-godot`이며
 `hera-agent-godot` 별칭은 유지합니다. 다른 도구와 충돌하지 않도록 `hera`는
 등록하지 않습니다. 이미 배포된 패키지와 Homebrew는 별도 배포 전까지 기존
 이름을 사용할 수 있습니다. [전환 안내](packaging/README.md#command-name-migration)를 참고하세요.
@@ -55,9 +55,10 @@ C# 또는 명시적으로 선택한 GDScript 평가 등. 에이전트가 낡은 
 
 ## 현재 저장소 기준: v2.0.0
 
-애드온 매니페스트는 `2.0.0`입니다. GitHub Releases, npm, Homebrew, Scoop, Asset
-Store는 태그가 올라가기 전까지 **v1.1.0**을 제공합니다. 릴리스 노트:
-[docs/releases/v2.0.0-asset-store-upload.md](docs/releases/v2.0.0-asset-store-upload.md).
+애드온과 GitHub Release는 `2.0.0`입니다(2026-10-16). Scoop은 갱신했습니다.
+npm v2 배포는 인증 대기이며 Homebrew [PR #2](https://github.com/NotNull92/homebrew-hera/pull/2)는
+열려 있습니다. Asset Store v2 제출은 대기 중이며 기존 unstable v1.2.0은 유지됩니다.
+[릴리스·채널 기록](docs/releases/v2.0.0-asset-store-upload.md).
 
 `v2.0.0`은 eval 기본 언어를 C#으로 변경하며 C# 검증·실행과 한영 패널을
 추가합니다. 기존 안정 JSON 필드 타입은 유지됩니다.

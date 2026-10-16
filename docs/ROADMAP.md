@@ -1,9 +1,14 @@
 # Roadmap
 
-Current release preparation: **v2.0.0**, addon manifest `2.0.0`. W1 and W2
+Current GitHub release: **v2.0.0**, addon manifest `2.0.0`. W1 and W2
 are merged on main; baseline `ae8c8c4` passed CI and HOL. Victor accepted legacy
 CLI `unknown` with upgrade guidance and authorized direct main release work.
 Channel publication is recorded in [the v2 record](releases/v2.0.0-asset-store-upload.md).
+
+Release tag `v2.0.0` points to `87368e3`. CI 7/7, HOL and release workflow passed.
+Scoop main pins the verified assets. npm v2 is ready but blocked by E401 credentials;
+[Homebrew PR #2](https://github.com/NotNull92/homebrew-hera/pull/2) is open (not merged).
+Store submission remains Victor's task. See the release record for exact hashes.
 
 ## Prepared — v1.2.0 (2026-09-15)
 

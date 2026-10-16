@@ -121,7 +121,7 @@ executable for the no-editor commands). Default output is compact JSON.
   `script current` cannot observe an external IDE's focused document. Runtime
   QA discovery accepts `qa_*` and `Qa` followed by an uppercase letter, such as
   `QaReady`; call C# methods with their exact case. `eval` defaults to C# on
-  this development branch; use `--lang gdscript` or
+  v2.0.0; use `--lang gdscript` or
   `HERA_GODOT_EVAL_LANG=gdscript` for GDScript (including batch children). See [docs/CSHARP_SUPPORT.md](docs/CSHARP_SUPPORT.md).
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
   node paths when scanning, `--json` only when you need the full structure.
