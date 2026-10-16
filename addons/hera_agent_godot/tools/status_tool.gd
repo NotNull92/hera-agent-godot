@@ -52,7 +52,7 @@ func _capabilities() -> Dictionary:
 		"csharp": _support(ClassDB.class_exists("CSharpScript")),
 		"csharp_eval": "unverified" if ClassDB.class_exists("CSharpScript") else "unsupported",
 		"csharp_validate": _support(_csharp_commands_available()),
-		"csharp_run": "unverified",
+		"csharp_run": _support(_csharp_commands_available()),
 		"dotnet_sdk": "unverified",
 	}
 

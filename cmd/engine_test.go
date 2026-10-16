@@ -679,8 +679,8 @@ func TestEngineHarnessError(t *testing.T) {
 	if err := engineHarnessError(project, "res://missing.gd"); err != nil {
 		t.Fatalf("unreadable scripts are left to the engine: %v", err)
 	}
-	if err := engineHarnessError(project, "res://Player.cs"); err != nil {
-		t.Fatalf("non-GDScript paths are left to the engine: %v", err)
+	if err := engineHarnessError(project, "res://Player.cs"); err == nil {
+		t.Fatal("C# preflight must reject an unreadable harness")
 	}
 }
 

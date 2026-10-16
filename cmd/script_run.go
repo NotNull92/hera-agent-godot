@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -103,6 +104,14 @@ func runScriptRun(params map[string]any) int {
 	}
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
+	if strings.EqualFold(filepath.Ext(path), ".cs") {
+		if !csharpEngineSupported(version) {
+			return failStructured(map[string]any{"path": path, "error": "csharp_unavailable", "detail": "C# run requires Godot 4.7 .NET"})
+		}
+		if _, err := csharpAssembly(project); err != nil {
+			return failStructured(map[string]any{"path": path, "error": "csharp_build_required", "detail": err.Error()})
+		}
+	}
 	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
@@ -131,6 +140,9 @@ func stringParam(params map[string]any, key string) string {
 // shortcut: the list is a heuristic set of common engine classes; a rare
 // incompatible base outside it still ends in the engine timeout.
 func engineHarnessError(projectDir, path string) error {
+	if strings.EqualFold(filepath.Ext(path), ".cs") {
+		return csharpHarnessError(projectDir, path)
+	}
 	if !strings.HasSuffix(path, ".gd") {
 		return nil
 	}
@@ -144,6 +156,27 @@ func engineHarnessError(projectDir, path string) error {
 		return nil
 	}
 	return fmt.Errorf("%s extends %s; the harness script must extend SceneTree or MainLoop", path, base)
+}
+
+var csharpComments = regexp.MustCompile(`(?s)/\*.*?\*/|(?m)//[^\r\n]*`)
+
+func csharpHarnessError(project, path string) error {
+	disk := filepath.Join(project, filepath.FromSlash(strings.TrimPrefix(path, "res://")))
+	rel, err := filepath.Rel(project, disk)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return fmt.Errorf("script path escapes project")
+	}
+	data, err := os.ReadFile(disk)
+	if err != nil {
+		return err
+	}
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	pattern := regexp.MustCompile(`\bclass\s+` + regexp.QuoteMeta(name) + `\s*:\s*(?:global::)?(?:Godot\.)?([A-Za-z_][A-Za-z_0-9]*)`)
+	m := pattern.FindStringSubmatch(csharpComments.ReplaceAllString(string(data), ""))
+	if len(m) == 2 && incompatibleHarnessBases[m[1]] {
+		return fmt.Errorf("%s inherits %s; a C# harness must inherit SceneTree or MainLoop", path, m[1])
+	}
+	return nil // Unknown/user-defined bases remain the engine's responsibility.
 }
 
 // incompatibleHarnessBases are engine classes that cannot run as a MainLoop.

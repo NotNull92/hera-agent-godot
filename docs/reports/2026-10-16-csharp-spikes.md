@@ -105,3 +105,17 @@ hashes and mtimes. The Go live test uses mock editor discovery/context plus real
 Go build/vet/full uncached tests pass. Updated script/status GDScript check-only
 and validation-guard regression pass on 4.2 and 4.7.2 .NET. Full live integration
 will be repeated with the final loader in Phase 4.
+
+## Phase 3 — direct C# harness execution
+
+`script run` now preflights C# paths, known incompatible base classes, Godot
+4.7+ .NET identity and the existing Debug project assembly. It invokes the .cs
+file directly; no GDScript shim and no implicit build. Unknown custom bases
+remain the engine's responsibility, as with GDScript. Assembly presence does
+not prove freshness relative to source; the engine executes the built revision.
+
+Go unit/full tests, build and vet pass. Actual development CLI ran the S3
+fixture `Tool.cs` with `one two`: expected marker, exit 0, duration 317 ms.
+This run used the disposable project but inherited the invoking user's profile
+(unlike the isolated Phase 0 runs); no user project was opened or changed.
+All subsequent integration uses isolated profiles explicitly.
