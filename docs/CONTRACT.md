@@ -9,9 +9,9 @@ CI pipelines, wrappers — may rely on: invocation shape, output streams, exit
 codes, error shapes, and per-command response fields. (`hera-agent-godot` is
 the transitional alias for the same binary; the contract is identical.)
 
-## v2 development changes (not a released version)
+## v2.0.0 changes
 
-The stable v1 field-type promises remain as recorded below. This branch changes
+The stable v1 field-type promises remain as recorded below. v2.0.0 changes
 `eval`'s default language to C#; explicit `--lang gdscript` preserves GDScript
 behavior. `HERA_GODOT_EVAL_LANG=gdscript` applies when no language is explicit,
 including batch children. New C# paths require Godot 4.7+ .NET. Success retains
@@ -47,7 +47,7 @@ Status capability probes remain observations, not proof of a built loader:
 on `status --capabilities`. The panel's major.minor comparison is informational,
 not wire compatibility negotiation. See [migration](MIGRATING_TO_V2.md).
 
-v2 개발 브랜치에서는 eval 기본 언어만 C#으로 전환하고 기존 결과 필드 타입은 유지합니다.
+v2.0.0에서는 eval 기본 언어만 C#으로 전환하고 기존 결과 필드 타입은 유지합니다.
 C# 검증은 실험적 프로젝트 빌드이며, 타임아웃·실패가 변경 취소를 뜻하지 않습니다.
 상세 언어 선택, 요구 환경, 오류와 보안 경계는 연결된 문서를 따르세요.
 
@@ -307,7 +307,7 @@ with a build warning. Attach rejects an unloaded C# class until build/reload;
 success includes `language` and `build_warning` in `script_diagnostics`, whose
 preload arrays remain GDScript-only diagnostics. Hera does not create `.csproj`/solution files.
 Explicit C# validation builds into isolated outputs; other script operations do
-not build. The v2 development default for `eval` is C#, with explicit GDScript opt-in. See [C# support](CSHARP_SUPPORT.md).
+not build. The v2.0.0 default for `eval` is C#, with explicit GDScript opt-in. See [C# support](CSHARP_SUPPORT.md).
 
 ### Editor mutations
 
@@ -401,7 +401,7 @@ dependencies, then restored to the editor after export.
 
 ## Engine-backed commands (experimental, no live editor)
 
-New in the unreleased v1.3 line. These run the engine binary as a bounded child
+New in v2.0.0. These run the engine binary as a bounded child
 process and are **experimental**: names and fields may change in a minor
 release until they are promoted.
 
@@ -438,7 +438,7 @@ carry either no `engine` block or one without a `version`.
 
 ## Debug sessions (experimental)
 
-New in the unreleased v1.3 line. `debug` is a DAP client for a running editor
+New in v2.0.0. `debug` is a DAP client for a running editor
 debug server; it does not start or stop the editor or the game.
 
 | Command | Tier | Notes |

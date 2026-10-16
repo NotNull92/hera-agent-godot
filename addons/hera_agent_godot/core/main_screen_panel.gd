@@ -19,7 +19,7 @@ const STRINGS := {
 	"token_error": ["Not connected: shared token read failed", "연결 안 됨: 공유 토큰 읽기 실패"],
 	"bind_error": ["Not connected: ports 8770–8785 unavailable", "연결 안 됨: 포트 8770–8785 사용 불가"],
 	"not_seen": ["No CLI request yet", "아직 CLI 요청 없음"],
-	"unknown": ["CLI version unknown", "CLI 버전 알 수 없음"],
+	"unknown": ["CLI version unknown; upgrade the CLI", "CLI 버전 알 수 없음; CLI를 업그레이드하세요"],
 	"match": ["Versions match", "버전 일치"],
 	"mismatch": ["Upgrade CLI and addon together", "CLI와 애드온을 함께 업그레이드하세요"],
 	"patch": ["Patch versions differ", "패치 버전 다름"],

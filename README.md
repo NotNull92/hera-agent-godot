@@ -4,13 +4,13 @@
 
 # hera-agent-godot
 
-The development editor panel shows bilingual connection, version, C# and auth
+The editor panel shows bilingual connection, version, C# and auth
 observations, with theme/DPI-aware layout and English **Copy agent setup**.
 Version matching compares major/minor; it does not prove feature compatibility.
 The copied block includes the project path but never token values or token paths.
 See [development validation](docs/releases/v2-development-validation-2026-10-16.md).
 
-**CLI command migration (unreleased):** this checkout installs `hera-godot`, with
+**CLI command migration:** this checkout installs `hera-godot`, with
 `hera-agent-godot` retained as an alias. It no longer registers `hera`, so other
 tools can use that name. Published packages/Homebrew may still expose the old name
 until separately released. See [migration notes](packaging/README.md#command-name-migration).
@@ -46,14 +46,14 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current in-repo baseline: v1.2.0
+## Current in-repo baseline: v2.0.0
 
-Addon manifest is `1.2.0`. GitHub Releases, npm, Homebrew, Scoop, and the Asset
-Store still serve **v1.1.0** until `v1.2.0` is tagged. Release notes:
-[docs/releases/v1.2.0-asset-store-upload.md](docs/releases/v1.2.0-asset-store-upload.md).
+Addon manifest is `2.0.0`. GitHub Releases, npm, Homebrew, Scoop, and the Asset
+Store still serve **v1.1.0** until `v2.0.0` is tagged. Release notes:
+[docs/releases/v2.0.0-asset-store-upload.md](docs/releases/v2.0.0-asset-store-upload.md).
 
-`v1.2.0` is a minor cut on the v1 contract: new experimental commands and
-fields, no intended break of documented stable JSON.
+`v2.0.0` changes the default eval language to C# and adds C# validation/run and
+the bilingual editor panel. Existing stable JSON field types remain unchanged.
 
 Highlights since v1.1.0:
 
@@ -107,7 +107,7 @@ Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 
 ## Command surface
 
-The `v1.2.0` CLI/addon surface includes:
+The `v2.0.0` CLI/addon surface includes:
 `status` (`--capabilities`), `operation`, `instances`, `run`/`stop`, `scene`, `editor`, `script` (including
 `validate` and `.gd`/`.cs` create), `project`,
 `classdb`, `node` (read + write + reparent + resource/script wiring), `signal`, `resource`
@@ -138,7 +138,7 @@ shares ownership across its children; client timeouts do not unlock running work
 See [the editor gate](docs/COMMANDS.md#editor-mutation-gate) for import readiness
 and engine capability limits.
 
-The unreleased v1.3 line adds an **engine-backed surface** that needs no open
+v2.0.0 adds an **engine-backed surface** that needs no open
 editor: `engine info`/`doctor`, `script run` (headless `SceneTree` harness with
 passthrough args), `project import`, `project export` (`pack` needs no export
 templates; `release`/`debug` warn when standard templates are missing),
@@ -188,7 +188,7 @@ use `--lang gdscript` or `HERA_GODOT_EVAL_LANG=gdscript` for old expressions.
 New C# eval/validate/run require Godot 4.7+ .NET. The small native C# eval loader
 is entirely `#if TOOLS` and excluded from export builds. The editor bridge
 remains GDScript. Build the separate helper using the C# guide below; release
-asset packaging is pending. See [migration](docs/MIGRATING_TO_V2.md).
+asset is installed with `hera-godot csharp-host install`. See [migration](docs/MIGRATING_TO_V2.md).
 See [C# support](docs/CSHARP_SUPPORT.md) for setup and limitations.
 
 Externally launched and parallel game processes can be selected independently
@@ -204,7 +204,7 @@ is removed from exported project settings.
 
 ## Install
 
-For v1.2.0 upgrades, update scripts to `hera-godot` and verify with `hera-godot version`. npm upgrades remove the old package bin; one-line installers preserve existing `hera` files. Check the resolved path and ownership before manually removing an old Hera Godot `hera`; another tool may own it. Upgrade CLI and addon together. Homebrew migration awaits a separate tap update.
+For v2.0.0 upgrades, update scripts to `hera-godot` and verify with `hera-godot version`. npm upgrades remove the old package bin; one-line installers preserve existing `hera` files. Check the resolved path and ownership before manually removing an old Hera Godot `hera`; another tool may own it. Upgrade CLI and addon together. Homebrew migration awaits a separate tap update.
 
 **CLI** — via a package manager:
 
@@ -359,3 +359,6 @@ Hera is free and MIT-licensed. If it saves you time, you can support development
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.0`
+(npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).

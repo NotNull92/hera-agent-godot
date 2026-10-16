@@ -1,33 +1,15 @@
 # Roadmap
 
-Phased build plan. Each phase is independently testable. The current repository
-has the core CLI/addon surface implemented. Addon manifest is `1.2.0`; the
-GitHub/npm/Scoop/Homebrew/Asset Store channels still serve `v1.1.0` until
-`v1.2.0` is tagged. See
-[docs/releases/v1.2.0-asset-store-upload.md](./releases/v1.2.0-asset-store-upload.md).
-The previous cut: GitHub `v1.1.0` 2026-09-08; Scoop in-repo; Homebrew
-[NotNull92/homebrew-hera#1](https://github.com/NotNull92/homebrew-hera/pull/1);
-Asset Store submitted 2026-09-08; `hera-godot@1.1.0` on npm.
-Phases 7–9 chart the
-standardization arc from v0.8 to v1.0: contract, distribution, then a
-stability declaration — the goal is that agents treat Hera as the default way
-to drive Godot from a shell.
-
-## Development — C# and editor UI (2026-10-16)
-
-`feat/v2-editor-ui` carries W1 C# eval/validate/run and W2 bilingual editor
-status/setup UI. The default eval language changes to C#; existing GDScript
-automation must select `--lang gdscript` or the documented environment default.
-See [migration](MIGRATING_TO_V2.md) and
-[integration evidence](releases/v2-development-validation-2026-10-16.md).
-Local gates pass; new remote CI remains pending because PR/main actions are not
-authorized. This is development work, not a release or version bump. Helper
-packaging, release channels and tags remain separate approval work.
+Current release preparation: **v2.0.0**, addon manifest `2.0.0`. W1 and W2
+are merged on main; baseline `ae8c8c4` passed CI and HOL. Victor accepted legacy
+CLI `unknown` with upgrade guidance and authorized direct main release work.
+Channel publication is recorded in [the v2 record](releases/v2.0.0-asset-store-upload.md).
 
 ## Prepared — v1.2.0 (2026-09-15)
 
-Addon manifest `1.2.0`. Not tagged. Published CLI channels remain `v1.1.0`
-until `git tag v1.2.0` runs the release workflow. Record:
+Historical untagged preparation, superseded by v2.0.0. The store holds an unstable
+v1.2.0 upload from 2026-09-15; Victor must check whether it can be deleted or
+replaced on the manage page. Record:
 [v1.2.0-asset-store-upload.md](releases/v1.2.0-asset-store-upload.md).
 
 ### Structured call and eval results (2026-10-15)

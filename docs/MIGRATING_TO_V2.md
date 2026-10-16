@@ -1,9 +1,7 @@
-# Moving to the v2 development branch / v2 개발 브랜치 전환
+# Moving to v2.0.0 / v2.0.0 전환
 
-This describes unreleased branch behavior. Version strings and distribution
-channels have not been bumped; install/build matching CLI and addon sources.
-아직 출시되지 않은 브랜치 동작입니다. 버전 번호와 배포 채널은 변경하지 않았으며,
-CLI와 애드온은 같은 소스 리비전으로 빌드·설치하세요.
+This describes v2.0.0 behavior. Upgrade CLI and addon together.
+v2.0.0 동작 안내입니다. CLI와 애드온을 함께 업그레이드하세요.
 
 ## Select the eval language / eval 언어 선택
 
@@ -22,7 +20,8 @@ silent fallback: standard Godot returns `csharp_unavailable` and suggests GDScri
 명시한 언어가 환경변수보다 우선합니다. 표준 Godot에서 C# 요청은 자동 전환하지 않고 실패합니다.
 
 For C#, use Godot 4.7+ .NET, build/reload the project with Hera's native `[Tool]`
-loader, and build the external [compiler helper](CSHARP_SUPPORT.md#compiler-helper).
+loader, and install the external [compiler helper](CSHARP_SUPPORT.md#compiler-helper):
+`hera-godot csharp-host install --version v2.0.0`. Package managers do not bundle it.
 `SceneRoot` refers to the edited root. This example works in PowerShell, cmd.exe
 and POSIX shells (cmd.exe does not strip single quotes):
 `SceneRoot`는 편집 중인 루트입니다. 다음 예제는 PowerShell·cmd.exe·POSIX 셸에서
@@ -46,7 +45,7 @@ C#은 4.7+ .NET, 빌드·리로드된 프로젝트와 별도 헬퍼가 필요합
 - `.cs` debug breakpoints return `csharp_debug_unsupported` (exit 2); use an IDE.
 - The editor UI compares the last observed CLI's major.minor version, not
   protocol compatibility or continued process liveness. Patch differences are
-  neutral. A missing header is unknown. Copy setup contains no auth token/path.
+  neutral. A missing header is unknown: upgrade the older CLI. Copy setup contains no auth token/path.
 
 검증 빌드는 격리 출력 경로를 사용하지만 샌드박스가 아닙니다. 실행은 이미 빌드된
 C# 하니스를 사용하며, C# 디버깅은 IDE에서 수행합니다. UI 버전 일치는 호환성이나

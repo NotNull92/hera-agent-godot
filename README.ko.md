@@ -4,7 +4,7 @@
 
 # hera-agent-godot
 
-개발 중인 에디터 패널은 연결·버전·C#·인증 상태를 한영으로 표시하며 테마와 DPI를
+에디터 패널은 연결·버전·C#·인증 상태를 한영으로 표시하며 테마와 DPI를
 따릅니다. **에이전트 설정 복사**는 영어 안내를 복사합니다. 버전 비교는 major/minor
 일치만 확인하며 기능 호환성을 보장하지 않습니다. 복사 내용에는 프로젝트 경로가
 포함되지만 토큰 값과 토큰 경로는 포함되지 않습니다.
@@ -53,14 +53,14 @@ C# 또는 명시적으로 선택한 GDScript 평가 등. 에이전트가 낡은 
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 현재 저장소 기준: v1.2.0
+## 현재 저장소 기준: v2.0.0
 
-애드온 매니페스트는 `1.2.0`입니다. GitHub Releases, npm, Homebrew, Scoop, Asset
+애드온 매니페스트는 `2.0.0`입니다. GitHub Releases, npm, Homebrew, Scoop, Asset
 Store는 태그가 올라가기 전까지 **v1.1.0**을 제공합니다. 릴리스 노트:
-[docs/releases/v1.2.0-asset-store-upload.md](docs/releases/v1.2.0-asset-store-upload.md).
+[docs/releases/v2.0.0-asset-store-upload.md](docs/releases/v2.0.0-asset-store-upload.md).
 
-`v1.2.0`은 v1 계약 위의 마이너입니다. experimental 명령과 필드를 추가하며
-문서화된 안정 JSON을 의도적으로 깨지 않습니다.
+`v2.0.0`은 eval 기본 언어를 C#으로 변경하며 C# 검증·실행과 한영 패널을
+추가합니다. 기존 안정 JSON 필드 타입은 유지됩니다.
 
 v1.1.0 이후 주요 변경:
 
@@ -111,7 +111,7 @@ CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. v1 �
 
 ## 명령 표면
 
-`v1.2.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
+`v2.0.0` CLI/애드온 표면에는 다음 명령이 포함됩니다:
 `status`(`--capabilities`), `operation`, `instances`, `run`/`stop`, `scene`, `editor`, `script`, `project`, `classdb`,
 `node`(읽기+쓰기+reparent+리소스/스크립트 연결), `signal`,
 `resource`(get/uid/list/set/create/resave/update-uids/export-mesh-library),
@@ -150,7 +150,7 @@ batch는 하위 작업에 소유권을 전달하며, 클라이언트 시간 초�
 작업을 해제하지 않습니다. import 준비 상태와 엔진별 한계는
 [수정 gate](docs/COMMANDS.md#editor-mutation-gate)를 참고하세요.
 
-아직 릴리스되지 않은 v1.3 라인은 **에디터 없이 동작하는 엔진 표면**을 추가합니다:
+v2.0.0은 **에디터 없이 동작하는 엔진 표면**을 추가합니다:
 `engine info`/`doctor`, `script run`(헤드리스 `SceneTree` 하니스 + 인자 전달),
 `project import`, `project export`(`pack`은 export 템플릿 없이 동작하고
 `release`/`debug`는 기본 템플릿이 없으면 경고), `capture movie`(Movie Maker로
@@ -188,7 +188,7 @@ Godot .NET이 필요하며, `status.csharp_supported`는 에디터 지원 여부
 `--lang gdscript` 또는 `HERA_GODOT_EVAL_LANG=gdscript`로 선택하세요.
 새 C# eval/validate/run은 Godot 4.7+ .NET 전용입니다. 네이티브 C# eval 로더
 전체는 `#if TOOLS`로 감싸져 익스포트 빌드에서 제외됩니다. GDScript 에디터
-브리지는 유지됩니다. 별도 컴파일러 헬퍼의 빌드 방법은 아래 가이드를 참고하세요.
+브리지는 유지됩니다. 컴파일러 헬퍼는 `hera-godot csharp-host install`로 설치하세요.
 릴리스 자산 패키징은 아직 진행하지 않았습니다. [마이그레이션](docs/MIGRATING_TO_V2.md).
 설정과 제한은 [C# 지원 가이드](docs/CSHARP_SUPPORT.md)를 참고하세요.
 
@@ -205,7 +205,7 @@ Godot .NET이 필요하며, `status.csharp_supported`는 에디터 지원 여부
 
 ## 설치
 
-v1.2.0 업그레이드 시 스크립트를 `hera-godot`으로 바꾸고 `hera-godot version`으로 확인하세요. npm 업그레이드는 이전 패키지 bin을 제거하지만 원라인 설치는 기존 `hera` 파일을 보존합니다. 이전 Hera Godot의 `hera`를 수동 삭제하기 전에 실제 경로와 소유를 확인하세요. 다른 도구의 파일일 수 있습니다. CLI와 애드온을 함께 올리세요. Homebrew 전환은 별도 탭 업데이트를 기다립니다.
+v2.0.0 업그레이드 시 스크립트를 `hera-godot`으로 바꾸고 `hera-godot version`으로 확인하세요. npm 업그레이드는 이전 패키지 bin을 제거하지만 원라인 설치는 기존 `hera` 파일을 보존합니다. 이전 Hera Godot의 `hera`를 수동 삭제하기 전에 실제 경로와 소유를 확인하세요. 다른 도구의 파일일 수 있습니다. CLI와 애드온을 함께 올리세요. Homebrew 전환은 별도 탭 업데이트를 기다립니다.
 
 **CLI** — 패키지 매니저로 설치:
 
@@ -356,3 +356,6 @@ Hera는 무료이며 MIT 라이선스입니다. 도움이 되었다면 개발을
 ## 라이선스
 
 MIT — [LICENSE](LICENSE) 참고.
+
+C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.0`
+(npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).
