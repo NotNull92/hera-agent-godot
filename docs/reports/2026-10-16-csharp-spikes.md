@@ -169,3 +169,61 @@ used an invalid EditorInterface.GetTree call and finally assumed a quit reply;
 all three are corrected in the reproducible harness. Standard-editor checks use
 separate projects per engine and only the relevant test, avoiding 4.7-import
 cache reuse and unrelated newer test APIs on 4.2.
+
+## Phase 5 — C# debugging guidance
+
+`debug attach --break res://Player.cs:12` now returns usage exit 2 and
+`csharp_debug_unsupported` before reading the project, hashing scripts,
+connecting to DAP or writing a session. Mixed breakpoint lists also refuse the
+whole request when any path ends in `.cs` (case-insensitive). GDScript DAP paths
+are unchanged. This does not add a .NET debugger or detect a project's language
+when attach contains no C# breakpoint.
+
+For C# debugging / C# 디버깅 안내: use Visual Studio, Rider, or VS Code with a
+.NET debugger, following the official
+[external-editor setup](https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html#configuring-an-external-editor).
+Hera's Godot DAP endpoint is not the .NET debugging endpoint. Hera does not
+generate IDE settings, launch a debugger, or change project files for this.
+C# 중단점은 IDE의 .NET 디버거에서 설정하고 실행하세요. Hera의 `debug` 명령은
+C# 디버깅을 대신하지 않으며 IDE 설정이나 사용자 프로젝트를 수정하지 않습니다.
+
+Unit tests verify both `.cs` and `.CS` reject even with a nonexistent project
+and unreachable endpoint. A contract golden pins error, guidance URL and exit.
+The documentation section is recorded here under the user's Phase 0–5 scope;
+the Phase 7 CSHARP_SUPPORT/COMMANDS/SECURITY/README migration remains deferred.
+
+## W1 local gate summary and handover
+
+- Go build, vet, full uncached tests, shuffled uncached tests and race + shuffle
+  pass on Windows. C# compiler-helper build and assertion suite pass. Live
+  4.7.2 .NET execution and real export verification pass as detailed above.
+- Standard 4.7 eval check-only, explicit GDScript regression, default C# refusal
+  and plugin load pass. 4.2 eval/tool-test check-only and the same regression
+  pass (`hera-w1-standard-rbwmzuof`). Full 4.2 import/plugin-load gate is **not
+  established**: startup without a completed import misses the addon font;
+  a clean isolated import exceeds 60 seconds. The same clean import on the
+  untouched base `5b97973` also exceeds 60 seconds, captured in
+  `%TEMP%/hera-42-baseline-zd27i338/import.log`. Current evidence is
+  `%TEMP%/hera-w1-standard-8s7xsind/0-import.log`. This is not reported as a
+  passing 4.2 full editor gate or attributed to the C# change.
+- The helper assertion suite is a Python subprocess test (`host_checks.py`),
+  not a `dotnet test` project. Live W1 coverage is a dedicated disposable-project
+  Python runner rather than an expansion of `script_languages.sh`. Successful
+  eval/validate outputs are recorded in live evidence; committed contract
+  goldens currently cover language errors, GDScript compatibility, help and
+  C# debug refusal, not live C# success/validation output normalization.
+- No macOS live execution, .NET 8-only host execution, full Phase 8 headless
+  suite or new CI result is claimed. No release readiness claim: Phase 6–8,
+  Phase 7 documentation/security migration and helper packaging remain later
+  work. General v1 documentation intentionally still describes the released
+  behavior, per the user's explicit scope restriction.
+- ProjectReference validation remains conservatively unsupported. C# eval
+  still cannot cast non-Tool editor placeholders to user classes, and an
+  arbitrary expression can retain its ALC or block the editor. Local gates do
+  not erase those boundaries. Existing `csharp_eval: unverified` capability
+  does not claim the helper/project has been built merely from .NET presence.
+
+User projects, csproj/solution files, main, tags, versions and CI configuration
+were not changed. Only owned temporary fixtures were built/exported; launched
+editors were shut down or killed by their owning harness. Preserve the user's
+untracked PLAN/REVIEW files and v1 HTML explainer. Stop at Phase 5; no PR opened.

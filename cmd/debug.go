@@ -810,6 +810,23 @@ func runDebug(args []string) int {
 
 // runDebugAttach records the session and reports the observed state.
 func runDebugAttach(params map[string]any) int {
+	if breaks, ok := params["breaks"].([]sessionBreakpoint); ok {
+		for _, breakpoint := range breaks {
+			if strings.EqualFold(filepath.Ext(breakpoint.Path), ".cs") {
+				failStructured(map[string]any{
+					"error":    "csharp_debug_unsupported",
+					"detail":   "Godot's DAP endpoint does not debug C#; use Visual Studio, Rider, or VS Code with a .NET debugger",
+					"docs_url": "https://docs.godotengine.org/en/stable/tutorials/scripting/c_sharp/c_sharp_basics.html#configuring-an-external-editor",
+					"guidance": []string{
+						"Visual Studio: open the project's solution and use its Godot C# debug target",
+						"Rider: open the project and use its Godot run/debug configuration",
+						"VS Code: configure a .NET launch/attach target as described in the linked Godot C# documentation",
+					},
+				})
+				return 2
+			}
+		}
+	}
 	wait := sessionWait(params)
 	project := stringParam(params, "project")
 	if project != "" {

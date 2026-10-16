@@ -87,6 +87,7 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "debug_csharp_unsupported", args: []string{"debug", "attach", "--break", "res://Missing.cs:12"}, noEditor: true, wantExit: 2, wantStderrPrefix: "error: csharp_debug_unsupported:", golden: "debug_csharp_unsupported"},
 		{name: "eval_csharp_unavailable", args: []string{"eval", "1+1"}, responses: map[string]string{"eval:csharp-context": `{"ok":false,"error":"csharp_unavailable: use --lang gdscript"}`}, wantExit: 1, wantStderrPrefix: "error: csharp_unavailable:", golden: "eval_csharp_unavailable"},
 		{name: "eval_csharp_build_required", args: []string{"eval", "1+1"}, responses: map[string]string{"eval:csharp-context": `{"ok":false,"error":"csharp_build_required: build and reload the project"}`}, wantExit: 1, wantStderrPrefix: "error: csharp_build_required:", golden: "eval_csharp_build_required"},
 		{name: "editor_busy", args: []string{"project", "scan"}, responses: map[string]string{"project": `{"ok":false,"error":"editor_busy: editor mutation or import in progress"}`}, wantExit: 1, wantStderrPrefix: "project: editor_busy:"},
