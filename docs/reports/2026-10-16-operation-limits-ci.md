@@ -26,3 +26,9 @@ Evidence is retained under ignored `dist/ci-operation-limits/`:
 - Godot 4.7.2 check-only passes for both original and corrected fixture; the failure is behavioral, not a parse error.
 
 No user editor, scene or recording terminal was touched. This is a standalone test-only change; live editor smoke and Go tests do not exercise the changed fixture and were not repeated.
+
+## Final validation
+
+Fix commit `146a9ec40aba83e7dca6ca1a3e0792cc86719c19` passed [CI 38870922140](https://github.com/NotNull92/hera-agent-godot/actions/runs/38870922140): all seven jobs, including the previously failing Godot 4.7 standalone regression job. Local Godot 4.2 check-only and focused execution also passed. The complete local Godot 4.7.2 standalone suite passed all 31 tests (`dist/ci-operation-limits/headless.log`). Existing engine headless teardown warnings remain; these passes do not claim globally warning-free engine exits.
+
+The recording prerequisite is resolved. No new addon release, npm publication or store upload is needed for this test-only correction.
