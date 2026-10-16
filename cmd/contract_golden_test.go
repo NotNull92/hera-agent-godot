@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -186,6 +187,9 @@ func contractCases() []contractCase {
 }
 
 func TestContract_goldenOutputs(t *testing.T) {
+	previous := statusSDKProbe
+	statusSDKProbe = func(context.Context) (string, string, string) { return "/fixture/dotnet", "10.0.204", "supported" }
+	t.Cleanup(func() { statusSDKProbe = previous })
 	for _, tc := range contractCases() {
 		t.Run(tc.name, func(t *testing.T) {
 			responses := make(map[string]string, len(tc.responses))

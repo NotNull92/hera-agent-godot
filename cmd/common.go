@@ -31,6 +31,7 @@ func dialEditorWithMode(requireSingle bool) (*client.Client, error) {
 	}
 	c := client.NewWithTimeout(fmt.Sprintf("http://127.0.0.1:%d", inst.Port), requestTimeout)
 	c.Token = client.LoadSharedToken()
+	c.Version = Version()
 	return c, nil
 }
 

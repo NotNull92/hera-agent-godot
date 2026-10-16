@@ -65,3 +65,19 @@ and Debug-only TOOLS definitions; local execution above is the decisive evidence
 
 Phase 0 basic feasibility is established. Phases 1–5 remain to implement and
 validate; these spike results are not a completed W1 claim.
+
+## Phase 1 — protocol and observations
+
+CLI requests now include the actual CLI version header (development fallback).
+The server remembers a bounded version and timestamp only for accepted requests;
+missing/oversized headers remain unknown. Experimental C# capability keys are
+present without claiming unimplemented functionality. Only explicit status
+capability reads probe the local SDK with a bounded `dotnet --version`; SDK
+presence never implies editor C# support. Stable status fields are unchanged.
+
+Validation: Go build/vet, full uncached tests and targeted golden pass. Updated
+HTTP and capability tests pass on official Windows 4.2 and 4.7; HTTP also passes
+on 4.7.2 .NET. Initial harness inherited auth and imported unrelated 4.7-only
+tests into 4.2; corrected isolation (empty auth, minimal test copy, proper editor
+mode) passes without assertion changes. 4.2 editor teardown emits known RID
+warnings, not a zero-warning claim. Evidence: `%TEMP%/hera-v2-protocol-_sq9i68t`.

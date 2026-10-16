@@ -11,6 +11,10 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 func _run() -> void:
+	var versioned: Dictionary = _server._parse_request(_wire("X-Hera-Cli-Version: v2.0.0\r\n", "{}"))
+	_check(versioned.get("cli_version") == "v2.0.0", "CLI version parsed")
+	_check(_server._parse_request(_wire("", "{}")).get("cli_version") == "", "old CLI version unknown")
+	_check(_server._parse_request(_wire("X-Hera-Cli-Version: " + "x".repeat(65) + "\r\n", "{}")).get("cli_version") == "", "oversized version unknown")
 	if not OS.get_cmdline_user_args().has("--backpressure"):
 		_test_tokens()
 	_check(_server.start(18770, 100) > 0, "loopback listener starts")

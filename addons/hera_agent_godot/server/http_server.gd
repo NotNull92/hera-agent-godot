@@ -23,6 +23,8 @@ var port := 0
 # must carry a matching X-Hera-Token header or it is rejected with 401. Set by
 # the plugin from load_shared_token() before start().
 var auth_token := ""
+var last_cli_version := ""
+var last_cli_seen_msec := 0
 
 var _server: TCPServer
 var _clients: Array = [] # conn, buf, state (reading/queued/writing), deadline; output and offset when writing
@@ -120,6 +122,8 @@ func poll(queue) -> void:
 		elif parsed["body"] == null:
 			_write_http(conn, 400, "Bad Request", ToolResponse.failure("invalid json body"))
 		else:
+			last_cli_version = String(parsed["cli_version"])
+			last_cli_seen_msec = now_msec
 			entry["state"] = "queued"
 			entry["buf"] = PackedByteArray()
 			queue.enqueue({ "conn": conn, "request": parsed["body"] })
@@ -167,7 +171,7 @@ func _write_http(conn: StreamPeerTCP, code: int, reason: String, body: Dictionar
 # Parse an accumulated buffer into { complete, method, path, origin, token, body }.
 # body is the decoded JSON Dictionary (or null on parse failure / empty).
 func _parse_request(buf: PackedByteArray) -> Dictionary:
-	var result := { "complete": false, "too_large": false, "method": "", "path": "", "origin": "", "token": "", "body": null }
+	var result := { "complete": false, "too_large": false, "method": "", "path": "", "origin": "", "token": "", "cli_version": "", "body": null }
 	var header_end := _find_header_end(buf)
 	if header_end == -1:
 		return result # headers not fully received yet
@@ -194,6 +198,8 @@ func _parse_request(buf: PackedByteArray) -> Dictionary:
 			result["origin"] = value
 		elif key == "x-hera-token":
 			result["token"] = value
+		elif key == "x-hera-cli-version":
+			result["cli_version"] = value if value.length() <= 64 else ""
 
 	if content_length > MAX_REQUEST_BYTES:
 		result["complete"] = true

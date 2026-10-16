@@ -19,6 +19,9 @@ func _run() -> void:
 	if data.get("godot_commit", "") != Engine.get_version_info().get("hash", ""):
 		failures.append("status must report the running engine commit")
 	var capabilities: Dictionary = data.get("capabilities", {})
+	for key: String in ["csharp_eval", "csharp_validate", "csharp_run"]:
+		if not ["supported", "unsupported", "unverified"].has(capabilities.get(key, "")):
+			failures.append("missing C# capability state: " + key)
 	if capabilities.get("editor_mutation_gate") != "supported" or capabilities.get("import_busy_api") != tool._support(ClassDB.class_has_method("EditorFileSystem", "is_importing")):
 		failures.append("gate support must not imply external import-state API availability")
 	for key in ["editor_logger_api", "editor_log_cursor", "debugger_messages_api", "dap", "script_metadata_api", "script_symbol_lookup", "global_class_lookup_api", "import_state_api", "render_frame_event_api", "csharp", "dotnet_sdk"]:

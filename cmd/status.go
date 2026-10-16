@@ -16,7 +16,7 @@ func runStatus(args []string) int {
 	}
 	reshape := compactStatusData
 	if detail {
-		reshape = nil
+		reshape = statusWithSDK
 	}
 	return dialAndPostPrint(dialEditor, postPrintRequest{tool: "status", label: "status", reshape: reshape})
 }

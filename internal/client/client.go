@@ -26,7 +26,8 @@ type Client struct {
 	HTTP    *http.Client
 	// Token, when non-empty, is sent as the X-Hera-Token header on every
 	// request (opt-in shared-token auth; see docs/SECURITY.md).
-	Token string
+	Token   string
+	Version string
 }
 
 // New builds a Client with a sane default timeout.
@@ -61,6 +62,11 @@ func (c *Client) Post(tool string, params map[string]any) (*protocol.Response, e
 		return nil, fmt.Errorf("build %q request: %w", tool, err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	cliVersion := c.Version
+	if cliVersion == "" {
+		cliVersion = "dev"
+	}
+	req.Header.Set("X-Hera-Cli-Version", cliVersion)
 	if c.Token != "" {
 		req.Header.Set("X-Hera-Token", c.Token)
 	}

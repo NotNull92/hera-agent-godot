@@ -50,6 +50,9 @@ func _capabilities() -> Dictionary:
 		"import_state_api": _support(ClassDB.class_has_method("EditorFileSystem", "is_scanning") and ClassDB.class_has_method("EditorFileSystem", "get_scanning_progress")),
 		"render_frame_event_api": _support(RenderingServer.has_signal("frame_post_draw")),
 		"csharp": _support(ClassDB.class_exists("CSharpScript")),
+		"csharp_eval": "unverified" if ClassDB.class_exists("CSharpScript") else "unsupported",
+		"csharp_validate": "unverified",
+		"csharp_run": "unverified",
 		"dotnet_sdk": "unverified",
 	}
 

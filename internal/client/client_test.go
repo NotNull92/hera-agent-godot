@@ -18,6 +18,9 @@ func TestClientPost_sendsRequestToRpcAndDecodesResponse(t *testing.T) {
 		if r.URL.Path != "/rpc" {
 			t.Errorf("path = %q, want /rpc", r.URL.Path)
 		}
+		if r.Header.Get("X-Hera-Cli-Version") != "dev" {
+			t.Error("missing development CLI version header")
+		}
 		raw, _ := io.ReadAll(r.Body)
 		_ = json.Unmarshal(raw, &seen)
 		w.Header().Set("Content-Type", "application/json")
@@ -44,8 +47,10 @@ func TestClientPost_sendsRequestToRpcAndDecodesResponse(t *testing.T) {
 
 func TestClientPost_sendsTokenHeaderWhenSet(t *testing.T) {
 	var gotToken string
+	var gotVersion string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotToken = r.Header.Get("X-Hera-Token")
+		gotVersion = r.Header.Get("X-Hera-Cli-Version")
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write([]byte(`{"ok":true}`))
 	}))
@@ -60,11 +65,15 @@ func TestClientPost_sendsTokenHeaderWhenSet(t *testing.T) {
 	}
 
 	c.Token = "s3cret"
+	c.Version = "v1.2.0"
 	if _, err := c.Post("status", nil); err != nil {
 		t.Fatalf("Post error: %v", err)
 	}
 	if gotToken != "s3cret" {
 		t.Fatalf("X-Hera-Token = %q, want s3cret", gotToken)
+	}
+	if gotVersion != "v1.2.0" {
+		t.Fatalf("CLI version header = %q", gotVersion)
 	}
 }
 
