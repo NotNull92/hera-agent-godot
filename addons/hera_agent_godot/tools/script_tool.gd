@@ -91,7 +91,11 @@ func _open(params: Dictionary) -> Dictionary:
 func _validate_context(params: Dictionary) -> Dictionary:
 	var path := String(params.get("path", ""))
 	if path.ends_with(".cs"):
-		return ToolResponse.failure("script validate supports GDScript only; build C# with the .NET SDK")
+		if not CSharpSupport.available():
+			return ToolResponse.failure("csharp_unavailable: C# validation requires Godot 4.7 .NET")
+		var version: Dictionary = Engine.get_version_info()
+		if int(version.get("major", 0)) != 4 or int(version.get("minor", 0)) < 7:
+			return ToolResponse.failure("csharp_unavailable: C# validation requires Godot 4.7 .NET")
 	var guard := _guard_readable_script_path(path)
 	if guard != "":
 		return ToolResponse.failure(guard)

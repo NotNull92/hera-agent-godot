@@ -51,7 +51,7 @@ func _capabilities() -> Dictionary:
 		"render_frame_event_api": _support(RenderingServer.has_signal("frame_post_draw")),
 		"csharp": _support(ClassDB.class_exists("CSharpScript")),
 		"csharp_eval": "unverified" if ClassDB.class_exists("CSharpScript") else "unsupported",
-		"csharp_validate": "unverified",
+		"csharp_validate": _support(_csharp_commands_available()),
 		"csharp_run": "unverified",
 		"dotnet_sdk": "unverified",
 	}
@@ -59,3 +59,7 @@ func _capabilities() -> Dictionary:
 
 func _support(available: bool) -> String:
 	return "supported" if available else "unsupported"
+
+func _csharp_commands_available() -> bool:
+	var version: Dictionary = Engine.get_version_info()
+	return ClassDB.class_exists("CSharpScript") and int(version.get("major", 0)) == 4 and int(version.get("minor", 0)) >= 7

@@ -81,3 +81,27 @@ on 4.7.2 .NET. Initial harness inherited auth and imported unrelated 4.7-only
 tests into 4.2; corrected isolation (empty auth, minimal test copy, proper editor
 mode) passes without assertion changes. 4.2 editor teardown emits known RID
 warnings, not a zero-warning claim. Evidence: `%TEMP%/hera-v2-protocol-_sq9i68t`.
+
+## Phase 2 — C# disk validation
+
+C# validate now requests a guarded context from a 4.7+ .NET editor, queries
+MSBuild Compile items, restores/builds into isolated paths and reports file
+error/warning diagnostics plus other-file error counts. Requested-file hashes
+bracket compilation. Missing SDK/project, excluded source, restore/build errors,
+truncation and deadline failures are failures; unfinished workers retain staging.
+MSBuild targets/generators execute code; redirection is not a security sandbox.
+
+Current conservative boundary: exactly one root csproj and no ProjectReference
+items. References are explicitly refused as `project_references_unsupported`,
+rather than allowing different projects to share concrete output/intermediate
+paths. Supporting project graphs needs per-project isolated paths. No user
+csproj/solution is generated or edited. Phase 7 must document this boundary and
+the changed build/security wording before release.
+
+Validation: real SDK/Godot.NET.Sdk compilation for clean, requested-file error,
+and other-file-only error passes; each preserves all baseline editor artifact
+hashes and mtimes. The Go live test uses mock editor discovery/context plus real
+.NET compilation in a disposable project, not a claim of full live HTTP coverage.
+Go build/vet/full uncached tests pass. Updated script/status GDScript check-only
+and validation-guard regression pass on 4.2 and 4.7.2 .NET. Full live integration
+will be repeated with the final loader in Phase 4.

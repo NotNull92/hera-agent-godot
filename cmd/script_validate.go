@@ -45,6 +45,9 @@ func runScriptValidate(params map[string]any) int {
 		fmt.Fprintln(os.Stderr, "script validate: incomplete validation context")
 		return 1
 	}
+	if strings.HasSuffix(path, ".cs") {
+		return runCSharpValidate(project, path, params["evidence"] == true)
+	}
 	timeout := requestTimeout
 	if timeout == 0 {
 		timeout = 5 * time.Second
