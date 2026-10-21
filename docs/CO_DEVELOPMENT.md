@@ -19,6 +19,11 @@ Claude Code and Codex collaborate on this repository. Rules for both agents:
   for Go; Godot `--check-only` for GDScript; sync README (EN/KO),
   `docs/COMMANDS.md`, and `docs/ROADMAP.md` when the surface changes, and
   regenerate the contract goldens when `docs/CONTRACT.md` behavior changes.
+- `docs/guide/index.html` (Hera Godot Status) is a self-contained Korean page
+  that the portfolio site mirrors from each release tag. In the release commit,
+  update its version figures (CLI/addon version, command and tool counts) and
+  any risk or decision the release settles, before tagging. Its art is embedded
+  as base64 WebP in the `#art` JSON block; the mirror refuses pages over 2 MB.
 - Outward-facing actions (store uploads, PRs to third-party repos, version
   bumps/releases) need the user's explicit go-ahead; Asset Store form
   submission is done by the user personally.
