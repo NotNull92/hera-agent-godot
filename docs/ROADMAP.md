@@ -1,6 +1,6 @@
 # Roadmap
 
-Release candidate: **v2.1.0** (2026-10-23): combined node creation/properties, bounded assertions, read narrowing, smaller default CLI responses (breaking for omitted-field parsers), and scene-escape fixes. Gates and publication pending. [Release record](releases/v2.1.0-release.md).
+Current GitHub release: **v2.1.0** (2026-10-23): combined node creation/properties, bounded assertions, read narrowing, smaller default CLI responses (breaking for omitted-field parsers), and scene-escape fixes. Candidate CI 39906242493 and release workflow 39906501378 passed on tag commit `0cb15be`; all eight archive hashes verified after downloading all nine assets. Scoop/npm pins updated; npm pack/scratch install passed through both aliases. [Homebrew tap PR #6](https://github.com/NotNull92/homebrew-hera/pull/6) is open, not merged. npm publication and Asset Store upload remain with Victor. [Release record](releases/v2.1.0-release.md).
 
 Previous GitHub release: **v2.0.3** (2026-10-21): docs-only patch. Adds the Hera Godot Status guide (`docs/guide/index.html`), which the portfolio mirrors from release tags, and ships 45a1786 (unreachable Go helpers removed). CLI and addon behavior are unchanged. CI 39564042748 and release workflow 39564333197 passed; all eight archive hashes verified after download. Scoop and the npm manifest pin v2.0.3; Homebrew tap PR #5 merged. npm publication and any store upload are pending. [Release record](releases/v2.0.3-release.md).
 
