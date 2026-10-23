@@ -3,6 +3,7 @@ package cmd
 import "testing"
 
 func TestParseSignalArgs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name       string
 		args       []string
@@ -52,6 +53,7 @@ func TestParseSignalArgs(t *testing.T) {
 }
 
 func TestSignalActionMutates(t *testing.T) {
+	t.Parallel()
 	for _, tt := range []struct {
 		action string
 		want   bool
@@ -67,6 +69,7 @@ func TestSignalActionMutates(t *testing.T) {
 }
 
 func TestSignalListRejectsFlagAsNode(t *testing.T) {
+	t.Parallel()
 	for _, arg := range []string{"--connected", "--unknown", "-x"} {
 		_, err := parseSignalArgs([]string{"list", arg})
 		if err == nil || err.Error() != "usage: signal list <node>" {
