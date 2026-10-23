@@ -62,19 +62,20 @@ explicitly requested; it does not satisfy the two-download requirement.
 - Use an official **Godot 4.7 editor binary**, not an export template, and set
   `GODOT_BIN` to its absolute path.
 - Run from the repository root, with the Hera plugin enabled by this checkout.
-- Use Bash on Linux/macOS or Git Bash/WSL on Windows. The same lifecycle is
-  suitable for a GitHub Actions `ubuntu-24.04` job and for local reproduction.
+- Use Bash on macOS or Linux, or Git Bash on Windows. Ubuntu (including
+  Ubuntu under WSL) is not a supported environment; see the
+  [operating system policy](SUPPORT_MATRIX.md#operating-system-policy).
 - Keep all generated state under a per-run directory. Do not reuse a
   developer's home directory, a previous heartbeat directory, or a token file.
 
 The command examples below build a fresh CLI into the run directory. An
-installed `hera` binary may be substituted only when it is the checkout being
+installed `hera-godot` binary may be substituted only when it is the checkout being
 tested.
 
 ## Lifecycle
 
 Set `GODOT_BIN` before running this block. The live runtime path also requires
-`xvfb-run` (on Ubuntu: install `xvfb` and `xauth`). In GitHub Actions,
+`xvfb-run` and `xauth`. In GitHub Actions,
 `RUNNER_TEMP` and `GITHUB_WORKSPACE` already exist; locally, the fallbacks keep
 all state under the checkout.
 
@@ -344,8 +345,9 @@ for this tier. Command exit codes are the verdict; logs are diagnostic evidence.
 
 ## CI and remote status
 
-Use a pinned `ubuntu-24.04` runtime job with its own Xvfb server for this
-lifecycle, not an implicit graphics environment. GitHub-hosted jobs are fresh
+Hera's own CI runs this lifecycle in a pinned GitHub-hosted Linux job with
+its own Xvfb server, not an implicit graphics environment; that runner is build
+infrastructure, not a supported deployment platform. GitHub-hosted jobs are fresh
 virtual machines, so keep the runtime logs in the job workspace and make the
 runtime job self-contained. See
 [GitHub's runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
