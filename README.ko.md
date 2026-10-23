@@ -179,7 +179,7 @@ v2.0.0은 **에디터 없이 동작하는 엔진 표면**을 추가합니다:
 
 `hera-godot status`는 에디터 PID, 씬, 프로젝트 이름, 엔진 버전과 Game Feel / C#
 플래그를 반환하며 세션 ID와 프로젝트 경로는 생략합니다. 예정된 2.1 CLI는 compact,
-pretty, batch 출력에서 중복 필드를 생략합니다. [호환성 변경 표](docs/MIGRATING_TO_V2_1.md)를 확인하세요.
+pretty, batch 출력에서 중복 필드를 생략하며 명시한 `--fields`는 유지합니다. [호환성 변경 표](docs/MIGRATING_TO_V2_1.md)를 확인하세요.
 `hera-godot status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
 `unsupported`, `unverified`)를 추가합니다. API 존재만으로 디버거 연결이나 SDK
 설치를 보장하지 않습니다.

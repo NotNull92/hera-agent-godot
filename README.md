@@ -169,7 +169,7 @@ Capture and docs generate in isolated directories before publishing verified art
 `hera-godot status` reports the editor PID, scene, project name, engine version,
 and Game Feel / C# editor flags. Session and project-path fields are omitted.
 The planned 2.1 CLI trims redundant response fields in compact, pretty and batch
-output; see [the breaking-change migration table](docs/MIGRATING_TO_V2_1.md).
+output; explicit `--fields` selections remain. See [the breaking-change migration table](docs/MIGRATING_TO_V2_1.md).
 `hera-godot status --capabilities` adds the engine commit and API capability states
 (`supported`, `unsupported`, or `unverified`). API presence does not certify a
 connected debugger or installed SDK. See

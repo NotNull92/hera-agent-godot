@@ -27,15 +27,7 @@ func slimData(raw any) any {
 			}
 		}
 	}
-	for _, key := range []string{"nodes", "controls"} {
-		if nodes, ok := out[key].([]any); ok {
-			entries := make([]any, len(nodes))
-			for i, node := range nodes {
-				entries[i] = slimNode(slimData(node))
-			}
-			out[key] = entries
-		}
-	}
+
 	return out
 }
 
@@ -128,6 +120,18 @@ func reshapeOutput(tool string, params map[string]any, raw any) any {
 				entries[i] = entry
 			}
 			out["results"] = entries
+		}
+	}
+	for _, key := range []string{"nodes", "controls"} {
+		if nodes, ok := out[key].([]any); ok {
+			entries := make([]any, len(nodes))
+			for i, node := range nodes {
+				entries[i] = node
+				if params["fields"] == nil {
+					entries[i] = slimNode(node)
+				}
+			}
+			out[key] = entries
 		}
 	}
 	return slimData(out)

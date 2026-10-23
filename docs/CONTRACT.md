@@ -145,7 +145,7 @@ See [MIGRATING_TO_V1.md](MIGRATING_TO_V1.md) for the 0.x upgrade path.
 ## Planned 2.1 response omissions (breaking)
 
 The CLI omits false `truncated`, `count` equal to an adjacent array length,
-and node `name` equal to the final `path` segment (except root `.`). A differing
+and node `name` equal to the final `path` segment (except root `.` or explicit `--fields` selections). A differing
 count or true truncation flag remains. These rules apply to compact and pretty
 output and to each batch child. Addon RPC data, internal negotiation, property
 values, structured call results and evidence objects retain their full shape.

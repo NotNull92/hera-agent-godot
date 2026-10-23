@@ -11,6 +11,9 @@ func TestOutputShape(t *testing.T) {
 		name, tool, params, input, want string
 	}{
 		{"nodes", "scene", `{}`, `{"count":2,"truncated":false,"nodes":[{"path":".","name":"Main"},{"path":"Parent/Child","name":"Child"}]}`, `{"nodes":[{"path":".","name":"Main"},{"path":"Parent/Child"}]}`},
+		{"explicit UI fields", "game", `{"action":"ui_tree","fields":["path","name"]}`, `{"controls":[{"path":"/root/Main/Play","name":"Play"}]}`, `{"controls":[{"path":"/root/Main/Play","name":"Play"}]}`},
+		{"default UI fields", "game", `{"action":"ui_tree"}`, `{"controls":[{"path":"/root/Main/Play","name":"Play"}]}`, `{"controls":[{"path":"/root/Main/Play"}]}`},
+		{"batch explicit UI fields", "batch", `{"commands":[{"tool":"game","params":{"action":"ui_tree","fields":["path","name"]}}]}`, `{"results":[{"tool":"game","ok":true,"data":{"controls":[{"path":"/root/Main/Play","name":"Play"}]}}]}`, `{"results":[{"tool":"game","ok":true,"data":{"controls":[{"path":"/root/Main/Play","name":"Play"}]}}]}`},
 		{"capped", "scene", `{}`, `{"count":3,"truncated":true,"nodes":[{"path":"Child","name":"Alias"}]}`, `{"count":3,"truncated":true,"nodes":[{"path":"Child","name":"Alias"}]}`},
 		{"user values", "game", `{"action":"call"}`, `{"result_value":{"count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child"}]},"evidence":{"truncated":false}}`, `{"result_value":{"count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child"}]},"evidence":{"truncated":false}}`},
 		{"file log", "output", `{}`, `{"available":true,"log_path":"log.txt","source":"file","lines":[]}`, `{"available":true,"lines":[]}`},

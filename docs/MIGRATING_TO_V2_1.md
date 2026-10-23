@@ -14,7 +14,7 @@ and evidence objects are not recursively trimmed.
 |-------|------------------|---------------|
 | `truncated` | When false | Treat absence as false; true is still printed. |
 | `count` | When equal to the length of an adjacent response array | Use the array length; a differing total is retained. |
-| Node `name` | When equal to the final segment of `path` | Use that segment; root `path: "."` retains its name. Applies to tree/find/UI entries and node gets. |
+| Node `name` | When equal to the final segment of `path`, unless explicitly requested through `--fields` | Use that segment; root `path: "."` retains its name. Applies to tree/find/UI entries and node gets. |
 | Structured failure `message` | CLI engine/debug structured failures | Read `error` and `detail`; the same diagnostic still goes to stderr. Exit codes are unchanged. |
 | File-log `log_path` | When `available: true` | Use the full `output`/`diagnostics` RPC data if needed. Unavailable/unreadable logs retain the path. |
 | Log `source` | When `"file"` | Treat absence as `"file"`. Editor-source metadata is retained. |

@@ -40,8 +40,8 @@ hera-godot screenshot --runtime --analyze
 ```
 
 The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
-session/path fields. Missing log `source` means file. Pretty and batch output
-use the same rules; see [migration rules](docs/MIGRATING_TO_V2_1.md).
+session/path fields. Missing log `source` means file. Pretty/batch share these rules;
+explicit `--fields` stay. See [migration rules](docs/MIGRATING_TO_V2_1.md).
 
 ## GDScript quick gate
 

@@ -87,6 +87,8 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "game_ui_explicit_name", args: []string{"game", "ui", "tree", "--fields=path,name"}, responses: map[string]string{"game:ui_tree": `{"ok":true,"data":{"controls":[{"path":"/root/Main/Play","name":"Play"}],"count":1,"truncated":false}}`}, golden: "game_ui_explicit_name"},
+		{name: "game_ui_explicit_name_json", args: []string{"--json", "game", "ui", "tree", "--fields=path,name"}, responses: map[string]string{"game:ui_tree": `{"ok":true,"data":{"controls":[{"path":"/root/Main/Play","name":"Play"}],"count":1,"truncated":false}}`}, golden: "game_ui_explicit_name_json"},
 		{name: "game_input_mouse", args: []string{"game", "input", "mouse", "--x=10", "--y=20", "--click"}, responses: map[string]string{"game:input": `{"ok":true,"data":{"kind":"mouse","mode":"click","x":10,"y":20,"button":"left","pid":42,"log_count":2}}`}, golden: "game_input_mouse"},
 		{name: "node_get_child", args: []string{"node", "get", "Child", "--prop=visible"}, responses: map[string]string{"node": `{"ok":true,"data":{"name":"Child","path":"Child","type":"Node2D","properties":{"visible":"true"}}}`}, golden: "node_get_child"},
 

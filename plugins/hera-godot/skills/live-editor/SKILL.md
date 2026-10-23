@@ -30,8 +30,8 @@ instances` shows `stale`, the editor process may still be running with an
 expired heartbeat — that is not the same as no editor.
 
 The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
-session/path fields. Missing log `source` means file. Pretty and batch output
-use the same rules; see `docs/MIGRATING_TO_V2_1.md`.
+session/path fields. Missing log `source` means file. Pretty/batch share these rules;
+explicit `--fields` stay. See `docs/MIGRATING_TO_V2_1.md`.
 
 Value flags accept `--flag=value`; `--flag=` equals `--flag ""`, subject to
 the same validation.
