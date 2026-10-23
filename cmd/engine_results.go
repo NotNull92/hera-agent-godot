@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"github.com/NotNull92/hera-agent-godot/internal/protocol"
 	"os"
 	"os/exec"
@@ -10,7 +11,7 @@ import (
 
 // runResultFields is the shared status/output block of an engine-backed result.
 // Commands add their own artifact fields on top.
-func runResultFields(run engineRunResult) map[string]any {
+func runResultFields(run engineproc.Result) map[string]any {
 	fields := map[string]any{
 		"exit_code": run.ExitCode, "timed_out": run.TimedOut,
 		"duration_ms": run.Duration.Milliseconds(),
@@ -34,7 +35,7 @@ func runResultFields(run engineRunResult) map[string]any {
 }
 
 // mergeResult copies shared run fields into a command result.
-func mergeResult(result map[string]any, run engineRunResult) map[string]any {
+func mergeResult(result map[string]any, run engineproc.Result) map[string]any {
 	for key, value := range runResultFields(run) {
 		result[key] = value
 	}
@@ -42,7 +43,7 @@ func mergeResult(result map[string]any, run engineRunResult) map[string]any {
 }
 
 // runFailureCode classifies an engine run that must not be reported as success.
-func runFailureCode(run engineRunResult) string {
+func runFailureCode(run engineproc.Result) string {
 	switch {
 	case run.Abandoned:
 		// The exit status was never observed, so no work can be claimed.
@@ -62,7 +63,7 @@ func runFailureCode(run engineRunResult) string {
 }
 
 // runFailed reports whether a run failed, including incomplete output.
-func runFailed(run engineRunResult) bool {
+func runFailed(run engineproc.Result) bool {
 	return runFailureCode(run) != ""
 }
 
@@ -88,7 +89,7 @@ func failEngineResult(result map[string]any) int {
 
 // finishEngineResult applies the run verdict to a command result, prints it
 // once, and returns the command exit code.
-func finishEngineResult(result map[string]any, run engineRunResult) int {
+func finishEngineResult(result map[string]any, run engineproc.Result) int {
 	if reason := runFailureCode(run); reason != "" && resultError(result) == "" {
 		result["error"] = reason
 	}

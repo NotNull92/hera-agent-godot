@@ -1,4 +1,4 @@
-package cmd
+package engineproc
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 )
+
+const engineOutputLimit = 64 * 1024
 
 // engineWaitDelay bounds both the inherited-pipe wait after the started process
 // exits and Hera's own wait for a process it asked to terminate, so a surviving
@@ -67,22 +69,22 @@ func (o *boundedOutput) snapshot() (string, bool) {
 	return string(o.text), o.truncated
 }
 
-// processGuarder is the ownership contract runEngineBounded relies on. Tests
-// replace engineGuardFactory to inject setup, resume and termination failures
+// Guard is the ownership contract Run relies on. Tests
+// replace GuardFactory to inject setup, resume and termination failures
 // deterministically.
-type processGuarder interface {
-	resume() string
-	terminate() string
-	close()
+type Guard interface {
+	Resume() string
+	Terminate() string
+	Close()
 }
 
-// engineGuardFactory creates the guard for a started process.
-var engineGuardFactory = func(pid int, process *os.Process) processGuarder {
+// GuardFactory creates the guard for a started process.
+var GuardFactory = func(pid int, process *os.Process) Guard {
 	return newProcessGuard(pid, process)
 }
 
-// engineRunResult is one bounded engine process run.
-type engineRunResult struct {
+// Result is one bounded engine process run.
+type Result struct {
 	Started   bool
 	ExitCode  int
 	Output    string
@@ -98,7 +100,7 @@ type engineRunResult struct {
 	Termination    string
 }
 
-// runEngineBounded runs the engine with bounded output. Ownership of the
+// Run runs the engine with bounded output. Ownership of the
 // process is established at launch:
 //
 //   - Windows: the child is assigned to an owned Job Object (kill-on-close)
@@ -113,9 +115,9 @@ type engineRunResult struct {
 //     caller forever.
 //
 // An already-canceled context starts nothing.
-func runEngineBounded(ctx context.Context, executable string, args []string, dir string, env []string, limit int) engineRunResult {
+func Run(ctx context.Context, executable string, args []string, dir string, env []string, limit int) Result {
 	started := time.Now()
-	result := engineRunResult{ExitCode: -1}
+	result := Result{ExitCode: -1}
 	if ctx.Err() != nil {
 		// Never launch work for a deadline that already passed.
 		result.TimedOut = true
@@ -137,27 +139,27 @@ func runEngineBounded(ctx context.Context, executable string, args []string, dir
 		return result
 	}
 	result.Started = true
-	guard := engineGuardFactory(command.Process.Pid, command.Process)
+	guard := GuardFactory(command.Process.Pid, command.Process)
 	// One worker owns termination and close, including refusal. The caller never
 	// touches the guard again, even if a native call outlives its wait bound.
-	failure := guard.resume()
+	failure := guard.Resume()
 	stopped := make(chan struct{})
 	cleanup := make(chan string, 1)
 	go func() {
 		termination := ""
 		if failure != "" {
-			termination = guard.terminate()
+			termination = guard.Terminate()
 		} else {
 			select {
 			case <-ctx.Done():
-				termination = guard.terminate()
+				termination = guard.Terminate()
 			case <-stopped:
 			}
 		}
 		if failure == "" {
 			<-stopped
 		}
-		guard.close()
+		guard.Close()
 		cleanup <- termination
 	}()
 

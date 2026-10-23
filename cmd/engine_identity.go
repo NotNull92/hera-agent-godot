@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -96,7 +97,7 @@ func parseEngineVersion(raw string) engineVersion {
 
 // readEngineVersion runs --version and parses the first non-empty line.
 func readEngineVersion(ctx context.Context, executable string) (engineVersion, error) {
-	run := runEngineBounded(ctx, executable, []string{"--version"}, "", nil, 4096)
+	run := engineproc.Run(ctx, executable, []string{"--version"}, "", nil, 4096)
 	if failure := runFailureCode(run); failure != "" {
 		return engineVersion{}, fmt.Errorf("--version failed (%s), exit %d: %s", failure, run.ExitCode, firstLine(run.Output))
 	}
@@ -136,7 +137,7 @@ type engineHelp struct {
 }
 
 func readEngineHelp(ctx context.Context, executable string) engineHelp {
-	run := runEngineBounded(ctx, executable, []string{"--help"}, "", nil, 256*1024)
+	run := engineproc.Run(ctx, executable, []string{"--help"}, "", nil, 256*1024)
 	if runFailed(run) || !run.Started || run.Output == "" || run.Truncated ||
 		errors.Is(run.RunErr, exec.ErrWaitDelay) {
 		reason := "engine --help did not complete"

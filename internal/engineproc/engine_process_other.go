@@ -1,6 +1,6 @@
 //go:build !windows
 
-package cmd
+package engineproc
 
 import (
 	"os"
@@ -30,10 +30,10 @@ func newProcessGuard(pid int, process *os.Process) *processGuard {
 }
 
 // resume is a no-op on Unix, where the child is not launched suspended.
-func (g *processGuard) resume() string { return "" }
+func (g *processGuard) Resume() string { return "" }
 
 // terminate stops the started process and reports any incomplete cleanup.
-func (g *processGuard) terminate() string {
+func (g *processGuard) Terminate() string {
 	if g.process == nil {
 		return "no process handle; nothing could be terminated"
 	}
@@ -43,4 +43,4 @@ func (g *processGuard) terminate() string {
 	return "only the started process was terminated; descendants are not signalled on this platform"
 }
 
-func (g *processGuard) close() {}
+func (g *processGuard) Close() {}

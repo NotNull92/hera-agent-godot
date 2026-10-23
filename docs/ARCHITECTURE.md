@@ -358,3 +358,6 @@ inside the destination root. Verification precedes per-file publication through
 `os.Root`; failures retain staging. One worker owns each engine guard's termination
 and close; the caller bounds its waits and reports unfinished cleanup. DAP targets
 are discovered through `threads`, with per-command `--thread` selection.
+
+Engine process ownership, bounded output, and platform guards live in
+`internal/engineproc`; `cmd` maps its run results to CLI responses.

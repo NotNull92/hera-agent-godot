@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"io"
 	"os"
 	"path/filepath"
@@ -143,7 +144,7 @@ func runCaptureMovie(params map[string]any) int {
 	)
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	notes := []string{
 		"Movie Maker requires a working display driver; --headless uses the dummy renderer and crashed in testing",

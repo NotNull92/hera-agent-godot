@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -120,8 +121,8 @@ func runCSharpValidate(project, path string, evidence bool) int {
 		}
 	}()
 	paths := csharpBuildPaths(stage)
-	run := func(args []string) engineRunResult {
-		r := runEngineBounded(ctx, dotnet, append(args, paths...), project, append(os.Environ(), "DOTNET_CLI_UI_LANGUAGE=en", "DOTNET_NOLOGO=1", "DOTNET_GENERATE_ASPNET_CERTIFICATE=false"), engineOutputLimit)
+	run := func(args []string) engineproc.Result {
+		r := engineproc.Run(ctx, dotnet, append(args, paths...), project, append(os.Environ(), "DOTNET_CLI_UI_LANGUAGE=en", "DOTNET_NOLOGO=1", "DOTNET_GENERATE_ASPNET_CERTIFICATE=false"), engineOutputLimit)
 		if r.Abandoned || r.CleanupPending {
 			keep = true
 			result["staging_dir"] = filepath.ToSlash(stage)

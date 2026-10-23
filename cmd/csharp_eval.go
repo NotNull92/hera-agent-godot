@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/NotNull92/hera-agent-godot/internal/client"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -141,7 +142,7 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	run := runEngineBounded(ctx, executable, args, stage, nil, 768*1024)
+	run := engineproc.Run(ctx, executable, args, stage, nil, 768*1024)
 	if run.Abandoned || run.CleanupPending {
 		keep = true
 		return &codedError{Code: "csharp_compile_incomplete", Err: fmt.Errorf("worker unfinished; retained staging at %s", stage)}

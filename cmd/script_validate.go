@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"io"
 	"os"
 	"path/filepath"
@@ -60,7 +61,7 @@ func runScriptValidate(params map[string]any) int {
 		before, beforeErr = scriptDiskHash(diskPath)
 	}
 	started := time.Now().UTC().Format(time.RFC3339Nano)
-	run := runEngineBounded(ctx, executable, []string{"--headless", "--path", project, "--check-only", "--script", path}, "", nil, 64*1024)
+	run := engineproc.Run(ctx, executable, []string{"--headless", "--path", project, "--check-only", "--script", path}, "", nil, 64*1024)
 	if params["evidence"] == true {
 		after, afterErr = scriptDiskHash(diskPath)
 	}

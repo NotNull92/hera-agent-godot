@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -123,7 +124,7 @@ func runProjectImport(params map[string]any) int {
 
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	run := runEngineBounded(ctx, ref.Path, []string{"--headless", "--path", project, "--import"}, project, nil, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, []string{"--headless", "--path", project, "--import"}, project, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
 		"project_path":     filepath.ToSlash(project),
@@ -216,7 +217,7 @@ func runProjectExport(params map[string]any) int {
 	if patches := stringParam(params, "patches"); patches != "" {
 		engineArgs = append(engineArgs, "--patches", patches)
 	}
-	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 	stat, statErr := os.Stat(outputAbs)
 	result := mergeResult(base, run)
 	result["available_presets"] = presets

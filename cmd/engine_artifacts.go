@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"io"
 	"io/fs"
 	"os"
@@ -82,7 +83,7 @@ func publishArtifacts(stage, destination string, replace bool) (int, error) {
 	return published, root.RemoveAll(stageName)
 }
 
-func finishArtifactPublication(result map[string]any, run engineRunResult, stage, destination string, replace bool) int {
+func finishArtifactPublication(result map[string]any, run engineproc.Result, stage, destination string, replace bool) int {
 	result["artifact_source"] = "isolated_run_directory"
 	result["published"] = false
 	result["staging_dir"] = filepath.ToSlash(stage)
