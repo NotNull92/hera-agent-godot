@@ -395,7 +395,7 @@ without fallback.
 | `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` only when true |
 | `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface); click/input coordinates are live viewport pixels, not the project window setting. `game input` also injects joypad buttons and axes |
 | `game clock` | experimental | `{paused, time_scale, process_frames, physics_frames}`; `--step` adds `stepped` (`process` or `physics`) |
-| `game input sequence --file` | experimental | array of 1–128 `{frame,action,pressed}` events, ordered offsets 0–120; result `{kind,frames,events[],pid}` includes observed `physics_frame` per event; prevalidates actions, cancels on clock changes/deadline and releases held inputs |
+| `game input sequence --file` | experimental | array of 1–128 `{frame,action,pressed}` events, ordered offsets 0–120; CLI result `{frames,events[],pid}` (echoed `kind: "sequence"` omitted) includes observed `physics_frame` per event; prevalidates actions, cancels on clock changes/deadline and releases held inputs |
 | `game screenshot` | experimental | capture path and live PNG size; window/visible/project sizes; `size_matches_project` compares PNG pixels to the project viewport, not the visible rect. `--analyze` metrics evolve with QA guidance. Captures are not upscaled. |
 | `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
@@ -408,8 +408,9 @@ exit status. If the node disappeared, `actual` is omitted; failure `error` is
 carried by the RPC envelope/stderr, not duplicated in stdout data. The CLI timeout is extended for this call by a five-second transport
 margin; the bridge also covers the requested wait. Omitted waits are unchanged. Existing nodes without the property fail immediately;
 missing nodes keep waiting for a spawn. Batch HTTP timeouts add the sum of
-child assertion waits because children run sequentially. The editor gate remains held during the
-wait (at most 30 seconds plus transport overhead).
+child assertion waits because children run sequentially. Each assertion holds the editor gate during its
+wait (at most 30 seconds plus transport overhead); a batch holds it across all
+children, so its total wait can be longer.
 
 Clock steps finish one selected node-callback phase before pausing. Input
 sequences require an unpaused tree, time scale 1, and physics rate >=60 Hz;

@@ -35,8 +35,9 @@ exit status. If the node disappeared, `actual` is omitted; failure `error` is
 carried by the RPC envelope/stderr, not duplicated in stdout data. The CLI timeout is extended for this call by a five-second transport
 margin; the bridge also covers the requested wait. Omitted waits are unchanged. Existing nodes without the property fail immediately;
 missing nodes keep waiting for a spawn. Batch HTTP timeouts add the sum of
-child assertion waits because children run sequentially. The editor gate remains held during the
-wait (at most 30 seconds plus transport overhead).
+child assertion waits because children run sequentially. Each assertion holds the editor gate during its
+wait (at most 30 seconds plus transport overhead); a batch holds it across all
+children, so its total wait can be longer.
 
 ```sh
 hera-godot game assert /root/Main visible eq true --within-ms 1000
@@ -230,7 +231,7 @@ mutation a new ID merely to force it to run.
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N] [--source file\|editor] [--since cursor]` | `output` | ☑ | Default: tail the project's configured file log. Opt-in editor source: bounded session evidence with cursors and severity/location metadata; see below. Unreadable evidence reports `available:false`. |
 | `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log; file `source` is omitted and `log_path` appears only when unavailable. That `clean` flag is only the file log, not the editor Output panel. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
-| `scene tree [<path>] [--depth N] [--type Class] [--props a,b]` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). Optional subtree paths stay inside the scene; output paths remain scene-relative. Depth 0 includes only the subtree root. `--type` includes subclasses; `--props` adds a `props` object per matching node (missing properties fail). |
+| `scene tree [<path>] [--depth N] [--type Class] [--props a,b]` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type, plus name when not implied by path; root `.` keeps name). Optional subtree paths stay inside the scene; output paths remain scene-relative. Depth 0 includes only the subtree root. `--type` includes subclasses; `--props` adds a `props` object per matching node (missing properties fail). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |
 | `scene reload [res://...]` | `scene` | ☑ | Reload the current or named open scene from disk, useful after external `.tscn` edits before saving through the editor. |
@@ -478,8 +479,9 @@ deadline. Other input/clock mutations fail while a sequence or clock step is
 active. Runtime node calls and external human input can still affect the game;
 this does not make arbitrary game logic deterministic.
 
-Success returns `kind: "sequence"`, `pid`, `frames` (last offset plus one),
+CLI success returns `pid`, `frames` (last offset plus one),
 and `events[]` with requested fields plus the observed `physics_frame` counter.
+The repeated `kind: "sequence"` is omitted from CLI output; full RPC data retains it.
 For requirement-based QA, use `game.input` with
 `params: {"kind":"sequence","events":[...]}`, followed by `game.assert`
 steps whose `covers` name the gameplay requirements. `game --pid N` selects a
