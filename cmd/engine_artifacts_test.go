@@ -17,7 +17,7 @@ func TestArtifactStagingAndPublication(t *testing.T) {
 		t.Fatal(err)
 	}
 	output := filepath.Join(stage, "movie.png")
-	if _, count, err := movieFrameCounts(output, nil); err != nil || count != 0 {
+	if count, err := movieFrameCounts(output); err != nil || count != 0 {
 		t.Fatalf("old destination counted: %d %v", count, err)
 	}
 	generated := filepath.Join(stage, filepath.Base(old))
@@ -28,8 +28,8 @@ func TestArtifactStagingAndPublication(t *testing.T) {
 	if err := os.Chtimes(generated, oldInfo.ModTime(), oldInfo.ModTime()); err != nil {
 		t.Fatal(err)
 	}
-	if written, present, err := movieFrameCounts(output, nil); err != nil || written != 1 || present != 1 {
-		t.Fatalf("same metadata run lost: %d %d %v", written, present, err)
+	if present, err := movieFrameCounts(output); err != nil || present != 1 {
+		t.Fatalf("same metadata run lost: %d %v", present, err)
 	}
 	if n, err := publishArtifacts(stage, destination, false); err == nil || n != 0 {
 		t.Fatalf("overwrote without force: %d %v", n, err)
@@ -126,5 +126,23 @@ func TestFailedRunNeverPublishesArtifacts(t *testing.T) {
 		if body, _ := os.ReadFile(staged); string(body) != "new" {
 			t.Fatal("failed run lost staged output")
 		}
+	}
+}
+
+func TestMovieFrameCountsScopeAndFailure(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"shot00000001.png", "shot00000002.png", "shot.wav", "other00000003.png"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if count, err := movieFrameCounts(filepath.Join(dir, "shot.png")); err != nil || count != 2 {
+		t.Fatalf("count=%d err=%v", count, err)
+	}
+	if count, err := movieFrameCounts(filepath.Join(dir, "shot.avi")); err != nil || count != 0 {
+		t.Fatalf("container count=%d err=%v", count, err)
+	}
+	if _, err := movieFrameCounts(filepath.Join(dir, "missing", "shot.png")); err == nil {
+		t.Fatal("missing directory must fail")
 	}
 }
