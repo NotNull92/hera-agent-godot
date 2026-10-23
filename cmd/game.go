@@ -228,8 +228,8 @@ func parseGameAssertArgs(args []string) (map[string]any, error) {
 			return nil, err
 		}
 		value, err := strconv.Atoi(raw)
-		if err != nil || value < 1 || value > maxWaitMS {
-			return nil, fmt.Errorf("--within-ms must be between 1 and %d", maxWaitMS)
+		if err != nil || value < 1 || value > maxAssertionWaitMS {
+			return nil, fmt.Errorf("--within-ms must be between 1 and %d", maxAssertionWaitMS)
 		}
 		within = &value
 		i = next - 1

@@ -379,4 +379,4 @@ C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.3`
 
 `node add`와 `node instance`는 반복 가능한 `--set prop=value`를 지원합니다. 생성과 속성 설정은 하나의 실행 취소 작업이며 응답의 `values`로 확인합니다.
 
-`game assert ... --within-ms N`은 성공하거나 제한 시간에 도달할 때까지 재검사합니다. QA assertion 단계는 `within_ms`를 받습니다.
+`game assert ... --within-ms N`은 성공하거나 최대 30초의 제한 시간에 도달할 때까지 재검사합니다. QA assertion 단계는 `within_ms`를 받습니다.

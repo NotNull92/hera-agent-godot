@@ -52,6 +52,6 @@ static func wait_error(request: Dictionary) -> String:
 	if not request.has("within_ms"):
 		return ""
 	var value: Variant = request["within_ms"]
-	if typeof(value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)) or float(value) != floor(float(value)) or float(value) < 1 or float(value) > 3600000:
-		return "within_ms must be between 1 and 3600000"
+	if typeof(value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)) or float(value) != floor(float(value)) or float(value) < 1 or float(value) > 30000:
+		return "within_ms must be between 1 and 30000"
 	return ""

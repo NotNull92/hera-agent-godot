@@ -23,7 +23,7 @@ commands:
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
              dump --out <dir>  offline ClassDB JSON from the engine (no editor needed)
   game       [--pid N] tree | ui tree|audit | instances | screenshot | click | input | clock | assert | qa discover|diagnose|--file | node get|set|call
-                    assert <path> <prop> <op> [expected] --within-ms N (1..3600000)
+                    assert <path> <prop> <op> [expected] --within-ms N (1..30000)
              input sequence --file <events.json>  replay actions on physics frames
   engine     info | doctor [--project DIR]  engine identity, build kind, export templates, project cache
   capture    movie <out.avi|.png|.ogv> [--frames N] [--fps N] [--resolution WxH]  deterministic frames

@@ -25,11 +25,13 @@ hera-godot node instance res://child.tscn --set visible=false
 
 ## Wait for a runtime assertion
 
-`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
+`game assert ... --within-ms N` retries each runtime frame for 1–30,000 ms
 (QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
 `timed_out: true` and the last observed `actual` when available, with failure
 exit status. The CLI timeout is extended for this call by a five-second transport
-margin; the bridge also covers the requested wait. Omitted waits are unchanged.
+margin; the bridge also covers the requested wait. Omitted waits are unchanged. Existing nodes without the property fail immediately;
+missing nodes keep waiting for a spawn. The editor gate remains held during the
+wait (at most 30 seconds plus transport overhead).
 
 ```sh
 hera-godot game assert /root/Main visible eq true --within-ms 1000
@@ -288,7 +290,7 @@ mutation a new ID merely to force it to run.
 | `game node get <path> [--prop <name>\|--props <a,b>]` | `game` | ☑ | Dump a live runtime node's editor-visible properties, or selected properties for low-token QA. Selected names may use dotted paths such as `player.position` or `state.score`. Absolute paths like `/root/Main` are accepted. |
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
 | `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified `result` and, from v2.0.0, a structured `result_value` (or `result_value_omitted`). Runtime-only and may have side effects. |
-| `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value] [--within-ms N]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. `--within-ms` (1–3,600,000) retries each frame; returns `waited_ms`, plus `timed_out: true` and last available `actual` on timeout. |
+| `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value] [--within-ms N]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. `--within-ms` (1–30,000) retries each frame; returns `waited_ms`, plus `timed_out: true` and last available `actual` on timeout. |
 | `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helpers and `Qa` followed by an uppercase letter (e.g. `QaReady`); method names are case-sensitive. Discover methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
 | `game qa diagnose [--lines N] [--max-errors N] [--max-warnings N] [--path user://capture.png]` | local + tools | ☑ | Run a read-only, project-agnostic runtime health check. It reports editor diagnostic counts, live game-process ambiguity, runtime/UI tree truncation, and screenshot blankness, low detail, or likely clipping. Capture width/height and `size_matches_project` are reported without failing a healthy image that is simply smaller than the project viewport. It does not assume nodes, controls, rules, or QA helper names. |
 | `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.qa.discover`, `game.ui.tree`, `game.ui.audit`, `game.click`, `game.input`, `game.input_log`, `game.clock`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps. `game.ui.audit` accepts its CLI filters in `params`; failed audit evidence is retained in the step result and does not satisfy `covers`. Known tools, required node fields, assertion operators, run actions, and numeric limits are preflighted before any requests. Diagnostics fail when unavailable or when counts are missing/invalid; omitted `max_warnings` allows warnings, while explicit `0` requires none. The file may be a legacy step array or an object with `requirements` plus `steps`; each step may declare `covers`, and missing or failed requirement coverage makes the scenario fail. |

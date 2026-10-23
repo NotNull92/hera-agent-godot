@@ -223,7 +223,7 @@ use the same rules; see [migration rules](MIGRATING_TO_V2_1.md).
   restores it for editor play. Disabling Hera removes an owned persisted
   autoload, while a same-named user autoload at another path is left alone.
 - **Bound eventual assertions.** `game assert ... --within-ms N` retries once
-  per runtime frame for 1–3,600,000 ms; QA assertion steps use `within_ms`.
+  per runtime frame for 1–30,000 ms; QA assertion steps use `within_ms`.
   Read `waited_ms`; timeout adds `timed_out: true` and the last available
   `actual`, with exit 1. The CLI and runtime bridge cover this wait.
 - **Prefer low-token QA reads.** Use `game ui audit`, `game ui tree`, `game node get --prop/--props`,

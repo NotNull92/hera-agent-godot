@@ -16,7 +16,7 @@ func TestGameAssertWithin(t *testing.T) {
 			t.Fatalf("%v %v", p, err)
 		}
 	}
-	for _, n := range []string{"0", "-1", "3600001", "1.5", ""} {
+	for _, n := range []string{"0", "-1", "30001", "1.5", ""} {
 		if _, err := parseGameAssertArgs([]string{".", "visible", "exists", "--within-ms=" + n}); err == nil {
 			t.Fatal(n)
 		}

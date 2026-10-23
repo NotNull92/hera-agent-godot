@@ -6,11 +6,13 @@ import (
 	"time"
 )
 
+const maxAssertionWaitMS = 30000
+
 // Extend only this request, preserving the caller's transport and later timeouts.
 func postWithAssertionWait(c *client.Client, tool string, params map[string]any) (*protocol.Response, error) {
 	if tool == "game" && params["action"] == "assert" {
 		n, ok := params["within_ms"].(int)
-		if ok && n >= 1 && n <= maxWaitMS {
+		if ok && n >= 1 && n <= maxAssertionWaitMS {
 			requestClient := *c
 			if c.HTTP == nil {
 				requestClient.HTTP = client.New(c.BaseURL).HTTP

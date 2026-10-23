@@ -262,7 +262,8 @@ func _assert_node_within(request: Dictionary) -> Dictionary:
 		if result.has("actual"):
 			last_actual = result["actual"]
 		result["waited_ms"] = Time.get_ticks_msec() - started
-		if result.get("ok", false):
+		# An existing node without a readable property cannot satisfy this assertion.
+		if result.get("ok", false) or (result.has("path") and not result.has("actual")):
 			return result
 		if Time.get_ticks_msec() >= deadline:
 			result["timed_out"] = true

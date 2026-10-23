@@ -401,11 +401,13 @@ without fallback.
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |
 
-`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
+`game assert ... --within-ms N` retries each runtime frame for 1–30,000 ms
 (QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
 `timed_out: true` and the last observed `actual` when available, with failure
 exit status. The CLI timeout is extended for this call by a five-second transport
-margin; the bridge also covers the requested wait. Omitted waits are unchanged.
+margin; the bridge also covers the requested wait. Omitted waits are unchanged. Existing nodes without the property fail immediately;
+missing nodes keep waiting for a spawn. The editor gate remains held during the
+wait (at most 30 seconds plus transport overhead).
 
 Clock steps finish one selected node-callback phase before pausing. Input
 sequences require an unpaused tree, time scale 1, and physics rate >=60 Hz;

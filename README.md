@@ -382,4 +382,4 @@ C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.3`
 
 Node creation supports repeatable `--set prop=value` on `node add` and `node instance`, with one undo action and re-read `values`.
 
-`game assert ... --within-ms N` retries until success or a bounded deadline; QA assertion steps accept `within_ms`.
+`game assert ... --within-ms N` retries until success or a deadline of at most 30 seconds; QA assertion steps accept `within_ms`.

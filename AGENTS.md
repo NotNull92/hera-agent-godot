@@ -69,7 +69,7 @@ use the same rules; see [migration rules](docs/MIGRATING_TO_V2_1.md).
 
 ## Verify your work
 
-After an edit, **confirm it**. QA assertions accept `within_ms` (1–3,600,000);
+After an edit, **confirm it**. QA assertions accept `within_ms` (1–30,000);
 read `waited_ms`, `timed_out` and the last `actual` when available.
 
 - After `node set`: check the re-read `value` in the response; use `node get`

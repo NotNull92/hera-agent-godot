@@ -76,7 +76,7 @@ repository's `docs/CSHARP_SUPPORT.md` for setup and limitations.
   `node instance`; check returned `values`. Creation and properties share one
   undo action. Without `--set`, confirm with `hera-godot --ids scene tree`.
   After a run, check `diagnostics` first; use `output --type error` for raw lines.
-- For eventual runtime state, use `game assert ... --within-ms N` (1–3,600,000).
+- For eventual runtime state, use `game assert ... --within-ms N` (1–30,000).
   QA assertion steps accept `within_ms`. Read `waited_ms`; timeouts return
   `timed_out: true`, the last available `actual`, and exit 1.
 - For visual/UI work, use `game ui tree`, semantic `game click`, and
