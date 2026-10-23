@@ -31,7 +31,11 @@ static func properties(node: Node, max_value_len: int, changed: bool = false) ->
 			if class_default == null:
 				continue
 			default_value = class_default.get(name)
-		if node.get(name) == default_value:
+		var current_value: Variant = node.get(name)
+		var current_type: int = typeof(current_value)
+		var default_type: int = typeof(default_value)
+		var comparable: bool = current_type == default_type or (current_type in [TYPE_INT, TYPE_FLOAT] and default_type in [TYPE_INT, TYPE_FLOAT])
+		if comparable and current_value == default_value:
 			result.erase(name)
 	if class_default != null:
 		class_default.free()

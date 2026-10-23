@@ -33,7 +33,7 @@ func _test() -> void:
 	_check(not changed.has("amount") and changed.get("count") == "4", "script defaults and custom revert respected")
 	custom.free()
 	var exported_script := GDScript.new()
-	exported_script.source_code = "extends Node\n@export var count: int = 3\n"
+	exported_script.source_code = "extends Node\n@export var count = 3\n"
 	_check(exported_script.reload() == OK, "exported default fixture compiles")
 	var placeholder := Node.new()
 	placeholder.set_script(exported_script)
@@ -41,6 +41,10 @@ func _test() -> void:
 	_check(not Codec.properties(placeholder, 200, true).has("count"), "unchanged script export omitted")
 	placeholder.set("count", 4)
 	_check(Codec.properties(placeholder, 200, true).get("count") == "4", "changed script export included")
+	placeholder.set("count", "changed type")
+	_check(Codec.properties(placeholder, 200, true).get("count") == "changed type", "unrelated property types remain changed")
+	placeholder.set("count", 3.0)
+	_check(not Codec.properties(placeholder, 200, true).has("count"), "equal int and float defaults remain comparable")
 	placeholder.free()
 	var scene := Node2D.new()
 	scene.name = "Main"
