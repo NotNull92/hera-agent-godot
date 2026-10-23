@@ -17,6 +17,9 @@ including pretty output and batch children. Full addon RPC data is unchanged.
 array of `[property, value]` pairs; legacy objects remain accepted). All properties are validated before attachment, then applied in the same
 creation undo action. Only this form adds `values` with re-read property strings;
 invalid properties or values add no node. Setters run in caller order, including duplicates; the last assignment wins.
+Values are applied before tree attachment: `global_*` setters act as local, and
+a `@tool` `_ready` may overwrite them. Use local properties, or `node set` after
+creation for properties that need the parent/tree.
 
 ```sh
 hera-godot node add Node2D --name Child --set visible=false --set "position=Vector2(10, 20)"
@@ -249,8 +252,8 @@ mutation a new ID merely to force it to run.
 | `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set and persist `application/run/main_scene` through the targeted editor; its in-memory setting and subsequent default `run` agree immediately. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
 | `node get <path> [--changed\|--prop <name>\|--props <a,b>] [--snapshot]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. `--changed` excludes default-valued properties and cannot combine with `--prop`/`--props`. Defaults use inspector revert values, then script defaults, then class defaults (a temporary instance on Godot 4.2). `--snapshot` requires one `--prop` and adds a typed conditional-mutation snapshot. Godot 4.2 may report `null` for uncached tool-script defaults; `--changed` compares against that engine result and can include unchanged exports. It does not instantiate user scripts to infer defaults. Comparison is exact (no float tolerance), and values set by an instanced sub-scene count as changed. |
-| `node add <type> [--parent <path>] [--name <n>] [--set prop=value ...]` | `node` | ☑ | Add a node under a parent; validate `--set` properties before attaching, apply in one undo action, and return re-read `values` only for `--set`. When Game Feel Mode is enabled, feel-related node types return a compact `agent_hint` pointing at relevant `game_feel` topics. |
-| `node instance <res://scene.tscn> [--parent <path>] [--name <n>] [--set prop=value ...]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path and all `--set` properties; one undo action and optional re-read `values`, as for `node add`. |
+| `node add <type> [--parent <path>] [--name <n>] [--set prop=value ...]` | `node` | ☑ | Add a node under a parent; validate `--set` properties before attaching, apply in one undo action, and return re-read `values` only for `--set`. Setters run before tree attachment: use local properties; use `node set` afterward for `global_*` or values overwritten by `@tool` `_ready`. When Game Feel Mode is enabled, feel-related node types return a compact `agent_hint` pointing at relevant `game_feel` topics. |
+| `node instance <res://scene.tscn> [--parent <path>] [--name <n>] [--set prop=value ...]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path and all `--set` properties; one undo action and optional re-read `values`, as for `node add`. The same pre-tree/global-property and `@tool` `_ready` limits apply. |
 | `node set <path> --prop <name> --value <v> [--expected <JSON> [--verify]]` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). Optional typed preconditions reject stale targets before mutation. |
 | `node set-resource <path> --prop <name> --resource <res://...>` | `node` | ☑ | Set an object/resource property from a Resource file, with path and type compatibility checks (undoable). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |

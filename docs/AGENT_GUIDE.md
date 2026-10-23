@@ -302,6 +302,9 @@ After an edit, **confirm it** instead of assuming:
 - After `node set`: check the re-read `value` in the response; use `node get`
   only for other properties. After `node add --set` or `node instance --set`,
   check returned `values`; creation and properties share one undo action.
+  Setters run before tree attachment, so `global_*` values act as local and
+  `@tool` `_ready` may overwrite them. Use local properties or `node set` after
+  creation for values that need the parent/tree.
   Without `--set`, confirm structure with `hera-godot --ids scene tree`.
 - After structural changes: `hera-godot scene tree` (or `--ids`).
 - After `run`: `hera-godot diagnostics` first; `output --type error` for raw
