@@ -19,12 +19,16 @@ func slimData(raw any) any {
 		delete(out, "truncated")
 	}
 	if count, ok := out["count"]; ok {
+		arrays, length := 0, 0
 		for _, value := range out {
 			list := reflect.ValueOf(value)
-			if list.IsValid() && list.Kind() == reflect.Slice && equalJSON(count, list.Len()) {
-				delete(out, "count")
-				break
+			if list.IsValid() && list.Kind() == reflect.Slice && !list.IsNil() {
+				arrays++
+				length = list.Len()
 			}
+		}
+		if arrays == 1 && equalJSON(count, length) {
+			delete(out, "count")
 		}
 	}
 

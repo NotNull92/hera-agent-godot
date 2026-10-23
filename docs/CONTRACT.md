@@ -144,9 +144,10 @@ See [MIGRATING_TO_V1.md](MIGRATING_TO_V1.md) for the 0.x upgrade path.
 
 ## Planned 2.1 response omissions (breaking)
 
-The CLI omits false `truncated`, `count` equal to an adjacent array length,
-and node `name` equal to the final `path` segment (except root `.` or explicit `--fields` selections). A differing
-count or true truncation flag remains. These rules apply to compact and pretty
+The CLI omits false `truncated`. It omits `count` only when exactly one
+top-level response array exists and its length equals the count. Node `name`
+is omitted when equal to the final `path` segment, except root `.` or explicit
+`--fields` selections. A differing count or true truncation flag remains. These rules apply to compact and pretty
 output and to each batch child. Addon RPC data, internal negotiation, property
 values, structured call results and evidence objects retain their full shape.
 CLI structured engine/debug failures omit duplicate `message`; `error`, `detail`,
@@ -259,7 +260,7 @@ contract tests (see [Contract tests](#contract-tests)).
 | Command | Tier | Key fields |
 |---------|------|-----------|
 | `status` | stable | ✓ `pid`, `project_name`, `godot_version`, `scene`. Experimental additions always in the default CLI: `game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` (editor build capability, not SDK availability). `godot_commit` and `capabilities` (values `supported`, `unsupported`, `unverified`) are experimental detail on `status --capabilities`. See ARCHITECTURE §6 for capability scope. |
-| `instances` | stable | ✓ `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` with optional experimental `editor_session_id`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain. Legacy heartbeats omit the session field. |
+| `instances` | stable | ✓ `instances[]` (plus `count` when `stale[]` is also present) of `{pid, port, project_path, godot_version, scene, ts}` with optional experimental `editor_session_id`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain. Legacy heartbeats omit the session field. |
 | `version` | stable | bare string (linker-injected; `dev` for source builds) |
 | `run` / `stop` | stable | ✓ state shape `{playing, scene}` |
 

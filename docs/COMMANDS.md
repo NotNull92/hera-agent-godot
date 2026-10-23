@@ -9,7 +9,8 @@ Each command maps 1:1 to an addon tool and sends a single JSON request to the
 selected editor instance.
 
 CLI response fields follow the planned [2.1 omission rules](MIGRATING_TO_V2_1.md),
-including pretty output and batch children. Full addon RPC data is unchanged.
+including pretty output and batch children. `count` is omitted only when exactly
+one top-level array exists and its length matches. Full addon RPC data is unchanged.
 
 ## Create a configured node
 
