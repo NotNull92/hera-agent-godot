@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 // runSignal implements the `signal` command (read + write).
@@ -38,10 +39,17 @@ func parseSignalArgs(args []string) (map[string]any, error) {
 	sub, rest := args[0], args[1:]
 	switch sub {
 	case "list":
-		if len(rest) != 1 {
+		if len(rest) == 0 || strings.HasPrefix(rest[0], "-") {
 			return nil, fmt.Errorf("usage: signal list <node>")
 		}
-		return map[string]any{"action": "list", "node": rest[0]}, nil
+		params := map[string]any{"action": "list", "node": rest[0]}
+		for _, arg := range rest[1:] {
+			if arg != "--connected" {
+				return nil, fmt.Errorf("usage: signal list <node>")
+			}
+			params["connected"] = true
+		}
+		return params, nil
 
 	case "connect", "disconnect":
 		if len(rest) != 4 {

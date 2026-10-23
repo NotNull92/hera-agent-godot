@@ -1,5 +1,62 @@
 extends RefCounted
 
+const JOY_BUTTONS: Dictionary = {
+	"A": JOY_BUTTON_A,
+	"B": JOY_BUTTON_B,
+	"X": JOY_BUTTON_X,
+	"Y": JOY_BUTTON_Y,
+	"BACK": JOY_BUTTON_BACK,
+	"GUIDE": JOY_BUTTON_GUIDE,
+	"START": JOY_BUTTON_START,
+	"LEFT_STICK": JOY_BUTTON_LEFT_STICK,
+	"RIGHT_STICK": JOY_BUTTON_RIGHT_STICK,
+	"LEFT_SHOULDER": JOY_BUTTON_LEFT_SHOULDER,
+	"RIGHT_SHOULDER": JOY_BUTTON_RIGHT_SHOULDER,
+	"DPAD_UP": JOY_BUTTON_DPAD_UP,
+	"DPAD_DOWN": JOY_BUTTON_DPAD_DOWN,
+	"DPAD_LEFT": JOY_BUTTON_DPAD_LEFT,
+	"DPAD_RIGHT": JOY_BUTTON_DPAD_RIGHT,
+}
+
+const JOY_AXES: Dictionary = {
+	"LEFT_X": JOY_AXIS_LEFT_X,
+	"LEFT_Y": JOY_AXIS_LEFT_Y,
+	"RIGHT_X": JOY_AXIS_RIGHT_X,
+	"RIGHT_Y": JOY_AXIS_RIGHT_Y,
+	"TRIGGER_LEFT": JOY_AXIS_TRIGGER_LEFT,
+	"TRIGGER_RIGHT": JOY_AXIS_TRIGGER_RIGHT,
+}
+
+const MOUSE_BUTTONS: Dictionary = {
+	"left": MOUSE_BUTTON_LEFT,
+	"right": MOUSE_BUTTON_RIGHT,
+	"middle": MOUSE_BUTTON_MIDDLE,
+	"wheel_up": MOUSE_BUTTON_WHEEL_UP,
+	"wheel_down": MOUSE_BUTTON_WHEEL_DOWN,
+}
+
+const KEYS: Dictionary = {
+	"SPACE": KEY_SPACE,
+	"ENTER": KEY_ENTER,
+	"RETURN": KEY_ENTER,
+	"ESCAPE": KEY_ESCAPE,
+	"ESC": KEY_ESCAPE,
+	"TAB": KEY_TAB,
+	"BACKSPACE": KEY_BACKSPACE,
+	"LEFT": KEY_LEFT,
+	"RIGHT": KEY_RIGHT,
+	"UP": KEY_UP,
+	"DOWN": KEY_DOWN,
+	"SHIFT": KEY_SHIFT,
+	"CTRL": KEY_CTRL,
+	"CONTROL": KEY_CTRL,
+	"ALT": KEY_ALT,
+	"META": KEY_META,
+	"CMD": KEY_META,
+	"COMMAND": KEY_META,
+}
+
+
 const GameImageAnalyzer = preload("res://addons/hera_agent_godot/runtime/game_image_analyzer.gd")
 const CaptureEvidence = preload("res://addons/hera_agent_godot/core/capture_evidence.gd")
 
@@ -258,74 +315,11 @@ static func _joy_button_index(raw: Variant) -> int:
 		return int(name)
 	if name.begins_with("JOY_BUTTON_"):
 		name = name.substr(11)
-	match name:
-		"A":
-			return JOY_BUTTON_A
-		"B":
-			return JOY_BUTTON_B
-		"X":
-			return JOY_BUTTON_X
-		"Y":
-			return JOY_BUTTON_Y
-		"BACK":
-			return JOY_BUTTON_BACK
-		"GUIDE":
-			return JOY_BUTTON_GUIDE
-		"START":
-			return JOY_BUTTON_START
-		"LEFT_STICK":
-			return JOY_BUTTON_LEFT_STICK
-		"RIGHT_STICK":
-			return JOY_BUTTON_RIGHT_STICK
-		"LEFT_SHOULDER":
-			return JOY_BUTTON_LEFT_SHOULDER
-		"RIGHT_SHOULDER":
-			return JOY_BUTTON_RIGHT_SHOULDER
-		"DPAD_UP":
-			return JOY_BUTTON_DPAD_UP
-		"DPAD_DOWN":
-			return JOY_BUTTON_DPAD_DOWN
-		"DPAD_LEFT":
-			return JOY_BUTTON_DPAD_LEFT
-		"DPAD_RIGHT":
-			return JOY_BUTTON_DPAD_RIGHT
-		_:
-			return -1
+	return int(JOY_BUTTONS.get(name, -1))
 
 static func joy_button_name(index: int) -> String:
-	match index:
-		JOY_BUTTON_A:
-			return "A"
-		JOY_BUTTON_B:
-			return "B"
-		JOY_BUTTON_X:
-			return "X"
-		JOY_BUTTON_Y:
-			return "Y"
-		JOY_BUTTON_BACK:
-			return "BACK"
-		JOY_BUTTON_GUIDE:
-			return "GUIDE"
-		JOY_BUTTON_START:
-			return "START"
-		JOY_BUTTON_LEFT_STICK:
-			return "LEFT_STICK"
-		JOY_BUTTON_RIGHT_STICK:
-			return "RIGHT_STICK"
-		JOY_BUTTON_LEFT_SHOULDER:
-			return "LEFT_SHOULDER"
-		JOY_BUTTON_RIGHT_SHOULDER:
-			return "RIGHT_SHOULDER"
-		JOY_BUTTON_DPAD_UP:
-			return "DPAD_UP"
-		JOY_BUTTON_DPAD_DOWN:
-			return "DPAD_DOWN"
-		JOY_BUTTON_DPAD_LEFT:
-			return "DPAD_LEFT"
-		JOY_BUTTON_DPAD_RIGHT:
-			return "DPAD_RIGHT"
-		_:
-			return str(index)
+	var name: Variant = JOY_BUTTONS.find_key(index)
+	return str(index) if name == null else String(name)
 
 static func _joy_axis_index(raw: Variant) -> int:
 	if typeof(raw) == TYPE_INT or typeof(raw) == TYPE_FLOAT:
@@ -336,38 +330,11 @@ static func _joy_axis_index(raw: Variant) -> int:
 		return int(name)
 	if name.begins_with("JOY_AXIS_"):
 		name = name.substr(9)
-	match name:
-		"LEFT_X":
-			return JOY_AXIS_LEFT_X
-		"LEFT_Y":
-			return JOY_AXIS_LEFT_Y
-		"RIGHT_X":
-			return JOY_AXIS_RIGHT_X
-		"RIGHT_Y":
-			return JOY_AXIS_RIGHT_Y
-		"TRIGGER_LEFT":
-			return JOY_AXIS_TRIGGER_LEFT
-		"TRIGGER_RIGHT":
-			return JOY_AXIS_TRIGGER_RIGHT
-		_:
-			return -1
+	return int(JOY_AXES.get(name, -1))
 
 static func joy_axis_name(index: int) -> String:
-	match index:
-		JOY_AXIS_LEFT_X:
-			return "LEFT_X"
-		JOY_AXIS_LEFT_Y:
-			return "LEFT_Y"
-		JOY_AXIS_RIGHT_X:
-			return "RIGHT_X"
-		JOY_AXIS_RIGHT_Y:
-			return "RIGHT_Y"
-		JOY_AXIS_TRIGGER_LEFT:
-			return "TRIGGER_LEFT"
-		JOY_AXIS_TRIGGER_RIGHT:
-			return "TRIGGER_RIGHT"
-		_:
-			return str(index)
+	var name: Variant = JOY_AXES.find_key(index)
+	return str(index) if name == null else String(name)
 
 static func _mouse_button_event(position: Vector2, button: int, pressed: bool, request: Dictionary) -> InputEventMouseButton:
 	var event := InputEventMouseButton.new()
@@ -404,34 +371,11 @@ static func _apply_modifiers(event: InputEventWithModifiers, request: Dictionary
 				event.meta_pressed = true
 
 static func _mouse_button_index(name: String) -> int:
-	match name.to_lower():
-		"left":
-			return MOUSE_BUTTON_LEFT
-		"right":
-			return MOUSE_BUTTON_RIGHT
-		"middle":
-			return MOUSE_BUTTON_MIDDLE
-		"wheel_up":
-			return MOUSE_BUTTON_WHEEL_UP
-		"wheel_down":
-			return MOUSE_BUTTON_WHEEL_DOWN
-		_:
-			return 0
+	return int(MOUSE_BUTTONS.get(name.to_lower(), 0))
 
 static func _mouse_button_name(index: int) -> String:
-	match index:
-		MOUSE_BUTTON_LEFT:
-			return "left"
-		MOUSE_BUTTON_RIGHT:
-			return "right"
-		MOUSE_BUTTON_MIDDLE:
-			return "middle"
-		MOUSE_BUTTON_WHEEL_UP:
-			return "wheel_up"
-		MOUSE_BUTTON_WHEEL_DOWN:
-			return "wheel_down"
-		_:
-			return str(index)
+	var name: Variant = MOUSE_BUTTONS.find_key(index)
+	return str(index) if name == null else String(name)
 
 static func _keycode(request: Dictionary) -> int:
 	if request.has("keycode"):
@@ -445,38 +389,12 @@ static func _keycode(request: Dictionary) -> int:
 			return KEY_A + (code - 65)
 		if code >= 48 and code <= 57:
 			return KEY_0 + (code - 48)
-	match raw_key:
-		"SPACE":
-			return KEY_SPACE
-		"ENTER", "RETURN":
-			return KEY_ENTER
-		"ESC", "ESCAPE":
-			return KEY_ESCAPE
-		"TAB":
-			return KEY_TAB
-		"BACKSPACE":
-			return KEY_BACKSPACE
-		"LEFT":
-			return KEY_LEFT
-		"RIGHT":
-			return KEY_RIGHT
-		"UP":
-			return KEY_UP
-		"DOWN":
-			return KEY_DOWN
-		"SHIFT":
-			return KEY_SHIFT
-		"CTRL", "CONTROL":
-			return KEY_CTRL
-		"ALT":
-			return KEY_ALT
-		"META", "CMD", "COMMAND":
-			return KEY_META
-		_:
-			if raw_key.begins_with("F") and raw_key.length() <= 3:
-				var number := int(raw_key.substr(1))
-				if number >= 1 and number <= 12:
-					return KEY_F1 + number - 1
+	if KEYS.has(raw_key):
+		return int(KEYS[raw_key])
+	if raw_key.begins_with("F") and raw_key.length() <= 3:
+		var number := int(raw_key.substr(1))
+		if number >= 1 and number <= 12:
+			return KEY_F1 + number - 1
 	return 0
 
 static func _key_name(keycode: int) -> String:
@@ -484,34 +402,9 @@ static func _key_name(keycode: int) -> String:
 		return "KEY_%s" % String.chr(65 + keycode - KEY_A)
 	if keycode >= KEY_0 and keycode <= KEY_9:
 		return "KEY_%s" % String.chr(48 + keycode - KEY_0)
-	match keycode:
-		KEY_SPACE:
-			return "KEY_SPACE"
-		KEY_ENTER:
-			return "KEY_ENTER"
-		KEY_ESCAPE:
-			return "KEY_ESCAPE"
-		KEY_TAB:
-			return "KEY_TAB"
-		KEY_BACKSPACE:
-			return "KEY_BACKSPACE"
-		KEY_LEFT:
-			return "KEY_LEFT"
-		KEY_RIGHT:
-			return "KEY_RIGHT"
-		KEY_UP:
-			return "KEY_UP"
-		KEY_DOWN:
-			return "KEY_DOWN"
-		KEY_SHIFT:
-			return "KEY_SHIFT"
-		KEY_CTRL:
-			return "KEY_CTRL"
-		KEY_ALT:
-			return "KEY_ALT"
-		KEY_META:
-			return "KEY_META"
-		_:
-			if keycode >= KEY_F1 and keycode <= KEY_F12:
-				return "KEY_F%d" % (keycode - KEY_F1 + 1)
+	var name: Variant = KEYS.find_key(keycode)
+	if name != null:
+		return "KEY_" + String(name)
+	if keycode >= KEY_F1 and keycode <= KEY_F12:
+		return "KEY_F%d" % (keycode - KEY_F1 + 1)
 	return str(keycode)

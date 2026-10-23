@@ -36,53 +36,54 @@ func parseGameInputMouseArgs(args []string) (map[string]any, error) {
 	hasY := false
 	mode := ""
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--x":
+		switch {
+		case isFlag(args[i], "--x"):
 			value, err := parseRequiredScreenCoordinate(args, &i, "--x")
 			if err != nil {
 				return nil, err
 			}
 			params["x"] = value
 			hasX = true
-		case "--y":
+		case isFlag(args[i], "--y"):
 			value, err := parseRequiredScreenCoordinate(args, &i, "--y")
 			if err != nil {
 				return nil, err
 			}
 			params["y"] = value
 			hasY = true
-		case "--dx":
+		case isFlag(args[i], "--dx"):
 			value, err := parseRequiredInt(args, &i, "--dx")
 			if err != nil {
 				return nil, err
 			}
 			params["dx"] = value
-		case "--dy":
+		case isFlag(args[i], "--dy"):
 			value, err := parseRequiredInt(args, &i, "--dy")
 			if err != nil {
 				return nil, err
 			}
 			params["dy"] = value
-		case "--button":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--button requires a value")
+		case isFlag(args[i], "--button"):
+			raw, next, err := takeFlagValue(args, i, "--button")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			button := strings.ToLower(args[i])
+			i = next - 1
+			button := strings.ToLower(raw)
 			if !validMouseButton(button) {
-				return nil, fmt.Errorf("unknown mouse button %q (want left|right|middle|wheel_up|wheel_down)", args[i])
+				return nil, fmt.Errorf("unknown mouse button %q (want left|right|middle|wheel_up|wheel_down)", raw)
 			}
 			params["button"] = button
-		case "--press", "--release", "--click", "--move":
+		case args[i] == "--press", args[i] == "--release", args[i] == "--click", args[i] == "--move":
 			nextMode := strings.TrimPrefix(args[i], "--")
 			if mode != "" {
 				return nil, fmt.Errorf("game input mouse accepts exactly one of --press, --release, --click, or --move")
 			}
 			mode = nextMode
 			params["mode"] = nextMode
-		case "--double":
+		case args[i] == "--double":
 			params["double"] = true
-		case "--modifiers":
+		case isFlag(args[i], "--modifiers"):
 			modifiers, err := parseRequiredModifiers(args, &i)
 			if err != nil {
 				return nil, err
@@ -106,18 +107,19 @@ func parseGameInputKeyArgs(args []string) (map[string]any, error) {
 	mode := ""
 	hasKey := false
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--key":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--key requires a value")
+		switch {
+		case isFlag(args[i], "--key"):
+			raw, next, err := takeFlagValue(args, i, "--key")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] == "" {
+			i = next - 1
+			if raw == "" {
 				return nil, fmt.Errorf("--key requires a non-empty value")
 			}
-			params["key"] = args[i]
+			params["key"] = raw
 			hasKey = true
-		case "--keycode":
+		case isFlag(args[i], "--keycode"):
 			value, err := parseRequiredInt(args, &i, "--keycode")
 			if err != nil {
 				return nil, err
@@ -127,7 +129,7 @@ func parseGameInputKeyArgs(args []string) (map[string]any, error) {
 			}
 			params["keycode"] = value
 			hasKey = true
-		case "--unicode":
+		case isFlag(args[i], "--unicode"):
 			value, err := parseRequiredInt(args, &i, "--unicode")
 			if err != nil {
 				return nil, err
@@ -136,25 +138,26 @@ func parseGameInputKeyArgs(args []string) (map[string]any, error) {
 				return nil, fmt.Errorf("--unicode must be non-negative")
 			}
 			params["unicode"] = value
-		case "--press", "--release":
+		case args[i] == "--press", args[i] == "--release":
 			nextMode := strings.TrimPrefix(args[i], "--")
 			if mode != "" {
 				return nil, fmt.Errorf("game input key accepts exactly one of --press or --release")
 			}
 			mode = nextMode
 			params["mode"] = nextMode
-		case "--physical":
+		case args[i] == "--physical":
 			params["physical"] = true
-		case "--route":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--route requires a value")
+		case isFlag(args[i], "--route"):
+			raw, next, err := takeFlagValue(args, i, "--route")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] != "input" && args[i] != "viewport" {
-				return nil, fmt.Errorf("unknown key route %q (want input|viewport)", args[i])
+			i = next - 1
+			if raw != "input" && raw != "viewport" {
+				return nil, fmt.Errorf("unknown key route %q (want input|viewport)", raw)
 			}
-			params["route"] = args[i]
-		case "--modifiers":
+			params["route"] = raw
+		case isFlag(args[i], "--modifiers"):
 			modifiers, err := parseRequiredModifiers(args, &i)
 			if err != nil {
 				return nil, err
@@ -180,22 +183,23 @@ func parseGameInputActionArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "input", "kind": "action", "name": args[0]}
 	mode := ""
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--press", "--release":
+		switch {
+		case args[i] == "--press", args[i] == "--release":
 			nextMode := strings.TrimPrefix(args[i], "--")
 			if mode != "" {
 				return nil, fmt.Errorf("game input action accepts exactly one of --press or --release")
 			}
 			mode = nextMode
 			params["mode"] = nextMode
-		case "--strength":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--strength requires a value")
+		case isFlag(args[i], "--strength"):
+			raw, next, err := takeFlagValue(args, i, "--strength")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			strength, err := strconv.ParseFloat(args[i], 64)
+			i = next - 1
+			strength, err := strconv.ParseFloat(raw, 64)
 			if err != nil || strength < 0.0 || strength > 1.0 {
-				return nil, fmt.Errorf("invalid --strength %q (want 0..1)", args[i])
+				return nil, fmt.Errorf("invalid --strength %q (want 0..1)", raw)
 			}
 			params["strength"] = strength
 		default:
@@ -220,22 +224,23 @@ func parseGameInputJoypadArgs(args []string) (map[string]any, error) {
 	mode := ""
 	hasButton := false
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--button":
-			if i+1 >= len(args) || args[i+1] == "" {
+		switch {
+		case isFlag(args[i], "--button"):
+			raw, next, err := takeFlagValue(args, i, "--button")
+			if err != nil || raw == "" {
 				return nil, fmt.Errorf("--button requires a value")
 			}
-			i++
-			params["button"] = args[i]
+			i = next - 1
+			params["button"] = raw
 			hasButton = true
-		case "--press", "--release":
+		case args[i] == "--press", args[i] == "--release":
 			nextMode := strings.TrimPrefix(args[i], "--")
 			if mode != "" {
 				return nil, fmt.Errorf("game input joypad accepts exactly one of --press or --release")
 			}
 			mode = nextMode
 			params["mode"] = nextMode
-		case "--device":
+		case isFlag(args[i], "--device"):
 			value, err := parseRequiredInt(args, &i, "--device")
 			if err != nil {
 				return nil, err
@@ -262,26 +267,28 @@ func parseGameInputAxisArgs(args []string) (map[string]any, error) {
 	hasAxis := false
 	hasValue := false
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--axis":
-			if i+1 >= len(args) || args[i+1] == "" {
+		switch {
+		case isFlag(args[i], "--axis"):
+			raw, next, err := takeFlagValue(args, i, "--axis")
+			if err != nil || raw == "" {
 				return nil, fmt.Errorf("--axis requires a value")
 			}
-			i++
-			params["axis"] = args[i]
+			i = next - 1
+			params["axis"] = raw
 			hasAxis = true
-		case "--value":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--value requires a value")
+		case isFlag(args[i], "--value"):
+			raw, next, err := takeFlagValue(args, i, "--value")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			value, err := strconv.ParseFloat(args[i], 64)
+			i = next - 1
+			value, err := strconv.ParseFloat(raw, 64)
 			if err != nil || value < -1.0 || value > 1.0 || value != value {
-				return nil, fmt.Errorf("invalid --value %q (want -1..1)", args[i])
+				return nil, fmt.Errorf("invalid --value %q (want -1..1)", raw)
 			}
 			params["value"] = value
 			hasValue = true
-		case "--device":
+		case isFlag(args[i], "--device"):
 			dev, err := parseRequiredInt(args, &i, "--device")
 			if err != nil {
 				return nil, err
@@ -306,8 +313,8 @@ func parseGameInputAxisArgs(args []string) (map[string]any, error) {
 func parseGameInputLogArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "input_log"}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--limit":
+		switch {
+		case isFlag(args[i], "--limit"):
 			value, err := parseRequiredInt(args, &i, "--limit")
 			if err != nil {
 				return nil, err
@@ -316,7 +323,7 @@ func parseGameInputLogArgs(args []string) (map[string]any, error) {
 				return nil, fmt.Errorf("--limit must be non-negative")
 			}
 			params["limit"] = value
-		case "--clear":
+		case args[i] == "--clear":
 			params["clear"] = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
@@ -326,31 +333,34 @@ func parseGameInputLogArgs(args []string) (map[string]any, error) {
 }
 
 func parseRequiredScreenCoordinate(args []string, index *int, flag string) (int, error) {
-	if *index+1 >= len(args) {
-		return 0, fmt.Errorf("%s requires a value", flag)
+	raw, next, err := takeFlagValue(args, *index, flag)
+	if err != nil {
+		return 0, err
 	}
-	*index = *index + 1
-	return parseScreenCoordinate(args[*index], flag)
+	*index = next - 1
+	return parseScreenCoordinate(raw, flag)
 }
 
 func parseRequiredInt(args []string, index *int, flag string) (int, error) {
-	if *index+1 >= len(args) {
-		return 0, fmt.Errorf("%s requires a value", flag)
-	}
-	*index = *index + 1
-	value, err := strconv.Atoi(args[*index])
+	raw, next, err := takeFlagValue(args, *index, flag)
 	if err != nil {
-		return 0, fmt.Errorf("invalid %s %q (want an integer)", flag, args[*index])
+		return 0, err
+	}
+	*index = next - 1
+	value, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s %q (want an integer)", flag, raw)
 	}
 	return value, nil
 }
 
 func parseRequiredModifiers(args []string, index *int) ([]string, error) {
-	if *index+1 >= len(args) {
-		return nil, fmt.Errorf("--modifiers requires a value")
+	raw, next, err := takeFlagValue(args, *index, "--modifiers")
+	if err != nil {
+		return nil, err
 	}
-	*index = *index + 1
-	modifiers, err := parseCommaList(args[*index])
+	*index = next - 1
+	modifiers, err := parseCommaList(raw)
 	if err != nil {
 		return nil, err
 	}

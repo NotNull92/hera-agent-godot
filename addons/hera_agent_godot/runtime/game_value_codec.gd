@@ -1,35 +1,14 @@
 extends RefCounted
 
-const VariantText = preload("res://addons/hera_agent_godot/core/variant_text.gd")
+const ValueCodec = preload("res://addons/hera_agent_godot/core/value_codec.gd")
 
 const MAX_VALUE_LEN := 200
 
 static func properties(node: Node) -> Dictionary:
-	var result := {}
-	for prop in node.get_property_list():
-		var usage := int(prop.get("usage", 0))
-		if not (usage & PROPERTY_USAGE_EDITOR):
-			continue
-		if usage & (PROPERTY_USAGE_CATEGORY | PROPERTY_USAGE_GROUP | PROPERTY_USAGE_SUBGROUP):
-			continue
-		var pname := String(prop.get("name", ""))
-		if pname == "":
-			continue
-		var value := str(node.get(pname))
-		if value.length() > MAX_VALUE_LEN:
-			value = value.substr(0, MAX_VALUE_LEN) + "..."
-		result[pname] = value
-	return result
+	return ValueCodec.properties(node, MAX_VALUE_LEN, "...")
 
 static func selected_properties(node: Node, names: Array) -> Dictionary:
-	var result := {}
-	for raw_name in names:
-		var name := String(raw_name)
-		var value := property_value(node, name)
-		if not bool(value.get("ok", false)):
-			return value
-		result[name] = String(value.get("value", ""))
-	return { "ok": true, "properties": result }
+	return ValueCodec.selected_properties(node, names, func(target: Node, name: String) -> Dictionary: return property_value(target, name))
 
 static func property_value(node: Node, name: String) -> Dictionary:
 	if name.begins_with("metadata/"):
@@ -40,11 +19,7 @@ static func property_value(node: Node, name: String) -> Dictionary:
 		return { "ok": true, "value": str(meta_value), "type": type_string(typeof(meta_value)) }
 	if name.find(".") != -1:
 		return _nested_property_value(node, name)
-	for prop in node.get_property_list():
-		if String(prop.get("name", "")) == name:
-			var prop_value: Variant = node.get(name)
-			return { "ok": true, "value": str(prop_value), "type": type_string(typeof(prop_value)) }
-	return { "ok": false, "error": "node has no property: %s" % name }
+	return ValueCodec.property_value(node, name)
 
 static func _nested_property_value(node: Node, path: String) -> Dictionary:
 	var parts := path.split(".", false)
@@ -136,35 +111,7 @@ static func _array_value(values: Array, name: String) -> Dictionary:
 	return { "ok": true, "value": values[index] }
 
 static func coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
-	var target_type := int(prop_info.get("type", TYPE_NIL))
-	if typeof(raw) != TYPE_STRING:
-		return { "ok": true, "value": raw }
-	var text := String(raw)
-	match target_type:
-		TYPE_STRING:
-			return { "ok": true, "value": text }
-		TYPE_STRING_NAME:
-			return { "ok": true, "value": StringName(text) }
-		TYPE_BOOL:
-			return _coerce_bool(text)
-		TYPE_INT:
-			if not text.is_valid_int():
-				return { "ok": false, "error": "invalid int value for property: %s" % text }
-			return { "ok": true, "value": int(text) }
-		TYPE_FLOAT:
-			if not text.is_valid_float():
-				return { "ok": false, "error": "invalid float value for property: %s" % text }
-			return { "ok": true, "value": float(text) }
-		TYPE_NODE_PATH:
-			return { "ok": true, "value": NodePath(text) }
-		TYPE_NIL:
-			if text == "null":
-				return { "ok": true, "value": null }
-			return { "ok": false, "error": "cannot infer type for null property: %s" % String(prop_info.get("name", "")) }
-		TYPE_OBJECT:
-			return { "ok": false, "error": "unsupported object/resource property: %s" % String(prop_info.get("name", "")) }
-		_:
-			return _coerce_variant(text, target_type)
+	return ValueCodec.coerce(raw, prop_info)
 
 static func call_args(request: Dictionary) -> Array:
 	var raw_args: Variant = request.get("args", [])
@@ -183,19 +130,3 @@ static func call_arg(raw: Variant) -> Variant:
 	if parsed == null and text != "null":
 		return text
 	return parsed
-
-static func _coerce_bool(text: String) -> Dictionary:
-	var lower := text.to_lower()
-	if lower == "true" or lower == "1":
-		return { "ok": true, "value": true }
-	if lower == "false" or lower == "0":
-		return { "ok": true, "value": false }
-	return { "ok": false, "error": "invalid bool value for property: %s" % text }
-
-static func _coerce_variant(text: String, target_type: int) -> Dictionary:
-	var parsed: Variant = str_to_var(text)
-	if parsed == null and text != "null":
-		return { "ok": false, "error": "invalid %s value for property: %s%s" % [type_string(target_type), text, VariantText.hint_suffix(target_type)] }
-	if typeof(parsed) != target_type:
-		return { "ok": false, "error": "property expects %s, got %s%s" % [type_string(target_type), type_string(typeof(parsed)), VariantText.hint_suffix(target_type)] }
-	return { "ok": true, "value": parsed }

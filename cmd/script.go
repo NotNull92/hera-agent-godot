@@ -76,23 +76,25 @@ func parseScriptOpenArgs(args []string) (map[string]any, error) {
 	}
 	params := map[string]any{"action": "open", "path": args[0]}
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--line":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--line"):
+			raw, next, err := takeFlagValue(args, i, "--line")
+			if err != nil {
 				return nil, fmt.Errorf("--line requires a number")
 			}
-			i++
-			line, err := strconv.Atoi(args[i])
+			i = next - 1
+			line, err := strconv.Atoi(raw)
 			if err != nil || line <= 0 {
 				return nil, fmt.Errorf("--line requires a positive number")
 			}
 			params["line"] = line
-		case "--column":
-			if i+1 >= len(args) {
+		case isFlag(args[i], "--column"):
+			raw, next, err := takeFlagValue(args, i, "--column")
+			if err != nil {
 				return nil, fmt.Errorf("--column requires a number")
 			}
-			i++
-			column, err := strconv.Atoi(args[i])
+			i = next - 1
+			column, err := strconv.Atoi(raw)
 			if err != nil || column <= 0 {
 				return nil, fmt.Errorf("--column requires a positive number")
 			}
@@ -112,13 +114,14 @@ func parseScriptCreateArgs(args []string) (map[string]any, error) {
 	var signals []string
 	var exports []string
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--lang":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--lang"):
+			raw, next, err := takeFlagValue(args, i, "--lang")
+			if err != nil {
 				return nil, fmt.Errorf("--lang requires gdscript or csharp")
 			}
-			i++
-			lang := args[i]
+			i = next - 1
+			lang := raw
 			ext := path.Ext(args[0])
 			if lang != "gdscript" && lang != "csharp" {
 				return nil, fmt.Errorf("--lang must be gdscript or csharp")
@@ -127,44 +130,48 @@ func parseScriptCreateArgs(args []string) (map[string]any, error) {
 				return nil, fmt.Errorf("--lang %s conflicts with script extension %q", lang, ext)
 			}
 			params["lang"] = lang
-		case "--extends":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--extends requires a value")
+		case isFlag(args[i], "--extends"):
+			raw, next, err := takeFlagValue(args, i, "--extends")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["extends"] = args[i]
-		case "--class-name":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--class-name requires a value")
+			i = next - 1
+			params["extends"] = raw
+		case isFlag(args[i], "--class-name"):
+			raw, next, err := takeFlagValue(args, i, "--class-name")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["class_name"] = args[i]
-		case "--force":
+			i = next - 1
+			params["class_name"] = raw
+		case args[i] == "--force":
 			params["force"] = true
-		case "--tool":
+		case args[i] == "--tool":
 			params["tool"] = true
-		case "--ready":
+		case args[i] == "--ready":
 			params["ready"] = true
-		case "--process":
+		case args[i] == "--process":
 			params["process"] = true
-		case "--physics-process":
+		case args[i] == "--physics-process":
 			params["physics_process"] = true
-		case "--input":
+		case args[i] == "--input":
 			params["input"] = true
-		case "--unhandled-input":
+		case args[i] == "--unhandled-input":
 			params["unhandled_input"] = true
-		case "--signal":
-			if i+1 >= len(args) {
+		case isFlag(args[i], "--signal"):
+			raw, next, err := takeFlagValue(args, i, "--signal")
+			if err != nil {
 				return nil, fmt.Errorf("--signal requires a name")
 			}
-			i++
-			signals = append(signals, args[i])
-		case "--export":
-			if i+1 >= len(args) {
+			i = next - 1
+			signals = append(signals, raw)
+		case isFlag(args[i], "--export"):
+			raw, next, err := takeFlagValue(args, i, "--export")
+			if err != nil {
 				return nil, fmt.Errorf("--export requires a name:type[=value]")
 			}
-			i++
-			exports = append(exports, args[i])
+			i = next - 1
+			exports = append(exports, raw)
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}

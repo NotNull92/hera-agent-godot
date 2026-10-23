@@ -65,3 +65,12 @@ func TestSignalActionMutates(t *testing.T) {
 		}
 	}
 }
+
+func TestSignalListRejectsFlagAsNode(t *testing.T) {
+	for _, arg := range []string{"--connected", "--unknown", "-x"} {
+		_, err := parseSignalArgs([]string{"list", arg})
+		if err == nil || err.Error() != "usage: signal list <node>" {
+			t.Fatalf("list %s: got %v, want usage error", arg, err)
+		}
+	}
+}

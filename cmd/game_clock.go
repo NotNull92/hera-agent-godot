@@ -10,32 +10,33 @@ func parseGameClockArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "clock"}
 	pauseSet := false
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--pause":
+		switch {
+		case args[i] == "--pause":
 			if pauseSet {
 				return nil, fmt.Errorf("game clock accepts only one of --pause or --resume")
 			}
 			params["paused"] = true
 			pauseSet = true
-		case "--resume":
+		case args[i] == "--resume":
 			if pauseSet {
 				return nil, fmt.Errorf("game clock accepts only one of --pause or --resume")
 			}
 			params["paused"] = false
 			pauseSet = true
-		case "--time-scale":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--time-scale requires a value")
+		case isFlag(args[i], "--time-scale"):
+			raw, next, err := takeFlagValue(args, i, "--time-scale")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			scale, err := strconv.ParseFloat(args[i], 64)
+			i = next - 1
+			scale, err := strconv.ParseFloat(raw, 64)
 			if err != nil || scale <= 0 || math.IsNaN(scale) || math.IsInf(scale, 0) {
-				return nil, fmt.Errorf("invalid --time-scale %q (want a number greater than 0)", args[i])
+				return nil, fmt.Errorf("invalid --time-scale %q (want a number greater than 0)", raw)
 			}
 			params["time_scale"] = scale
-		case "--step":
+		case args[i] == "--step":
 			params["step"] = true
-		case "--physics":
+		case args[i] == "--physics":
 			params["physics"] = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])

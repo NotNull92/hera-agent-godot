@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -61,26 +60,17 @@ func runScriptValidate(params map[string]any) int {
 		before, beforeErr = scriptDiskHash(diskPath)
 	}
 	started := time.Now().UTC().Format(time.RFC3339Nano)
-	command := exec.CommandContext(ctx, executable, "--headless", "--path", project, "--check-only", "--script", path)
-	command.WaitDelay = time.Second
-	output := &scriptValidationOutput{}
-	command.Stdout = output
-	command.Stderr = output
-	err = command.Run()
+	run := runEngineBounded(ctx, executable, []string{"--headless", "--path", project, "--check-only", "--script", path}, "", nil, 64*1024)
 	if params["evidence"] == true {
 		after, afterErr = scriptDiskHash(diskPath)
 	}
-	exitCode := -1
-	if command.ProcessState != nil {
-		exitCode = command.ProcessState.ExitCode()
-	}
 	result := map[string]any{
-		"path": path, "valid": err == nil, "exit_code": exitCode,
-		"output": strings.TrimSpace(string(output.text)), "output_truncated": output.truncated,
-		"timed_out": ctx.Err() != nil,
+		"path": path, "valid": !runFailed(run), "exit_code": run.ExitCode,
+		"output": run.Output, "output_truncated": run.Truncated,
+		"timed_out": run.TimedOut,
 	}
-	if err != nil && exitCode == -1 {
-		result["error"] = err.Error()
+	if run.RunErr != nil && run.ExitCode == -1 {
+		result["error"] = run.RunErr.Error()
 	}
 	if params["evidence"] == true {
 		version, engineAvailable := data["engine_version"].(map[string]any)
@@ -131,21 +121,4 @@ func scriptDiskHash(path string) (string, error) {
 		return "", fmt.Errorf("script exceeds 64 MiB hash limit")
 	}
 	return fmt.Sprintf("%x", hash.Sum(nil)), nil
-}
-
-type scriptValidationOutput struct {
-	text      []byte
-	truncated bool
-}
-
-func (o *scriptValidationOutput) Write(p []byte) (int, error) {
-	const limit = 64 * 1024
-	remaining := limit - len(o.text)
-	if len(p) > remaining {
-		o.text = append(o.text, p[:remaining]...)
-		o.truncated = true
-	} else {
-		o.text = append(o.text, p...)
-	}
-	return len(p), nil
 }

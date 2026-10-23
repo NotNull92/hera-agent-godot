@@ -109,7 +109,7 @@ func TestParseSceneArgs(t *testing.T) {
 		{name: "tree", args: []string{"tree"}, wantAction: "tree"},
 		{name: "list", args: []string{"list"}, wantAction: "open_scenes"},
 		{name: "unknown", args: []string{"nope"}, wantErr: true},
-		{name: "tree extra arg", args: []string{"tree", "extra"}, wantErr: true},
+		{name: "tree subtree", args: []string{"tree", "extra"}, wantAction: "tree"},
 		{name: "list unknown flag", args: []string{"list", "--bad"}, wantErr: true},
 	}
 	for _, tt := range tests {

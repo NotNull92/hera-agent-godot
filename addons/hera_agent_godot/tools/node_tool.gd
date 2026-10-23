@@ -1,5 +1,7 @@
 extends RefCounted
 
+const SceneNodePath = preload("res://addons/hera_agent_godot/core/scene_node_path.gd")
+
 const CSharpSupport = preload("res://addons/hera_agent_godot/tools/csharp_script_support.gd")
 
 # `node` — read and mutate nodes in the edited scene.
@@ -395,8 +397,7 @@ func _detach_script(root: Node, params: Dictionary) -> Dictionary:
 	return ToolResponse.success({ "path": path, "script": "" })
 
 func _resolve(root: Node, path: String) -> Node:
-	var node := root if path == "." else root.get_node_or_null(path)
-	return node if node == root or (node != null and root.is_ancestor_of(node)) else null
+	return SceneNodePath.resolve(root, path)
 
 func _snapshot_owners(node: Node, owners: Dictionary) -> void:
 	owners[node] = node.owner
@@ -410,11 +411,13 @@ func _property_info(node: Node, prop: String) -> Dictionary:
 	return {}
 
 func _properties_from_request(node: Node, params: Dictionary) -> Dictionary:
+	if params.get("changed", false) and (params.has("prop") or params.has("props")):
+		return {"ok": false, "error": "--changed cannot be combined with --prop or --props"}
 	if params.has("prop"):
 		return NodeValueCodec.selected_properties(node, [String(params.get("prop", ""))], MAX_VALUE_LEN)
 	if params.has("props"):
 		return NodeValueCodec.selected_properties(node, params.get("props", []), MAX_VALUE_LEN)
-	return { "ok": true, "properties": NodeValueCodec.properties(node, MAX_VALUE_LEN) }
+	return { "ok": true, "properties": NodeValueCodec.properties(node, MAX_VALUE_LEN, bool(params.get("changed", false))) }
 
 func _scan_editor_filesystem() -> void:
 	var filesystem := EditorInterface.get_resource_filesystem()

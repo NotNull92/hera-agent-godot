@@ -1,5 +1,7 @@
 extends RefCounted
 
+const SceneNodePath = preload("res://addons/hera_agent_godot/core/scene_node_path.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 
@@ -86,9 +88,7 @@ func _selected_nodes(root: Node) -> Array:
 
 
 func _resolve(root: Node, path: String) -> Node:
-	if path == "" or path == ".":
-		return root
-	return root.get_node_or_null(path)
+	return SceneNodePath.resolve(root, path)
 
 
 func _node_summary(root: Node, node: Node) -> Dictionary:

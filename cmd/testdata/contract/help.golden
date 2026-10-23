@@ -7,17 +7,17 @@ commands:
   operation  submit <session:unix_ms:nonce> --request JSON | status|cancel <id> [--verbose]
   run        play the main / current / a specific scene  (--scene, --current, --wait)
   stop       stop the running scene
-  scene      tree | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
+  scene      tree [path] [--depth N] [--type Class] [--props a,b] | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
   editor     state | selected | select <node> [--add] | clear-selection
   node       find|get|add|instance|set|set-resource|remove|reparent|attach-script|detach-script
-             get <path> --prop P --snapshot; set <path> --prop P --value V [--expected JSON [--verify]]
+             get <path> [--changed|--prop P|--props a,b]; --snapshot with --prop; set <path> --prop P --value V [--expected JSON [--verify]]
   script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
              validate <res://script.gd> [--evidence]  check fresh on-disk GDScript with the editor's engine
              run <res://tool.gd> [--quit-after N] [-- <args>...]  headless SceneTree harness, no editor needed
   project    info | list-files | scan | reimport <res://file>... | mkdir | set-main-scene
              import [--project DIR]  engine import pass, no editor needed
              export <preset> <output> [--kind pack|release|debug|patch] [--patches a,b] [--verbose]
-  signal     list <node> | connect|disconnect <from> <sig> <to> <method>
+  signal     list <node> [--connected] | connect|disconnect <from> <sig> <to> <method>
   resource   get|uid|list|set|create|resave|update-uids|export-mesh-library
   theme      get <res://t.tres> [--type T] | set <res://t.tres> --type T --color|--constant|--font-size name=value
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)

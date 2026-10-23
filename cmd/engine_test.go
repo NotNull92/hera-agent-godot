@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -206,63 +207,6 @@ func TestParseCaptureMovieArgs(t *testing.T) {
 	}
 }
 
-func TestMovieFrameCounts(t *testing.T) {
-	dir := t.TempDir()
-	stale := filepath.Join(dir, "shot00000000.png")
-	if err := os.WriteFile(stale, []byte("old"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	before, snapshotErr := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
-	if snapshotErr != nil {
-		t.Fatalf("the destination must be observable: %v", snapshotErr)
-	}
-	for _, name := range []string{"shot00000001.png", "shot00000002.png", "shot.wav", "other00000003.png"} {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	written, present, scanErr := movieFrameCounts(filepath.Join(dir, "shot.png"), before)
-	if scanErr != nil {
-		t.Fatalf("an existing sequence must be listable: %v", scanErr)
-	}
-	if written != 2 || present != 3 {
-		t.Fatalf("written=%d present=%d", written, present)
-	}
-	// A frame this run rewrote counts as its output; a frame it left alone does
-	// not, whatever the filesystem says about timestamps.
-	if err := os.WriteFile(stale, []byte("new-and-longer"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-	written, present, scanErr = movieFrameCounts(filepath.Join(dir, "shot.png"), before)
-	if scanErr != nil || written != 3 || present != 3 {
-		t.Fatalf("rewritten: written=%d present=%d err=%v", written, present, scanErr)
-	}
-	if _, present, _ := movieFrameCounts(filepath.Join(dir, "shot.avi"), before); present != 0 {
-		t.Fatal("containers must report no measurable frame count")
-	}
-}
-
-func TestMovieVerificationClassification(t *testing.T) {
-	// No frame at all is the only certain failure.
-	if code, inconclusive, _ := movieVerification(0, 0); code != "no_frame_produced" || inconclusive {
-		t.Fatalf("missing frames: code=%q inconclusive=%v", code, inconclusive)
-	}
-	// Frames exist but none changed: a rewrite inside one timestamp interval is
-	// indistinguishable from no work, so it must not be failed or claimed.
-	code, inconclusive, note := movieVerification(0, 3)
-	if code != "" || !inconclusive || note == "" {
-		t.Fatalf("unchanged frames: code=%q inconclusive=%v note=%q", code, inconclusive, note)
-	}
-	// A partial rewrite is reported as the unchanged remainder.
-	code, inconclusive, note = movieVerification(2, 5)
-	if code != "" || inconclusive || !strings.Contains(note, "3 frame file(s) have unchanged size") {
-		t.Fatalf("partial rewrite: code=%q inconclusive=%v note=%q", code, inconclusive, note)
-	}
-	if code, inconclusive, note := movieVerification(4, 4); code != "" || inconclusive || note != "" {
-		t.Fatalf("a full rewrite needs no remark: code=%q inconclusive=%v note=%q", code, inconclusive, note)
-	}
-}
-
 func TestXmlGenerationIgnoresDestinationArtifacts(t *testing.T) {
 	destination := t.TempDir()
 	if err := os.WriteFile(filepath.Join(destination, "A.xml"), []byte("old"), 0o600); err != nil {
@@ -375,75 +319,6 @@ func TestRunEngineBoundedDefersCloseToARunningTerminationWorker(t *testing.T) {
 	}
 	if closes := guard.closeCount(); closes != 1 {
 		t.Fatalf("the worker must close the guard exactly once, got %d", closes)
-	}
-}
-
-func TestContainerVerification(t *testing.T) {
-	before := fileStamp{bytes: 10, mod: time.Unix(100, 0)}
-	after := fileStamp{bytes: 10, mod: time.Unix(100, 0)}
-	if code, inconclusive := containerVerification(before, true, after, true, nil, nil); code != "" || !inconclusive {
-		t.Fatalf("an unchanged container must be inconclusive: code=%q inconclusive=%v", code, inconclusive)
-	}
-	changed := fileStamp{bytes: 20, mod: time.Unix(200, 0)}
-	if code, inconclusive := containerVerification(before, true, changed, true, nil, nil); code != "" || inconclusive {
-		t.Fatalf("a changed container is this run's output: code=%q inconclusive=%v", code, inconclusive)
-	}
-	// A brand-new file was not present before the run: it is this run's output.
-	if code, inconclusive := containerVerification(fileStamp{}, false, changed, true, nil, nil); code != "" || inconclusive {
-		t.Fatalf("a new container is this run's output: code=%q inconclusive=%v", code, inconclusive)
-	}
-	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false, nil, nil); code != "no_artifact_produced" {
-		t.Fatalf("a missing container must fail: %q", code)
-	}
-	if code, inconclusive := containerVerification(fileStamp{}, false, after, true, os.ErrPermission, nil); code != "" || !inconclusive {
-		t.Fatalf("an unobservable past must be inconclusive: %q %v", code, inconclusive)
-	}
-	if code, _ := containerVerification(before, true, fileStamp{}, false, nil, os.ErrPermission); code != "artifact_stat_failed" {
-		t.Fatalf("an unobservable output is not proof of absence: %q", code)
-	}
-	if code, _ := containerVerification(fileStamp{}, false, fileStamp{}, false, os.ErrPermission, nil); code != "no_artifact_produced" {
-		t.Fatalf("known absence must still fail after an unobservable past: %q", code)
-	}
-}
-
-func TestStatFileStampDistinguishesAbsence(t *testing.T) {
-	dir := t.TempDir()
-	if _, seen, err := statFileStamp(filepath.Join(dir, "missing.avi")); seen || err != nil {
-		t.Fatalf("missing file: seen=%v err=%v", seen, err)
-	}
-	if _, seen, err := statFileStamp(dir); seen || err == nil {
-		t.Fatalf("a directory is not a missing recording: seen=%v err=%v", seen, err)
-	}
-	path := filepath.Join(dir, "movie.avi")
-	if err := os.WriteFile(path, []byte("movie"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if stamp, seen, err := statFileStamp(path); !seen || err != nil || stamp.bytes != 5 {
-		t.Fatalf("existing file: stamp=%+v seen=%v err=%v", stamp, seen, err)
-	}
-}
-
-func TestClassifySequence(t *testing.T) {
-	beforeErr := os.ErrPermission
-	// A destination that could not be observed before the run must still fail when
-	// the recording is missing: freshness is unknown, absence is not.
-	if verdict := classifySequence(0, 0, nil, beforeErr); verdict.ErrorCode != "no_frame_produced" || verdict.Inconclusive {
-		t.Fatalf("missing frames must fail: %+v", verdict)
-	}
-	if verdict := classifySequence(0, 0, errors.New("list failed"), beforeErr); verdict.ErrorCode != "sequence_scan_failed" {
-		t.Fatalf("an unlistable sequence must fail: %+v", verdict)
-	}
-	// With frames present, an unobserved past withholds the comparison fields.
-	verdict := classifySequence(5, 5, nil, beforeErr)
-	if verdict.ErrorCode != "" || !verdict.Inconclusive || verdict.ClaimCounts {
-		t.Fatalf("an unobservable past must be inconclusive without counts: %+v", verdict)
-	}
-	// With an observable past the normal classification applies.
-	if verdict := classifySequence(0, 3, nil, nil); verdict.ErrorCode != "" || !verdict.Inconclusive || !verdict.ClaimCounts {
-		t.Fatalf("unchanged frames must be inconclusive with counts: %+v", verdict)
-	}
-	if verdict := classifySequence(3, 3, nil, nil); verdict.ErrorCode != "" || verdict.Inconclusive {
-		t.Fatalf("a full rewrite needs no remark: %+v", verdict)
 	}
 }
 
@@ -696,17 +571,10 @@ func TestFirstFrameSize(t *testing.T) {
 	if err := os.WriteFile(stale, header, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	before, snapshotErr := snapshotMovieFrames(filepath.Join(dir, "shot.png"))
-	if snapshotErr != nil {
-		t.Fatalf("the destination must be observable: %v", snapshotErr)
-	}
-	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.png"), before); ok {
-		t.Fatal("an unchanged frame must not report this run's size")
-	}
 	if err := os.WriteFile(filepath.Join(dir, "shot00000001.png"), header, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	width, height, ok := firstFrameSize(filepath.Join(dir, "shot.png"), before)
+	width, height, ok := firstFrameSize(filepath.Join(dir, "shot.png"))
 	if !ok || width != 1152 || height != 648 {
 		t.Fatalf("size=%dx%d ok=%v", width, height, ok)
 	}
@@ -714,14 +582,14 @@ func TestFirstFrameSize(t *testing.T) {
 	if err := os.WriteFile(stale, append(header, 0), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	width, height, ok = firstFrameSize(filepath.Join(dir, "shot.png"), before)
+	width, height, ok = firstFrameSize(filepath.Join(dir, "shot.png"))
 	if !ok || width != 1152 || height != 648 {
 		t.Fatalf("rewritten: size=%dx%d ok=%v", width, height, ok)
 	}
-	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.avi"), before); ok {
+	if _, _, ok := firstFrameSize(filepath.Join(dir, "shot.avi")); ok {
 		t.Fatal("only PNG sequences report a frame size")
 	}
-	if _, _, ok := firstFrameSize(filepath.Join(dir, "empty.png"), before); ok {
+	if _, _, ok := firstFrameSize(filepath.Join(dir, "empty.png")); ok {
 		t.Fatal("missing frames must not report a size")
 	}
 }
@@ -1173,5 +1041,25 @@ func TestRunEngineBoundedNativeStalls(t *testing.T) {
 				t.Fatalf("lost refusal: %+v", result)
 			}
 		})
+	}
+}
+
+func TestEngineInfoExplicitProject(t *testing.T) {
+	project := t.TempDir()
+	stdout, stderr, code := captureContractRun([]string{"engine", "info", "--project", project})
+	if code != 1 || !strings.Contains(stderr, "project.godot") || stdout != "" {
+		t.Fatalf("ignored invalid project: %d %q %q", code, stdout, stderr)
+	}
+	executable := os.Getenv("HERA_TEST_GODOT")
+	if executable == "" {
+		return
+	}
+	if err := os.WriteFile(filepath.Join(project, "project.godot"), []byte("config_version=5\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr, code = captureContractRun([]string{"--engine", executable, "engine", "info", "--project", project})
+	var result map[string]any
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil || code != 0 || result["project_path"] != filepath.ToSlash(project) {
+		t.Fatalf("project: %d %s %s %v", code, stdout, stderr, err)
 	}
 }

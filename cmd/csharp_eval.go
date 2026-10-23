@@ -12,6 +12,14 @@ import (
 	"time"
 )
 
+type codedError struct {
+	Code string
+	Err  error
+}
+
+func (e *codedError) Error() string { return e.Code + ": " + e.Err.Error() }
+func (e *codedError) Unwrap() error { return e.Err }
+
 var csharpHostPath string
 
 func resolveCSharpHost() (string, error) {
@@ -26,7 +34,7 @@ func resolveCSharpHost() (string, error) {
 			return "", err
 		}
 		if !fileExists(abs) {
-			return "", fmt.Errorf("csharp_host_unavailable: host file not found; run hera-godot csharp-host install")
+			return "", &codedError{Code: "csharp_host_unavailable", Err: fmt.Errorf("host file not found; run hera-godot csharp-host install")}
 		}
 		return abs, nil
 	}
@@ -37,7 +45,7 @@ func resolveCSharpHost() (string, error) {
 			return path, nil
 		}
 	}
-	return "", fmt.Errorf("csharp_host_unavailable: run hera-godot csharp-host install or set --csharp-host / HERA_GODOT_CSHARP_HOST")
+	return "", &codedError{Code: "csharp_host_unavailable", Err: fmt.Errorf("run hera-godot csharp-host install or set --csharp-host / HERA_GODOT_CSHARP_HOST")}
 }
 
 func prepareEvalRequests(c *client.Client, tool string, params map[string]any) error {
@@ -55,7 +63,7 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 	}
 	explicit, ok := params["lang"].(string)
 	if _, exists := params["lang"]; exists && !ok {
-		return fmt.Errorf("invalid_language: eval lang must be a string")
+		return &codedError{Code: "invalid_language", Err: fmt.Errorf("eval lang must be a string")}
 	}
 	lang, err := evalLanguage(explicit)
 	if err != nil {
@@ -67,27 +75,27 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 	}
 	expression, ok := params["expr"].(string)
 	if !ok || strings.TrimSpace(expression) == "" {
-		return fmt.Errorf("parse_error: eval requires an expression")
+		return &codedError{Code: "parse_error", Err: fmt.Errorf("eval requires an expression")}
 	}
 	resp, err := c.Post("eval", map[string]any{"lang": "csharp", "action": "csharp-context"})
 	if err != nil {
-		return err
+		return &codedError{Code: "csharp_compile_failed", Err: err}
 	}
 	if !resp.OK {
 		return fmt.Errorf("%s", resp.Error)
 	}
 	data, ok := resp.Data.(map[string]any)
 	if !ok {
-		return fmt.Errorf("csharp_build_required: invalid loader context")
+		return &codedError{Code: "csharp_build_required", Err: fmt.Errorf("invalid loader context")}
 	}
 	project, _ := data["project_reference"].(string)
 	mvid, _ := data["project_mvid"].(string)
 	refs, ok := data["references"].([]any)
 	if !ok || len(refs) == 0 || project == "" || mvid == "" {
-		return fmt.Errorf("csharp_build_required: incomplete loader context")
+		return &codedError{Code: "csharp_build_required", Err: fmt.Errorf("incomplete loader context")}
 	}
 	if !fileExists(project) {
-		return fmt.Errorf("csharp_build_required: project assembly is missing; build and reload the project")
+		return &codedError{Code: "csharp_build_required", Err: fmt.Errorf("project assembly is missing; build and reload the project")}
 	}
 	references := []string{}
 	for _, ref := range refs {
@@ -123,7 +131,7 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 	if strings.EqualFold(filepath.Ext(host), ".dll") {
 		executable, err = exec.LookPath("dotnet")
 		if err != nil {
-			return fmt.Errorf("dotnet_unavailable: %w", err)
+			return &codedError{Code: "dotnet_unavailable", Err: fmt.Errorf("%w", err)}
 		}
 		args = append([]string{host}, args...)
 	}
@@ -136,10 +144,10 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 	run := runEngineBounded(ctx, executable, args, stage, nil, 768*1024)
 	if run.Abandoned || run.CleanupPending {
 		keep = true
-		return fmt.Errorf("csharp_compile_incomplete: worker unfinished; retained staging at %s", stage)
+		return &codedError{Code: "csharp_compile_incomplete", Err: fmt.Errorf("worker unfinished; retained staging at %s", stage)}
 	}
 	if run.TimedOut {
-		return fmt.Errorf("csharp_compile_timeout: compiler exceeded deadline")
+		return &codedError{Code: "csharp_compile_timeout", Err: fmt.Errorf("compiler exceeded deadline")}
 	}
 	var compiled struct {
 		OK          bool     `json:"ok"`
@@ -148,13 +156,13 @@ func prepareEvalRequests(c *client.Client, tool string, params map[string]any) e
 		Diagnostics []string `json:"diagnostics"`
 	}
 	if run.Truncated || json.Unmarshal([]byte(run.Output), &compiled) != nil {
-		return fmt.Errorf("csharp_compile_failed: compiler did not return a complete response")
+		return &codedError{Code: "csharp_compile_failed", Err: fmt.Errorf("compiler did not return a complete response")}
 	}
 	if !compiled.OK {
-		return fmt.Errorf("%s: %s", compiled.Error, strings.Join(compiled.Diagnostics, "; "))
+		return &codedError{Code: compiled.Error, Err: fmt.Errorf("%s", strings.Join(compiled.Diagnostics, "; "))}
 	}
 	if runFailed(run) || compiled.Assembly == "" {
-		return fmt.Errorf("csharp_compile_failed: compiler failed")
+		return &codedError{Code: "csharp_compile_failed", Err: fmt.Errorf("compiler failed")}
 	}
 	params["assembly"], params["project_mvid"] = compiled.Assembly, mvid
 	return nil

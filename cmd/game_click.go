@@ -12,48 +12,52 @@ func parseGameClickArgs(args []string) (map[string]any, error) {
 	hasNode := false
 	hasText := false
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--x":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--x requires a value")
+		switch {
+		case isFlag(args[i], "--x"):
+			raw, next, err := takeFlagValue(args, i, "--x")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			x, err := parseScreenCoordinate(args[i], "--x")
+			i = next - 1
+			x, err := parseScreenCoordinate(raw, "--x")
 			if err != nil {
 				return nil, err
 			}
 			params["x"] = x
 			hasX = true
-		case "--y":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--y requires a value")
+		case isFlag(args[i], "--y"):
+			raw, next, err := takeFlagValue(args, i, "--y")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			y, err := parseScreenCoordinate(args[i], "--y")
+			i = next - 1
+			y, err := parseScreenCoordinate(raw, "--y")
 			if err != nil {
 				return nil, err
 			}
 			params["y"] = y
 			hasY = true
-		case "--node":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--node requires a value")
+		case isFlag(args[i], "--node"):
+			raw, next, err := takeFlagValue(args, i, "--node")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] == "" {
+			i = next - 1
+			if raw == "" {
 				return nil, fmt.Errorf("--node requires a non-empty value")
 			}
-			params["path"] = normalizeGameNodePath(args[i])
+			params["path"] = normalizeGameNodePath(raw)
 			hasNode = true
-		case "--text":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--text requires a value")
+		case isFlag(args[i], "--text"):
+			raw, next, err := takeFlagValue(args, i, "--text")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] == "" {
+			i = next - 1
+			if raw == "" {
 				return nil, fmt.Errorf("--text requires a non-empty value")
 			}
-			params["text"] = args[i]
+			params["text"] = raw
 			hasText = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])

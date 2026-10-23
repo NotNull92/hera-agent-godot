@@ -35,7 +35,9 @@ func runGameQADiagnose(args []string, targetPID int) int {
 		return 1
 	}
 	data, ok := executeGameQADiagnosis(c, options)
-	printData(&protocol.Response{OK: true, Data: data})
+	if code := printData(&protocol.Response{OK: true, Data: data}); code != 0 {
+		return code
+	}
 	if !ok {
 		return 1
 	}
@@ -49,34 +51,35 @@ func parseGameQADiagnoseArgs(args []string) (gameQADiagnoseOptions, error) {
 		maxWarnings: noGameQAWarningLimit,
 	}
 	for index := 0; index < len(args); index++ {
-		switch args[index] {
-		case "--lines":
+		switch {
+		case isFlag(args[index], "--lines"):
 			value, next, err := gameQADiagnosePositiveInt(args, index, "--lines")
 			if err != nil {
 				return gameQADiagnoseOptions{}, err
 			}
 			options.lines = value
 			index = next
-		case "--max-errors":
+		case isFlag(args[index], "--max-errors"):
 			value, next, err := gameQADiagnoseNonNegativeInt(args, index, "--max-errors")
 			if err != nil {
 				return gameQADiagnoseOptions{}, err
 			}
 			options.maxErrors = value
 			index = next
-		case "--max-warnings":
+		case isFlag(args[index], "--max-warnings"):
 			value, next, err := gameQADiagnoseNonNegativeInt(args, index, "--max-warnings")
 			if err != nil {
 				return gameQADiagnoseOptions{}, err
 			}
 			options.maxWarnings = value
 			index = next
-		case "--path":
-			if index+1 >= len(args) || args[index+1] == "" {
+		case isFlag(args[index], "--path"):
+			value, next, err := takeFlagValue(args, index, "--path")
+			if err != nil || value == "" {
 				return gameQADiagnoseOptions{}, fmt.Errorf("--path requires a non-empty value")
 			}
-			index++
-			options.screenshotPath = args[index]
+			index = next - 1
+			options.screenshotPath = value
 		default:
 			return gameQADiagnoseOptions{}, fmt.Errorf("unknown flag %q", args[index])
 		}
@@ -96,14 +99,15 @@ func gameQADiagnosePositiveInt(args []string, index int, flag string) (int, int,
 }
 
 func gameQADiagnoseNonNegativeInt(args []string, index int, flag string) (int, int, error) {
-	if index+1 >= len(args) {
-		return 0, index, fmt.Errorf("%s requires a value", flag)
+	raw, next, err := takeFlagValue(args, index, flag)
+	if err != nil {
+		return 0, index, err
 	}
-	value, err := strconv.Atoi(args[index+1])
+	value, err := strconv.Atoi(raw)
 	if err != nil || value < 0 {
-		return 0, index, fmt.Errorf("invalid %s %q (want a non-negative integer)", flag, args[index+1])
+		return 0, index, fmt.Errorf("invalid %s %q (want a non-negative integer)", flag, raw)
 	}
-	return value, index + 1, nil
+	return value, next - 1, nil
 }
 
 func executeGameQADiagnosis(c *client.Client, options gameQADiagnoseOptions) (map[string]any, bool) {

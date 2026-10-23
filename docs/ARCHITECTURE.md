@@ -75,7 +75,7 @@ Two processes talk over localhost HTTP:
 | 2 | Editor scripts use `@tool` and run inside the editor. | The plugin entrypoint is `hera_agent_plugin.gd`, extending `EditorPlugin`. |
 | 3 | Editor and scene-tree mutation should run on the editor main loop. | Network handling enqueues work; `_process` drains queued requests and calls tools. |
 | 4 | Godot's core concepts are Node, Scene, Resource, Signal, and NodePath. | Commands are named `scene`, `node`, `run`, `eval`, and `output`; no Unity vocabulary. |
-| 5 | GDScript has native `Expression` support and the best editor integration. | `eval` follows Godot's GDScript path instead of trying to compile another language. |
+| 5 | C# uses the helper host; GDScript has native `Expression` support. | `eval` defaults to C# through the helper host; `--lang gdscript` selects the GDScript path. |
 
 ---
 

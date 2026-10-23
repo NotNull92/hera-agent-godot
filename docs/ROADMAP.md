@@ -30,6 +30,11 @@ editor/terminal were closed; the demo was not re-prepared. The frozen prompt is
 unchanged. v2.0.0's publication and Victor's 2026-10-16 store submission remain
 recorded in [its historical record](releases/v2.0.0-asset-store-upload.md).
 
+## Unreleased — read narrowing
+
+Optional `node get --changed`, `scene tree [path] --depth/--type/--props`, and
+`signal list --connected` reduce inspection output; default responses stay unchanged.
+
 ## Prepared — v1.2.0 (2026-09-15)
 
 Historical untagged preparation, superseded by v2.0.0. The store holds an unstable

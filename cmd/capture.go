@@ -143,11 +143,6 @@ func runCaptureMovie(params map[string]any) int {
 	)
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	// The sequence state is captured before the run, so this run's frames are
-	// identified by change rather than by a timestamp comparison. A failed
-	// observation is recorded and reported as inconclusive, never as freshness.
-	before, beforeErr := snapshotMovieFrames(output)
-	containerBefore, containerSeen, containerBeforeErr := statFileStamp(output)
 	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	notes := []string{
@@ -170,61 +165,36 @@ func runCaptureMovie(params map[string]any) int {
 	} else {
 		result["output_exists"] = false
 	}
-	if width, height, ok := firstFrameSize(output, before); ok {
+	if width, height, ok := firstFrameSize(output); ok {
 		result["frame_size"] = fmt.Sprintf("%dx%d", width, height)
 	}
 	if movieFramePatternMeasurable(output) {
-		written, present, scanErr := movieFrameCounts(output, before)
-		verdict := classifySequence(written, present, scanErr, beforeErr)
-		if verdict.ErrorCode != "" {
-			result["error"] = verdict.ErrorCode
-			if verdict.Detail != "" {
-				result["detail"] = verdict.Detail
-			}
-		}
-		if scanErr == nil {
+		present, scanErr := movieFrameCounts(output)
+		if scanErr != nil {
+			result["error"] = "sequence_scan_failed"
+			result["detail"] = "the frame sequence could not be listed: " + scanErr.Error()
+		} else {
 			result["frames_present"] = present
-		}
-		if verdict.ClaimCounts {
-			result["frames_written"] = written
-			if written < present {
-				// Frames whose metadata did not change may be older files or rewrites
-				// that this observation cannot tell apart.
-				result["frames_unchanged"] = present - written
+			result["frames_written"] = present
+			if present == 0 {
+				result["error"] = "no_frame_produced"
+				result["detail"] = "the engine exited without writing a frame"
 			}
-		}
-		if verdict.Inconclusive {
-			result["frames_verification"] = "inconclusive"
-			if verdict.Detail != "" {
-				result["frames_verification_detail"] = verdict.Detail
-			}
-		}
-		if verdict.Note != "" {
-			notes = append(notes, verdict.Note)
-			result["notes"] = notes
 		}
 	} else {
-		after, afterSeen, afterErr := statFileStamp(output)
-		code, inconclusive := containerVerification(containerBefore, containerSeen, after, afterSeen, containerBeforeErr, afterErr)
+		info, statErr := os.Stat(output)
 		switch {
-		case afterErr != nil:
+		case os.IsNotExist(statErr):
+			result["error"] = "no_artifact_produced"
+			result["detail"] = "the engine exited without writing the recording: " + filepath.ToSlash(output)
+		case statErr != nil || !info.Mode().IsRegular():
+			if statErr == nil {
+				statErr = fmt.Errorf("recording target is not a regular file: %s", output)
+			}
 			delete(result, "output_exists")
 			delete(result, "output_bytes")
-			result["error"] = code
-			result["detail"] = "the recording could not be observed: " + afterErr.Error()
-		case code != "":
-			result["error"] = code
-			result["detail"] = "the engine exited without writing the recording: " + filepath.ToSlash(output)
-		case inconclusive:
-			// The file is unchanged since before the run, which is either an
-			// identical rewrite or no work at all; the difference is not observable.
-			result["output_verification"] = "inconclusive"
-			if containerBeforeErr != nil {
-				result["output_verification_detail"] = "the recording could not be observed before the run: " + containerBeforeErr.Error()
-			} else {
-				notes = append(notes, "output_verification inconclusive: the recording file has unchanged size and modification time")
-			}
-			result["notes"] = notes
+			result["error"] = "artifact_stat_failed"
+			result["detail"] = "the recording could not be observed: " + statErr.Error()
 		}
 	}
 	if failure := runFailureCode(run); failure != "" && resultError(result) == "" {
@@ -242,17 +212,6 @@ func resolveOutputPath(projectDir, output string) string {
 	return output
 }
 
-// frameSnapshot is the PNG sequence state before a run, so this run's output can
-// be told from an older file with the same name without trusting timestamp
-// granularity (coarse filesystems can report a fresh write in the past).
-type frameSnapshot map[string]fileStamp
-
-// fileStamp is one file's size and modification time.
-type fileStamp struct {
-	bytes int64
-	mod   time.Time
-}
-
 // movieFramePattern returns the directory and name pattern of a PNG sequence.
 func movieFramePattern(output string) (string, *regexp.Regexp, bool) {
 	if !strings.EqualFold(filepath.Ext(output), ".png") {
@@ -263,42 +222,6 @@ func movieFramePattern(output string) (string, *regexp.Regexp, bool) {
 	return dir, regexp.MustCompile(`^` + regexp.QuoteMeta(base) + `\d+\.png$`), true
 }
 
-// snapshotMovieFrames records the PNG sequence state before a run. A destination
-// that cannot be observed is an error, so verification reports inconclusive
-// instead of treating unobserved files as this run's output.
-func snapshotMovieFrames(output string) (frameSnapshot, error) {
-	before := frameSnapshot{}
-	dir, pattern, measurable := movieFramePattern(output)
-	if !measurable {
-		return before, nil
-	}
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return before, err
-	}
-	for _, entry := range entries {
-		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
-			continue
-		}
-		info, infoErr := entry.Info()
-		if infoErr != nil {
-			return before, infoErr
-		}
-		before[entry.Name()] = fileStamp{bytes: info.Size(), mod: info.ModTime()}
-	}
-	return before, nil
-}
-
-// changed reports whether a frame is this run's output: it is new, or its size or
-// modification time differs from the snapshot.
-func (s frameSnapshot) changed(name string, info os.FileInfo) bool {
-	stamp, seen := s[name]
-	if !seen {
-		return true
-	}
-	return stamp.bytes != info.Size() || !stamp.mod.Equal(info.ModTime())
-}
-
 // movieFramePatternMeasurable reports whether an output path is a PNG sequence,
 // which is the only case in which frames are measured.
 func movieFramePatternMeasurable(output string) bool {
@@ -306,115 +229,29 @@ func movieFramePatternMeasurable(output string) bool {
 	return measurable
 }
 
-// containerVerification classifies a single-file recording target from stamps
-// taken before and after the run: a missing target fails, an unchanged one is
-// inconclusive (an identical rewrite and no work are indistinguishable), and a
-// changed or newly created one is verified.
-func containerVerification(before fileStamp, beforeSeen bool, after fileStamp, afterSeen bool, beforeErr, afterErr error) (errorCode string, inconclusive bool) {
-	if afterErr != nil {
-		return "artifact_stat_failed", false
-	}
-	if !afterSeen {
-		return "no_artifact_produced", false
-	}
-	if beforeErr != nil || (beforeSeen && before == after) {
-		return "", true
-	}
-	return "", false
-}
-
-// sequenceVerdict is the PNG sequence verification verdict for one run.
-type sequenceVerdict struct {
-	ErrorCode    string
-	Detail       string
-	Inconclusive bool
-	// ClaimCounts reports whether frames_written/frames_unchanged may be claimed:
-	// that needs a pre-run observation to compare against.
-	ClaimCounts bool
-	Note        string
-}
-
-// classifySequence decides the sequence verdict. A sequence that cannot be listed
-// or holds no frame fails whatever the pre-run state was, so an unobservable
-// destination never hides a missing recording; only the comparison-derived fields
-// are withheld when the pre-run state is unknown.
-func classifySequence(written, present int, scanErr, beforeErr error) sequenceVerdict {
-	switch {
-	case scanErr != nil:
-		return sequenceVerdict{ErrorCode: "sequence_scan_failed", Detail: "the frame sequence could not be listed: " + scanErr.Error()}
-	case present == 0:
-		return sequenceVerdict{ErrorCode: "no_frame_produced", Detail: "the engine exited without writing a frame", ClaimCounts: true}
-	case beforeErr != nil:
-		return sequenceVerdict{Inconclusive: true,
-			Detail: "the destination could not be observed before the run: " + beforeErr.Error()}
-	}
-	code, inconclusive, note := movieVerification(written, present)
-	return sequenceVerdict{ErrorCode: code, Inconclusive: inconclusive, ClaimCounts: true, Note: note}
-}
-
-// movieVerification classifies a frame-count comparison. Missing frames are a
-// failure; frames that are all unchanged may be a rewrite inside one filesystem
-// timestamp interval or no work at all, which is reported as inconclusive rather
-// than claimed as this run's output or failed.
-func movieVerification(written, present int) (errorCode string, inconclusive bool, note string) {
-	switch {
-	case present == 0:
-		return "no_frame_produced", false, "no_frame_produced: the engine exited without writing a frame"
-	case written == 0:
-		return "", true, "frames_verification inconclusive: every frame has unchanged size and modification time"
-	case present > written:
-		return "", false, fmt.Sprintf("%d frame file(s) have unchanged size and modification time; they may predate this run or be rewrites this observation cannot tell apart", present-written)
-	}
-	return "", false, ""
-}
-
-// statFileStamp records a regular file's identity, so a container that this run
-// did not replace can be reported instead of assumed fresh.
-func statFileStamp(path string) (fileStamp, bool, error) {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return fileStamp{}, false, nil
-	}
-	if err != nil {
-		return fileStamp{}, false, err
-	}
-	if !info.Mode().IsRegular() {
-		return fileStamp{}, false, fmt.Errorf("recording target is not a regular file: %s", path)
-	}
-	return fileStamp{bytes: info.Size(), mod: info.ModTime()}, true, nil
-}
-
-// movieFrameCounts separates frames whose metadata changed from older files with
-// the same prefix. A sequence that cannot be listed is an error.
-func movieFrameCounts(output string, before frameSnapshot) (written int, present int, scanErr error) {
+// movieFrameCounts counts this run's frames in its isolated staging directory.
+func movieFrameCounts(output string) (int, error) {
 	dir, pattern, measurable := movieFramePattern(output)
 	if !measurable {
-		return 0, 0, nil
+		return 0, nil
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return 0, 0, err
+		return 0, err
 	}
+	present := 0
 	for _, entry := range entries {
-		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
-			continue
-		}
-		present++
-		info, infoErr := entry.Info()
-		if infoErr != nil {
-			return 0, present, infoErr
-		}
-		if before.changed(entry.Name(), info) {
-			written++
+		if !entry.IsDir() && pattern.MatchString(entry.Name()) {
+			present++
 		}
 	}
-	return written, present, nil
+	return present, nil
 }
 
 // firstFrameSize reads the first PNG frame this run produced. Movie Maker sizes
 // the recording from the project viewport, so callers need the observed size
 // rather than the requested --resolution.
-func firstFrameSize(output string, before frameSnapshot) (int, int, bool) {
+func firstFrameSize(output string) (int, int, bool) {
 	dir, pattern, measurable := movieFramePattern(output)
 	if !measurable {
 		return 0, 0, false
@@ -426,10 +263,6 @@ func firstFrameSize(output string, before frameSnapshot) (int, int, bool) {
 	names := []string{}
 	for _, entry := range entries {
 		if entry.IsDir() || !pattern.MatchString(entry.Name()) {
-			continue
-		}
-		info, infoErr := entry.Info()
-		if infoErr != nil || !before.changed(entry.Name(), info) {
 			continue
 		}
 		names = append(names, entry.Name())

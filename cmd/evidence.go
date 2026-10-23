@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/hex"
 	"fmt"
+	"strings"
 )
 
 func wantsLinkedEvidence(tool string, params map[string]any) bool {
@@ -74,16 +75,16 @@ func parseEvidenceOptions(args []string, capture bool) ([]string, map[string]any
 	params := map[string]any{}
 	rest := make([]string, 0, len(args))
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--evidence":
+		switch {
+		case args[i] == "--evidence":
 			params["evidence"] = true
-		case "--operation-id", "--runtime-session", "--expected-sha256":
-			flag := args[i]
-			if i+1 == len(args) {
-				return nil, nil, fmt.Errorf("%s requires a value", flag)
+		case isFlag(args[i], "--operation-id"), isFlag(args[i], "--runtime-session"), isFlag(args[i], "--expected-sha256"):
+			flag, _, _ := strings.Cut(args[i], "=")
+			value, next, err := takeFlagValue(args, i, flag)
+			if err != nil {
+				return nil, nil, err
 			}
-			i++
-			value := args[i]
+			i = next - 1
 			switch flag {
 			case "--operation-id":
 				if !capture || !validOperationID(value) {

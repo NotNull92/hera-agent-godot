@@ -145,6 +145,9 @@ CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. v1 �
 상대 물리 프레임에 맞춰 입력하고 종료 시 눌린 액션을 해제합니다.
 시간 제한과 QA 예제는 명령 레퍼런스를 참고하세요.
 
+작은 응답이 필요하면 `node get <path> --changed`, `scene tree [path] --depth N
+--type Class --props a,b`, `signal list <path> --connected`를 사용하세요. 기본 응답은 유지됩니다.
+
 조건부 수정은 `node get <path> --prop P --snapshot`의 `expected` 객체를
 `node set <path> --prop P --value V --expected '<JSON>' --verify`에 전달합니다.
 세션·씬·노드·타입이 있는 속성값이 달라졌다면 수정 전에 거절합니다.
@@ -296,8 +299,9 @@ CLI를 설치하고 애드온을 활성화하세요.
   [`integrations/AGENTS.md`](integrations/AGENTS.md)의 내용을 대상 프로젝트
   `AGENTS.md`에 추가하세요.
 
-각 에이전트용 문서는 Hera의 저토큰 설계를 뒷받침하는 약 1k-token 이하
-표면 예산을 지키며, Claude Code와 Codex는 같은 `live-editor` 스킬을 공유합니다.
+`AGENTS.md` 드라이버 카드는 약 1k-token을 목표로 합니다. 자세한 운영 규칙은
+[에이전트 가이드](docs/AGENT_GUIDE.md)에 있고, 전체 명령 레퍼런스는 필요할 때
+읽습니다. Claude Code와 Codex는 같은 `live-editor` 스킬을 공유합니다.
 
 ## 동작 방식
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 // runOutput implements `hera-godot output [--type log|error|warning|all] [--lines N]`.
@@ -19,38 +20,41 @@ func runOutput(args []string) int {
 func parseOutputArgs(args []string) (map[string]any, error) {
 	params := map[string]any{}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--type":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--type requires a value")
+		switch {
+		case isFlag(args[i], "--type"):
+			raw, next, err := takeFlagValue(args, i, "--type")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			switch args[i] {
+			i = next - 1
+			switch raw {
 			case "log", "error", "warning", "all":
 			default:
-				return nil, fmt.Errorf("invalid --type %q (want log|error|warning|all)", args[i])
+				return nil, fmt.Errorf("invalid --type %q (want log|error|warning|all)", raw)
 			}
-			params["type"] = args[i]
-		case "--lines":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--lines requires a value")
+			params["type"] = raw
+		case isFlag(args[i], "--lines"):
+			raw, next, err := takeFlagValue(args, i, "--lines")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			n, err := strconv.Atoi(args[i])
+			i = next - 1
+			n, err := strconv.Atoi(raw)
 			if err != nil || n <= 0 {
-				return nil, fmt.Errorf("invalid --lines %q (want a positive integer)", args[i])
+				return nil, fmt.Errorf("invalid --lines %q (want a positive integer)", raw)
 			}
 			params["lines"] = n
-		case "--source", "--since":
-			flag := args[i]
-			if i+1 >= len(args) || args[i+1] == "" {
+		case isFlag(args[i], "--source"), isFlag(args[i], "--since"):
+			flag, _, _ := strings.Cut(args[i], "=")
+			raw, next, err := takeFlagValue(args, i, flag)
+			if err != nil || raw == "" {
 				return nil, fmt.Errorf("%s requires a value", flag)
 			}
-			i++
-			if flag == "--source" && args[i] != "file" && args[i] != "editor" {
-				return nil, fmt.Errorf("invalid --source %q (want file|editor)", args[i])
+			i = next - 1
+			if flag == "--source" && raw != "file" && raw != "editor" {
+				return nil, fmt.Errorf("invalid --source %q (want file|editor)", raw)
 			}
-			params[flag[2:]] = args[i]
+			params[flag[2:]] = raw
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}

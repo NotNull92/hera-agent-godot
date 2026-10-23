@@ -39,13 +39,14 @@ func parseThemeGetArgs(args []string) (map[string]any, error) {
 	}
 	params := map[string]any{"action": "get", "path": args[0]}
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--type":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--type"):
+			raw, next, err := takeFlagValue(args, i, "--type")
+			if err != nil {
 				return nil, fmt.Errorf("--type requires a theme type")
 			}
-			params["type"] = args[i+1]
-			i++
+			i = next - 1
+			params["type"] = raw
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -64,19 +65,22 @@ func parseThemeSetArgs(args []string) (map[string]any, error) {
 	fontSizes := map[string]any{}
 
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--type":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--type"):
+			raw, next, err := takeFlagValue(args, i, "--type")
+			if err != nil {
 				return nil, fmt.Errorf("--type requires a theme type")
 			}
-			params["type"] = args[i+1]
-			i++
-		case "--color", "--constant", "--font-size":
-			flag := args[i]
-			if i+1 >= len(args) {
+			i = next - 1
+			params["type"] = raw
+		case isFlag(args[i], "--color"), isFlag(args[i], "--constant"), isFlag(args[i], "--font-size"):
+			flag, _, _ := strings.Cut(args[i], "=")
+			raw, next, err := takeFlagValue(args, i, flag)
+			if err != nil {
 				return nil, fmt.Errorf("%s requires a name=value", flag)
 			}
-			name, value, err := splitThemeItem(flag, args[i+1])
+			i = next - 1
+			name, value, err := splitThemeItem(flag, raw)
 			if err != nil {
 				return nil, err
 			}
@@ -88,7 +92,6 @@ func parseThemeSetArgs(args []string) (map[string]any, error) {
 			default:
 				fontSizes[name] = value
 			}
-			i++
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}

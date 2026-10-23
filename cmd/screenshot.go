@@ -40,42 +40,45 @@ func parseScreenshotArgs(args []string) (map[string]any, error) {
 	var sized bool
 	var transparent bool
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--path":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--path requires a value")
+		switch {
+		case isFlag(args[i], "--path"):
+			raw, next, err := takeFlagValue(args, i, "--path")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["path"] = args[i]
-		case "--width":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--width requires a value")
+			i = next - 1
+			params["path"] = raw
+		case isFlag(args[i], "--width"):
+			raw, next, err := takeFlagValue(args, i, "--width")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			n, err := strconv.Atoi(args[i])
+			i = next - 1
+			n, err := strconv.Atoi(raw)
 			if err != nil || n <= 0 || n > maxScreenshotSize {
-				return nil, fmt.Errorf("invalid --width %q (want 1-%d)", args[i], maxScreenshotSize)
+				return nil, fmt.Errorf("invalid --width %q (want 1-%d)", raw, maxScreenshotSize)
 			}
 			params["width"] = n
 			sized = true
-		case "--height":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--height requires a value")
+		case isFlag(args[i], "--height"):
+			raw, next, err := takeFlagValue(args, i, "--height")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			n, err := strconv.Atoi(args[i])
+			i = next - 1
+			n, err := strconv.Atoi(raw)
 			if err != nil || n <= 0 || n > maxScreenshotSize {
-				return nil, fmt.Errorf("invalid --height %q (want 1-%d)", args[i], maxScreenshotSize)
+				return nil, fmt.Errorf("invalid --height %q (want 1-%d)", raw, maxScreenshotSize)
 			}
 			params["height"] = n
 			sized = true
-		case "--transparent":
+		case args[i] == "--transparent":
 			params["transparent"] = true
 			transparent = true
-		case "--runtime":
+		case args[i] == "--runtime":
 			params["runtime"] = true
 			runtime = true
-		case "--analyze":
+		case args[i] == "--analyze":
 			params["analyze"] = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])

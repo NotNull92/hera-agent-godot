@@ -19,6 +19,7 @@ func _run() -> void:
 		_test_tokens()
 	_check(_server.start(18770, 100) > 0, "loopback listener starts")
 	_server.auth_token = "test-token"
+	await _same_frame_response()
 	await _request("", "{}", 401)
 	await _request("X-Hera-Token: wrong\r\n", "{}", 401)
 	await _request("X-Hera-Token: test-token\r\nOrigin: https://example.com\r\n", "{}", 403)
@@ -168,3 +169,33 @@ func _check(value: bool, message: String) -> void:
 	if not value:
 		_failed = true
 		push_error("FAIL: " + message)
+
+func _same_frame_response() -> void:
+	var client: StreamPeerTCP = await _connect()
+	client.put_data(_wire("X-Hera-Token: test-token\r\n", "{}"))
+	var peer: StreamPeerTCP = _server._clients[0]["conn"]
+	for i in 100:
+		peer.poll()
+		if peer.get_available_bytes() > 0:
+			break
+		await create_timer(0.01).timeout
+	_server.poll(_queue)
+	var requests: Array = _queue.drain()
+	_check(requests.size() == 1, "single poll receives prepared request")
+	if requests.is_empty():
+		client.disconnect_from_host()
+		return
+	_server.respond(requests[0]["conn"], {"ok": true, "data": "same-frame"})
+	var received := PackedByteArray()
+	for i in 100:
+		client.poll()
+		var count := client.get_available_bytes()
+		if count > 0:
+			var chunk: Array = client.get_data(count)
+			received.append_array(chunk[1])
+		if received.get_string_from_utf8().contains("same-frame"):
+			break
+		await create_timer(0.01).timeout
+	_check(received.get_string_from_utf8().contains("same-frame"), "respond flushes without a second server poll")
+	client.disconnect_from_host()
+	_server.poll(_queue)

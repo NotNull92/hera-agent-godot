@@ -77,16 +77,7 @@ func poll(queue) -> void:
 		if status != StreamPeerTCP.STATUS_CONNECTED:
 			continue # dropped/errored — discard
 		if entry["state"] == "writing":
-			var output: PackedByteArray = entry["output"]
-			var offset: int = entry["offset"]
-			var written: Array = conn.put_partial_data(output.slice(offset, mini(offset + WRITE_CHUNK_BYTES, output.size())))
-			if written[0] != OK:
-				conn.disconnect_from_host()
-				continue
-			entry["offset"] = offset + int(written[1])
-			if int(entry["offset"]) == output.size():
-				conn.disconnect_from_host()
-			else:
+			if _flush(entry):
 				keep.append(entry)
 			continue
 		if entry["state"] == "queued":
@@ -130,7 +121,7 @@ func poll(queue) -> void:
 		keep.append(entry)
 	_clients = keep
 
-# Queue a successful tool response; poll flushes it without blocking the editor.
+# Send the first nonblocking chunk now; poll flushes any remainder.
 func respond(conn: StreamPeerTCP, response: Dictionary) -> void:
 	_write_http(conn, 200, "OK", response)
 
@@ -167,6 +158,22 @@ func _write_http(conn: StreamPeerTCP, code: int, reason: String, body: Dictionar
 	entry["buf"] = PackedByteArray()
 	entry["state"] = "writing"
 	entry["deadline"] = Time.get_ticks_msec() + CLIENT_TIMEOUT_MSEC
+	_flush(entry)
+
+# Return true only while a partial response still needs polling.
+func _flush(entry: Dictionary) -> bool:
+	var conn: StreamPeerTCP = entry["conn"]
+	var output: PackedByteArray = entry["output"]
+	var offset: int = entry["offset"]
+	var written: Array = conn.put_partial_data(output.slice(offset, mini(offset + WRITE_CHUNK_BYTES, output.size())))
+	if written[0] != OK:
+		conn.disconnect_from_host()
+		return false
+	entry["offset"] = offset + int(written[1])
+	if int(entry["offset"]) == output.size():
+		conn.disconnect_from_host()
+		return false
+	return true
 
 # Parse an accumulated buffer into { complete, method, path, origin, token, body }.
 # body is the decoded JSON Dictionary (or null on parse failure / empty).

@@ -23,10 +23,7 @@ import (
 
 const (
 	defaultDAPPort    = 6006
-	defaultDAPTimeout = 10 * time.Second
 	defaultStopWaitMS = 10000
-	pauseWait         = 5 * time.Second
-	actionWait        = 5 * time.Second
 	maxWaitMS         = 3600000
 	maxDAPVariables   = 50
 )
