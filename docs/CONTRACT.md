@@ -403,8 +403,9 @@ without fallback.
 
 `game assert ... --within-ms N` retries each runtime frame for 1–30,000 ms
 (QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
-`timed_out: true` and the last observed `actual` when available, with failure
-exit status. The CLI timeout is extended for this call by a five-second transport
+`timed_out: true` and the final frame's `actual` when available, with failure
+exit status. If the node disappeared, `actual` is omitted; failure `error` is
+carried by the RPC envelope/stderr, not duplicated in stdout data. The CLI timeout is extended for this call by a five-second transport
 margin; the bridge also covers the requested wait. Omitted waits are unchanged. Existing nodes without the property fail immediately;
 missing nodes keep waiting for a spawn. Batch HTTP timeouts add the sum of
 child assertion waits because children run sequentially. The editor gate remains held during the

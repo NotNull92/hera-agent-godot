@@ -2,6 +2,11 @@
 extends SceneTree
 
 const Game = preload("res://addons/hera_agent_godot/tools/game_tool.gd")
+class FailedAssertion:
+	extends Game
+	func _read_response(_game_pid: int, _request_id: String) -> Dictionary:
+		return {"ok": false, "id": "fixture", "error": "assert failed", "actual": "false", "waited_ms": 100, "timed_out": true}
+
 var response: Variant
 
 func _initialize() -> void:
@@ -30,6 +35,16 @@ func _run() -> void:
 		push_error("retired host cannot accept another request")
 		quit(1)
 		return
+	host = Node.new()
+	root.add_child(host)
+	var failing := FailedAssertion.new()
+	failing.set_host(host)
+	response = await failing.execute_async({"action": "assert", "pid": 424242, "within_ms": 100})
+	if response.get("ok", true) or response.get("error") != "assert failed" or response.get("data", {}).has("error") or not response.get("data", {}).get("timed_out", false):
+		push_error("assertion failure keeps the outer error without duplicating it in data")
+		quit(1)
+		return
+	host.free()
 	print("game_host_lifetime_test: PASS")
 	quit(0)
 

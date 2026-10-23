@@ -256,19 +256,14 @@ func _assert_node_within(request: Dictionary) -> Dictionary:
 		return _response(request, false, {"error": invalid})
 	var started: int = Time.get_ticks_msec()
 	var deadline: int = started + int(request["within_ms"])
-	var last_actual: Variant = null
 	while true:
 		var result: Dictionary = _assert_node(request)
-		if result.has("actual"):
-			last_actual = result["actual"]
 		result["waited_ms"] = Time.get_ticks_msec() - started
 		# An existing node without a readable property cannot satisfy this assertion.
 		if result.get("ok", false) or (result.has("path") and not result.has("actual")):
 			return result
 		if Time.get_ticks_msec() >= deadline:
 			result["timed_out"] = true
-			if last_actual != null:
-				result["actual"] = last_actual
 			return result
 		await get_tree().process_frame
 	return {}

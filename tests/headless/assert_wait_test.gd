@@ -54,6 +54,12 @@ func _test() -> void:
 	request["value"] = "true"
 	response = inspector._handle(request)
 	_check(response.get("ok", false) and not response.has("waited_ms"), "default remains immediate")
-	target.free()
+	request["within_ms"] = 100
+	request["value"] = "false"
+	create_timer(0.03).timeout.connect(target.queue_free)
+	response = await inspector._assert_node_within(request)
+	_check(response.get("timed_out", false) and not response.has("actual") and String(response.get("error", "")).begins_with("node not found:"), "timeout reports only the last frame after node removal")
+	if is_instance_valid(target):
+		target.free()
 	inspector.free()
 	quit(1 if failed else 0)

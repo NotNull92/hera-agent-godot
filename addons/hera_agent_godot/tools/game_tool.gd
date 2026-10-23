@@ -79,6 +79,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 			if action == "assert" and params.has("within_ms"):
 				response.erase("ok")
 				response.erase("id")
+				response.erase("error")
 				failure["data"] = response
 			elif bool(params.get("evidence", false)) and response.has("evidence"):
 				failure["data"] = {"evidence": response.evidence}
