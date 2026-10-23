@@ -406,7 +406,8 @@ without fallback.
 `timed_out: true` and the last observed `actual` when available, with failure
 exit status. The CLI timeout is extended for this call by a five-second transport
 margin; the bridge also covers the requested wait. Omitted waits are unchanged. Existing nodes without the property fail immediately;
-missing nodes keep waiting for a spawn. The editor gate remains held during the
+missing nodes keep waiting for a spawn. Batch HTTP timeouts add the sum of
+child assertion waits because children run sequentially. The editor gate remains held during the
 wait (at most 30 seconds plus transport overhead).
 
 Clock steps finish one selected node-callback phase before pausing. Input

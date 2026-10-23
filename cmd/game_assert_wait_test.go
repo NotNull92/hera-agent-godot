@@ -3,8 +3,10 @@ package cmd
 import (
 	"encoding/json"
 	"github.com/NotNull92/hera-agent-godot/internal/client"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -45,5 +47,44 @@ func TestAssertionWaitExtendsOnlyItsRequest(t *testing.T) {
 	}
 	if c.HTTP.Timeout != time.Millisecond {
 		t.Fatal("changed shared client timeout")
+	}
+}
+
+type assertionTransport func(*http.Request) (*http.Response, error)
+
+func (f assertionTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
+
+func TestBatchAssertionWaitBudget(t *testing.T) {
+	var params map[string]any
+	if err := json.Unmarshal([]byte(`{"commands":[{"tool":"game","params":{"action":"assert","within_ms":10000}},{"tool":"game","params":{"action":"assert","within_ms":20000}},{"tool":"game","params":{"action":"get","within_ms":30000}},{"tool":"game","params":{"action":"assert","within_ms":30001}}]}`), &params); err != nil {
+		t.Fatal(err)
+	}
+	for _, base := range []time.Duration{time.Millisecond, 10 * time.Second, 0} {
+		c := client.New("http://fixture")
+		c.HTTP.Timeout = base
+		c.HTTP.Transport = assertionTransport(func(r *http.Request) (*http.Response, error) {
+			deadline, ok := r.Context().Deadline()
+			if base == 0 {
+				if ok {
+					t.Fatal("unlimited timeout became bounded")
+				}
+			} else {
+				want := 35 * time.Second
+				if base == 10*time.Second {
+					want = 40 * time.Second
+				}
+				remaining := time.Until(deadline)
+				if !ok || remaining > want || remaining < want-time.Second {
+					t.Fatalf("budget %s, want %s", remaining, want)
+				}
+			}
+			return &http.Response{StatusCode: 200, Header: make(http.Header), Body: io.NopCloser(strings.NewReader(`{"ok":true,"data":{}}`))}, nil
+		})
+		if _, err := postWithAssertionWait(c, "batch", params); err != nil {
+			t.Fatal(err)
+		}
+		if c.HTTP.Timeout != base {
+			t.Fatal("changed shared client")
+		}
 	}
 }
