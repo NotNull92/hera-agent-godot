@@ -113,7 +113,7 @@ CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. v1 �
 |---|---|---|
 | **매 턴** 상주하는 도구 스키마 | **0** | ~4k~31k tok (도구 수에 비례 증가) |
 | 에이전트가 로드하는 표면 | 캐시 가능한 마크다운 (live-editor 스킬 ~1k tok; COMMANDS.md는 더 큼) | 전체 도구 목록, 매 턴 재전송 |
-| 액션당 응답 | compact JSON — 기본 `status` ≈79 tok (픽스처), `node get` ≈186 tok | JSON, 보통 pretty |
+| 액션당 응답 | compact JSON — 기본 `status` ≈50 tok (픽스처), `node get` ≈186 tok | JSON, 보통 pretty |
 
 헤라 수치는 라이브 Godot 4.7 에디터에서 **실측**, MCP 열은 공개 Godot MCP
 서버들의 표본 도구 수(약 41~155개) × 도구 스키마당 ~100~200 tok 으로 낸
@@ -177,7 +177,9 @@ v2.0.0은 **에디터 없이 동작하는 엔진 표면**을 추가합니다:
 캡처와 문서는 실행별 독립 디렉터리에서 생성·검증한 뒤 목적지에 게시합니다. 실패하면 `staging_dir`를 보존하며, `published:true`가 게시 완료를 뜻합니다. 디버그 명령은 스레드를 조회하며 선택이 모호하면 `--thread ID`를 사용합니다. 네이티브 종료·핸들 해제의 호출자 대기는 제한하고 미완료 정리를 보고합니다.
 
 
-`hera-godot status`는 `editor_session_id`와 Game Feel / C# 에디터 플래그를 반환합니다.
+`hera-godot status`는 에디터 PID, 씬, 프로젝트 이름, 엔진 버전과 Game Feel / C#
+플래그를 반환하며 세션 ID와 프로젝트 경로는 생략합니다. 예정된 2.1 CLI는 compact,
+pretty, batch 출력에서 중복 필드를 생략합니다. [호환성 변경 표](docs/MIGRATING_TO_V2_1.md)를 확인하세요.
 `hera-godot status --capabilities`가 엔진 커밋과 API 기능 상태(`supported`,
 `unsupported`, `unverified`)를 추가합니다. API 존재만으로 디버거 연결이나 SDK
 설치를 보장하지 않습니다.

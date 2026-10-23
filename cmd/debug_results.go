@@ -90,8 +90,8 @@ func debugActionFailure(result map[string]any, action string, err error) int {
 // debugFail prints the structured failure, a stderr diagnostic, and returns 1.
 func debugFail(result map[string]any, code, detail string) int {
 	result["error"], result["detail"] = code, detail
-	result["ok"], result["message"] = false, code+": "+detail
-	fmt.Fprintf(os.Stderr, "error: %s\n", result["message"])
+	result["ok"] = false
+	fmt.Fprintf(os.Stderr, "error: %s: %s\n", code, detail)
 	if printed := printData(&protocol.Response{OK: true, Data: result}); printed != 0 {
 		return printed
 	}

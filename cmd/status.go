@@ -14,11 +14,7 @@ func runStatus(args []string) int {
 		fmt.Fprintf(os.Stderr, "status: %v\n", err)
 		return 2
 	}
-	reshape := compactStatusData
-	if detail {
-		reshape = statusWithSDK
-	}
-	return dialAndPostPrint(dialEditor, postPrintRequest{tool: "status", label: "status", reshape: reshape})
+	return dialAndPostPrint(dialEditor, postPrintRequest{tool: "status", params: map[string]any{"capabilities": detail}, label: "status"})
 }
 
 func parseStatusArgs(args []string) (bool, error) {

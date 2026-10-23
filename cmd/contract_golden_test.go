@@ -87,6 +87,9 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "game_input_mouse", args: []string{"game", "input", "mouse", "--x=10", "--y=20", "--click"}, responses: map[string]string{"game:input": `{"ok":true,"data":{"kind":"mouse","mode":"click","x":10,"y":20,"button":"left","pid":42,"log_count":2}}`}, golden: "game_input_mouse"},
+		{name: "node_get_child", args: []string{"node", "get", "Child", "--prop=visible"}, responses: map[string]string{"node": `{"ok":true,"data":{"name":"Child","path":"Child","type":"Node2D","properties":{"visible":"true"}}}`}, golden: "node_get_child"},
+
 		{name: "node_add_set", args: []string{"node", "add", "Node2D", "--name=Child", "--set=visible=false"}, responses: map[string]string{"node": `{"ok":true,"data":{"added":"Child","type":"Node2D","name":"Child","values":{"visible":"false"}}}`}, golden: "node_add_set"},
 		{name: "node_instance_set", args: []string{"node", "instance", "res://child.tscn", "--set=visible=false"}, responses: map[string]string{"node": `{"ok":true,"data":{"instanced":"Child","scene":"res://child.tscn","type":"Node2D","name":"Child","values":{"visible":"false"}}}`}, golden: "node_instance_set"},
 		{name: "scene_tree_scoped", args: []string{"scene", "tree", "Child", "--depth=0", "--type=Node2D", "--props=visible"}, responses: map[string]string{"scene": `{"ok":true,"data":{"scene":"res://main.tscn","count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child","type":"Node2D","props":{"visible":"true"}}]}}`}, golden: "scene_tree_scoped"},

@@ -311,3 +311,7 @@ Use repeatable `--set prop=value` on `node add`/`node instance`; check returned
 
 Use `game assert ... --within-ms N` for a bounded frame-by-frame retry; QA
 assertion steps accept `within_ms`. Check `timed_out` and the last `actual`.
+
+The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
+session/path fields. Missing log `source` means file. Pretty and batch output
+use the same rules; see `docs/MIGRATING_TO_V2_1.md`.

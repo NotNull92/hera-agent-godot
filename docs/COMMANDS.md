@@ -8,6 +8,9 @@ All value flags accept `--flag=value` as well as `--flag value`; `--flag=` passe
 Each command maps 1:1 to an addon tool and sends a single JSON request to the
 selected editor instance.
 
+CLI response fields follow the planned [2.1 omission rules](MIGRATING_TO_V2_1.md),
+including pretty output and batch children. Full addon RPC data is unchanged.
+
 ## Linked evidence (opt-in)
 
 `script validate res://file.gd --evidence` adds `source: disk`, selected engine

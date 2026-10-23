@@ -285,7 +285,6 @@ func failStructured(data map[string]any) int {
 		message += ": " + detail
 	}
 	data["ok"] = false
-	data["message"] = message
 	fmt.Fprintf(os.Stderr, "error: %s\n", message)
 	if code := printData(&protocol.Response{OK: true, Data: data}); code != 0 {
 		return code

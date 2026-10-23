@@ -121,7 +121,8 @@ engine capability limits, batch ownership and the boundary of runtime completion
 | **experimental** | Shape may change in any release. Changes are called out in release notes but carry no compatibility promise. |
 
 Removing or renaming a stable field, or changing its JSON type, is a breaking
-change and requires a major version bump plus a deprecation cycle.
+change and normally requires a major version bump plus a deprecation cycle.
+The approved 2.1 response diet below is an explicit, bounded exception.
 
 ## Versioning and deprecation policy
 
@@ -140,6 +141,23 @@ as one versioned product and should be upgraded together.
   may change without a public deprecation cycle.
 
 See [MIGRATING_TO_V1.md](MIGRATING_TO_V1.md) for the 0.x upgrade path.
+
+## Planned 2.1 response omissions (breaking)
+
+The CLI omits false `truncated`, `count` equal to an adjacent array length,
+and node `name` equal to the final `path` segment (except root `.`). A differing
+count or true truncation flag remains. These rules apply to compact and pretty
+output and to each batch child. Addon RPC data, internal negotiation, property
+values, structured call results and evidence objects retain their full shape.
+CLI structured engine/debug failures omit duplicate `message`; `error`, `detail`,
+stderr and exit codes remain. `game input` omits equal request echoes while
+retaining `pid`, `log_count`, normalization differences and computed fields.
+Status omits `editor_session_id` and `project_path` even with `--capabilities`;
+that flag still retains the capability block. File logs omit `source: "file"`
+and omit `log_path` when available; editor-source metadata is retained.
+This approved minor-release exception is limited to these omissions; other
+stable-field changes still follow the policy above. See the field-by-field
+[migration table](MIGRATING_TO_V2_1.md). Release/version changes are separate.
 
 ## Invocation
 
@@ -240,8 +258,8 @@ contract tests (see [Contract tests](#contract-tests)).
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
-| `status` | stable | ✓ `pid`, `project_name`, `project_path`, `godot_version`, `scene`. Experimental additions always in the default CLI: `editor_session_id`, `game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` (editor build capability, not SDK availability). `godot_commit` and `capabilities` (values `supported`, `unsupported`, `unverified`) are experimental detail on `status --capabilities`. See ARCHITECTURE §6 for capability scope. |
-| `instances` | stable | ✓ `count`, `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` with optional experimental `editor_session_id`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain. Legacy heartbeats omit the session field. |
+| `status` | stable | ✓ `pid`, `project_name`, `godot_version`, `scene`. Experimental additions always in the default CLI: `game_feel_mode`, `game_feel_ui_mode`, and boolean `csharp_supported` (editor build capability, not SDK availability). `godot_commit` and `capabilities` (values `supported`, `unsupported`, `unverified`) are experimental detail on `status --capabilities`. See ARCHITECTURE §6 for capability scope. |
+| `instances` | stable | ✓ `instances[]` of `{pid, port, project_path, godot_version, scene, ts}` with optional experimental `editor_session_id`; optional `stale[]` of the same shape plus `age_sec` when expired heartbeat files remain. Legacy heartbeats omit the session field. |
 | `version` | stable | bare string (linker-injected; `dev` for source builds) |
 | `run` / `stop` | stable | ✓ state shape `{playing, scene}` |
 
@@ -249,13 +267,13 @@ contract tests (see [Contract tests](#contract-tests)).
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
-| `scene tree` | stable | ✓ `scene`, `count`, `truncated`, `nodes[]` of `{name, path, type}`. Optional params `path`, non-negative `depth`, `type`, and `props[]` narrow reads; only `props` adds a per-node `props{}` field. Depth is relative to the subtree; returned paths remain relative to the edited root. |
+| `scene tree` | stable | ✓ `scene`, `nodes[]` of `{path, type}` plus conditional `name`, `count`, `truncated` (2.1 rules above). Optional params `path`, non-negative `depth`, `type`, and `props[]` narrow reads; only `props` adds a per-node `props{}` field. Depth is relative to the subtree; returned paths remain relative to the edited root. |
 | `scene list` | stable | ✓ `current`, `open[]` |
 | `editor state` | stable | ✓ `current_scene`, `current_script{found, path}`, `main_scene`, `open_scenes[]`, `playing`, `playing_scene`, `project_name`, `project_path`, `selected[]` |
 | `editor selected` | stable | selection list with scene-relative paths |
-| `node find` | stable | ✓ `count`, `truncated`, `nodes[]` of `{name, path, type}` |
-| `node get` | stable | ✓ `name`, `path`, `type`, `properties{}` (stringified values). Opt-in experimental `--prop P --snapshot` adds the complete typed `expected` object; ordinary reads are unchanged. Optional boolean `changed` filters defaults using inspector revert, script default, then class default; incompatible with `prop`/`props`. Godot 4.2 may report `null` for uncached tool-script defaults; `--changed` compares against that engine result and can include unchanged exports. It does not instantiate user scripts to infer defaults. Comparison is exact (no float tolerance), and values set by an instanced sub-scene count as changed. |
-| `signal list` | stable | ✓ `node`, `count`, `truncated`, `signals[]` of `{name, args[], connections[]}` (+ `external_connections` when editor-internal targets exist). Optional boolean `connected` excludes signals without either kind of connection. |
+| `node find` | stable | ✓ `nodes[]` of `{path, type}` plus conditional `name`, `count`, `truncated` (2.1 rules above) |
+| `node get` | stable | ✓ `path`, `type`, conditional `name`, `properties{}` (stringified values). Opt-in experimental `--prop P --snapshot` adds the complete typed `expected` object; ordinary reads are unchanged. Optional boolean `changed` filters defaults using inspector revert, script default, then class default; incompatible with `prop`/`props`. Godot 4.2 may report `null` for uncached tool-script defaults; `--changed` compares against that engine result and can include unchanged exports. It does not instantiate user scripts to infer defaults. Comparison is exact (no float tolerance), and values set by an instanced sub-scene count as changed. |
+| `signal list` | stable | ✓ `node`, conditional `count`/`truncated`, `signals[]` of `{name, args[], connections[]}` (+ `external_connections` when editor-internal targets exist). Optional boolean `connected` excludes signals without either kind of connection. |
 | `screenshot diff` | experimental | ✓ `before`, `after`, `width`, `height`, `threshold`, `total_pixels`, `changed_pixels`, `changed_ratio`, `max_delta`, `identical`, and `changed_bounds{x,y,width,height}` when anything changed. Computed locally; `max_delta` is reported even when it is under the threshold |
 | `theme get` / `theme set` | experimental | ✓ (`get`) `path`, `types[]`, `items{<type>{colors{}, constants{}, font_sizes{}}}`; (`set`) `path`, `type`, `applied{}`, `undoable:false`. Colour values are printed to 6 decimals so a value round-trips what the caller wrote rather than float32 noise |
 | `project info` | stable | ✓ `name`, `path`, `current_scene`, `files{all, scene, script, resource, asset, shader, other}`, `godot{...}` |
@@ -264,8 +282,8 @@ contract tests (see [Contract tests](#contract-tests)).
 | `resource get` | stable | class, name, editor-visible properties |
 | `resource uid` | stable | ✓ `path`, `uid`, `uid_path`, `sidecar`, `sidecar_exists` |
 | `resource list` | stable | resource entries with class + path |
-| `output` | stable | ✓ `available`, `log_path`, `type`, `total`, `lines[]`. Additive `source` is `file` for the default log and `editor` for `--source editor`. |
-| `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `log_path`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. Additive `source` is `file` for the default log (so `clean` is not a claim about the editor Output panel) and `editor` for `--source editor`. `available` is false whenever the log cannot be read, and `clean` is false there too since cleanliness cannot be asserted without a readable log. `file_logging_enabled` is the *effective* value (`get_setting_with_override`), because file logging defaults to true on desktop through the `.pc` feature tag while the untagged default is false |
+| `output` | stable | ✓ `available`, `type`, `total`, `lines[]`; `log_path` only for unavailable file logs. Default file `source` is omitted; editor-source metadata is retained. |
+| `diagnostics` | stable | ✓ `available`, `clean`, `file_logging_enabled`, `total_lines`, `error_count`, `errors[]`, `warning_count`, `warnings[]`. File `log_path` is retained only when unavailable; default file `source` is omitted (so `clean` is not a claim about the editor Output panel). Editor-source metadata is retained. `available` is false whenever the log cannot be read, and `clean` is false there too since cleanliness cannot be asserted without a readable log. `file_logging_enabled` is the *effective* value (`get_setting_with_override`), because file logging defaults to true on desktop through the `.pc` feature tag while the untagged default is false |
 | `script current` / `script inspect` | experimental | compact script metadata; GDScript source response unchanged, C# loaded-assembly metadata as specified below |
 | `script validate` | experimental | fresh on-disk `.gd` native engine check; JSON `{path,valid,exit_code,output,output_truncated,timed_out}`; optional `error` for launch failure; invalid/timeout exits 1, output capped at 64 KiB; leading `--timeout` also bounds the child process (default 5 s) |
 
@@ -369,7 +387,7 @@ without fallback.
 | `game assert` | stable | ✓ pass: `{prop, op, actual, expected}`; fail: stderr + exit 1 |
 | `game instances` | experimental | `instances[]` with pid, scene, heartbeat age, `user_data_dir`, viewport sizes; optional `stale[]`; `shared_user_data` when live processes share `user://` |
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
-| `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` |
+| `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` only when true |
 | `game click` / `game input` / `game input-log` | experimental | input injection + diagnostic log (v0.7 surface); click/input coordinates are live viewport pixels, not the project window setting. `game input` also injects joypad buttons and axes |
 | `game clock` | experimental | `{paused, time_scale, process_frames, physics_frames}`; `--step` adds `stepped` (`process` or `physics`) |
 | `game input sequence --file` | experimental | array of 1–128 `{frame,action,pressed}` events, ordered offsets 0–120; result `{kind,frames,events[],pid}` includes observed `physics_frame` per event; prevalidates actions, cancels on clock changes/deadline and releases held inputs |
