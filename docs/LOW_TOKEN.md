@@ -34,14 +34,14 @@ list. Those docs **do grow** as the command surface grows; they are still
 loaded once (and prompt-cacheable), unlike MCP schemas that sit in every
 request.
 
-Sizes below are **UTF-8 byte counts** from this tree (`wc -c` / file length),
+Sizes below are **UTF-8 byte counts** measured at `532b5a3` (`wc -c` / file length),
 not tokenizer output. Approximate tokens as bytes/4.
 
 | Hera surface (one-time, cacheable) | Bytes | ~tok |
 |------------------------------------|------:|-----:|
 | `plugins/hera-godot/skills/live-editor/SKILL.md` | 4,187 | ~1,047 |
-| `AGENTS.md` (driver card) | 16,001 | ~4,000 |
-| `docs/COMMANDS.md` (full reference) | 47,019 | ~11,755 |
+| `AGENTS.md` (driver card) | 19,932 | ~4,983 |
+| `docs/COMMANDS.md` (full reference) | 73,902 | ~18,476 |
 
 So before any work is done, an MCP client in the sampled servers still pays
 **~4k–31k resident tokens every turn** for tool schemas. Hera pays **nothing
@@ -61,7 +61,7 @@ this tree's contract goldens (UTF-8 bytes, including the trailing newline).
 | Operation | compact (default) | `--json` (pretty) |
 |-----------|------------------:|------------------:|
 | `status` (compact CLI) | 316 bytes (~79 tok, fixture) | — |
-| `status --capabilities` | 843 bytes (~211 tok, fixture) | — |
+| `status --capabilities` | 926 bytes (~232 tok, fixture) | — |
 | `scene tree` (1-node demo)|  116 bytes (~29 tok) | 170 bytes (~42 tok) |
 | `node get .` (full Node2D property dump) | 744 bytes (~186 tok) | 932 bytes (~233 tok) |
 | `node find` (all)         |   83 bytes (~20 tok) | 133 bytes (~33 tok) |

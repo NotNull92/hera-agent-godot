@@ -53,7 +53,8 @@ Godot .NET capability, not SDK installation. C# templates use a filename-matchin
 partial class. Build and reload the assembly before attachment; Hera does not
 build or generate solution files. C# inspect/current reads loaded-assembly
 metadata, which can be unavailable or stale. `script current` cannot observe
-external IDE focus. `eval` always uses a GDScript expression.
+external IDE focus. `eval` defaults to C# through the helper host; use
+`--lang gdscript` for a GDScript expression.
 
 Runtime QA discovery accepts `qa_*` and `Qa` followed by an uppercase letter,
 such as `QaReady`; preserve exact case when calling C# methods. See the Hera
