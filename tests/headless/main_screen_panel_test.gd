@@ -47,7 +47,12 @@ func _run() -> void:
 	check(not setup.contains("secret-never-copy") and not setup.contains("HERA_AGENT_GODOT_TOKEN") and not setup.contains(".hera-agent-godot/token"), "no secrets or token paths")
 	panel.set_connection("token_error", false)
 	check(panel.agent_setup_text().contains("Auth state is unknown"), "unreadable token is not auth off")
-	panel.update_observations("2.0.9", true, 8770, false)
+	var manifest := ConfigFile.new()
+	assert(manifest.load("res://addons/hera_agent_godot/plugin.cfg") == OK)
+	var version_parts: PackedStringArray = String(manifest.get_value("plugin", "version")).split(".")
+	assert(version_parts.size() == 3)
+	var patch_mismatch: String = "%s.%s.%d" % [version_parts[0], version_parts[1], int(version_parts[2]) + 9]
+	panel.update_observations(patch_mismatch, true, 8770, false)
 	check(panel.rows["version"].text.contains("Patch versions differ"), "patch difference is explained")
 	panel.set_connection("listening", true)
 	check(Settings.GAME_FEEL_MODE_SETTING == "hera_agent_godot/game_feel_mode", "game key preserved")
