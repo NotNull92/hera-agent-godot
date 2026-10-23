@@ -73,7 +73,7 @@ func _test() -> void:
 	for params: Dictionary in [{"depth": -1}, {"depth": 0.5}, {"props": "name"}, {"props": [5]}]:
 		params["action"] = "tree"
 		_check(not tool.execute(params).get("ok", false), "invalid tree options rejected")
-	_check(not tool.execute({"action": "tree", "props": ["missing_property"]}).get("ok", false), "missing selected property rejected")
+	_check(tool.execute({"action": "tree", "path": "Child", "props": ["missing_property"]}).get("error") == "node has no property: missing_property (node: Child)", "missing selected property identifies the node")
 	_check(not NodeTool.new().execute({"action": "get", "changed": true, "prop": "name"}).get("ok", false), "changed rejects selected props through RPC")
 	var signals := SignalTool.new()
 	scene.renamed.connect(Callable(scene.get_node("Child"), "get_name"))

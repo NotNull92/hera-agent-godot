@@ -205,7 +205,7 @@ func _collect(node: Node, root: Node, out: Array, params: Dictionary = {}, depth
 		if params.has("props"):
 			var selected: Dictionary = NodeValueCodec.selected_properties(node, params["props"], 200)
 			if not selected.get("ok", false):
-				return String(selected.get("error", "property not found"))
+				return "%s (node: %s)" % [String(selected.get("error", "property not found")), entry["path"]]
 			entry["props"] = selected["properties"]
 		out.append(entry)
 	if params.has("depth") and depth >= int(params["depth"]):
