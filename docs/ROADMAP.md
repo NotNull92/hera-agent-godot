@@ -1,6 +1,8 @@
 # Roadmap
 
-Current GitHub release: **v2.0.3** (2026-10-21): docs-only patch. Adds the Hera Godot Status guide (`docs/guide/index.html`), which the portfolio mirrors from release tags, and ships 45a1786 (unreachable Go helpers removed). CLI and addon behavior are unchanged. CI 39564042748 and release workflow 39564333197 passed; all eight archive hashes verified after download. Scoop and the npm manifest pin v2.0.3; Homebrew tap PR #5 merged. npm publication and any store upload are pending. [Release record](releases/v2.0.3-release.md).
+Release candidate: **v2.1.0** (2026-10-23): combined node creation/properties, bounded assertions, read narrowing, smaller default CLI responses (breaking for omitted-field parsers), and scene-escape fixes. Gates and publication pending. [Release record](releases/v2.1.0-release.md).
+
+Previous GitHub release: **v2.0.3** (2026-10-21): docs-only patch. Adds the Hera Godot Status guide (`docs/guide/index.html`), which the portfolio mirrors from release tags, and ships 45a1786 (unreachable Go helpers removed). CLI and addon behavior are unchanged. CI 39564042748 and release workflow 39564333197 passed; all eight archive hashes verified after download. Scoop and the npm manifest pin v2.0.3; Homebrew tap PR #5 merged. npm publication and any store upload are pending. [Release record](releases/v2.0.3-release.md).
 
 Previous GitHub release: **v2.0.2** (2026-10-16): owner-supplied Hera portrait replaces panel, README logos and store thumbnails. Full source: `docs/assets/hera_new.png`; addon uses a fitted 192×192 copy. [Release/upload record](releases/v2.0.2-asset-store-upload.md) · [gates](reports/2026-10-16-v2.0.2-release-gates.md). All seven candidate CI jobs and release workflow passed. Downloaded ZIP/CLI and all eight archive hashes verified; five fresh actual-addon screenshots prepared. Scoop updated; Homebrew 2.0.1 PR #3 merged and 2.0.2 PR #4 merged with the verified hashes. npm 2.0.2 publication and registry integrity are verified. Victor confirmed store upload completion (approval/publication unverified). Recording preparation is next. The operation_limits_test clock-boundary fixture failure was fixed in 146a9ec; CI 38870922140 passed all seven jobs. [Investigation and checks](reports/2026-10-16-operation-limits-ci.md).
 
@@ -30,19 +32,18 @@ editor/terminal were closed; the demo was not re-prepared. The frozen prompt is
 unchanged. v2.0.0's publication and Victor's 2026-10-16 store submission remain
 recorded in [its historical record](releases/v2.0.0-asset-store-upload.md).
 
-## Unreleased — planned 2.1 response diet and combined commands
+## v2.1.0 — response diet and combined commands
 
 CLI output omits redundant fields as documented in [the migration guide](MIGRATING_TO_V2_1.md).
-This is the approved breaking minor-release exception; no version or publication
-change is included. `node add`/`instance --set` creates configured nodes in one
+This is the approved breaking minor-release exception. `node add`/`instance --set` creates configured nodes in one
 undo action; `game assert --within-ms` adds bounded frame retries (also QA
 `within_ms`). Empty `--flag=` matches the empty space form. Parser isolation,
 command-file splits and `internal/engineproc` preserve command behavior.
 
-## Unreleased — read narrowing
+## v2.1.0 — read narrowing
 
 Optional `node get --changed`, `scene tree [path] --depth/--type/--props`, and
-`signal list --connected` reduce inspection output; default responses stay unchanged.
+`signal list --connected` reduce inspection output; the response diet above also changes default responses.
 
 ## Prepared — v1.2.0 (2026-09-15)
 

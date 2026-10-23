@@ -1,8 +1,8 @@
 # Migrating to the 2.1 CLI response shape
 
-These breaking omissions are implemented for the planned 2.1 release. This is
-an explicit exception to the stable-field major-version policy; it does not
-announce a release. Upgrade consumers before deploying this CLI.
+These breaking omissions ship in v2.1.0, an explicit exception to the
+stable-field major-version policy. Upgrade consumers before deploying this CLI.
+See the [release/channel record](releases/v2.1.0-release.md) for publication status.
 
 Compact output, `--json` pretty output, and each `batch` child use the same
 shape. `--ids` remains paths only. Full addon RPC responses and internal CLI

@@ -54,14 +54,15 @@ language and design principles that keep new features aligned.
 Sibling of [`hera-agent-unity`](https://github.com/NotNull92/hera-agent-unity) —
 same low-token, shell-native philosophy, **designed for Godot**, not ported.
 
-## Current in-repo baseline: v2.0.3
+## Current in-repo baseline: v2.1.0
 
-Docs: the release now carries [Hera Godot Status](docs/guide/index.html), a
-self-contained Korean guide to the request flow, commands, risks and decisions.
-Unreachable Go helpers were removed; CLI and addon behavior are unchanged.
-Addon manifest and GitHub Release are `2.0.3` (2026-10-21). Scoop, npm and
-Homebrew follow the verified release hashes.
-[Release/channel record](docs/releases/v2.0.3-release.md).
+Create configured nodes with `node add/instance --set`, wait for assertions with
+`game assert --within-ms`, and narrow reads with `node get --changed`, scoped
+`scene tree` filters and `signal list --connected`. Default CLI responses are
+smaller; scripts parsing omitted fields must follow the
+[migration guide](docs/MIGRATING_TO_V2_1.md). Upgrade CLI and addon together.
+Addon manifest: `2.1.0` (2026-10-23). Publication and package channel status:
+[release/channel record](docs/releases/v2.1.0-release.md).
 
 `v2.0.0` changes the default eval language to C# and adds C# validation/run and
 the bilingual editor panel. Existing stable JSON field types remain unchanged.
@@ -377,7 +378,7 @@ Hera is free and MIT-licensed. If it saves you time, you can support development
 
 MIT — see [LICENSE](LICENSE).
 
-C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.3`
+C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.1.0`
 (npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).
 
 Node creation supports repeatable `--set prop=value` on `node add` and `node instance`, with one undo action and re-read `values`.

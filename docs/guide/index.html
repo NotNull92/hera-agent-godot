@@ -311,8 +311,8 @@ footer a{color:var(--frost)}
     <div class="rule" style="width:min(420px,80%)"><i></i></div>
     <p class="sub"><b>hera-agent-godot</b>는 AI가 켜져 있는 Godot 에디터와 실행 중인 게임을 직접 보고 고칠 수 있게 해 주는 도구예요. 이 페이지는 그 구조, 기능, 위험, 결정을 게임 공략집처럼 정리했어요. 1인 게임 회사 대표의 눈으로 썼어요.</p>
     <div class="sheet" aria-label="현재 버전">
-      <div class="stat"><span class="rune">CLI</span><b>v2.0.3</b></div>
-      <div class="stat"><span class="rune">Addon</span><b>2.0.3</b></div>
+      <div class="stat"><span class="rune">CLI</span><b>v2.1.0</b></div>
+      <div class="stat"><span class="rune">Addon</span><b>2.1.0</b></div>
       <div class="stat"><span class="rune">Commands · Tools</span><b>29 · 19</b></div>
       <div class="stat"><span class="rune">Godot</span><b>4.2–4.7</b></div>
     </div>
@@ -431,7 +431,7 @@ footer a{color:var(--frost)}
 
   <footer>
     <div class="rule" style="width:min(320px,70%);margin:0 auto"><i></i></div>
-    <span>기준 버전: CLI <span class="mono">v2.0.3</span> / Addon <span class="mono">2.0.3</span> (2026-10-21 작성). 원본: <a href="https://github.com/NotNull92/hera-agent-godot/blob/main/docs/guide/index.html">hera-agent-godot/docs/guide</a>. 위험과 제안은 실제로 재 본 결과나 문서 근거가 있는 것만 넣었어요.</span>
+    <span>기준 버전: CLI <span class="mono">v2.1.0</span> / Addon <span class="mono">2.1.0</span> (2026-10-23 갱신). 원본: <a href="https://github.com/NotNull92/hera-agent-godot/blob/main/docs/guide/index.html">hera-agent-godot/docs/guide</a>. 위험과 제안은 실제로 재 본 결과나 문서 근거가 있는 것만 넣었어요.</span>
   </footer>
 </div>
 
@@ -575,7 +575,7 @@ const TREES=[
   {t:"perf",n:"기력 측정",row:1,col:2,pre:["engine"],what:"엔진의 벤치마크 기능으로 실행하고, 시간이 가장 많이 걸린 단계를 JSON으로 보여 줘요.",why:"느려진 곳을 짐작하지 않고 숫자로 찾아요. 종료 코드 0은 측정 파일을 읽었다는 뜻이지 게임이 성공했다는 뜻은 아니에요.",cmd:"hera-godot perf sample --top 10",acts:"sample"},
   {t:"docs",n:"고서 필사",row:2,col:1,pre:["engine"],what:"이 엔진의 클래스 문서나 프로젝트 GDScript 문서를 파일로 뽑아요. 이미 있는 문서는 --force 없이 덮어쓰지 않아요.",why:"인터넷 없이 이 버전의 문서를 AI 옆에 둬요.",cmd:"hera-godot docs dump --out docs --format json",acts:"dump"}]},
  {id:"guide",n:"길잡이",r:"CLI 기본기",d:"연결할 에디터를 확인하고, 작업 전에 안내를 읽고, 여러 명령을 안전하게 묶어요.",skills:[
-  {t:"status",n:"정찰",row:0,col:1,what:"연결된 에디터의 프로젝트, Godot 버전, 편집 중인 씬, 세션 번호, Game Feel 설정을 보여 줘요. 기본 응답은 316바이트 정도예요.",why:"명령을 보내기 전에 어느 에디터가 켜져 있는지 알 수 있어요. 에디터 콘솔 내용은 여기 안 나와요.",cmd:"hera-godot status",acts:""},
+  {t:"status",n:"정찰",row:0,col:1,what:"연결된 에디터의 프로젝트 이름, Godot 버전, 편집 중인 씬, Game Feel 설정을 보여 줘요. v2.1 기본 응답은 프로젝트 경로와 세션 번호를 생략해요.",why:"명령을 보내기 전에 어느 에디터가 켜져 있는지 알 수 있어요. 에디터 콘솔 내용은 여기 안 나와요.",cmd:"hera-godot status",acts:""},
   {t:"instances",n:"봉화 세기",row:1,col:0,pre:["status"],what:"살아 있는 에디터 목록과, 오래되어 멈춘(stale) heartbeat를 따로 보여 줘요. 에디터에 묻지 않고 파일만 읽어요.",why:"'에디터가 없다'와 '에디터가 멈췄다'를 구분해요.",cmd:"hera-godot instances",acts:""},
   {t:"guidance",n:"길잡이 등불",row:1,col:2,pre:["status"],what:"에디터의 Game Feel 설정을 읽고, UI 작업이나 게임 전체에 맞는 손맛 안내를 돌려줘요.",why:"UI를 만들기 전에 읽으면, 반응이 빠르고 움직임이 살아 있는 UI를 기본으로 만들어요.",cmd:"hera-godot guidance ui",acts:"ui, game-feel"},
   {t:"game_feel",n:"손맛의 비전",row:2,col:2,pre:["guidance"],what:"내장된 게임 손맛 지식 54주제를 찾아봐요. 화면 흔들림, 조작감, 카메라, 체력바 같은 주제마다 구체적인 값과 주의점을 알려 줘요.",why:"타격감과 조작감을 느낌으로만 정하지 않고, 정리된 값에서 시작해요.",cmd:"hera-godot game_feel screen_shake",acts:""},
@@ -672,7 +672,7 @@ const LAW=[
   rule:"지켜야 할 약속은 CLI의 인자, 출력, 종료 코드예요. CLI와 애드온 사이의 HTTP(/rpc), heartbeat 파일, 포트 고르는 방법은 내부라서 버전마다 바뀔 수 있어요. 다른 도구는 /rpc가 아니라 CLI 위에 만들어요.",
   doc:[DOC("docs/CONTRACT.md#what-is-public-what-is-internal","CONTRACT: What is public")]},
  {t:"기능을 없애기 전에 미리 알려요",from:"계약",d:"v1.0.0",
-  rule:"v1.0.0부터 semver를 따라요. 안정된 명령, 옵션, 응답 칸, 종료 코드의 뜻은 중간 버전에서 먼저 예고하고, 다음 큰 버전보다 일찍 없애지 않아요. 실험 기능은 중간 버전에서 바뀔 수 있고, 릴리스 노트에 적어요.",
+  rule:"v1.0.0부터 semver를 따라요. 안정된 명령, 옵션, 응답 칸, 종료 코드의 뜻은 중간 버전에서 먼저 예고하고, 다음 큰 버전보다 일찍 없애지 않아요. 실험 기능은 중간 버전에서 바뀔 수 있고, 릴리스 노트에 적어요. v2.1은 승인된 예외로 기본 응답의 중복 필드를 생략해요. 파싱 스크립트는 docs/MIGRATING_TO_V2_1.md를 따라 수정하세요.",
   doc:[DOC("docs/CONTRACT.md#versioning-and-deprecation-policy","CONTRACT: Versioning")]},
  {t:"Godot 3은 지원하지 않아요",from:"설계",d:"현재",
   rule:"전체 검사 기준은 Godot 4.7이고, 확인된 가장 낮은 버전은 4.2예요. 애드온을 쓰는 데 C#/.NET이 꼭 필요하지는 않아요.",
@@ -735,7 +735,7 @@ const HAVE=[
  {k:"ward",t:"AI 실수를 막는 장치",d:"바꾸는 명령은 에디터가 하나일 때만 가요. 편집이 겹치면 editor_busy로 막고, --expected로 그사이 바뀐 대상은 고치지 않고, 지정한 게임은 다른 게임으로 넘어가지 않아요.",key:"editor_gate · node set --expected · game --pid"},
  {k:"hand",t:"살아 있는 게임 조종",d:"실행 중인 게임을 글자로 클릭하고, 물리 프레임에 맞춰 입력을 재생하고, 시간을 멈추거나 한 프레임씩 넘겨요.",key:"game click --text · input sequence · game clock --step"},
  {k:"proof",t:"요구사항 증명",d:"각본에 요구사항 목록을 적으면, 확인하지 못한 요구사항이 있을 때 각본 전체가 실패해요.",key:"game qa --file (requirements · covers)"},
- {k:"coin",t:"토큰 절약 설계",d:"AI에게 미리 실어 보내는 도구 설명이 없고, 응답은 짧은 JSON이에요. status는 316바이트 정도예요. AI 사용료를 직접 내는 1인 개발자에게는 바로 돈이에요.",key:"LOW_TOKEN.md · --ids · --fields"}
+ {k:"coin",t:"토큰 절약 설계",d:"AI에게 미리 실어 보내는 도구 설명이 없고, 응답은 짧은 JSON이에요. v2.1은 중복 필드를 생략하고 읽기 범위를 좁혀요. AI 사용료를 직접 내는 1인 개발자에게는 바로 돈이에요.",key:"LOW_TOKEN.md · --ids · --fields"}
 ];
 const NEW=[
  {k:"channel",r:"추천 1",t:"에디터 디버거 통로",d:"게임 안에 Hera 감시자(autoload)를 넣지 않고, Godot 에디터의 디버거 통로(EditorDebuggerPlugin)로 게임과 이야기해요.",w:"지금은 감시자를 프로젝트에 넣었다가 내보낼 때 빼는 방식이에요. 그 사이에서 실제 사고가 났었어요(H05).",c:"ROADMAP의 다음 계획에 적혀 있어요. 게임 쪽 명령이 모두 그대로 동작하는지 다시 검사해야 해요."},

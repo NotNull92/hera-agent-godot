@@ -61,14 +61,15 @@ C# 또는 명시적으로 선택한 GDScript 평가 등. 에이전트가 낡은 
 프로젝트로, 동일한 저토큰·쉘 친화 철학을 따르며 **포팅이 아니라 Godot에 맞춰
 새로 설계**했습니다.
 
-## 현재 저장소 기준: v2.0.3
+## 현재 저장소 기준: v2.1.0
 
-문서: 릴리스에 [Hera Godot Status](docs/guide/index.html) 공략집을 함께 담습니다.
-처리 흐름·명령·위험·결정을 한 장으로 정리한 한국어 페이지입니다. 쓰이지 않던
-Go 보조 함수를 지웠고, CLI와 애드온 동작은 바뀌지 않았습니다.
-애드온과 GitHub Release는 `2.0.3`입니다(2026-10-21). Scoop·npm·Homebrew는
-검증된 릴리스 해시를 따라 갱신합니다.
-[릴리스·채널 기록](docs/releases/v2.0.3-release.md).
+`node add/instance --set`으로 속성과 노드를 함께 만들고,
+`game assert --within-ms`로 조건을 기다릴 수 있습니다. `node get --changed`,
+`scene tree` 경로·필터, `signal list --connected`로 읽기 범위를 줄입니다.
+기본 CLI 응답이 작아져 생략 필드를 파싱하는 스크립트는
+[전환 가이드](docs/MIGRATING_TO_V2_1.md)를 따라 수정해야 합니다. CLI와 애드온을 함께 업그레이드하세요.
+애드온 버전: `2.1.0` (2026-10-23). 배포·패키지 채널 상태:
+[릴리스·채널 기록](docs/releases/v2.1.0-release.md).
 
 `v2.0.0`은 eval 기본 언어를 C#으로 변경하며 C# 검증·실행과 한영 패널을
 추가합니다. 기존 안정 JSON 필드 타입은 유지됩니다.
@@ -374,7 +375,7 @@ Hera는 무료이며 MIT 라이선스입니다. 도움이 되었다면 개발을
 
 MIT — [LICENSE](LICENSE) 참고.
 
-C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.3`
+C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.1.0`
 (npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).
 
 `node add`와 `node instance`는 반복 가능한 `--set prop=value`를 지원합니다. 생성과 속성 설정은 하나의 실행 취소 작업이며 응답의 `values`로 확인합니다.
