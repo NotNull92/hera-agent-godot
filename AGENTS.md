@@ -54,7 +54,7 @@ hera-godot diagnostics --source editor             # opt-in editor-session error
 hera-godot run --current --wait / hera-godot stop --wait
 hera-godot game ui tree --type Button --fields name,path,text,disabled
 hera-godot --ids game ui tree                      # Control paths only
-hera-godot guidance ui                             # UI mode before building UI
+hera-godot guidance ui                             # UI checklist when needed
 ```
 
 Engine-backed surface (no live editor, CI-friendly; see
@@ -139,7 +139,8 @@ executable for the no-editor commands). Default output is compact JSON.
   and physics rate >=60 Hz; held inputs are released on completion/cancellation.
   The runtime deadline is 2.5 seconds. See `docs/COMMANDS.md` for QA integration.
 - **UI work reads the live guidance mode first.** Before agent-driven UI work,
-  run `hera-godot guidance ui`. If it reports `game_feel_ui_mode: true`, implement
+  read `game_feel_ui_mode` from `status`; use `guidance ui` when the checklist
+  text is needed. If the mode is true, implement
   UI around Game Feel: immediate input feedback, expressive state changes,
   satisfying bounded motion, and runtime visual QA for those effects.
 - **Mutations are undoable where Godot exposes editor undo.**
@@ -182,9 +183,10 @@ executable for the no-editor commands). Default output is compact JSON.
   - Prefer `and`/`or`/`not`, typed `@onready` or exported node references,
     named signal handlers for normal UI, and `@tool` only when editor-time
     execution is required and guarded.
-  - After any GDScript edit, run `godot --headless --path . --check-only` on the
-    affected scene or script before calling the work done. If `godot` is not
-    available, use Hera diagnostics/run/output as described in the guide.
+  - After any GDScript edit, run `hera-godot script validate res://file.gd`
+    on the affected disk script before calling the work done. Fall back to
+    `godot --headless --path . --check-only` when needed; use Hera
+    diagnostics/run/output if no engine is available, as described in the guide.
 - **`game node set/call`, `game click`, `game input`, and `game clock` are runtime-only.** They change the running game process,
   are not registered with undo, and are lost when the play session stops. `game clock --pause` sets `SceneTree.paused`; `--step` leaves the tree paused. The runtime inspector keeps processing while paused.
 - **Runtime game requests are process-isolated.** If stale Godot game processes
@@ -271,8 +273,8 @@ fail before mutation. Verification failure/unavailability happens after
 mutation and does not roll it back or save the scene. See the bounded type
 list and string-valued identity contract in `docs/COMMANDS.md`.
 
-Editor log evidence is opt-in: `output`/`diagnostics --source editor` first
-verify `hera-godot status --capabilities` → `capabilities.editor_log_cursor`. File logs remain the default.
+Editor log evidence is opt-in: `output`/`diagnostics --source editor` negotiate
+support and report `editor_evidence_unavailable` themselves. File logs remain the default.
 Retain the returned cursor for an observed interval; `cursor_expired` requires
 an explicit restart from `restart_cursor`. Check `available`, `complete`, and
 `dropped_count`; a retained tail is not proof that earlier errors never occurred.
@@ -281,9 +283,11 @@ The collector covers only this editor process after registration. Startup
 
 After an edit, **confirm it** instead of assuming:
 
-- After `node add`/`set`: `hera-godot node get <path>` and check the value.
+- After `node set`: check the re-read `value` in the response; use `node get`
+  only for other properties. After `node add`: `hera-godot --ids scene tree`.
 - After structural changes: `hera-godot scene tree` (or `--ids`).
-- After `run`: `hera-godot output --type error` (project file log) or
+- After `run`: `hera-godot diagnostics` first; `output --type error` for raw
+  project file log lines, or
   `hera-godot diagnostics --source editor` when that capability is supported. File-log
   `clean: true` is not a claim about the editor Output panel.
 - For UI/visual changes: `hera-godot screenshot` for the edited scene, or

@@ -14,9 +14,10 @@ of truth for live editor and runtime state.
 1. Run `hera-godot status`. If no live editor is found, ask the user to enable the
    addon under **Project Settings → Plugins**; do not infer editor state from
    files.
-2. If multiple editors are found, run `hera-godot instances`. Pass
-   `hera-godot --instance <pid>` for any mutation.
-3. Before UI work, run `hera-godot guidance ui` and follow its returned mode.
+2. Reads select the first live editor. Mutations reject multiple editors with
+   their PID list; use `instances` only to choose a PID, then pass `--instance <pid>`.
+3. Before UI work, read `game_feel_ui_mode` from `status`; use `guidance ui`
+   when the checklist text is needed.
 
 Editor and game PIDs are separate. Use global `--instance <editor-pid>` for the
 editor, then `game --pid <game-pid> ...` to select a fresh entry from
@@ -62,13 +63,15 @@ repository's `docs/CSHARP_SUPPORT.md` for setup and limitations.
 
 ## Prove the result
 
-- After a change, read the changed property or node tree. After a run, check
-  `hera-godot output --type error` or `hera-godot diagnostics`.
+- After `node set`, check the response's re-read `value`; use `node get` for
+  other properties. After `node add`, use `hera-godot --ids scene tree`.
+  After a run, check `diagnostics` first; use `output --type error` for raw lines.
 - For visual/UI work, use `game ui tree`, semantic `game click`, and
   `hera-godot screenshot --runtime --analyze`. For prompt requirements, prefer a
   `game qa --file` scenario with `requirements` and per-step `covers`.
-- After editing GDScript, run that project's headless `--check-only` gate when
-  available, then re-check diagnostics. After C# changes, build the .NET project,
+- After editing GDScript, run `script validate res://file.gd`; fall back to
+  the project's headless `--check-only` gate, then re-check diagnostics.
+  After C# changes, build the .NET project,
   reload the assembly, and verify runtime behavior; GDScript `--check-only` does
   not compile C#.
 
