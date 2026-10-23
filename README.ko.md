@@ -299,8 +299,9 @@ CLI를 설치하고 애드온을 활성화하세요.
   [`integrations/AGENTS.md`](integrations/AGENTS.md)의 내용을 대상 프로젝트
   `AGENTS.md`에 추가하세요.
 
-각 에이전트용 문서는 Hera의 저토큰 설계를 뒷받침하는 약 1k-token 이하
-표면 예산을 지키며, Claude Code와 Codex는 같은 `live-editor` 스킬을 공유합니다.
+`AGENTS.md` 드라이버 카드는 약 1k-token을 목표로 합니다. 자세한 운영 규칙은
+[에이전트 가이드](docs/AGENT_GUIDE.md)에 있고, 전체 명령 레퍼런스는 필요할 때
+읽습니다. Claude Code와 Codex는 같은 `live-editor` 스킬을 공유합니다.
 
 ## 동작 방식
 
