@@ -8,10 +8,17 @@ of re-discovering it; date the entries that are point-in-time observations.
 ## Godot on this machine
 
 - **Release state (2026-10-23)**: current release is **v2.1.0** (tag → `0cb15be`;
-  breaking default-output trim, see `docs/MIGRATING_TO_V2_1.md`). When the
-  v2.1.0 owner tasks were handed off, the npm registry's `latest` was still
-  **2.0.2** (2.0.3 was never published) and this PC was not logged in to npm.
-  The 2.0.x recording/branding notes below are history, not the current target.
+  breaking default-output trim, see `docs/MIGRATING_TO_V2_1.md`) on every
+  channel: GitHub, Scoop, Homebrew tap, npm (`latest` = 2.1.0; 2.0.3 was never
+  published to npm) and the Asset Store (v2.1.0 submitted, pending approval;
+  gallery replaced). npm publication needs Victor's own login and security-key
+  approval; agents never handle it. No real `brew install` of any 2.x release
+  has been run on any OS. The 2.0.x recording/branding notes below are history.
+- **Ubuntu retired (2026-10-23)**: Victor ended Ubuntu support, including WSL
+  Ubuntu, so do not set up Ubuntu environments for verification. Facts found
+  while planning one: WSL 2 is installed with **no** distribution, and Docker is
+  not installed. The GitHub workflows' `ubuntu-24.04` runners stay as build
+  infrastructure only.
 - **Godot 4.2 for compatibility checks (2026-10-23)**: the official 4.2-stable
   direct executable was downloaded to
   `dist/wave1/godot42/Godot_v4.2-stable_win64.exe` (ignored `dist/`; may be

@@ -17,6 +17,8 @@ Windows/macOS support policy is unchanged.
 Ubuntu GitHub Actions runners remain build/test infrastructure. A passing job
 on those runners is evidence for that job's checks, not a promise to support
 Ubuntu deployments. Historical verification records remain historical.
+User-facing guides no longer suggest Ubuntu or WSL environments; the
+[nonvisual CI recipe](HEADLESS_CI.md) points here instead.
 
 
 The [2026-09-14 local baseline](reports/2026-09-14-engine-capability-baseline.md)
