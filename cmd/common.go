@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -60,7 +61,10 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 	}
 	if err := prepareEvalRequests(c, request.tool, request.params); err != nil {
 		code, detail, found := strings.Cut(err.Error(), ":")
-		if !found {
+		var coded *codedError
+		if errors.As(err, &coded) {
+			code, detail = coded.Code, coded.Err.Error()
+		} else if !found {
 			code, detail = "csharp_compile_failed", err.Error()
 		}
 		return failStructured(map[string]any{"error": code, "detail": strings.TrimSpace(detail)})

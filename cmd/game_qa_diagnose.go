@@ -35,7 +35,9 @@ func runGameQADiagnose(args []string, targetPID int) int {
 		return 1
 	}
 	data, ok := executeGameQADiagnosis(c, options)
-	printData(&protocol.Response{OK: true, Data: data})
+	if code := printData(&protocol.Response{OK: true, Data: data}); code != 0 {
+		return code
+	}
 	if !ok {
 		return 1
 	}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"os"
 	"os/exec"
@@ -1040,5 +1041,25 @@ func TestRunEngineBoundedNativeStalls(t *testing.T) {
 				t.Fatalf("lost refusal: %+v", result)
 			}
 		})
+	}
+}
+
+func TestEngineInfoExplicitProject(t *testing.T) {
+	project := t.TempDir()
+	stdout, stderr, code := captureContractRun([]string{"engine", "info", "--project", project})
+	if code != 1 || !strings.Contains(stderr, "project.godot") || stdout != "" {
+		t.Fatalf("ignored invalid project: %d %q %q", code, stdout, stderr)
+	}
+	executable := os.Getenv("HERA_TEST_GODOT")
+	if executable == "" {
+		return
+	}
+	if err := os.WriteFile(filepath.Join(project, "project.godot"), []byte("config_version=5\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	stdout, stderr, code = captureContractRun([]string{"--engine", executable, "engine", "info", "--project", project})
+	var result map[string]any
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil || code != 0 || result["project_path"] != filepath.ToSlash(project) {
+		t.Fatalf("project: %d %s %s %v", code, stdout, stderr, err)
 	}
 }

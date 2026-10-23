@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -98,5 +100,21 @@ func TestCSharpEvalMissingAssembly(t *testing.T) {
 	err := prepareEvalRequests(client.New(server.URL), "eval", map[string]any{"expr": "1", "lang": "csharp"})
 	if err == nil || !strings.HasPrefix(err.Error(), "csharp_build_required:") {
 		t.Fatal(err)
+	}
+}
+
+func TestEvalTransportErrorKeepsStructuredCode(t *testing.T) {
+	server := startContractEditor(t, map[string]string{"eval:csharp-context": "not JSON"})
+	defer server.Close()
+	installContractHome(t, contractServerPort(t, server), true)
+	stdout, stderr, code := captureContractRun([]string{"eval", "--lang=csharp", "1"})
+	var result map[string]any
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil || code != 1 || result["error"] != "csharp_compile_failed" {
+		t.Fatalf("%d %s %s %v", code, stdout, stderr, err)
+	}
+	err := prepareEvalRequests(nil, "eval", map[string]any{"lang": 42})
+	var coded *codedError
+	if !errors.As(fmt.Errorf("wrapped: %w", err), &coded) || coded.Code != "invalid_language" {
+		t.Fatalf("lost code: %v", err)
 	}
 }

@@ -607,7 +607,13 @@ func runEngineInfo(args []string) int {
 		fmt.Fprintf(os.Stderr, "engine info: %v\n", err)
 		return 2
 	}
-	_ = project
+	if project != "" {
+		project, err = resolveProjectDir(project)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "engine info: %v\n", err)
+			return 1
+		}
+	}
 	ref, ctx, cancel, err := runEngineCommand(engineVersionTimeout)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "engine info: %v\n", err)
@@ -618,6 +624,9 @@ func runEngineInfo(args []string) int {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "engine info: %v\n", err)
 		return 1
+	}
+	if project != "" {
+		info["project_path"] = filepath.ToSlash(project)
 	}
 	if code := printData(&protocol.Response{OK: true, Data: info}); code != 0 {
 		return code

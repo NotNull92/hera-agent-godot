@@ -33,7 +33,9 @@ func runGameQA(args []string, targetPID int) int {
 	results, stepsOK := executeGameQASteps(c, scenario.Steps, keepGoing)
 	data, ok := gameQASummary(scenario, results, stepsOK)
 	resp := &protocol.Response{OK: true, Data: data}
-	printData(resp)
+	if code := printData(resp); code != 0 {
+		return code
+	}
 	if !ok {
 		return 1
 	}
