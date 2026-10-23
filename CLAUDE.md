@@ -1,8 +1,10 @@
 # CLAUDE.md
 
-This project ships a CLI (`hera`; `hera-agent-godot` is a transitional alias)
-that drives a live Godot 4.x editor. Full guidance for using it — setup, commands, conventions, and the
-"verify your work" workflow — is in **[AGENTS.md](AGENTS.md)**. Read that first.
+This project ships a CLI (`hera-godot`; `hera-agent-godot` is a transitional alias)
+that drives a live Godot 4.x editor. Read the driver card **[AGENTS.md](AGENTS.md)**
+first; the full operating rules — setup, commands, conventions, and the
+"verify your work" workflow — are in **[docs/AGENT_GUIDE.md](docs/AGENT_GUIDE.md)**,
+linked section by section from the card.
 
 Quick reminders:
 
@@ -60,4 +62,6 @@ workspace**, not a new `codex exec` process. Find the pane with
 then `herdr pane run <PANE_ID> '<text>'`; the Codex TUI may leave the text in
 its input box, so follow with `herdr pane send-keys <PANE_ID> enter` and confirm
 with `herdr pane read <PANE_ID>` that the prompt was submitted. Write the durable brief under `docs/handoff/`
-first (local-only, gitignored) and point the pane at that file.
+first (local-only, gitignored) and point the pane at that file. To give Codex
+a fresh conversation (e.g. its context is nearly used up), send `/new` the same
+way before the brief.

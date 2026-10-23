@@ -7,6 +7,18 @@ of re-discovering it; date the entries that are point-in-time observations.
 
 ## Godot on this machine
 
+- **Release state (2026-10-23)**: current release is **v2.1.0** (tag → `0cb15be`;
+  breaking default-output trim, see `docs/MIGRATING_TO_V2_1.md`). When the
+  v2.1.0 owner tasks were handed off, the npm registry's `latest` was still
+  **2.0.2** (2.0.3 was never published) and this PC was not logged in to npm.
+  The 2.0.x recording/branding notes below are history, not the current target.
+- **Godot 4.2 for compatibility checks (2026-10-23)**: the official 4.2-stable
+  direct executable was downloaded to
+  `dist/wave1/godot42/Godot_v4.2-stable_win64.exe` (ignored `dist/`; may be
+  deleted — re-download from the official 4.2-stable release if missing). Use
+  it for `--check-only` and for repeated runs of touched headless tests; CI runs
+  the full headless suite on 4.7 only, so 4.2 timing flakes surface only here.
+
 - **Branding follow-up (2026-10-16)**: target release and recording CLI are now 2.0.2. Homebrew PR #3 (2.0.1) was reviewed and merged at 07:35:20 UTC. Keep recording preparation on hold until owner npm 2.0.2 publication. The full supplied portrait is `docs/assets/hera_new.png`; addon ships only the 192×192 fitted copy.
 
 
@@ -177,6 +189,18 @@ buffering.
 
 ## Toolchain limits on this PC
 
+- **Review snapshots (2026-10-23)**: `git archive` honours the `/cmd` and
+  `/internal` `export-ignore` rules in `.gitattributes`, so archiving a commit
+  silently drops the Go sources. Snapshot a commit with `git worktree add
+  --detach` or per-file `git show <rev>:<path>` instead.
+- **Deleting scratch worktrees (2026-10-23)**: worktrees under the deep
+  per-session temp path exceed MAX_PATH, so `git worktree remove` fails with
+  `Filename too long`. Delete with PowerShell
+  `Remove-Item -LiteralPath ("\\?\" + $path) -Recurse -Force`, then
+  `git worktree prune`.
+- **Python console encoding**: the console code page is cp949, and `python -I`
+  ignores `PYTHONIOENCODING`; printing Korean/UTF-8 text needs
+  `sys.stdout.reconfigure(encoding="utf-8")` in the script.
 - **Race check reverified (2026-09-14)**: `go test -race -shuffle=on -count=1 ./...`
   passed with Go 1.26.2 windows/amd64, `CGO_ENABLED=1`, and the installed UCRT64
   GCC. The earlier antivirus block did not recur; attempt the check before
