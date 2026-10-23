@@ -1,5 +1,14 @@
 # CLI package-manager manifests
 
+## Ubuntu support retired (2026-10-23)
+
+Ubuntu, including Ubuntu under WSL, is no longer a supported deployment target.
+Do not schedule Ubuntu release qualification or promise Ubuntu-specific fixes.
+Generic Linux artifacts and package-manager entries remain for other Linux
+distributions; their availability does not imply Ubuntu support. Existing
+published packages are not withdrawn. Ubuntu CI runners remain infrastructure.
+See the [operating system policy](../docs/SUPPORT_MATRIX.md#operating-system-policy).
+
 ## Command-name migration
 
 The canonical installed command is `hera-godot`; `hera-agent-godot` remains an

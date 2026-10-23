@@ -222,6 +222,8 @@ Godot .NET이 필요하며, `status.csharp_supported`는 에디터 지원 여부
 
 ## 설치
 
+**2026-10-23부터 Ubuntu 지원을 중단했습니다.** WSL의 Ubuntu도 포함합니다. Ubuntu는 공식 배포 지원 대상에서 제외하며, 릴리스 검증과 Ubuntu 전용 문제 대응을 제공하지 않습니다. Linux 공용 파일이 설치되더라도 지원을 보장하지 않습니다. [플랫폼 정책](docs/SUPPORT_MATRIX.md#operating-system-policy)을 확인하세요.
+
 v2.0.0 업그레이드 시 스크립트를 `hera-godot`으로 바꾸고 `hera-godot version`으로 확인하세요. npm 업그레이드는 이전 패키지 bin을 제거하지만 원라인 설치는 기존 `hera` 파일을 보존합니다. 이전 Hera Godot의 `hera`를 수동 삭제하기 전에 실제 경로와 소유를 확인하세요. 다른 도구의 파일일 수 있습니다. CLI와 애드온을 함께 올리세요. Homebrew 전환은 별도 탭 업데이트를 기다립니다.
 
 **CLI** — 패키지 매니저로 설치:
@@ -233,12 +235,12 @@ scoop install hera
 ```
 
 ```sh
-# macOS / Linux (Homebrew)
+# macOS / Linux except Ubuntu (Homebrew)
 brew install NotNull92/hera/hera
 ```
 
 ```sh
-# Node.js 18+ 이 있는 모든 플랫폼 (npm)
+# Windows / macOS / Ubuntu 외 Linux, Node.js 18+ (npm)
 npm install -g hera-godot
 # 또는 설치 없이 실행: npx hera-godot status
 ```
@@ -246,7 +248,7 @@ npm install -g hera-godot
 또는 최신 릴리스 바이너리를 받아 설치하는 원라인:
 
 ```sh
-# macOS / Linux
+# macOS / Linux except Ubuntu
 curl -fsSL https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.sh | sh
 ```
 

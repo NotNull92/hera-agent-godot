@@ -222,6 +222,8 @@ is removed from exported project settings.
 
 ## Install
 
+**Ubuntu support ended on 2026-10-23**, including Ubuntu under WSL. Ubuntu is no longer a supported deployment target: release validation and Ubuntu-specific fixes are not provided. Generic Linux downloads may remain installable; availability is not a support guarantee. See the [platform policy](docs/SUPPORT_MATRIX.md#operating-system-policy).
+
 For v2.0.0 upgrades, update scripts to `hera-godot` and verify with `hera-godot version`. npm upgrades remove the old package bin; one-line installers preserve existing `hera` files. Check the resolved path and ownership before manually removing an old Hera Godot `hera`; another tool may own it. Upgrade CLI and addon together. Homebrew migration awaits a separate tap update.
 
 **CLI** — via a package manager:
@@ -233,12 +235,12 @@ scoop install hera
 ```
 
 ```sh
-# macOS / Linux (Homebrew)
+# macOS / Linux except Ubuntu (Homebrew)
 brew install NotNull92/hera/hera
 ```
 
 ```sh
-# Any platform with Node.js 18+ (npm)
+# Windows / macOS / Linux except Ubuntu; Node.js 18+ (npm)
 npm install -g hera-godot
 # or zero-install: npx hera-godot status
 ```
@@ -246,7 +248,7 @@ npm install -g hera-godot
 Or a one-liner that fetches the latest release binary:
 
 ```sh
-# macOS / Linux
+# macOS / Linux except Ubuntu
 curl -fsSL https://raw.githubusercontent.com/NotNull92/hera-agent-godot/main/install.sh | sh
 ```
 

@@ -1,5 +1,24 @@
 # Godot support matrix
 
+## Operating system policy
+
+Effective 2026-10-23, Ubuntu is no longer supported as a Hera deployment
+target, including Ubuntu under WSL. This applies to the CLI and Godot addon:
+Ubuntu release validation and Ubuntu-specific compatibility fixes are outside
+the supported scope. The owner cancelled the disposable-Ubuntu Homebrew
+verification planned for v2.1.0; no successful native Homebrew install is claimed.
+
+Generic Linux archives, npm platform entries and the Homebrew Linux formula
+remain available for other Linux distributions. They do not establish Ubuntu
+support or new verification claims for other distributions. Existing published
+artifacts are not withdrawn, and no Ubuntu runtime/install blocker is added.
+Windows/macOS support policy is unchanged.
+
+Ubuntu GitHub Actions runners remain build/test infrastructure. A passing job
+on those runners is evidence for that job's checks, not a promise to support
+Ubuntu deployments. Historical verification records remain historical.
+
+
 The [2026-09-14 local baseline](reports/2026-09-14-engine-capability-baseline.md)
 verified the installed Windows 4.7.2 .NET executable, all 52 addon parse checks,
 17 standalone regressions, and isolated live status/smoke. It does not expand
