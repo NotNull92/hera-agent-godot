@@ -46,8 +46,10 @@ Everyday driver surface (full flags and response fields: [docs/COMMANDS.md](docs
 hera-godot status                                  # project, version, scene, session; not the editor console
 hera-godot status --capabilities                   # include experimental API capability map
 hera-godot instances                               # live editors; stale heartbeats listed separately
-hera-godot --ids scene tree                        # edited scene paths
-hera-godot node get <path> --prop p                # one property; omit --prop only when you need the dump
+hera-godot --ids scene tree [path] --depth N        # scoped edited scene paths
+hera-godot node get <path> --prop p                # one property; --changed for non-defaults
+hera-godot scene tree --type Class --props a,b      # selected per-node properties
+hera-godot signal list <path> --connected           # connected signals only
 hera-godot node add|set|remove ...                 # undoable editor mutations
 hera-godot diagnostics [--lines N]                 # project file log; source is file, not the Output panel
 hera-godot diagnostics --source editor             # opt-in editor-session errors (capability-gated)

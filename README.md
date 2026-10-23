@@ -133,6 +133,9 @@ screenshot), `guidance`, `game_feel`, `output`, `diagnostics`, `eval`, `screensh
 [docs/ROADMAP.md](docs/ROADMAP.md) for release history and Asset Store
 packaging status.
 
+For smaller reads, use `node get <path> --changed`, `scene tree [path] --depth N
+--type Class --props a,b`, or `signal list <path> --connected`. Defaults are unchanged.
+
 For conditional edits, read `node get <path> --prop P --snapshot`, then pass
 its `expected` object to `node set <path> --prop P --value V --expected '<JSON>'
 --verify`. Stale sessions, scenes, nodes, or typed values are rejected before

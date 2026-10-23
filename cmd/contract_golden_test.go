@@ -87,6 +87,11 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "scene_tree_scoped", args: []string{"scene", "tree", "Child", "--depth=0", "--type=Node2D", "--props=visible"}, responses: map[string]string{"scene": `{"ok":true,"data":{"scene":"res://main.tscn","count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child","type":"Node2D","props":{"visible":"true"}}]}}`}, golden: "scene_tree_scoped"},
+		{name: "scene_tree_scoped_ids", args: []string{"--ids", "scene", "tree", "Child", "--depth=0"}, responses: map[string]string{"scene": `{"ok":true,"data":{"scene":"res://main.tscn","count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child","type":"Node2D"}]}}`}, golden: "scene_tree_scoped_ids"},
+		{name: "node_get_changed", args: []string{"node", "get", ".", "--changed"}, responses: map[string]string{"node": `{"ok":true,"data":{"name":"Main","path":".","type":"Node2D","properties":{"name":"Main","visible":"false"}}}`}, golden: "node_get_changed"},
+		{name: "signal_list_connected", args: []string{"signal", "list", ".", "--connected"}, responses: map[string]string{"signal": `{"ok":true,"data":{"node":".","count":1,"truncated":false,"signals":[{"name":"renamed","args":[],"connections":[{"to":"Child","method":"get_name"}]}]}}`}, golden: "signal_list_connected"},
+
 		{name: "debug_csharp_unsupported", args: []string{"debug", "attach", "--break", "res://Missing.cs:12"}, noEditor: true, wantExit: 2, wantStderrPrefix: "error: csharp_debug_unsupported:", golden: "debug_csharp_unsupported"},
 		{name: "eval_csharp_unavailable", args: []string{"eval", "1+1"}, responses: map[string]string{"eval:csharp-context": `{"ok":false,"error":"csharp_unavailable: use --lang gdscript"}`}, wantExit: 1, wantStderrPrefix: "error: csharp_unavailable:", golden: "eval_csharp_unavailable"},
 		{name: "eval_csharp_build_required", args: []string{"eval", "1+1"}, responses: map[string]string{"eval:csharp-context": `{"ok":false,"error":"csharp_build_required: build and reload the project"}`}, wantExit: 1, wantStderrPrefix: "error: csharp_build_required:", golden: "eval_csharp_build_required"},

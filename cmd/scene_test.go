@@ -22,7 +22,7 @@ func TestParseSceneArgsDetailed(t *testing.T) {
 		{name: "save", args: []string{"save"}, wantAction: "save"},
 		{name: "create", args: []string{"create", "res://scenes/New.tscn", "--root", "Node2D", "--force", "--open"}, wantAction: "create", wantPath: "res://scenes/New.tscn"},
 		{name: "save as", args: []string{"save-as", "res://scenes/Copy.tscn", "--force"}, wantAction: "save_as", wantPath: "res://scenes/Copy.tscn"},
-		{name: "tree extra", args: []string{"tree", "extra"}, wantErr: true},
+		{name: "tree subtree", args: []string{"tree", "extra"}, wantAction: "tree", wantPath: "extra"},
 		{name: "list extra", args: []string{"list", "extra"}, wantErr: true},
 		{name: "open missing", args: []string{"open"}, wantErr: true},
 		{name: "reload extra", args: []string{"reload", "res://a.tscn", "extra"}, wantErr: true},

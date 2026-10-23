@@ -32,7 +32,8 @@ expired heartbeat — that is not the same as no editor.
 ## Keep reads small and writes safe
 
 - Default output is compact. Prefer `hera-godot --ids scene tree`, selected
-  `node get --prop/--props`, scoped `game ui tree`, and `game qa discover`
+  `node get --prop/--props/--changed`, `scene tree [path] --depth N --type Class
+  --props a,b`, `signal list <path> --connected`, scoped `game ui tree`, and `game qa discover`
   before full dumps.
 - Use `node add/set/remove` and `signal connect/disconnect` for normal editor
   changes; Godot records those as undoable steps. Prefer them to `eval`, whose

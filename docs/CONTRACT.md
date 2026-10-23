@@ -249,13 +249,13 @@ contract tests (see [Contract tests](#contract-tests)).
 
 | Command | Tier | Key fields |
 |---------|------|-----------|
-| `scene tree` | stable | ✓ `scene`, `count`, `truncated`, `nodes[]` of `{name, path, type}` |
+| `scene tree` | stable | ✓ `scene`, `count`, `truncated`, `nodes[]` of `{name, path, type}`. Optional params `path`, non-negative `depth`, `type`, and `props[]` narrow reads; only `props` adds a per-node `props{}` field. Depth is relative to the subtree; returned paths remain relative to the edited root. |
 | `scene list` | stable | ✓ `current`, `open[]` |
 | `editor state` | stable | ✓ `current_scene`, `current_script{found, path}`, `main_scene`, `open_scenes[]`, `playing`, `playing_scene`, `project_name`, `project_path`, `selected[]` |
 | `editor selected` | stable | selection list with scene-relative paths |
 | `node find` | stable | ✓ `count`, `truncated`, `nodes[]` of `{name, path, type}` |
-| `node get` | stable | ✓ `name`, `path`, `type`, `properties{}` (stringified values). Opt-in experimental `--prop P --snapshot` adds the complete typed `expected` object; ordinary reads are unchanged. |
-| `signal list` | stable | ✓ `node`, `count`, `truncated`, `signals[]` of `{name, args[], connections[]}` (+ `external_connections` when editor-internal targets exist) |
+| `node get` | stable | ✓ `name`, `path`, `type`, `properties{}` (stringified values). Opt-in experimental `--prop P --snapshot` adds the complete typed `expected` object; ordinary reads are unchanged. Optional boolean `changed` filters defaults using inspector revert, script default, then class default; incompatible with `prop`/`props`. Godot 4.2 may report `null` for uncached tool-script defaults; `--changed` compares against that engine result and can include unchanged exports. It does not instantiate user scripts to infer defaults. |
+| `signal list` | stable | ✓ `node`, `count`, `truncated`, `signals[]` of `{name, args[], connections[]}` (+ `external_connections` when editor-internal targets exist). Optional boolean `connected` excludes signals without either kind of connection. |
 | `screenshot diff` | experimental | ✓ `before`, `after`, `width`, `height`, `threshold`, `total_pixels`, `changed_pixels`, `changed_ratio`, `max_delta`, `identical`, and `changed_bounds{x,y,width,height}` when anything changed. Computed locally; `max_delta` is reported even when it is under the threshold |
 | `theme get` / `theme set` | experimental | ✓ (`get`) `path`, `types[]`, `items{<type>{colors{}, constants{}, font_sizes{}}}`; (`set`) `path`, `type`, `applied{}`, `undoable:false`. Colour values are printed to 6 decimals so a value round-trips what the caller wrote rather than float32 noise |
 | `project info` | stable | ✓ `name`, `path`, `current_scene`, `files{all, scene, script, resource, asset, shader, other}`, `godot{...}` |

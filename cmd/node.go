@@ -70,6 +70,8 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		params := map[string]any{"action": "get", "path": rest[0]}
 		for i := 1; i < len(rest); i++ {
 			switch {
+			case rest[i] == "--changed":
+				params["changed"] = true
 			case rest[i] == "--snapshot":
 				params["snapshot"] = true
 			case isFlag(rest[i], "--prop"):
@@ -99,6 +101,9 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			}
+		}
+		if params["changed"] == true && (params["prop"] != nil || params["props"] != nil) {
+			return nil, fmt.Errorf("--changed cannot be combined with --prop or --props")
 		}
 		if params["snapshot"] == true && params["prop"] == nil {
 			return nil, fmt.Errorf("--snapshot requires --prop")

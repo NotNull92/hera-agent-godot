@@ -31,7 +31,7 @@ static func _property_info(res: Resource, prop: String) -> Dictionary:
 	return {}
 
 static func _coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
-	return ValueCodec.coerce(raw, prop_info, {"numeric": true, "parse_node_path": true, "load_resource": _coerce_resource_object})
+	return ValueCodec.coerce(raw, prop_info, {"numeric": true, "parse_node_path": true, "load_resource": func(text: String, info: Dictionary) -> Dictionary: return _coerce_resource_object(text, info)})
 
 static func _coerce_resource_object(text: String, prop_info: Dictionary) -> Dictionary:
 	if text == "null":

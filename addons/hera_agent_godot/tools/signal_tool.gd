@@ -65,6 +65,8 @@ func _list(root: Node, params: Dictionary) -> Dictionary:
 				"to": target_path,
 				"method": String(callable.get_method()),
 			})
+		if params.get("connected", false) and conns.is_empty() and external_connection_count == 0:
+			continue
 		var entry := { "name": sig_name, "args": args, "connections": conns }
 		if external_connection_count > 0:
 			entry["external_connections"] = external_connection_count

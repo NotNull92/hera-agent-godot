@@ -21,7 +21,7 @@ func _initialize() -> void:
 	node.name = "LongName"
 	assert(NodeCodec.selected_properties(node, ["name"], 4).properties.name == "Long…")
 	assert(GameCodec.property_value(node, "name").type == "StringName")
-	assert(GameCodec.selected_properties(node, ["position.x"]).properties["position.x"] == "0.0")
+	assert(GameCodec.selected_properties(node, ["position.x"]).properties["position.x"] == str(0.0))
 	assert(NodeCodec.property_value(node, "", 200).error == "property name is empty")
 	assert(GameCodec.property_value(node, "").error == "node has no property: ")
 	node.free()

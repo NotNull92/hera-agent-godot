@@ -8,7 +8,7 @@ static func properties(node: Node) -> Dictionary:
 	return ValueCodec.properties(node, MAX_VALUE_LEN, "...")
 
 static func selected_properties(node: Node, names: Array) -> Dictionary:
-	return ValueCodec.selected_properties(node, names, property_value)
+	return ValueCodec.selected_properties(node, names, func(target: Node, name: String) -> Dictionary: return property_value(target, name))
 
 static func property_value(node: Node, name: String) -> Dictionary:
 	if name.begins_with("metadata/"):

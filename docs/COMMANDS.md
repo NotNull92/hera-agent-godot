@@ -190,7 +190,7 @@ mutation a new ID merely to force it to run.
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N] [--source file\|editor] [--since cursor]` | `output` | ☑ | Default: tail the project's configured file log. Opt-in editor source: bounded session evidence with cursors and severity/location metadata; see below. Unreadable evidence reports `available:false`. |
 | `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log and set `source: file`. That `clean` flag is only the file log, not the editor Output panel. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
-| `scene tree` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). |
+| `scene tree [<path>] [--depth N] [--type Class] [--props a,b]` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). Optional subtree paths stay inside the scene; output paths remain scene-relative. Depth 0 includes only the subtree root. `--type` includes subclasses; `--props` adds a `props` object per matching node (missing properties fail). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |
 | `scene reload [res://...]` | `scene` | ☑ | Reload the current or named open scene from disk, useful after external `.tscn` edits before saving through the editor. |
@@ -212,7 +212,7 @@ mutation a new ID merely to force it to run.
 | `project mkdir <res://dir>` | `project` | ☑ | Create a project directory under `res://` and refresh the editor filesystem. |
 | `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set and persist `application/run/main_scene` through the targeted editor; its in-memory setting and subsequent default `run` agree immediately. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
-| `node get <path> [--prop <name>\|--props <a,b>] [--snapshot]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. `--snapshot` requires one `--prop` and adds a typed conditional-mutation snapshot. |
+| `node get <path> [--changed\|--prop <name>\|--props <a,b>] [--snapshot]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. `--changed` excludes default-valued properties and cannot combine with `--prop`/`--props`. Defaults use inspector revert values, then script defaults, then class defaults (a temporary instance on Godot 4.2). `--snapshot` requires one `--prop` and adds a typed conditional-mutation snapshot. Godot 4.2 may report `null` for uncached tool-script defaults; `--changed` compares against that engine result and can include unchanged exports. It does not instantiate user scripts to infer defaults. |
 | `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). When Game Feel Mode is enabled, feel-related node types return a compact `agent_hint` pointing at relevant `game_feel` topics. |
 | `node instance <res://scene.tscn> [--parent <path>] [--name <n>]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path (undoable). |
 | `node set <path> --prop <name> --value <v> [--expected <JSON> [--verify]]` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). Optional typed preconditions reject stale targets before mutation. |
@@ -221,7 +221,7 @@ mutation a new ID merely to force it to run.
 | `node reparent <path> --parent <path> [--no-keep-global-transform]` | `node` | ☑ | Move a node to a new parent (undoable). Defaults to keeping the global transform the way `Node.reparent` does. |
 | `node attach-script <path> <res://script.gd\|res://Script.cs>` | `node` | ☑ | Attach a script after validating path and base type (undoable). GDScript checks obvious `preload("res://...")` dependencies. C# requires Godot .NET and a loaded class; build/reload first. C# diagnostics carry a build warning, not C# compiler diagnostics. |
 | `node detach-script <path>` | `node` | ☑ | Clear a node's script (undoable). |
-| `signal list <node>` | `signal` | ☑ | List the signals a node exposes (name + arg names) and scene-local connections; editor-internal targets are counted as `external_connections`. |
+| `signal list <node> [--connected]` | `signal` | ☑ | List the signals a node exposes (name + arg names) and scene-local connections; editor-internal targets are counted as `external_connections`. `--connected` retains only signals with local or external connections. |
 | `signal connect <from> <sig> <to> <method>` | `signal` | ☑ | Connect a node's signal to a method on another node (undoable; persistent, saved with the scene). |
 | `signal disconnect <from> <sig> <to> <method>` | `signal` | ☑ | Remove that connection (undoable). |
 | `resource get <res://...>` | `resource` | ☑ | Load a resource (`.tres`/`.res`/`.tscn`/any `res://`) and dump its class, name, and editor-visible properties. Read-only; no scene needs to be open. |

@@ -12,6 +12,9 @@ const PersistenceEvidence = preload("res://addons/hera_agent_godot/core/persiste
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
+const SceneNodePath = preload("res://addons/hera_agent_godot/core/scene_node_path.gd")
+const NodeValueCodec = preload("res://addons/hera_agent_godot/tools/node_value_codec.gd")
+
 const MAX_NODES := 1000
 
 func get_name() -> String:
@@ -21,7 +24,7 @@ func execute(params: Dictionary) -> Dictionary:
 	var action := String(params.get("action", "tree"))
 	match action:
 		"tree":
-			return _tree()
+			return _tree(params)
 		"open_scenes":
 			return ToolResponse.success({
 				"open": _to_unique_strings(EditorInterface.get_open_scenes()),
@@ -40,12 +43,31 @@ func execute(params: Dictionary) -> Dictionary:
 		_:
 			return ToolResponse.failure("unknown scene action: %s (want tree|open_scenes|open|reload|save|create|save_as)" % action)
 
-func _tree() -> Dictionary:
+func _tree(params: Dictionary = {}) -> Dictionary:
 	var root := EditorInterface.get_edited_scene_root()
 	if root == null:
 		return ToolResponse.success({ "scene": "", "count": 0, "truncated": false, "nodes": [] })
+	if params.has("depth"):
+		var depth: Variant = params["depth"]
+		if typeof(depth) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(depth)) or float(depth) < 0 or float(depth) != floor(float(depth)) or float(depth) >= 9223372036854775808.0:
+			return ToolResponse.failure("depth must be a non-negative integer")
+	for key: String in ["path", "type"]:
+		if params.has(key) and not params[key] is String:
+			return ToolResponse.failure("%s must be a string" % key)
+	if params.has("props"):
+		if not params["props"] is Array:
+			return ToolResponse.failure("props must be an array of property names")
+		for prop: Variant in params["props"]:
+			if not prop is String or prop == "":
+				return ToolResponse.failure("props must be an array of property names")
+	var path := String(params.get("path", "."))
+	var subtree: Node = SceneNodePath.resolve(root, path)
+	if subtree == null:
+		return ToolResponse.failure("node not found: %s" % path)
 	var nodes: Array = []
-	_collect(root, root, nodes)
+	var error: String = _collect(subtree, root, nodes, params)
+	if error != "":
+		return ToolResponse.failure(error)
 	var truncated := nodes.size() > MAX_NODES
 	if truncated:
 		nodes = nodes.slice(0, MAX_NODES)
@@ -174,18 +196,25 @@ func _guard_existing_scene_path(path: String) -> Dictionary:
 		return ToolResponse.failure("scene path must stay inside res://")
 	return {}
 
-func _collect(node: Node, root: Node, out: Array) -> void:
+func _collect(node: Node, root: Node, out: Array, params: Dictionary = {}, depth: int = 0) -> String:
 	if out.size() > MAX_NODES:
-		return
-	out.append({
-		"path": String(root.get_path_to(node)),
-		"type": node.get_class(),
-		"name": String(node.name),
-	})
-	for child in node.get_children():
-		_collect(child, root, out)
-		if out.size() > MAX_NODES:
-			return
+		return ""
+	var type_filter := String(params.get("type", ""))
+	if type_filter == "" or node.is_class(type_filter):
+		var entry := {"path": String(root.get_path_to(node)), "type": node.get_class(), "name": String(node.name)}
+		if params.has("props"):
+			var selected: Dictionary = NodeValueCodec.selected_properties(node, params["props"], 200)
+			if not selected.get("ok", false):
+				return String(selected.get("error", "property not found"))
+			entry["props"] = selected["properties"]
+		out.append(entry)
+	if params.has("depth") and depth >= int(params["depth"]):
+		return ""
+	for child: Node in node.get_children():
+		var error: String = _collect(child, root, out, params, depth + 1)
+		if error != "" or out.size() > MAX_NODES:
+			return error
+	return ""
 
 func _current_scene() -> String:
 	var root := EditorInterface.get_edited_scene_root()

@@ -145,6 +145,9 @@ CLI와 애드온을 함께 올리고 Godot를 완전히 재시작하세요. v1 �
 상대 물리 프레임에 맞춰 입력하고 종료 시 눌린 액션을 해제합니다.
 시간 제한과 QA 예제는 명령 레퍼런스를 참고하세요.
 
+작은 응답이 필요하면 `node get <path> --changed`, `scene tree [path] --depth N
+--type Class --props a,b`, `signal list <path> --connected`를 사용하세요. 기본 응답은 유지됩니다.
+
 조건부 수정은 `node get <path> --prop P --snapshot`의 `expected` 객체를
 `node set <path> --prop P --value V --expected '<JSON>' --verify`에 전달합니다.
 세션·씬·노드·타입이 있는 속성값이 달라졌다면 수정 전에 거절합니다.
