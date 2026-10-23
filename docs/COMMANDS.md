@@ -1,6 +1,6 @@
 # Commands
 
-All value flags accept `--flag=value` as well as `--flag value`.
+Value flags accept non-empty values as `--flag=value` or `--flag value`; use the space form (`--value ""`) for an empty value where supported.
 
 > Status: implemented command surface. Output is compact by default to stay
 > low-token.
