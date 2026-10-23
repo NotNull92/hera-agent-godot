@@ -1,5 +1,7 @@
 extends RefCounted
 
+const SceneNodePath = preload("res://addons/hera_agent_godot/core/scene_node_path.gd")
+
 # `signal` — inspect and wire node signals in the edited scene.
 #   list <node>                            -> signals the node exposes + connections
 #   connect <from> <sig> <to> <method>     -> connect a signal to a node method
@@ -131,7 +133,7 @@ func _wire(root: Node, params: Dictionary, do_connect: bool) -> Dictionary:
 	})
 
 func _resolve(root: Node, path: String) -> Node:
-	return root if path == "." else root.get_node_or_null(path)
+	return SceneNodePath.resolve(root, path)
 
 # Path of a connection target relative to the scene root; absolute for an
 # out-of-scene object, empty for a non-Node (e.g. a freed or resource target).
