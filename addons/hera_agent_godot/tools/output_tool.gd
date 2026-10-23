@@ -7,6 +7,7 @@ extends RefCounted
 
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 const EditorLog = preload("res://addons/hera_agent_godot/core/editor_log.gd")
+const FILE_LOG_HINT := "%s This log only ever covers the running project — Godot installs no file logger in an editor session, so editor-console messages are never in it. Enable Project Settings > debug/file_logging/enable_file_logging for project runs, or relaunch the editor with --log-file <path> to capture editor output."
 var editor_log: RefCounted
 
 func get_name() -> String:
@@ -43,7 +44,7 @@ func execute(params: Dictionary) -> Dictionary:
 			"reason": "evidence_unavailable",
 			"file_logging_enabled": enabled,
 			"log_path": ProjectSettings.globalize_path(log_path),
-			"hint": "%s This log only ever covers the running project — Godot installs no file logger in an editor session, so editor-console messages are never in it. Enable Project Settings > debug/file_logging/enable_file_logging for project runs, or relaunch the editor with --log-file <path> to capture editor output." % reason,
+			"hint": FILE_LOG_HINT % reason,
 			"lines": [],
 		})
 

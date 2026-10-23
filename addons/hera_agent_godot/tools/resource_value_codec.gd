@@ -1,6 +1,6 @@
 extends RefCounted
 
-const VariantText = preload("res://addons/hera_agent_godot/core/variant_text.gd")
+const ValueCodec = preload("res://addons/hera_agent_godot/core/value_codec.gd")
 
 const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
 
@@ -31,49 +31,7 @@ static func _property_info(res: Resource, prop: String) -> Dictionary:
 	return {}
 
 static func _coerce(raw: Variant, prop_info: Dictionary) -> Dictionary:
-	var target_type := int(prop_info.get("type", TYPE_NIL))
-	if typeof(raw) != TYPE_STRING:
-		if typeof(raw) == target_type or (raw == null and target_type == TYPE_OBJECT):
-			return { "ok": true, "value": raw }
-		if typeof(raw) == TYPE_INT and target_type == TYPE_FLOAT:
-			return { "ok": true, "value": float(raw) }
-		if typeof(raw) == TYPE_FLOAT and target_type == TYPE_INT and is_finite(raw) and raw >= -9223372036854775808.0 and raw < 9223372036854775808.0 and raw == float(int(raw)):
-			return { "ok": true, "value": int(raw) }
-		return { "ok": false, "error": "property expects %s, got %s%s" % [type_string(target_type), type_string(typeof(raw)), VariantText.hint_suffix(target_type)] }
-	var text := String(raw)
-	match target_type:
-		TYPE_STRING:
-			return { "ok": true, "value": text }
-		TYPE_STRING_NAME:
-			return { "ok": true, "value": StringName(text) }
-		TYPE_BOOL:
-			var lower := text.to_lower()
-			if lower == "true" or lower == "1":
-				return { "ok": true, "value": true }
-			if lower == "false" or lower == "0":
-				return { "ok": true, "value": false }
-			return { "ok": false, "error": "invalid bool value for property: %s" % text }
-		TYPE_INT:
-			if not text.is_valid_int():
-				return { "ok": false, "error": "invalid int value for property: %s" % text }
-			return { "ok": true, "value": int(text) }
-		TYPE_FLOAT:
-			if not text.is_valid_float():
-				return { "ok": false, "error": "invalid float value for property: %s" % text }
-			return { "ok": true, "value": float(text) }
-		TYPE_OBJECT:
-			return _coerce_resource_object(text, prop_info)
-		TYPE_NIL:
-			if text == "null":
-				return { "ok": true, "value": null }
-			return { "ok": false, "error": "cannot infer type for null property: %s" % String(prop_info.get("name", "")) }
-		_:
-			var parsed: Variant = str_to_var(text)
-			if parsed == null and text != "null":
-				return { "ok": false, "error": "invalid %s value for property: %s%s" % [type_string(target_type), text, VariantText.hint_suffix(target_type)] }
-			if typeof(parsed) != target_type:
-				return { "ok": false, "error": "property expects %s, got %s%s" % [type_string(target_type), type_string(typeof(parsed)), VariantText.hint_suffix(target_type)] }
-			return { "ok": true, "value": parsed }
+	return ValueCodec.coerce(raw, prop_info, {"numeric": true, "parse_node_path": true, "load_resource": _coerce_resource_object})
 
 static func _coerce_resource_object(text: String, prop_info: Dictionary) -> Dictionary:
 	if text == "null":
