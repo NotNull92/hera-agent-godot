@@ -19,7 +19,7 @@ and evidence objects are not recursively trimmed.
 | File-log `log_path` | When `available: true` | Use the full `output`/`diagnostics` RPC data if needed. Unavailable/unreadable logs retain the path. |
 | Log `source` | When `"file"` | Treat absence as `"file"`. Editor-source metadata is retained. |
 | `game input` request echoes | When a returned input field equals its request value | Retain your request. `pid`, `log_count`, normalized values that differ, and other computed fields remain. |
-| Status `editor_session_id` | Both ordinary and capability output | Guard flows use the complete `expected` from `node get --prop P --snapshot`; raw status RPC retains the session. |
+| Status `editor_session_id` | Both ordinary and capability output | Guard flows use the complete `expected` from `node get --prop P --snapshot`; operation IDs can use the selected live `instances[].editor_session_id`; raw status RPC also retains it. |
 | Status `project_path` | Both ordinary and capability output | `project info` returns `path`; `editor state` returns `project_path`. |
 
 `status --capabilities` retains its capability block. Never manufacture a guard

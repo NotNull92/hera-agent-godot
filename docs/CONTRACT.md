@@ -372,6 +372,11 @@ two report post-mutation failure and do not roll back. Success adds string
 No persistence or full setter-side-effect isolation is implied. Batch results
 retain their existing per-entry error and sequential execution contract.
 
+`node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
+object). All properties are validated before attachment, then applied in the same
+creation undo action. Only this form adds `values` with re-read property strings;
+invalid properties or values add no node. Repeated properties use the last value.
+
 ### Runtime (game) surface
 
 Uses the `HeraGameInspector` autoload; not undoable. The default targets the
@@ -384,7 +389,7 @@ without fallback.
 |---------|------|-----------|
 | `game tree` | stable | `scene` + compact node list |
 | `game node get/set/call` | stable | `get` mirrors `node get` (stringified values); `call` returns the stable stringified `result`; experimental `result_value` / `result_value_omitted` from v2.0.0 |
-| `game assert` | stable | ✓ pass: `{prop, op, actual, expected}`; fail: stderr + exit 1 |
+| `game assert` | stable | ✓ default pass: `{prop, op, actual, expected}`; default fail: stderr + exit 1. Opt-in `--within-ms`: `waited_ms`; timeout also prints last available `actual`, `timed_out: true`, and exits 1 |
 | `game instances` | experimental | `instances[]` with pid, scene, heartbeat age, `user_data_dir`, viewport sizes; optional `stale[]`; `shared_user_data` when live processes share `user://` |
 | `game ui tree` | experimental | `Control` entries; fields selectable via `--fields` |
 | `game ui audit` | experimental | `ok`, `strict`, `scope`, `controls`, `errors`, `warnings`, structured `findings[]`, `truncated` only when true |
@@ -395,6 +400,12 @@ without fallback.
 | `game qa discover` | experimental | callable `qa_*` helpers or `Qa` followed by an uppercase letter (e.g. `QaReady`); exact case is preserved |
 | `game qa diagnose` | experimental | ✓ `ok`, `checks[]` of `{name, ok, ...}`, `issues[]` |
 | `game qa --file` | experimental | `ok`, `steps`, `results[]`, `requirements*` (verdict semantics above) |
+
+`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
+(QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
+`timed_out: true` and the last observed `actual` when available, with failure
+exit status. The CLI timeout is extended for this call by a five-second transport
+margin; the bridge also covers the requested wait. Omitted waits are unchanged.
 
 Clock steps finish one selected node-callback phase before pausing. Input
 sequences require an unpaused tree, time scale 1, and physics rate >=60 Hz;
@@ -601,14 +612,3 @@ Batch eval children and QA call-step data retain the new fields. Operation
 receipts retain their existing 16 KiB response-evidence limit: the additional
 value can make `result_byte_limit` more likely, without changing lifecycle or
 effect. Use `--verbose` to inspect retained response evidence.
-
-`node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
-object). All properties are validated before attachment, then applied in the same
-creation undo action. Only this form adds `values` with re-read property strings;
-invalid properties or values add no node. Repeated properties use the last value.
-
-`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
-(QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
-`timed_out: true` and the last observed `actual` when available, with failure
-exit status. The CLI timeout is extended for this call by a five-second transport
-margin; the bridge also covers the requested wait. Omitted waits are unchanged.

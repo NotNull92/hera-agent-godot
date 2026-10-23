@@ -78,7 +78,7 @@ Highlights since v1.1.0:
 - **Guarded node sets:** `--expected` / `--snapshot` / `--verify` refuse stale
   observations before the setter.
 - **Editor-log evidence:** `output`/`diagnostics --source editor` with cursors.
-  File logs name `source: file`.
+  File logs omit the default `source`; editor logs retain `source: editor`.
 - **Linked evidence:** opt-in `--evidence` on captures, save, and script
   validate. See [linked evidence](docs/COMMANDS.md#linked-evidence-opt-in).
 - **Compact defaults:** `status --capabilities`, `operation --verbose`,

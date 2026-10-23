@@ -11,22 +11,25 @@ The [agent guide](docs/AGENT_GUIDE.md) is authoritative for operating rules:
 [conventions and safety](docs/AGENT_GUIDE.md#conventions--safety),
 [evidence and verification](docs/AGENT_GUIDE.md#verify-your-work-hera), and
 [review boundaries](docs/AGENT_GUIDE.md#review-correction-boundaries).
-Read the relevant sections before those operations. For addon development follow
+Read relevant sections before operating. For addon development follow
 [CO_DEVELOPMENT](docs/CO_DEVELOPMENT.md); use [COMMANDS](docs/COMMANDS.md) for
 flags and responses. Prefer official Godot engine/docs sources for engine facts.
 
 ## Command card
 
 Global `--instance PID`, `--ids`, `--json`, `--timeout MS`, `--engine PATH` go
-before the command. Default output is compact JSON. Read `game_feel_ui_mode`
-from status before UI work; request `guidance ui` when its checklist is needed.
+before the command. `--flag=` equals `--flag ""`; normal validation applies.
+Output is compact JSON. Read status `game_feel_ui_mode` before UI work;
+use `guidance ui` for its checklist. `--set prop=value` is repeatable.
 
 ```
 hera-godot status
 hera-godot --ids scene tree [path] --depth N
 hera-godot scene tree --type Class --props a,b
-hera-godot node get <path> --prop p     # --props a,b or --changed also available
-hera-godot node add|set|remove ...
+hera-godot node get <path> --prop p     # also --props a,b or --changed
+hera-godot node add Node2D --set visible=false
+hera-godot node instance res://child.tscn --set visible=false
+hera-godot game assert /root/Main visible eq true --within-ms 1000
 hera-godot signal list <path> --connected
 hera-godot script validate res://file.gd
 hera-godot run --current --wait
@@ -35,6 +38,10 @@ hera-godot diagnostics
 hera-godot game ui tree --type Button --fields name,path,text,disabled
 hera-godot screenshot --runtime --analyze
 ```
+
+The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
+session/path fields. Missing log `source` means file. Pretty and batch output
+use the same rules; see [migration rules](docs/MIGRATING_TO_V2_1.md).
 
 ## GDScript quick gate
 
@@ -62,10 +69,13 @@ hera-godot screenshot --runtime --analyze
 
 ## Verify your work
 
-After an edit, **confirm it** instead of assuming:
+After an edit, **confirm it**. QA assertions accept `within_ms` (1–3,600,000);
+read `waited_ms`, `timed_out` and the last `actual` when available.
 
 - After `node set`: check the re-read `value` in the response; use `node get`
-  only for other properties. After `node add`: `hera-godot --ids scene tree`.
+  only for other properties. After `node add --set` or `node instance --set`,
+  check returned `values`; creation and properties share one undo action.
+  Without `--set`, confirm structure with `hera-godot --ids scene tree`.
 - After structural changes: `hera-godot scene tree` (or `--ids`).
 - After `run`: `hera-godot diagnostics` first; `output --type error` for raw
   project file log lines, or
@@ -73,13 +83,3 @@ After an edit, **confirm it** instead of assuming:
   `clean: true` is not a claim about the editor Output panel.
 - For UI/visual changes: `hera-godot screenshot` for the edited scene, or
   `hera-godot screenshot --runtime` after `run` for the live game viewport.
-
-Use repeatable `--set prop=value` on `node add`/`node instance`; check returned
-`values`. Creation and properties share one undo action.
-
-Use `game assert ... --within-ms N` for a bounded frame-by-frame retry; QA
-assertion steps accept `within_ms`. Check `timed_out` and the last `actual`.
-
-The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
-session/path fields. Missing log `source` means file. Pretty and batch output
-use the same rules; see `docs/MIGRATING_TO_V2_1.md`.

@@ -11,6 +11,32 @@ selected editor instance.
 CLI response fields follow the planned [2.1 omission rules](MIGRATING_TO_V2_1.md),
 including pretty output and batch children. Full addon RPC data is unchanged.
 
+## Create a configured node
+
+`node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
+object). All properties are validated before attachment, then applied in the same
+creation undo action. Only this form adds `values` with re-read property strings;
+invalid properties or values add no node. Repeated properties use the last value.
+
+```sh
+hera-godot node add Node2D --name Child --set visible=false --set "position=Vector2(10, 20)"
+hera-godot node instance res://child.tscn --set visible=false
+```
+
+## Wait for a runtime assertion
+
+`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
+(QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
+`timed_out: true` and the last observed `actual` when available, with failure
+exit status. The CLI timeout is extended for this call by a five-second transport
+margin; the bridge also covers the requested wait. Omitted waits are unchanged.
+
+```sh
+hera-godot game assert /root/Main visible eq true --within-ms 1000
+```
+
+QA step: `{"tool":"game.assert","path":"/root/Main","prop":"visible","op":"eq","value":true,"within_ms":1000}`.
+
 ## Linked evidence (opt-in)
 
 `script validate res://file.gd --evidence` adds `source: disk`, selected engine
@@ -117,17 +143,21 @@ selected editor and require `--instance` when several editors are live. Legacy
 commands are unchanged.
 
 The caller constructs and retains `id` as `EDITOR_SESSION:UNIX_MS:NONCE`, using
-`status.editor_session_id`, an absolute execution deadline no more than 60 seconds
+the selected live `instances[].editor_session_id` (or guarded-read `expected`),
+an absolute execution deadline no more than 60 seconds
 ahead, and a unique ASCII alphanumeric/underscore/hyphen nonce. Example PowerShell:
 
 ```powershell
-$session = (hera-godot status | ConvertFrom-Json).editor_session_id
+$editor = hera-godot status | ConvertFrom-Json
+$live = (hera-godot instances | ConvertFrom-Json).instances
+$session = ($live | Where-Object { $_.pid -eq $editor.pid }).editor_session_id
+if (-not $session) { throw "Selected editor session is unavailable; refresh discovery" }
 $deadline = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds() + 30000
 $operationId = "${session}:${deadline}:change1"
 # $request contains one supported {tool,params} object described below.
-hera-godot operation submit $operationId --request $request
-hera-godot operation status $operationId
-hera-godot operation cancel $operationId
+hera-godot --instance $editor.pid operation submit $operationId --request $request
+hera-godot --instance $editor.pid operation status $operationId
+hera-godot --instance $editor.pid operation cancel $operationId
 ```
 
 Supported request objects (maximum 16 KiB UTF-8):
@@ -188,11 +218,11 @@ mutation a new ID merely to force it to run.
 
 | Command | Tool | Status | Description |
 |---------|------|--------|-------------|
-| `status [--capabilities]` | `status` | ☑ | Show the connected editor: project path, Godot version, active scene, `editor_session_id`, `csharp_supported` (editor build, not SDK), and Game Feel modes. `--capabilities` adds experimental `godot_commit` and the full API `capabilities` map (`supported`/`unsupported`/`unverified`). |
+| `status [--capabilities]` | `status` | ☑ | Show the connected editor: PID, project name, Godot version, active scene, `csharp_supported` (editor build, not SDK), and Game Feel modes. `--capabilities` adds experimental `godot_commit` and the full API `capabilities` map (`supported`/`unsupported`/`unverified`). |
 | `run [--scene <res://...>] [--current] [--wait]` | `run` | ☑ | Play the main scene (default), the current scene (`--current`), or a specific scene (`--scene`). `--wait` polls until the matching runtime scene is inspectable. |
 | `stop [--wait]` | `run` | ☑ | Stop the running scene. `--wait` polls until stopped. |
 | `output [--type log\|error\|warning\|all] [--lines N] [--source file\|editor] [--since cursor]` | `output` | ☑ | Default: tail the project's configured file log. Opt-in editor source: bounded session evidence with cursors and severity/location metadata; see below. Unreadable evidence reports `available:false`. |
-| `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log and set `source: file`. That `clean` flag is only the file log, not the editor Output panel. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
+| `diagnostics [--lines N] [--source file\|editor] [--since cursor]` | `diagnostics` | ☑ | Default: summarize the project's configured file log; file `source` is omitted and `log_path` appears only when unavailable. That `clean` flag is only the file log, not the editor Output panel. Opt-in editor source: counts over the retained observed interval. Unavailable evidence is never reported clean. |
 | `scene tree [<path>] [--depth N] [--type Class] [--props a,b]` | `scene` | ☑ | Print the edited scene's node tree (compact: path/type/name). Optional subtree paths stay inside the scene; output paths remain scene-relative. Depth 0 includes only the subtree root. `--type` includes subclasses; `--props` adds a `props` object per matching node (missing properties fail). |
 | `scene list` | `scene` | ☑ | List open scenes and the current one. |
 | `scene open <res://...>` | `scene` | ☑ | Request opening a scene in the editor. |
@@ -216,8 +246,8 @@ mutation a new ID merely to force it to run.
 | `project set-main-scene <res://scene.tscn>` | `project` | ☑ | Set and persist `application/run/main_scene` through the targeted editor; its in-memory setting and subsequent default `run` agree immediately. |
 | `node find [query] [--type <Class>]` | `node` | ☑ | Find nodes by name substring and/or class. |
 | `node get <path> [--changed\|--prop <name>\|--props <a,b>] [--snapshot]` | `node` | ☑ | Dump a node's editor-visible properties, or selected properties for low-token editor inspection. `--changed` excludes default-valued properties and cannot combine with `--prop`/`--props`. Defaults use inspector revert values, then script defaults, then class defaults (a temporary instance on Godot 4.2). `--snapshot` requires one `--prop` and adds a typed conditional-mutation snapshot. Godot 4.2 may report `null` for uncached tool-script defaults; `--changed` compares against that engine result and can include unchanged exports. It does not instantiate user scripts to infer defaults. Comparison is exact (no float tolerance), and values set by an instanced sub-scene count as changed. |
-| `node add <type> [--parent <path>] [--name <n>]` | `node` | ☑ | Add a node under a parent (undoable). When Game Feel Mode is enabled, feel-related node types return a compact `agent_hint` pointing at relevant `game_feel` topics. |
-| `node instance <res://scene.tscn> [--parent <path>] [--name <n>]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path (undoable). |
+| `node add <type> [--parent <path>] [--name <n>] [--set prop=value ...]` | `node` | ☑ | Add a node under a parent; validate `--set` properties before attaching, apply in one undo action, and return re-read `values` only for `--set`. When Game Feel Mode is enabled, feel-related node types return a compact `agent_hint` pointing at relevant `game_feel` topics. |
+| `node instance <res://scene.tscn> [--parent <path>] [--name <n>] [--set prop=value ...]` | `node` | ☑ | Instance a PackedScene under a parent after validating the scene path and all `--set` properties; one undo action and optional re-read `values`, as for `node add`. |
 | `node set <path> --prop <name> --value <v> [--expected <JSON> [--verify]]` | `node` | ☑ | Set a node property (undoable; value coerced to the property's type). Optional typed preconditions reject stale targets before mutation. |
 | `node set-resource <path> --prop <name> --resource <res://...>` | `node` | ☑ | Set an object/resource property from a Resource file, with path and type compatibility checks (undoable). |
 | `node remove <path>` | `node` | ☑ | Remove a node (undoable). |
@@ -258,7 +288,7 @@ mutation a new ID merely to force it to run.
 | `game node get <path> [--prop <name>\|--props <a,b>]` | `game` | ☑ | Dump a live runtime node's editor-visible properties, or selected properties for low-token QA. Selected names may use dotted paths such as `player.position` or `state.score`. Absolute paths like `/root/Main` are accepted. |
 | `game node set <path> --prop <name> --value <v>` | `game` | ☑ | Set a live runtime node property. Runtime-only, not undoable, and lost when play stops. |
 | `game node call <path> <method> [--arg <v> ...]` | `game` | ☑ | Call a live runtime node method and return the stringified `result` and, from v2.0.0, a structured `result_value` (or `result_value_omitted`). Runtime-only and may have side effects. |
-| `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. Designed for generic QA, not a specific game. |
+| `game assert <path> <prop> <eq\|ne\|contains\|gt\|lt\|exists> [value] [--within-ms N]` | `game` | ☑ | Assert a live runtime node property with a compact pass/fail response. `--within-ms` (1–3,600,000) retries each frame; returns `waited_ms`, plus `timed_out: true` and last available `actual` on timeout. |
 | `game qa discover [path]` | `game` | ☑ | List callable runtime `qa_*` helpers and `Qa` followed by an uppercase letter (e.g. `QaReady`); method names are case-sensitive. Discover methods on the current scene root, or on a specific node path. Returns compact method names, argument names, default counts, and return type when known. |
 | `game qa diagnose [--lines N] [--max-errors N] [--max-warnings N] [--path user://capture.png]` | local + tools | ☑ | Run a read-only, project-agnostic runtime health check. It reports editor diagnostic counts, live game-process ambiguity, runtime/UI tree truncation, and screenshot blankness, low detail, or likely clipping. Capture width/height and `size_matches_project` are reported without failing a healthy image that is simply smaller than the project viewport. It does not assume nodes, controls, rules, or QA helper names. |
 | `game qa --file <scenario.json> [--continue]` | local + tools | ☑ | Run a generic JSON QA scenario made of `run`, `stop`, `wait`, `game.node.get`, `game.node.set`, `game.node.call`, `game.qa.discover`, `game.ui.tree`, `game.ui.audit`, `game.click`, `game.input`, `game.input_log`, `game.clock`, `game.assert`, `screenshot.runtime`, and `diagnostics` steps. `game.ui.audit` accepts its CLI filters in `params`; failed audit evidence is retained in the step result and does not satisfy `covers`. Known tools, required node fields, assertion operators, run actions, and numeric limits are preflighted before any requests. Diagnostics fail when unavailable or when counts are missing/invalid; omitted `max_warnings` allows warnings, while explicit `0` requires none. The file may be a legacy step array or an object with `requirements` plus `steps`; each step may declare `covers`, and missing or failed requirement coverage makes the scenario fail. |
@@ -717,7 +747,7 @@ The editor collector retains 1024 events. `--lines` accepts 1–1024 for this
 source (defaults: output 100, diagnostics 20). Output returns the latest matching
 `entries` with `sequence`, `severity` (`log`, `warning`, `error`), `message`,
 `location` (`function`, `file`, `line`), native `error_type` (-1 for plain
-messages), and `truncated`. Messages retain at most 4096 characters; location
+messages), and `truncated` when true. Messages retain at most 4096 characters; location
 strings retain 512 each. Script and shader failures count as errors; ordinary
 stderr messages also count as errors. No backtrace variables are collected.
 
@@ -800,14 +830,3 @@ is required to execute the framework-dependent helper.
 패키지 매니저는 CLI만 설치합니다. 위 명령으로 헬퍼를 별도 설치하세요. SHA256을
 검증한 후 사용자 홈의 헬퍼 폴더를 교체하며 사용자 프로젝트는 변경하지 않습니다.
 eval은 자동 다운로드하지 않습니다. 헬퍼 실행에는 .NET 8 이상 호환 런타임이 필요합니다.
-
-`node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
-object). All properties are validated before attachment, then applied in the same
-creation undo action. Only this form adds `values` with re-read property strings;
-invalid properties or values add no node. Repeated properties use the last value.
-
-`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
-(QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
-`timed_out: true` and the last observed `actual` when available, with failure
-exit status. The CLI timeout is extended for this call by a five-second transport
-margin; the bridge also covers the requested wait. Omitted waits are unchanged.

@@ -34,15 +34,15 @@ list. Those docs **do grow** as the command surface grows; they are still
 loaded once (and prompt-cacheable), unlike MCP schemas that sit in every
 request.
 
-Sizes below are **UTF-8 byte counts** measured at `8e17428` plus the driver-card split below (Git LF content),
-not tokenizer output. Approximate tokens as bytes/4.
+Sizes below are **UTF-8 byte counts** for the Wave 2 docs pass (2026-10-23,
+Git LF content), not tokenizer output. Approximate tokens as bytes/4.
 
 | Hera surface (one-time, cacheable) | Bytes | ~tok |
 |------------------------------------|------:|-----:|
-| `plugins/hera-godot/skills/live-editor/SKILL.md` | 4,617 | ~1,154 |
-| `AGENTS.md` (driver card) | 3,830 | ~958 |
-| `docs/COMMANDS.md` (full reference) | 74,014 | ~18,504 |
-| `docs/AGENT_GUIDE.md` (detailed operating rules) | 19,937 | ~4,984 |
+| `plugins/hera-godot/skills/live-editor/SKILL.md` | 5,297 | ~1,324 |
+| `AGENTS.md` (driver card) | 4,485 | ~1,121 |
+| `docs/COMMANDS.md` (full reference) | 76,191 | ~19,048 |
+| `docs/AGENT_GUIDE.md` (detailed operating rules) | 20,898 | ~5,224 |
 
 So before any work is done, an MCP client in the sampled servers still pays
 **~4k–31k resident tokens every turn** for tool schemas. Hera pays **nothing

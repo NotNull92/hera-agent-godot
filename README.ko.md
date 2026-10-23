@@ -81,8 +81,8 @@ v1.1.0 이후 주요 변경:
 - **operation receipt:** `operation submit|status|cancel`. 실행 전 거부는
   `rejected`/`not_applied`.
 - **가드된 node set:** `--expected` / `--snapshot` / `--verify`.
-- **에디터 로그 증거:** `output`/`diagnostics --source editor`. 파일 로그는
-  `source: file`.
+- **에디터 로그 증거:** `output`/`diagnostics --source editor`.
+  기본 파일 로그의 `source`는 생략하고 에디터 로그의 `source: editor`는 유지합니다.
 - **linked evidence:** 캡처·세이브·`script validate`의 `--evidence`.
 - **compact 기본값:** `status --capabilities`, `operation --verbose`,
   `game ui tree`의 `--ids`.

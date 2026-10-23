@@ -50,7 +50,10 @@ hera-godot --ids scene tree [path] --depth N        # scoped edited scene paths
 hera-godot node get <path> --prop p                # one property; --changed for non-defaults
 hera-godot scene tree --type Class --props a,b      # selected per-node properties
 hera-godot signal list <path> --connected           # connected signals only
-hera-godot node add|set|remove ...                 # undoable editor mutations
+hera-godot node add Node2D --set visible=false
+hera-godot node instance res://child.tscn --set visible=false
+hera-godot game assert /root/Main visible eq true --within-ms 1000
+hera-godot node set|remove ...                 # undoable editor mutations
 hera-godot diagnostics [--lines N]                 # project file log; source is file, not the Output panel
 hera-godot diagnostics --source editor             # opt-in editor-session errors (capability-gated)
 hera-godot run --current --wait / hera-godot stop --wait
@@ -109,6 +112,13 @@ only paths for `scene tree` / `node find` / `game ui tree`), `--instance <pid>`
 timeout, default 5000; also bounds engine processes), `--engine <path>` (engine
 executable for the no-editor commands). Default output is compact JSON.
 
+Value flags accept `--flag=value`; `--flag=` equals `--flag ""`, with the same
+normal validation.
+
+The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
+session/path fields. Missing log `source` means file. Pretty and batch output
+use the same rules; see [migration rules](MIGRATING_TO_V2_1.md).
+
 ## Conventions & safety
 
 - **Choose script language by extension.** `script create` accepts `.gd` or
@@ -126,7 +136,7 @@ executable for the no-editor commands). Default output is compact JSON.
   v2.0.0; use `--lang gdscript` or
   `HERA_GODOT_EVAL_LANG=gdscript` for GDScript (including batch children). See [docs/CSHARP_SUPPORT.md](CSHARP_SUPPORT.md).
 - **Output is compact by default** to stay low-token. Use `--ids` to get just
-  node paths when scanning, `--json` only when you need the full structure.
+  node paths when scanning, `--json` only for pretty formatting; it returns the same slim fields.
 - **Validate disk code before running it.** `script validate res://file.gd`
   uses the selected editor's engine in a separate bounded process. It does not
   check unsaved editor text. `.cs` uses an isolated project build (60-second
@@ -212,6 +222,10 @@ executable for the no-editor commands). Default output is compact JSON.
   its owned autoload while Godot assembles exported project settings, then
   restores it for editor play. Disabling Hera removes an owned persisted
   autoload, while a same-named user autoload at another path is left alone.
+- **Bound eventual assertions.** `game assert ... --within-ms N` retries once
+  per runtime frame for 1–3,600,000 ms; QA assertion steps use `within_ms`.
+  Read `waited_ms`; timeout adds `timed_out: true` and the last available
+  `actual`, with exit 1. The CLI and runtime bridge cover this wait.
 - **Prefer low-token QA reads.** Use `game ui audit`, `game ui tree`, `game node get --prop/--props`,
   `game assert`, `game qa discover`, `screenshot --runtime --analyze`, and
   `game qa --file` before dumping full node properties during automated QA.
@@ -286,7 +300,9 @@ The collector covers only this editor process after registration. Startup
 After an edit, **confirm it** instead of assuming:
 
 - After `node set`: check the re-read `value` in the response; use `node get`
-  only for other properties. After `node add`: `hera-godot --ids scene tree`.
+  only for other properties. After `node add --set` or `node instance --set`,
+  check returned `values`; creation and properties share one undo action.
+  Without `--set`, confirm structure with `hera-godot --ids scene tree`.
 - After structural changes: `hera-godot scene tree` (or `--ids`).
 - After `run`: `hera-godot diagnostics` first; `output --type error` for raw
   project file log lines, or
@@ -305,13 +321,3 @@ For prompt-driven game implementation cycles, follow
 ## Review correction boundaries
 
 QA scenario diagnostics require readable logs and valid counts; omitted `max_warnings` is unlimited, explicit zero is strict. Node removal and reparent undo preserve descendant ownership. Resource/theme batches validate before mutation, but disk-save failure rollback is not guaranteed. `project set-main-scene` updates and persists through the live editor. Standalone behavioral regressions run with `GODOT_BIN=/absolute/direct/godot bash tests/headless/run.sh`; each uses an isolated project and user directories.
-
-Use repeatable `--set prop=value` on `node add`/`node instance`; check returned
-`values`. Creation and properties share one undo action.
-
-Use `game assert ... --within-ms N` for a bounded frame-by-frame retry; QA
-assertion steps accept `within_ms`. Check `timed_out` and the last `actual`.
-
-The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
-session/path fields. Missing log `source` means file. Pretty and batch output
-use the same rules; see `docs/MIGRATING_TO_V2_1.md`.
