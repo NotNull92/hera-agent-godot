@@ -513,9 +513,6 @@ func engineContextTimeout(fallback time.Duration) (context.Context, context.Canc
 // It returns the value and the index after it.
 func takeFlagValue(args []string, i int, name string) (string, int, error) {
 	if value, ok := strings.CutPrefix(args[i], name+"="); ok {
-		if value == "" {
-			return "", i, fmt.Errorf("%s requires a value", name)
-		}
 		return value, i + 1, nil
 	}
 	if i+1 >= len(args) {
