@@ -802,3 +802,9 @@ eval은 자동 다운로드하지 않습니다. 헬퍼 실행에는 .NET 8 이�
 object). All properties are validated before attachment, then applied in the same
 creation undo action. Only this form adds `values` with re-read property strings;
 invalid properties or values add no node. Repeated properties use the last value.
+
+`game assert ... --within-ms N` retries each runtime frame for 1–3,600,000 ms
+(QA assertion steps: `within_ms`). It adds `waited_ms`; timeout adds
+`timed_out: true` and the last observed `actual` when available, with failure
+exit status. The CLI timeout is extended for this call by a five-second transport
+margin; the bridge also covers the requested wait. Omitted waits are unchanged.

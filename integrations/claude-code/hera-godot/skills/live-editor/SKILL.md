@@ -82,3 +82,6 @@ the Hera repository's `docs/COMMANDS.md`.
 
 Use repeatable `--set prop=value` on `node add`/`node instance`; check returned
 `values`. Creation and properties share one undo action.
+
+Use `game assert ... --within-ms N` for a bounded frame-by-frame retry; QA
+assertion steps accept `within_ms`. Check `timed_out` and the last `actual`.

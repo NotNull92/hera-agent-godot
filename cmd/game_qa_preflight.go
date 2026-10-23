@@ -3,6 +3,9 @@ package cmd
 import "fmt"
 
 func validateGameQAStep(step gameQAStep) error {
+	if step.WithinMS != nil && (step.Tool != "game.assert" || *step.WithinMS < 1 || *step.WithinMS > maxWaitMS) {
+		return fmt.Errorf("within_ms requires game.assert and must be between 1 and %d", maxWaitMS)
+	}
 	if step.Evidence && step.Tool != "screenshot.runtime" && step.Tool != "game.node.get" && step.Tool != "game.assert" {
 		return fmt.Errorf("evidence is supported on screenshot.runtime, game.node.get and game.assert")
 	}

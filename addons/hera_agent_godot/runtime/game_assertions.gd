@@ -18,6 +18,7 @@ static func check(node: Node, request: Dictionary) -> Dictionary:
 	if not matches:
 		return {
 			"ok": false,
+			"prop": prop, "op": op, "actual": actual_value, "expected": expected_value,
 			"error": "assert failed: %s %s %s (actual %s)" % [prop, op, expected_value, actual_value],
 		}
 	return {
@@ -46,3 +47,11 @@ static func _matches(op: String, actual: String, expected: String) -> bool:
 			return actual_float > expected_float if op == "gt" else actual_float < expected_float
 		_:
 			return false
+
+static func wait_error(request: Dictionary) -> String:
+	if not request.has("within_ms"):
+		return ""
+	var value: Variant = request["within_ms"]
+	if typeof(value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)) or float(value) != floor(float(value)) or float(value) < 1 or float(value) > 3600000:
+		return "within_ms must be between 1 and 3600000"
+	return ""

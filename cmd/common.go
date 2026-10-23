@@ -113,13 +113,13 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		}
 	}
 	protectActions(request.tool, request.params)
-	resp, err := c.Post(request.tool, request.params)
+	resp, err := postWithAssertionWait(c, request.tool, request.params)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
 	if !resp.OK {
-		if evidenceRequested && resp.Data != nil {
+		if (evidenceRequested || (request.tool == "game" && request.params["action"] == "assert" && request.params["within_ms"] != nil)) && resp.Data != nil {
 			printData(resp)
 		}
 		fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, resp.Error)
