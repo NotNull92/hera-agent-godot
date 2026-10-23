@@ -52,17 +52,18 @@ func parseScreenshotDiffArgs(args []string) (string, string, int, error) {
 	before, after := args[0], args[1]
 	threshold := defaultDiffThreshold
 	for i := 2; i < len(args); i++ {
-		switch args[i] {
-		case "--threshold":
-			if i+1 >= len(args) {
-				return "", "", 0, fmt.Errorf("--threshold requires a value")
+		switch {
+		case isFlag(args[i], "--threshold"):
+			raw, next, err := takeFlagValue(args, i, "--threshold")
+			if err != nil {
+				return "", "", 0, err
 			}
-			n, err := strconv.Atoi(args[i+1])
+			i = next - 1
+			n, err := strconv.Atoi(raw)
 			if err != nil || n < 0 || n > 255 {
-				return "", "", 0, fmt.Errorf("--threshold: want 0..255, got %q", args[i+1])
+				return "", "", 0, fmt.Errorf("--threshold: want 0..255, got %q", raw)
 			}
 			threshold = n
-			i++
 		default:
 			return "", "", 0, fmt.Errorf("unknown flag %q", args[i])
 		}

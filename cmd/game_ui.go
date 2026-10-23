@@ -53,54 +53,59 @@ func parseGameUIArgs(args []string) (map[string]any, error) {
 func parseGameUITreeArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "ui_tree"}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--path":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--path requires a value")
+		switch {
+		case isFlag(args[i], "--path"):
+			raw, next, err := takeFlagValue(args, i, "--path")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] == "" {
+			i = next - 1
+			if raw == "" {
 				return nil, fmt.Errorf("--path requires a non-empty value")
 			}
-			params["path"] = normalizeGameNodePath(args[i])
-		case "--depth":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--depth requires a value")
+			params["path"] = normalizeGameNodePath(raw)
+		case isFlag(args[i], "--depth"):
+			raw, next, err := takeFlagValue(args, i, "--depth")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			depth, err := parseNonNegativeInt(args[i], "--depth")
+			i = next - 1
+			depth, err := parseNonNegativeInt(raw, "--depth")
 			if err != nil {
 				return nil, err
 			}
 			params["depth"] = depth
-		case "--fields":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--fields requires a value")
+		case isFlag(args[i], "--fields"):
+			raw, next, err := takeFlagValue(args, i, "--fields")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			fields, err := parseGameUIFields(args[i])
+			i = next - 1
+			fields, err := parseGameUIFields(raw)
 			if err != nil {
 				return nil, err
 			}
 			params["fields"] = fields
-		case "--type":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--type requires a value")
+		case isFlag(args[i], "--type"):
+			raw, next, err := takeFlagValue(args, i, "--type")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] == "" {
+			i = next - 1
+			if raw == "" {
 				return nil, fmt.Errorf("--type requires a non-empty value")
 			}
-			params["type"] = args[i]
-		case "--text":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--text requires a value")
+			params["type"] = raw
+		case isFlag(args[i], "--text"):
+			raw, next, err := takeFlagValue(args, i, "--text")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if args[i] == "" {
+			i = next - 1
+			if raw == "" {
 				return nil, fmt.Errorf("--text requires a non-empty value")
 			}
-			params["text"] = args[i]
+			params["text"] = raw
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -116,14 +121,14 @@ func parseGameUIAuditArgs(args []string) (map[string]any, error) {
 		"limit":    defaultGameUIAuditLimit,
 	}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--path":
+		switch {
+		case isFlag(args[i], "--path"):
 			value, err := requiredGameUIAuditValue(args, &i, "--path")
 			if err != nil {
 				return nil, err
 			}
 			params["path"] = normalizeGameNodePath(value)
-		case "--severity":
+		case isFlag(args[i], "--severity"):
 			value, err := requiredGameUIAuditValue(args, &i, "--severity")
 			if err != nil {
 				return nil, err
@@ -132,7 +137,7 @@ func parseGameUIAuditArgs(args []string) (map[string]any, error) {
 				return nil, fmt.Errorf("unknown UI audit severity %q (want all|error|warning)", value)
 			}
 			params["severity"] = value
-		case "--rule":
+		case isFlag(args[i], "--rule"):
 			value, err := requiredGameUIAuditValue(args, &i, "--rule")
 			if err != nil {
 				return nil, err
@@ -141,9 +146,9 @@ func parseGameUIAuditArgs(args []string) (map[string]any, error) {
 				return nil, fmt.Errorf("unknown UI audit rule %q", value)
 			}
 			params["rule"] = value
-		case "--strict":
+		case args[i] == "--strict":
 			params["strict"] = true
-		case "--limit":
+		case isFlag(args[i], "--limit"):
 			value, err := requiredGameUIAuditValue(args, &i, "--limit")
 			if err != nil {
 				return nil, err
@@ -161,11 +166,12 @@ func parseGameUIAuditArgs(args []string) (map[string]any, error) {
 }
 
 func requiredGameUIAuditValue(args []string, index *int, flag string) (string, error) {
-	if *index+1 >= len(args) {
-		return "", fmt.Errorf("%s requires a value", flag)
+	raw, next, err := takeFlagValue(args, *index, flag)
+	if err != nil {
+		return "", err
 	}
-	*index = *index + 1
-	value := args[*index]
+	*index = next - 1
+	value := raw
 	if value == "" {
 		return "", fmt.Errorf("%s requires a non-empty value", flag)
 	}

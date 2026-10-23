@@ -16,10 +16,14 @@ type gameInputSequenceEvent struct {
 }
 
 func parseGameInputSequenceArgs(args []string) (map[string]any, error) {
-	if len(args) != 2 || args[0] != "--file" || args[1] == "" {
+	if len(args) == 0 || !isFlag(args[0], "--file") {
 		return nil, fmt.Errorf("usage: game input sequence --file <events.json>")
 	}
-	file, err := os.Open(args[1])
+	path, next, err := takeFlagValue(args, 0, "--file")
+	if err != nil || path == "" || next != len(args) {
+		return nil, fmt.Errorf("usage: game input sequence --file <events.json>")
+	}
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("read input sequence: %w", err)
 	}

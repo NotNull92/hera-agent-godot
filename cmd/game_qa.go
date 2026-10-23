@@ -42,14 +42,15 @@ func runGameQA(args []string, targetPID int) int {
 
 func parseGameQAFlags(args []string) (file string, keepGoing bool, err error) {
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--file":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--file"):
+			raw, next, err := takeFlagValue(args, i, "--file")
+			if err != nil {
 				return "", false, fmt.Errorf("--file requires a path")
 			}
-			i++
-			file = args[i]
-		case "--continue":
+			i = next - 1
+			file = raw
+		case args[i] == "--continue":
 			keepGoing = true
 		default:
 			return "", false, fmt.Errorf("unknown flag %q", args[i])

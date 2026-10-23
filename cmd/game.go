@@ -95,25 +95,27 @@ func parseGameNodeGetArgs(args []string) (map[string]any, error) {
 	}
 	params := map[string]any{"action": "get", "path": normalizeGameNodePath(args[0])}
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--prop":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--prop requires a value")
+		switch {
+		case isFlag(args[i], "--prop"):
+			raw, next, err := takeFlagValue(args, i, "--prop")
+			if err != nil {
+				return nil, err
 			}
-			i++
+			i = next - 1
 			if _, ok := params["props"]; ok {
 				return nil, fmt.Errorf("use either --prop or --props, not both")
 			}
-			params["prop"] = args[i]
-		case "--props":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--props requires a value")
+			params["prop"] = raw
+		case isFlag(args[i], "--props"):
+			raw, next, err := takeFlagValue(args, i, "--props")
+			if err != nil {
+				return nil, err
 			}
-			i++
+			i = next - 1
 			if _, ok := params["prop"]; ok {
 				return nil, fmt.Errorf("use either --prop or --props, not both")
 			}
-			props, err := parseCommaList(args[i])
+			props, err := parseCommaList(raw)
 			if err != nil {
 				return nil, err
 			}
@@ -131,19 +133,21 @@ func parseGameNodeSetArgs(args []string) (map[string]any, error) {
 	}
 	params := map[string]any{"action": "set", "path": normalizeGameNodePath(args[0])}
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--prop":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--prop requires a value")
+		switch {
+		case isFlag(args[i], "--prop"):
+			raw, next, err := takeFlagValue(args, i, "--prop")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["prop"] = args[i]
-		case "--value":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--value requires a value")
+			i = next - 1
+			params["prop"] = raw
+		case isFlag(args[i], "--value"):
+			raw, next, err := takeFlagValue(args, i, "--value")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["value"] = args[i]
+			i = next - 1
+			params["value"] = raw
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -164,13 +168,14 @@ func parseGameNodeCallArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "call", "path": normalizeGameNodePath(args[0]), "method": args[1]}
 	var callArgs []any
 	for i := 2; i < len(args); i++ {
-		switch args[i] {
-		case "--arg":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--arg requires a value")
+		switch {
+		case isFlag(args[i], "--arg"):
+			raw, next, err := takeFlagValue(args, i, "--arg")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			callArgs = append(callArgs, args[i])
+			i = next - 1
+			callArgs = append(callArgs, raw)
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -188,14 +193,15 @@ func parseGameScreenshotArgs(args []string) (map[string]any, error) {
 	}
 	params["action"] = "screenshot"
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--path":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--path requires a value")
+		switch {
+		case isFlag(args[i], "--path"):
+			raw, next, err := takeFlagValue(args, i, "--path")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["path"] = args[i]
-		case "--analyze":
+			i = next - 1
+			params["path"] = raw
+		case args[i] == "--analyze":
 			params["analyze"] = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])

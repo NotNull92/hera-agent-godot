@@ -85,28 +85,31 @@ func parseProjectReimportArgs(args []string) (map[string]any, error) {
 func parseProjectListFilesArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "list_files"}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--type":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--type requires a value")
+		switch {
+		case isFlag(args[i], "--type"):
+			raw, next, err := takeFlagValue(args, i, "--type")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			if !validProjectFileType(args[i]) {
+			i = next - 1
+			if !validProjectFileType(raw) {
 				return nil, fmt.Errorf("--type must be one of all|scene|script|resource|asset|shader")
 			}
-			params["type"] = args[i]
-		case "--pattern":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--pattern requires a value")
+			params["type"] = raw
+		case isFlag(args[i], "--pattern"):
+			raw, next, err := takeFlagValue(args, i, "--pattern")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["pattern"] = args[i]
-		case "--limit":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--limit requires a value")
+			i = next - 1
+			params["pattern"] = raw
+		case isFlag(args[i], "--limit"):
+			raw, next, err := takeFlagValue(args, i, "--limit")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			limit, err := strconv.Atoi(args[i])
+			i = next - 1
+			limit, err := strconv.Atoi(raw)
 			if err != nil || limit <= 0 {
 				return nil, fmt.Errorf("--limit must be a positive integer")
 			}

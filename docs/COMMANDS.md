@@ -1,5 +1,7 @@
 # Commands
 
+All value flags accept `--flag=value` as well as `--flag value`.
+
 > Status: implemented command surface. Output is compact by default to stay
 > low-token.
 

@@ -97,16 +97,17 @@ func parseRunArgs(args []string) (params map[string]any, wait bool, err error) {
 	var scene string
 	var current bool
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--scene":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--scene"):
+			raw, next, err := takeFlagValue(args, i, "--scene")
+			if err != nil {
 				return nil, false, fmt.Errorf("--scene requires a path")
 			}
-			i++
-			scene = args[i]
-		case "--current":
+			i = next - 1
+			scene = raw
+		case args[i] == "--current":
 			current = true
-		case "--wait":
+		case args[i] == "--wait":
 			wait = true
 		default:
 			return nil, false, fmt.Errorf("unknown flag %q", args[i])

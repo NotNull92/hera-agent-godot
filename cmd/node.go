@@ -45,12 +45,13 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		params := map[string]any{"action": "find"}
 		for i := 0; i < len(rest); i++ {
 			switch {
-			case rest[i] == "--type":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--type requires a value")
+			case isFlag(rest[i], "--type"):
+				raw, next, err := takeFlagValue(rest, i, "--type")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["type"] = rest[i]
+				i = next - 1
+				params["type"] = raw
 			case strings.HasPrefix(rest[i], "--"):
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			default:
@@ -68,27 +69,29 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		params := map[string]any{"action": "get", "path": rest[0]}
 		for i := 1; i < len(rest); i++ {
-			switch rest[i] {
-			case "--snapshot":
+			switch {
+			case rest[i] == "--snapshot":
 				params["snapshot"] = true
-			case "--prop":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--prop requires a value")
+			case isFlag(rest[i], "--prop"):
+				raw, next, err := takeFlagValue(rest, i, "--prop")
+				if err != nil {
+					return nil, err
 				}
-				i++
+				i = next - 1
 				if _, ok := params["props"]; ok {
 					return nil, fmt.Errorf("use either --prop or --props, not both")
 				}
-				params["prop"] = rest[i]
-			case "--props":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--props requires a value")
+				params["prop"] = raw
+			case isFlag(rest[i], "--props"):
+				raw, next, err := takeFlagValue(rest, i, "--props")
+				if err != nil {
+					return nil, err
 				}
-				i++
+				i = next - 1
 				if _, ok := params["prop"]; ok {
 					return nil, fmt.Errorf("use either --prop or --props, not both")
 				}
-				props, err := parseCommaList(rest[i])
+				props, err := parseCommaList(raw)
 				if err != nil {
 					return nil, err
 				}
@@ -108,19 +111,21 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		params := map[string]any{"action": "add", "type": rest[0]}
 		for i := 1; i < len(rest); i++ {
-			switch rest[i] {
-			case "--parent":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--parent requires a value")
+			switch {
+			case isFlag(rest[i], "--parent"):
+				raw, next, err := takeFlagValue(rest, i, "--parent")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["parent"] = rest[i]
-			case "--name":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--name requires a value")
+				i = next - 1
+				params["parent"] = raw
+			case isFlag(rest[i], "--name"):
+				raw, next, err := takeFlagValue(rest, i, "--name")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["name"] = rest[i]
+				i = next - 1
+				params["name"] = raw
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			}
@@ -133,19 +138,21 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		params := map[string]any{"action": "instance", "scene": rest[0]}
 		for i := 1; i < len(rest); i++ {
-			switch rest[i] {
-			case "--parent":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--parent requires a value")
+			switch {
+			case isFlag(rest[i], "--parent"):
+				raw, next, err := takeFlagValue(rest, i, "--parent")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["parent"] = rest[i]
-			case "--name":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--name requires a value")
+				i = next - 1
+				params["parent"] = raw
+			case isFlag(rest[i], "--name"):
+				raw, next, err := takeFlagValue(rest, i, "--name")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["name"] = rest[i]
+				i = next - 1
+				params["name"] = raw
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			}
@@ -158,31 +165,34 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		params := map[string]any{"action": "set", "path": rest[0]}
 		for i := 1; i < len(rest); i++ {
-			switch rest[i] {
-			case "--expected":
-				if i+1 >= len(rest) {
+			switch {
+			case isFlag(rest[i], "--expected"):
+				raw, next, err := takeFlagValue(rest, i, "--expected")
+				if err != nil {
 					return nil, fmt.Errorf("--expected requires a JSON object")
 				}
-				i++
-				expected, err := parseNodeExpected(rest[i])
+				i = next - 1
+				expected, err := parseNodeExpected(raw)
 				if err != nil {
 					return nil, err
 				}
 				params["expected"] = expected
-			case "--verify":
+			case rest[i] == "--verify":
 				params["verify"] = true
-			case "--prop":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--prop requires a value")
+			case isFlag(rest[i], "--prop"):
+				raw, next, err := takeFlagValue(rest, i, "--prop")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["prop"] = rest[i]
-			case "--value":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--value requires a value")
+				i = next - 1
+				params["prop"] = raw
+			case isFlag(rest[i], "--value"):
+				raw, next, err := takeFlagValue(rest, i, "--value")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["value"] = rest[i]
+				i = next - 1
+				params["value"] = raw
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			}
@@ -208,19 +218,21 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		params := map[string]any{"action": "set_resource", "path": rest[0]}
 		for i := 1; i < len(rest); i++ {
-			switch rest[i] {
-			case "--prop":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--prop requires a value")
+			switch {
+			case isFlag(rest[i], "--prop"):
+				raw, next, err := takeFlagValue(rest, i, "--prop")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["prop"] = rest[i]
-			case "--resource":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--resource requires a value")
+				i = next - 1
+				params["prop"] = raw
+			case isFlag(rest[i], "--resource"):
+				raw, next, err := takeFlagValue(rest, i, "--resource")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["resource"] = rest[i]
+				i = next - 1
+				params["resource"] = raw
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])
 			}
@@ -245,14 +257,15 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		}
 		params := map[string]any{"action": "reparent", "path": rest[0], "keep_global_transform": true}
 		for i := 1; i < len(rest); i++ {
-			switch rest[i] {
-			case "--parent":
-				if i+1 >= len(rest) {
-					return nil, fmt.Errorf("--parent requires a value")
+			switch {
+			case isFlag(rest[i], "--parent"):
+				raw, next, err := takeFlagValue(rest, i, "--parent")
+				if err != nil {
+					return nil, err
 				}
-				i++
-				params["parent"] = rest[i]
-			case "--no-keep-global-transform":
+				i = next - 1
+				params["parent"] = raw
+			case rest[i] == "--no-keep-global-transform":
 				params["keep_global_transform"] = false
 			default:
 				return nil, fmt.Errorf("unknown flag %q", rest[i])

@@ -75,25 +75,28 @@ func parseResourceListArgs(args []string) (map[string]any, error) {
 		start = 1
 	}
 	for i := start; i < len(args); i++ {
-		switch args[i] {
-		case "--type":
-			if i+1 >= len(args) {
+		switch {
+		case isFlag(args[i], "--type"):
+			raw, next, err := takeFlagValue(args, i, "--type")
+			if err != nil {
 				return nil, fmt.Errorf("--type requires a class name")
 			}
-			i++
-			params["type"] = args[i]
-		case "--pattern":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--pattern requires a value")
+			i = next - 1
+			params["type"] = raw
+		case isFlag(args[i], "--pattern"):
+			raw, next, err := takeFlagValue(args, i, "--pattern")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["pattern"] = args[i]
-		case "--limit":
-			if i+1 >= len(args) {
+			i = next - 1
+			params["pattern"] = raw
+		case isFlag(args[i], "--limit"):
+			raw, next, err := takeFlagValue(args, i, "--limit")
+			if err != nil {
 				return nil, fmt.Errorf("--limit requires a number")
 			}
-			i++
-			limit, err := strconv.Atoi(args[i])
+			i = next - 1
+			limit, err := strconv.Atoi(raw)
 			if err != nil || limit <= 0 {
 				return nil, fmt.Errorf("--limit requires a positive number")
 			}
@@ -110,7 +113,7 @@ func parseResourceSetArgs(args []string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(args) < 3 {
+	if len(args) < 2 || (len(args) == 2 && !strings.HasPrefix(args[1], "--prop=")) {
 		return nil, fmt.Errorf("usage: resource set <res://path> --prop <name=value> ...")
 	}
 	props, err := parseResourceProps(args[1:], "resource set <res://path> --prop <name=value> ...", false)
@@ -134,14 +137,15 @@ func parseResourceCreateArgs(args []string) (map[string]any, error) {
 		return nil, err
 	}
 	for i := 2; i < len(args); i++ {
-		switch args[i] {
-		case "--force":
+		switch {
+		case args[i] == "--force":
 			params["force"] = true
-		case "--prop":
-			if i+1 >= len(args) {
+		case isFlag(args[i], "--prop"):
+			_, next, err := takeFlagValue(args, i, "--prop")
+			if err != nil {
 				return nil, fmt.Errorf("--prop requires a name=value")
 			}
-			i++
+			i = next - 1
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}
@@ -155,18 +159,19 @@ func parseResourceCreateArgs(args []string) (map[string]any, error) {
 func parseResourceProps(args []string, usage string, allowForce bool) (map[string]string, error) {
 	props := map[string]string{}
 	for i := 0; i < len(args); i++ {
-		switch args[i] {
-		case "--force":
+		switch {
+		case args[i] == "--force":
 			if allowForce {
 				continue
 			}
 			return nil, fmt.Errorf("unknown flag %q", args[i])
-		case "--prop":
-			if i+1 >= len(args) {
+		case isFlag(args[i], "--prop"):
+			raw, next, err := takeFlagValue(args, i, "--prop")
+			if err != nil {
 				return nil, fmt.Errorf("--prop requires a name=value")
 			}
-			i++
-			name, value, ok := strings.Cut(args[i], "=")
+			i = next - 1
+			name, value, ok := strings.Cut(raw, "=")
 			if !ok || name == "" {
 				return nil, fmt.Errorf("--prop requires a name=value")
 			}
@@ -185,13 +190,14 @@ func parseExportMeshLibraryArgs(args []string) (map[string]any, error) {
 	params := map[string]any{"action": "export_mesh_library", "path": args[0], "output": args[1]}
 	var items []string
 	for i := 2; i < len(args); i++ {
-		switch args[i] {
-		case "--item":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--item requires a value")
+		switch {
+		case isFlag(args[i], "--item"):
+			raw, next, err := takeFlagValue(args, i, "--item")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			items = append(items, args[i])
+			i = next - 1
+			items = append(items, raw)
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
 		}

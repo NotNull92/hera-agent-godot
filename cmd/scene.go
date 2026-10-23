@@ -80,16 +80,17 @@ func parseSceneCreateArgs(args []string) (map[string]any, error) {
 	}
 	params := map[string]any{"action": "create", "path": args[0]}
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--root":
-			if i+1 >= len(args) {
-				return nil, fmt.Errorf("--root requires a value")
+		switch {
+		case isFlag(args[i], "--root"):
+			raw, next, err := takeFlagValue(args, i, "--root")
+			if err != nil {
+				return nil, err
 			}
-			i++
-			params["root"] = args[i]
-		case "--force":
+			i = next - 1
+			params["root"] = raw
+		case args[i] == "--force":
 			params["force"] = true
-		case "--open":
+		case args[i] == "--open":
 			params["open"] = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
@@ -104,8 +105,8 @@ func parseSceneSaveAsArgs(args []string) (map[string]any, error) {
 	}
 	params := map[string]any{"action": "save_as", "path": args[0]}
 	for i := 1; i < len(args); i++ {
-		switch args[i] {
-		case "--force":
+		switch {
+		case args[i] == "--force":
 			params["force"] = true
 		default:
 			return nil, fmt.Errorf("unknown flag %q", args[i])
