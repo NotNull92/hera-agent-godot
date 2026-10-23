@@ -79,3 +79,6 @@ repository's `docs/CSHARP_SUPPORT.md` for setup and limitations.
 Hera sends any configured `HERA_AGENT_GODOT_TOKEN` automatically. Never print
 or place that token in project files. For the complete command reference, see
 the Hera repository's `docs/COMMANDS.md`.
+
+Use repeatable `--set prop=value` on `node add`/`node instance`; check returned
+`values`. Creation and properties share one undo action.

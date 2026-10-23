@@ -46,3 +46,27 @@ static func selected_properties(node: Node, names: Array, max_value_len: int) ->
 
 static func property_value(node: Node, name: String, max_value_len: int) -> Dictionary:
 	return ValueCodec.property_value(node, name, max_value_len)
+
+static func prepare_properties(node: Node, raw: Variant) -> Dictionary:
+	if not raw is Dictionary:
+		return {"ok": false, "error": "props must be an object"}
+	var values: Dictionary = {}
+	for name: String in raw:
+		var info: Dictionary = {}
+		for property: Dictionary in node.get_property_list():
+			if String(property.get("name", "")) == name:
+				info = property
+				break
+		if info.is_empty():
+			return {"ok": false, "error": "node has no property: %s" % name}
+		var coerced: Dictionary = coerce(raw[name], info)
+		if not coerced.get("ok", false):
+			return coerced
+		values[name] = coerced.get("value")
+	return {"ok": true, "values": values}
+
+static func read_values(node: Node, values: Dictionary) -> Dictionary:
+	var result: Dictionary = {}
+	for name: String in values:
+		result[name] = str(node.get(name))
+	return result

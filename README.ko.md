@@ -374,3 +374,5 @@ MIT — [LICENSE](LICENSE) 참고.
 
 C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.3`
 (npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).
+
+`node add`와 `node instance`는 반복 가능한 `--set prop=value`를 지원합니다. 생성과 속성 설정은 하나의 실행 취소 작업이며 응답의 `values`로 확인합니다.

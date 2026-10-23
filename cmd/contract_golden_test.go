@@ -87,6 +87,8 @@ func contractCases() []contractCase {
 	)
 
 	return []contractCase{
+		{name: "node_add_set", args: []string{"node", "add", "Node2D", "--name=Child", "--set=visible=false"}, responses: map[string]string{"node": `{"ok":true,"data":{"added":"Child","type":"Node2D","name":"Child","values":{"visible":"false"}}}`}, golden: "node_add_set"},
+		{name: "node_instance_set", args: []string{"node", "instance", "res://child.tscn", "--set=visible=false"}, responses: map[string]string{"node": `{"ok":true,"data":{"instanced":"Child","scene":"res://child.tscn","type":"Node2D","name":"Child","values":{"visible":"false"}}}`}, golden: "node_instance_set"},
 		{name: "scene_tree_scoped", args: []string{"scene", "tree", "Child", "--depth=0", "--type=Node2D", "--props=visible"}, responses: map[string]string{"scene": `{"ok":true,"data":{"scene":"res://main.tscn","count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child","type":"Node2D","props":{"visible":"true"}}]}}`}, golden: "scene_tree_scoped"},
 		{name: "scene_tree_scoped_ids", args: []string{"--ids", "scene", "tree", "Child", "--depth=0"}, responses: map[string]string{"scene": `{"ok":true,"data":{"scene":"res://main.tscn","count":1,"truncated":false,"nodes":[{"path":"Child","name":"Child","type":"Node2D"}]}}`}, golden: "scene_tree_scoped_ids"},
 		{name: "node_get_changed", args: []string{"node", "get", ".", "--changed"}, responses: map[string]string{"node": `{"ok":true,"data":{"name":"Main","path":".","type":"Node2D","properties":{"name":"Main","visible":"false"}}}`}, golden: "node_get_changed"},

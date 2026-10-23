@@ -583,3 +583,8 @@ Batch eval children and QA call-step data retain the new fields. Operation
 receipts retain their existing 16 KiB response-evidence limit: the additional
 value can make `result_byte_limit` more likely, without changing lifecycle or
 effect. Use `--verbose` to inspect retained response evidence.
+
+`node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
+object). All properties are validated before attachment, then applied in the same
+creation undo action. Only this form adds `values` with re-read property strings;
+invalid properties or values add no node. Repeated properties use the last value.

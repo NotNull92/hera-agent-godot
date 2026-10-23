@@ -73,3 +73,6 @@ After an edit, **confirm it** instead of assuming:
   `clean: true` is not a claim about the editor Output panel.
 - For UI/visual changes: `hera-godot screenshot` for the edited scene, or
   `hera-godot screenshot --runtime` after `run` for the live game viewport.
+
+Use repeatable `--set prop=value` on `node add`/`node instance`; check returned
+`values`. Creation and properties share one undo action.

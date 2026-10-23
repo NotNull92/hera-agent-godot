@@ -797,3 +797,8 @@ is required to execute the framework-dependent helper.
 패키지 매니저는 CLI만 설치합니다. 위 명령으로 헬퍼를 별도 설치하세요. SHA256을
 검증한 후 사용자 홈의 헬퍼 폴더를 교체하며 사용자 프로젝트는 변경하지 않습니다.
 eval은 자동 다운로드하지 않습니다. 헬퍼 실행에는 .NET 8 이상 호환 런타임이 필요합니다.
+
+`node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
+object). All properties are validated before attachment, then applied in the same
+creation undo action. Only this form adds `values` with re-read property strings;
+invalid properties or values add no node. Repeated properties use the last value.

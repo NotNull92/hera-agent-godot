@@ -145,6 +145,14 @@ func _add_node(root: Node, params: Dictionary) -> Dictionary:
 	var node: Node = ClassDB.instantiate(type)
 	node.name = String(params.get("name", type))
 
+	var prepared: Dictionary = NodeValueCodec.prepare_properties(node, params.get("props", {}))
+	if not prepared.get("ok", false):
+		node.free()
+		return ToolResponse.failure(String(prepared.get("error", "invalid property value")))
+	var values: Dictionary = prepared["values"]
+	for prop: String in values:
+		node.set(prop, values[prop])
+
 	if _undo_redo != null:
 		_undo_redo.create_action("Hera: add %s" % type)
 		_undo_redo.add_do_method(parent, "add_child", node)
@@ -161,6 +169,8 @@ func _add_node(root: Node, params: Dictionary) -> Dictionary:
 		"type": node.get_class(),
 		"name": String(node.name),
 	}
+	if params.has("props"):
+		data["values"] = NodeValueCodec.read_values(node, values)
 	var hint := GameFeelGuide.hint_for_node_type(node.get_class())
 	if hint != "":
 		data["agent_hint"] = hint

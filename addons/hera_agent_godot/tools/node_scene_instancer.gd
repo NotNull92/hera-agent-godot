@@ -1,5 +1,7 @@
 extends RefCounted
 
+const NodeValueCodec = preload("res://addons/hera_agent_godot/tools/node_value_codec.gd")
+
 const SceneNodePath = preload("res://addons/hera_agent_godot/core/scene_node_path.gd")
 
 const ProjectPathSafety = preload("res://addons/hera_agent_godot/tools/project_path_safety.gd")
@@ -32,6 +34,14 @@ static func execute(root: Node, params: Dictionary, undo_redo: Variant) -> Dicti
 	if requested_name != "":
 		node.name = requested_name
 
+	var prepared: Dictionary = NodeValueCodec.prepare_properties(node, params.get("props", {}))
+	if not prepared.get("ok", false):
+		node.free()
+		return ToolResponse.failure(String(prepared.get("error", "invalid property value")))
+	var values: Dictionary = prepared["values"]
+	for prop: String in values:
+		node.set(prop, values[prop])
+
 	if undo_redo != null:
 		undo_redo.create_action("Hera: instance %s" % scene_path)
 		undo_redo.add_do_method(parent, "add_child", node)
@@ -43,12 +53,15 @@ static func execute(root: Node, params: Dictionary, undo_redo: Variant) -> Dicti
 		parent.add_child(node)
 		node.set_owner(root)
 
-	return ToolResponse.success({
+	var data := {
 		"instanced": String(root.get_path_to(node)),
 		"scene": scene_path,
 		"type": node.get_class(),
 		"name": String(node.name),
-	})
+	}
+	if params.has("props"):
+		data["values"] = NodeValueCodec.read_values(node, values)
+	return ToolResponse.success(data)
 
 static func _resolve(root: Node, path: String) -> Node:
 	return SceneNodePath.resolve(root, path)
