@@ -1,5 +1,7 @@
 extends RefCounted
 
+const GameAssertions = preload("res://addons/hera_agent_godot/runtime/game_assertions.gd")
+
 const ToolResponse = preload("res://addons/hera_agent_godot/core/tool_response.gd")
 
 const INSTANCE_DIR := "user://hera_game_instances"
@@ -26,6 +28,10 @@ func execute_async(params: Dictionary) -> Dictionary:
 	if not is_instance_valid(_host) or not _host.is_inside_tree():
 		return ToolResponse.rejected("session_mismatch: game host is no longer available", "session_mismatch")
 	var action := String(params.get("action", ""))
+	if action == "assert":
+		var invalid: String = GameAssertions.wait_error(params)
+		if invalid != "":
+			return ToolResponse.failure(invalid)
 	if action == "instances":
 		return ToolResponse.success(_instances_payload())
 	var target := _select_target(_collect_game_heartbeats()["live"], params, EditorInterface.get_playing_scene(), EditorInterface.is_playing_scene())
@@ -50,7 +56,7 @@ func execute_async(params: Dictionary) -> Dictionary:
 	var write_err := _write_request(request, int(target["pid"]))
 	if write_err != "":
 		return ToolResponse.rejected(write_err, "invalid_operation")
-	var deadline := Time.get_ticks_msec() + int(TIMEOUT_SEC * 1000.0)
+	var deadline := Time.get_ticks_msec() + int(TIMEOUT_SEC * 1000.0) + (int(params.get("within_ms", 0)) if action == "assert" else 0)
 	while Time.get_ticks_msec() < deadline:
 		if not is_instance_valid(_host) or not _host.is_inside_tree():
 			return ToolResponse.failure("outcome_unknown: game host ended while awaiting a dispatched request")
@@ -70,7 +76,12 @@ func execute_async(params: Dictionary) -> Dictionary:
 					response.erase("passed")
 				return ToolResponse.success(response)
 			var failure := ToolResponse.failure(String(response.get("error", "game request failed")))
-			if bool(params.get("evidence", false)) and response.has("evidence"):
+			if action == "assert" and params.has("within_ms"):
+				response.erase("ok")
+				response.erase("id")
+				response.erase("error")
+				failure["data"] = response
+			elif bool(params.get("evidence", false)) and response.has("evidence"):
 				failure["data"] = {"evidence": response.evidence}
 			return failure
 		await _host.get_tree().create_timer(POLL_INTERVAL_SEC).timeout

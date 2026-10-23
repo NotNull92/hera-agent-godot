@@ -117,6 +117,18 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		params := map[string]any{"action": "add", "type": rest[0]}
 		for i := 1; i < len(rest); i++ {
 			switch {
+			case isFlag(rest[i], "--set"):
+				raw, next, err := takeFlagValue(rest, i, "--set")
+				if err != nil {
+					return nil, err
+				}
+				prop, value, ok := strings.Cut(raw, "=")
+				if !ok || prop == "" {
+					return nil, fmt.Errorf("--set requires prop=value")
+				}
+				props, _ := params["props"].([][]string)
+				params["props"] = append(props, []string{prop, value})
+				i = next - 1
 			case isFlag(rest[i], "--parent"):
 				raw, next, err := takeFlagValue(rest, i, "--parent")
 				if err != nil {
@@ -144,6 +156,18 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 		params := map[string]any{"action": "instance", "scene": rest[0]}
 		for i := 1; i < len(rest); i++ {
 			switch {
+			case isFlag(rest[i], "--set"):
+				raw, next, err := takeFlagValue(rest, i, "--set")
+				if err != nil {
+					return nil, err
+				}
+				prop, value, ok := strings.Cut(raw, "=")
+				if !ok || prop == "" {
+					return nil, fmt.Errorf("--set requires prop=value")
+				}
+				props, _ := params["props"].([][]string)
+				params["props"] = append(props, []string{prop, value})
+				i = next - 1
 			case isFlag(rest[i], "--parent"):
 				raw, next, err := takeFlagValue(rest, i, "--parent")
 				if err != nil {

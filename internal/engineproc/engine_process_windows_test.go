@@ -1,6 +1,6 @@
 //go:build windows
 
-package cmd
+package engineproc
 
 import (
 	"context"
@@ -27,20 +27,20 @@ func TestWindowsGuardOwnsJobObject(t *testing.T) {
 		_, _ = command.Process.Wait()
 	}()
 	guard := newProcessGuard(command.Process.Pid, command.Process)
-	defer guard.close()
+	defer guard.Close()
 	if guard.job == 0 {
 		t.Fatal("a started process must be owned by a job object")
 	}
 	if guard.handle == 0 {
 		t.Fatal("a started process must keep a retained handle")
 	}
-	if failure := guard.resume(); failure != "" {
+	if failure := guard.Resume(); failure != "" {
 		t.Fatalf("the suspended child must resume: %q", failure)
 	}
 	if !guardAlive(guard) {
 		t.Fatal("the helper should be running when the guard is created")
 	}
-	if termination := guard.terminate(); termination != "" {
+	if termination := guard.Terminate(); termination != "" {
 		t.Fatalf("terminating an owned job must be clean: %q", termination)
 	}
 	deadline := time.Now().Add(10 * time.Second)
@@ -67,7 +67,7 @@ func TestWindowsJobCapturesDescendant(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	env := append(os.Environ(), "HERA_HELPER_SLEEP=1", "HERA_HELPER_SPAWN=1", "HERA_HELPER_PID_FILE="+pidFile)
-	result := runEngineBounded(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
+	result := Run(ctx, os.Args[0], []string{"-test.run=TestHelperProcessSleep"}, "", env, 4096)
 	if !result.Started {
 		t.Fatalf("helper should have started: %+v", result)
 	}
@@ -129,7 +129,7 @@ func TestWindowsCommandLaunchesSuspended(t *testing.T) {
 // failed is never allowed to run.
 func TestWindowsResumeRequiresOwnership(t *testing.T) {
 	guard := &processGuard{pid: 4242}
-	if failure := guard.resume(); failure == "" {
+	if failure := guard.Resume(); failure == "" {
 		t.Fatal("resuming without an owned job must fail")
 	}
 	if guard.resumed {
@@ -151,7 +151,7 @@ func TestWindowsGuardReportsUnconfiguredOwnership(t *testing.T) {
 		_, _ = command.Process.Wait()
 	}()
 	guard := &processGuard{pid: command.Process.Pid, process: command.Process}
-	if termination := guard.terminate(); termination == "" {
+	if termination := guard.Terminate(); termination == "" {
 		t.Fatal("cleanup without an owned job must be reported as incomplete")
 	}
 }

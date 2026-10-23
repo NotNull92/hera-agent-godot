@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -112,7 +113,7 @@ func runScriptRun(params map[string]any) int {
 			return failStructured(map[string]any{"path": path, "error": "csharp_build_required", "detail": err.Error()})
 		}
 	}
-	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
 		"path": path, "project_path": filepath.ToSlash(project), "arguments": arguments,

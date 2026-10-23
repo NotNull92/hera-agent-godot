@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"path/filepath"
 	"testing"
@@ -99,7 +100,7 @@ func TestArtifactPublicationIncludesSidecarsAndNestedXML(t *testing.T) {
 }
 
 func TestFailedRunNeverPublishesArtifacts(t *testing.T) {
-	for _, run := range []engineRunResult{{ExitCode: 1}, {ExitCode: -1, Abandoned: true}, {ExitCode: 0, CleanupPending: true}} {
+	for _, run := range []engineproc.Result{{ExitCode: 1}, {ExitCode: -1, Abandoned: true}, {ExitCode: 0, CleanupPending: true}} {
 		destination := t.TempDir()
 		final := filepath.Join(destination, "movie.avi")
 		if err := os.WriteFile(final, []byte("old"), 0o600); err != nil {

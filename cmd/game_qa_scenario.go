@@ -14,6 +14,7 @@ type gameQAScenario struct {
 }
 
 type gameQAStep struct {
+	WithinMS     *int           `json:"within_ms"`
 	Evidence     bool           `json:"evidence"`
 	Tool         string         `json:"tool"`
 	Path         string         `json:"path"`

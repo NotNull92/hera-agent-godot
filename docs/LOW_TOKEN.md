@@ -34,15 +34,15 @@ list. Those docs **do grow** as the command surface grows; they are still
 loaded once (and prompt-cacheable), unlike MCP schemas that sit in every
 request.
 
-Sizes below are **UTF-8 byte counts** measured at `8e17428` plus the driver-card split below (Git LF content),
-not tokenizer output. Approximate tokens as bytes/4.
+Sizes below are **UTF-8 byte counts** after the Wave 2 review follow-ups
+(2026-10-23, Git LF content), not tokenizer output. Approximate tokens as bytes/4.
 
 | Hera surface (one-time, cacheable) | Bytes | ~tok |
 |------------------------------------|------:|-----:|
-| `plugins/hera-godot/skills/live-editor/SKILL.md` | 4,617 | ~1,154 |
-| `AGENTS.md` (driver card) | 3,830 | ~958 |
-| `docs/COMMANDS.md` (full reference) | 74,014 | ~18,504 |
-| `docs/AGENT_GUIDE.md` (detailed operating rules) | 19,937 | ~4,984 |
+| `plugins/hera-godot/skills/live-editor/SKILL.md` | 5,308 | ~1,327 |
+| `AGENTS.md` (driver card) | 4,496 | ~1,124 |
+| `docs/COMMANDS.md` (full reference) | 77,481 | ~19,370 |
+| `docs/AGENT_GUIDE.md` (detailed operating rules) | 21,114 | ~5,278 |
 
 So before any work is done, an MCP client in the sampled servers still pays
 **~4k–31k resident tokens every turn** for tool schemas. Hera pays **nothing
@@ -56,19 +56,21 @@ is in doubt.
 ## 2. Per-operation cost — the response to each action
 
 Hera defaults to **compact JSON** (`--json` pretty-prints; `--ids` trims to
-paths). Live sizes below were measured on Godot 4.7 except `status`, which uses
-this tree's contract goldens (UTF-8 bytes, including the trailing newline).
+paths). Sizes below use the updated 2.1 contract goldens in this tree: UTF-8
+bytes with LF and the trailing newline. Pretty sizes use two-space indentation
+of the same payload; status also has a dedicated pretty golden. These are fixed
+fixtures, not a claim about every project's response size.
 
 | Operation | compact (default) | `--json` (pretty) |
 |-----------|------------------:|------------------:|
-| `status` (compact CLI) | 316 bytes (~79 tok, fixture) | — |
-| `status --capabilities` | 926 bytes (~232 tok, fixture) | — |
-| `scene tree` (1-node demo)|  116 bytes (~29 tok) | 170 bytes (~42 tok) |
-| `node get .` (full Node2D property dump) | 744 bytes (~186 tok) | 932 bytes (~233 tok) |
-| `node find` (all)         |   83 bytes (~20 tok) | 133 bytes (~33 tok) |
+| `status` | 199 bytes (~50 tok) | 228 bytes (~57 tok) |
+| `status --capabilities` | 809 bytes (~202 tok) | 964 bytes (~241 tok) |
+| `scene tree` (1-node demo) | 88 bytes (~22 tok) | 134 bytes (~34 tok) |
+| `node get .` (full Node2D dump) | 744 bytes (~186 tok) | 912 bytes (~228 tok) |
+| `node find` | 55 bytes (~14 tok) | 97 bytes (~24 tok) |
 
-Compact is ~20–30% smaller than pretty on these calls, and `--ids` cuts a tree
-or find result down to one path per line.
+`--ids` reduces tree/find output to one path per line. The 2.1 omissions apply
+to both JSON modes; see [the migration table](MIGRATING_TO_V2_1.md).
 
 High-volume UI reads should be scoped. On the Memory Match prompt scene, the
 full runtime Control tree was 7,858 chars (~1,965 tok), while this focused read:
@@ -99,22 +101,23 @@ Use the narrowest command that answers the question:
 
 ## Caveats (so the numbers stay honest)
 
-- **Hera figures are measured** on a live Godot 4.7 editor; **MCP figures are
+- **Hera per-call table uses contract fixtures**; historical UI examples below
+  were measured on a live Godot 4.7 editor; **MCP figures are
   estimated** from public tool counts × an assumed per-tool schema size. We did
   not run the MCP servers.
 - **Tool count means MCP tools, not internal operations.** One sampled server
   documents 120+ operations across ~41 MCP tools; the table uses ~41 for its
   resident schema estimate.
-- Token counts use a **`chars / 4`** approximation (no model tokenizer). It is
+- Token counts use a **`bytes / 4`** approximation (no model tokenizer). It is
   fine for relative scale, not for exact billing. JSON tends to tokenize a little
   denser than 4 chars/token, so these slightly *under*count both sides.
 - **Prompt caching** lowers the per-call cost of resident tokens for both sides
   on a cache hit. The structural point survives caching: MCP schemas grow with
   every tool *and* sit in each turn; Hera docs grow with the command surface
   but are optional, cacheable reads rather than a mandatory tool list.
-- **`status` fixture sizes** are the contract goldens in this tree, including
+- **Per-call fixture sizes** are the contract goldens in this tree, including
   the trailing newline. They are not every project's live `status` length
-  (`project_path` and similar fields vary).
+  (`scene` and `project_name` vary).
 - This is about **context economy, not a verdict on MCP.** MCP buys native,
   one-click client integration (Claude Code, Cursor, Codex). Hera trades that for
   the token budget and for working with anything that can run a shell command.

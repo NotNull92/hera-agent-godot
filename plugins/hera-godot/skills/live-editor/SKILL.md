@@ -29,6 +29,13 @@ the live viewport; do not assume the project resolution or upscale. If `hera-god
 instances` shows `stale`, the editor process may still be running with an
 expired heartbeat — that is not the same as no editor.
 
+The 2.1 CLI shape omits redundant counts/names, false `truncated`, and status
+session/path fields. Missing log `source` means file. Pretty/batch share these rules;
+explicit `--fields` stay. See `docs/MIGRATING_TO_V2_1.md`.
+
+Value flags accept `--flag=value`; `--flag=` equals `--flag ""`, subject to
+the same validation.
+
 ## Keep reads small and writes safe
 
 - Default output is compact. Prefer `hera-godot --ids scene tree`, selected
@@ -65,8 +72,13 @@ repository's `docs/CSHARP_SUPPORT.md` for setup and limitations.
 ## Prove the result
 
 - After `node set`, check the response's re-read `value`; use `node get` for
-  other properties. After `node add`, use `hera-godot --ids scene tree`.
+  other properties. Use repeatable `--set prop=value` on `node add` or
+  `node instance`; check returned `values`. Creation and properties share one
+  undo action. Without `--set`, confirm with `hera-godot --ids scene tree`.
   After a run, check `diagnostics` first; use `output --type error` for raw lines.
+- For eventual runtime state, use `game assert ... --within-ms N` (1–30,000).
+  QA assertion steps accept `within_ms`. Read `waited_ms`; timeouts return
+  `timed_out: true`, the last available `actual`, and exit 1.
 - For visual/UI work, use `game ui tree`, semantic `game click`, and
   `hera-godot screenshot --runtime --analyze`. For prompt requirements, prefer a
   `game qa --file` scenario with `requirements` and per-step `covers`.

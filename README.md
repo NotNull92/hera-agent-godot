@@ -78,7 +78,7 @@ Highlights since v1.1.0:
 - **Guarded node sets:** `--expected` / `--snapshot` / `--verify` refuse stale
   observations before the setter.
 - **Editor-log evidence:** `output`/`diagnostics --source editor` with cursors.
-  File logs name `source: file`.
+  File logs omit the default `source`; editor logs retain `source: editor`.
 - **Linked evidence:** opt-in `--evidence` on captures, save, and script
   validate. See [linked evidence](docs/COMMANDS.md#linked-evidence-opt-in).
 - **Compact defaults:** `status --capabilities`, `operation --verbose`,
@@ -109,7 +109,7 @@ The "MCP-grade reach, fewer tokens" claim — with numbers:
 |---|---|---|
 | Tool schemas resident **per turn** | **0** | ~4k–31k tok (grows with tool count) |
 | Surface the agent loads | cacheable markdown (live-editor skill ~1k tok; full COMMANDS.md is larger) | full tool list, re-sent each turn |
-| Per-action response | compact JSON — default `status` ≈79 tok (fixture), `node get` ≈186 tok | JSON, often pretty |
+| Per-action response | compact JSON — default `status` ≈50 tok (fixture), `node get` ≈186 tok | JSON, often pretty |
 
 Hera figures are **measured** on a live Godot 4.7 editor; the MCP column is an
 **estimate** from sampled public Godot MCP tool counts (~41–155 tools) ×
@@ -166,7 +166,10 @@ benchmark phases), `docs dump` (engine or project API reference), and
 Capture and docs generate in isolated directories before publishing verified artifacts. Failed runs retain `staging_dir`; `published:true` confirms publication. Debug commands discover threads; use `--thread ID` when selection is ambiguous. Native termination and close use bounded caller waits and report incomplete cleanup.
 
 
-`hera-godot status` reports `editor_session_id` and Game Feel / C# editor flags.
+`hera-godot status` reports the editor PID, scene, project name, engine version,
+and Game Feel / C# editor flags. Session and project-path fields are omitted.
+The planned 2.1 CLI trims redundant response fields in compact, pretty and batch
+output; explicit `--fields` selections remain. See [the breaking-change migration table](docs/MIGRATING_TO_V2_1.md).
 `hera-godot status --capabilities` adds the engine commit and API capability states
 (`supported`, `unsupported`, or `unverified`). API presence does not certify a
 connected debugger or installed SDK. See
@@ -376,3 +379,7 @@ MIT — see [LICENSE](LICENSE).
 
 C# helper / C# 헬퍼: `hera-godot csharp-host install --version v2.0.3`
 (npm/Scoop/Homebrew install only the CLI / 패키지 매니저는 CLI만 설치).
+
+Node creation supports repeatable `--set prop=value` on `node add` and `node instance`, with one undo action and re-read `values`.
+
+`game assert ... --within-ms N` retries until success or a deadline of at most 30 seconds; QA assertion steps accept `within_ms`.

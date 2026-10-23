@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -81,7 +82,7 @@ func TestCSharpValidateLive(t *testing.T) {
 	if state != "supported" {
 		t.Fatal(state)
 	}
-	baseline := runEngineBounded(ctx, dotnet, []string{"build", "Probe.csproj", "--nologo"}, project, nil, engineOutputLimit)
+	baseline := engineproc.Run(ctx, dotnet, []string{"build", "Probe.csproj", "--nologo"}, project, nil, engineOutputLimit)
 	if runFailed(baseline) {
 		t.Fatal(baseline.Output)
 	}

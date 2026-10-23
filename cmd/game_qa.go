@@ -87,7 +87,7 @@ func executeGameQAStep(c *client.Client, index int, step gameQAStep) gameQAResul
 		result.Error = err.Error()
 		return result
 	}
-	if step.Evidence {
+	if step.Evidence || step.WithinMS != nil {
 		result.Data = resp.Data
 	}
 	if !resp.OK {
@@ -167,10 +167,13 @@ func postGameQAStep(c *client.Client, step gameQAStep) (*protocol.Response, erro
 		return c.Post("game", targetGameParams(gameUIAuditParamsFromQAStep(step), step.targetPID))
 	case "game.assert":
 		params := map[string]any{"action": "assert", "path": normalizeGameNodePath(step.Path), "prop": step.Prop, "op": step.Op, "value": step.Value}
+		if step.WithinMS != nil {
+			params["within_ms"] = *step.WithinMS
+		}
 		if step.Evidence {
 			params["evidence"] = true
 		}
-		return c.Post("game", targetGameParams(params, step.targetPID))
+		return postWithAssertionWait(c, "game", targetGameParams(params, step.targetPID))
 	case "screenshot.runtime":
 		return c.Post("game", targetGameParams(screenshotParamsFromQAStep(step), step.targetPID))
 	case "diagnostics":

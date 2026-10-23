@@ -30,6 +30,15 @@ editor/terminal were closed; the demo was not re-prepared. The frozen prompt is
 unchanged. v2.0.0's publication and Victor's 2026-10-16 store submission remain
 recorded in [its historical record](releases/v2.0.0-asset-store-upload.md).
 
+## Unreleased — planned 2.1 response diet and combined commands
+
+CLI output omits redundant fields as documented in [the migration guide](MIGRATING_TO_V2_1.md).
+This is the approved breaking minor-release exception; no version or publication
+change is included. `node add`/`instance --set` creates configured nodes in one
+undo action; `game assert --within-ms` adds bounded frame retries (also QA
+`within_ms`). Empty `--flag=` matches the empty space form. Parser isolation,
+command-file splits and `internal/engineproc` preserve command behavior.
+
 ## Unreleased — read narrowing
 
 Optional `node get --changed`, `scene tree [path] --depth/--type/--props`, and

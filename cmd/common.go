@@ -113,13 +113,13 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 		}
 	}
 	protectActions(request.tool, request.params)
-	resp, err := c.Post(request.tool, request.params)
+	resp, err := postWithAssertionWait(c, request.tool, request.params)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", request.label, err)
 		return 1
 	}
 	if !resp.OK {
-		if evidenceRequested && resp.Data != nil {
+		if (evidenceRequested || (request.tool == "game" && request.params["action"] == "assert" && request.params["within_ms"] != nil)) && resp.Data != nil {
 			printData(resp)
 		}
 		fmt.Fprintf(os.Stderr, "%s: %s\n", request.label, resp.Error)
@@ -133,6 +133,7 @@ func dialAndPostPrint(dial func() (*client.Client, error), request postPrintRequ
 	if request.reshape != nil {
 		resp.Data = request.reshape(resp.Data)
 	}
+	resp.Data = reshapeOutput(request.tool, request.params, resp.Data)
 	return printData(resp)
 }
 
@@ -328,18 +329,19 @@ func compactJSON(v any) string {
 
 // printData prints a response's Data as compact JSON. Returns a process exit code.
 func printData(resp *protocol.Response) int {
+	data := slimData(resp.Data)
 	switch outputMode {
 	case "json":
-		out, err := json.MarshalIndent(resp.Data, "", "  ")
+		out, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			return 1
 		}
 		fmt.Println(string(out))
 	case "ids":
-		printIDs(resp.Data)
+		printIDs(data)
 	default:
-		out, err := json.Marshal(resp.Data)
+		out, err := json.Marshal(data)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "%v\n", err)
 			return 1

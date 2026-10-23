@@ -30,96 +30,111 @@ const maxDurationMilliseconds = int64(time.Duration(1<<63-1) / time.Millisecond)
 // Execute is the CLI entry point. Leading --json/--ids/--instance set global
 // options; the first non-flag argument is the command. Commands map 1:1 to
 // addon tools (see docs/COMMANDS.md).
-func Execute(args []string) int {
-	outputMode = ""
-	targetPID = 0
-	requestTimeout = 0
-	engineFlagPath = ""
-	csharpHostPath = ""
+type commandOptions struct {
+	OutputMode     string
+	TargetPID      int
+	RequestTimeout time.Duration
+	EnginePath     string
+	CSharpHostPath string
+}
+
+func parseCommandOptions(args []string) (commandOptions, []string, error) {
+	var options commandOptions
 	start := 0
 	for start < len(args) {
 		arg := args[start]
 		if isFlag(arg, "--csharp-host") {
 			value, next, err := takeFlagValue(args, start, "--csharp-host")
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				return 2
+				return options, nil, err
 			}
-			csharpHostPath = value
+			options.CSharpHostPath = value
 			start = next
 			continue
 		}
 		if arg == "--json" {
-			outputMode = "json"
+			options.OutputMode = "json"
 			start++
 			continue
 		}
 		if arg == "--ids" {
-			outputMode = "ids"
+			options.OutputMode = "ids"
 			start++
 			continue
 		}
 		if arg == "--engine" || strings.HasPrefix(arg, "--engine=") {
 			value, next, err := takeFlagValue(args, start, "--engine")
 			if err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				return 2
+				return options, nil, err
 			}
-			engineFlagPath = value
+			options.EnginePath = value
 			start = next
 			continue
 		}
 		if arg == "--instance" {
 			if start+1 >= len(args) {
-				fmt.Fprintln(os.Stderr, "--instance requires a pid argument")
-				return 2
+				return options, nil, fmt.Errorf("--instance requires a pid argument")
 			}
 			pid, ok := parsePID(args[start+1])
 			if !ok {
-				fmt.Fprintf(os.Stderr, "--instance: invalid pid %q\n", args[start+1])
-				return 2
+				return options, nil, fmt.Errorf("--instance: invalid pid %q", args[start+1])
 			}
-			targetPID = pid
+			options.TargetPID = pid
 			start += 2
 			continue
 		}
 		if v, ok := strings.CutPrefix(arg, "--instance="); ok {
 			pid, ok := parsePID(v)
 			if !ok {
-				fmt.Fprintf(os.Stderr, "--instance: invalid pid %q\n", v)
-				return 2
+				return options, nil, fmt.Errorf("--instance: invalid pid %q", v)
 			}
-			targetPID = pid
+			options.TargetPID = pid
 			start++
 			continue
 		}
 		if arg == "--timeout" {
 			if start+1 >= len(args) {
-				fmt.Fprintln(os.Stderr, "--timeout requires a milliseconds argument")
-				return 2
+				return options, nil, fmt.Errorf("--timeout requires a milliseconds argument")
 			}
 			timeout, ok := parseTimeoutMS(args[start+1])
 			if !ok {
-				fmt.Fprintf(os.Stderr, "--timeout: invalid milliseconds %q\n", args[start+1])
-				return 2
+				return options, nil, fmt.Errorf("--timeout: invalid milliseconds %q", args[start+1])
 			}
-			requestTimeout = timeout
+			options.RequestTimeout = timeout
 			start += 2
 			continue
 		}
 		if v, ok := strings.CutPrefix(arg, "--timeout="); ok {
 			timeout, ok := parseTimeoutMS(v)
 			if !ok {
-				fmt.Fprintf(os.Stderr, "--timeout: invalid milliseconds %q\n", v)
-				return 2
+				return options, nil, fmt.Errorf("--timeout: invalid milliseconds %q", v)
 			}
-			requestTimeout = timeout
+			options.RequestTimeout = timeout
 			start++
 			continue
 		}
 		break
 	}
-	args = args[start:]
+	return options, args[start:], nil
+
+}
+
+func Execute(args []string) int {
+	options, rest, err := parseCommandOptions(args)
+	return runCommand(rest, options, err)
+}
+
+func runCommand(args []string, options commandOptions, parseErr error) int {
+	// shortcut: legacy runners still consume globals; thread options through them before parallel command execution.
+	outputMode = options.OutputMode
+	targetPID = options.TargetPID
+	requestTimeout = options.RequestTimeout
+	engineFlagPath = options.EnginePath
+	csharpHostPath = options.CSharpHostPath
+	if parseErr != nil {
+		fmt.Fprintln(os.Stderr, parseErr)
+		return 2
+	}
 
 	if len(args) == 0 {
 		usage()
@@ -215,7 +230,7 @@ commands:
   scene      tree [path] [--depth N] [--type Class] [--props a,b] | list | open <res://...> | reload [res://...] | save | create [--open] | save-as
   editor     state | selected | select <node> [--add] | clear-selection
   node       find|get|add|instance|set|set-resource|remove|reparent|attach-script|detach-script
-             get <path> [--changed|--prop P|--props a,b]; --snapshot with --prop; set <path> --prop P --value V [--expected JSON [--verify]]
+             add|instance ... [--set prop=value]...; get <path> [--changed|--prop P|--props a,b]; --snapshot with --prop; set <path> --prop P --value V [--expected JSON [--verify]]
   script     current | inspect|open <res://script.gd|.cs> | create <res://script.gd|.cs> [--lang gdscript|csharp] [--tool]
              validate <res://script.gd> [--evidence]  check fresh on-disk GDScript with the editor's engine
              run <res://tool.gd> [--quit-after N] [-- <args>...]  headless SceneTree harness, no editor needed
@@ -228,6 +243,7 @@ commands:
   classdb    info|methods|properties|signals|constants|enums|inherits  ([--own] for signals/constants/enums)
              dump --out <dir>  offline ClassDB JSON from the engine (no editor needed)
   game       [--pid N] tree | ui tree|audit | instances | screenshot | click | input | clock | assert | qa discover|diagnose|--file | node get|set|call
+                    assert <path> <prop> <op> [expected] --within-ms N (1..30000)
              input sequence --file <events.json>  replay actions on physics frames
   engine     info | doctor [--project DIR]  engine identity, build kind, export templates, project cache
   capture    movie <out.avi|.png|.ogv> [--frames N] [--fps N] [--resolution WxH]  deterministic frames

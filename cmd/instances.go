@@ -35,9 +35,9 @@ func runInstances(args []string) int {
 	}
 	var out []byte
 	if outputMode == "json" {
-		out, err = json.MarshalIndent(data, "", "  ")
+		out, err = json.MarshalIndent(slimData(data), "", "  ")
 	} else {
-		out, err = json.Marshal(data)
+		out, err = json.Marshal(slimData(data))
 	}
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "instances: %v\n", err)

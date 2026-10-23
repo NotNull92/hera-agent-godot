@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -211,6 +212,36 @@ func parseGameScreenshotArgs(args []string) (map[string]any, error) {
 }
 
 func parseGameAssertArgs(args []string) (map[string]any, error) {
+	count := 4
+	if len(args) >= 3 && args[2] == "exists" {
+		count = 3
+	}
+	var within *int
+	positional := append([]string(nil), args[:min(count, len(args))]...)
+	for i := count; i < len(args); i++ {
+		if !isFlag(args[i], "--within-ms") {
+			positional = append(positional, args[i])
+			continue
+		}
+		raw, next, err := takeFlagValue(args, i, "--within-ms")
+		if err != nil {
+			return nil, err
+		}
+		value, err := strconv.Atoi(raw)
+		if err != nil || value < 1 || value > maxAssertionWaitMS {
+			return nil, fmt.Errorf("--within-ms must be between 1 and %d", maxAssertionWaitMS)
+		}
+		within = &value
+		i = next - 1
+	}
+	params, err := parseGameAssertBaseArgs(positional)
+	if err == nil && within != nil {
+		params["within_ms"] = *within
+	}
+	return params, err
+}
+
+func parseGameAssertBaseArgs(args []string) (map[string]any, error) {
 	if len(args) < 3 {
 		return nil, fmt.Errorf("usage: game assert <path> <prop> <eq|ne|contains|gt|lt|exists> [value]")
 	}

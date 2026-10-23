@@ -1,0 +1,8 @@
+{
+  "controls": [
+    {
+      "name": "Play",
+      "path": "/root/Main/Play"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -101,7 +102,7 @@ func runPerfSample(params map[string]any) int {
 	engineArgs = append(engineArgs, "--benchmark", "--benchmark-file", benchPath)
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	run := runEngineBounded(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, engineArgs, project, nil, engineOutputLimit)
 
 	boundedBy := "engine_exit"
 	if run.TimedOut {

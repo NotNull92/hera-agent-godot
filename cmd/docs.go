@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -159,7 +160,7 @@ func runDocsDump(params map[string]any) int {
 	}
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	run := runEngineBounded(ctx, ref.Path, engineArgs, workDir, nil, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, engineArgs, workDir, nil, engineOutputLimit)
 
 	result := mergeResult(map[string]any{
 		"mode": mode, "output_dir": filepath.ToSlash(outAbs),
@@ -408,7 +409,7 @@ func runClassDBDump(params map[string]any) int {
 	env := append(os.Environ(), isolatedUserEnv(isolated)...)
 	// Version identity is collected before the workload consumes the deadline.
 	version, _ := readEngineVersion(ctx, ref.Path)
-	run := runEngineBounded(ctx, ref.Path, []string{"--headless", "--class-db-json", "--quit"}, isolated, env, engineOutputLimit)
+	run := engineproc.Run(ctx, ref.Path, []string{"--headless", "--class-db-json", "--quit"}, isolated, env, engineOutputLimit)
 
 	files, publishErr := publishClassDBFiles(isolated, outAbs)
 	failed := 0

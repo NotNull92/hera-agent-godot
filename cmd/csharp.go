@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"github.com/NotNull92/hera-agent-godot/internal/engineproc"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,7 +21,7 @@ func dotnetSDK(ctx context.Context) (string, string, string) {
 	if err != nil {
 		return "", "", "unsupported"
 	}
-	run := runEngineBounded(ctx, path, []string{"--version"}, "", nil, 4096)
+	run := engineproc.Run(ctx, path, []string{"--version"}, "", nil, 4096)
 	version := strings.TrimSpace(run.Output)
 	if runFailed(run) || !dotnetVersionPattern.MatchString(version) {
 		return path, "", "unverified"

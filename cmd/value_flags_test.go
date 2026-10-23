@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -93,4 +94,27 @@ func joinValueFlags(args []string) []string {
 		}
 	}
 	return result
+}
+
+func TestEmptyValueFlagForms(t *testing.T) {
+	cases := []struct {
+		parse func([]string) (map[string]any, error)
+		args  []string
+	}{
+		{parseNodeArgs, []string{"set", ".", "--prop", "name", "--value", ""}},
+		{parseGameArgs, []string{"node", "call", ".", "method", "--arg", ""}},
+		{parseScriptArgs, []string{"create", "res://Test.cs", "--class-name", ""}},
+		{parseSceneArgs, []string{"tree", "--type", ""}},
+		{parseNodeArgs, []string{"get", ".", "--prop", ""}},
+	}
+	for _, tc := range cases {
+		want, wantErr := tc.parse(tc.args)
+		got, gotErr := tc.parse(joinValueFlags(tc.args))
+		if !reflect.DeepEqual(got, want) || fmt.Sprint(gotErr) != fmt.Sprint(wantErr) {
+			t.Fatalf("%v: %v / %v; want %v / %v", tc.args, got, gotErr, want, wantErr)
+		}
+	}
+	if _, _, err := takeFlagValue([]string{"--value"}, 0, "--value"); err == nil || err.Error() != "--value requires a value" {
+		t.Fatalf("missing value: %v", err)
+	}
 }

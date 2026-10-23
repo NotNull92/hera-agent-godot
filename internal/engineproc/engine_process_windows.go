@@ -1,6 +1,6 @@
 //go:build windows
 
-package cmd
+package engineproc
 
 import (
 	"fmt"
@@ -58,7 +58,7 @@ type threadEntry32 struct {
 // resume executes a suspended child once ownership is established. A child whose
 // job setup failed is never allowed to run: the invariant is verified membership
 // before execution, not merely an attempt at membership.
-func (g *processGuard) resume() string {
+func (g *processGuard) Resume() string {
 	if g.resumed {
 		return ""
 	}
@@ -204,7 +204,7 @@ func newProcessGuard(pid int, process *os.Process) *processGuard {
 
 // terminate stops the owned tree and reports any incomplete cleanup. It does not
 // depend on the started process still being alive.
-func (g *processGuard) terminate() string {
+func (g *processGuard) Terminate() string {
 	if g.job != 0 {
 		stopped, _, err := procTerminateJ.Call(uintptr(g.job), 1)
 		if failure := winCall(stopped, err, "TerminateJobObject"); failure == "" {
@@ -234,7 +234,7 @@ func (g *processGuard) fallback(reason string) string {
 	return reason + "; nothing could be terminated"
 }
 
-func (g *processGuard) close() {
+func (g *processGuard) Close() {
 	g.once.Do(func() {
 		if g.job != 0 {
 			syscall.CloseHandle(g.job)

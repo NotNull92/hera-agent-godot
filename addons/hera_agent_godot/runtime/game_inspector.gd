@@ -107,6 +107,9 @@ func _handle_file(path: String, response_path: String) -> void:
 	if String(request.get("action", "")) == "clock" and bool(request.get("step", false)):
 		_write(response_path, await _clock_step(request))
 		return
+	if request.get("action") == "assert" and request.has("within_ms"):
+		_write(response_path, await _assert_node_within(request))
+		return
 	_write(response_path, _handle(request))
 
 func _handle_operation(request: Dictionary, response_path: String) -> void:
@@ -235,6 +238,9 @@ func _assert_node(request: Dictionary) -> Dictionary:
 		return _response(request, false, { "error": "node not found: %s" % path })
 	var assertion := GameAssertions.check(node, request)
 	if not bool(assertion.get("ok", false)):
+		if request.has("within_ms"):
+			assertion["path"] = String(node.get_path())
+			return _response(request, false, assertion)
 		return _response(request, false, { "error": String(assertion.get("error", "assert failed")) })
 	return _response(request, true, {
 		"path": String(node.get_path()),
@@ -243,6 +249,24 @@ func _assert_node(request: Dictionary) -> Dictionary:
 		"actual": assertion.get("actual", ""),
 		"expected": assertion.get("expected", ""),
 	})
+
+func _assert_node_within(request: Dictionary) -> Dictionary:
+	var invalid: String = GameAssertions.wait_error(request)
+	if invalid != "":
+		return _response(request, false, {"error": invalid})
+	var started: int = Time.get_ticks_msec()
+	var deadline: int = started + int(request["within_ms"])
+	while true:
+		var result: Dictionary = _assert_node(request)
+		result["waited_ms"] = Time.get_ticks_msec() - started
+		# An existing node without a readable property cannot satisfy this assertion.
+		if result.get("ok", false) or (result.has("path") and not result.has("actual")):
+			return result
+		if Time.get_ticks_msec() >= deadline:
+			result["timed_out"] = true
+			return result
+		await get_tree().process_frame
+	return {}
 
 func _call_node(request: Dictionary) -> Dictionary:
 	var path := String(request.get("path", ""))

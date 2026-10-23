@@ -1,1 +1,1 @@
-{"count":1,"node":".","signals":[{"args":[],"connections":[{"method":"get_name","to":"Child"}],"name":"renamed"}],"truncated":false}
+{"node":".","signals":[{"args":[],"connections":[{"method":"get_name","to":"Child"}],"name":"renamed"}]}
