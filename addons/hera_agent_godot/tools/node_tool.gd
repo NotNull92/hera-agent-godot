@@ -149,9 +149,9 @@ func _add_node(root: Node, params: Dictionary) -> Dictionary:
 	if not prepared.get("ok", false):
 		node.free()
 		return ToolResponse.failure(String(prepared.get("error", "invalid property value")))
-	var values: Dictionary = prepared["values"]
-	for prop: String in values:
-		node.set(prop, values[prop])
+	var values: Array = prepared["values"]
+	for pair: Array in values:
+		node.set(String(pair[0]), pair[1])
 
 	if _undo_redo != null:
 		_undo_redo.create_action("Hera: add %s" % type)

@@ -373,9 +373,9 @@ No persistence or full setter-side-effect isolation is implied. Batch results
 retain their existing per-entry error and sequential execution contract.
 
 `node add` and `node instance` accept repeatable `--set prop=value` (RPC `props`
-object). All properties are validated before attachment, then applied in the same
+array of `[property, value]` pairs; legacy objects remain accepted). All properties are validated before attachment, then applied in the same
 creation undo action. Only this form adds `values` with re-read property strings;
-invalid properties or values add no node. Repeated properties use the last value.
+invalid properties or values add no node. Setters run in caller order, including duplicates; the last assignment wins.
 
 ### Runtime (game) surface
 

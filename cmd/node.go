@@ -126,12 +126,8 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 				if !ok || prop == "" {
 					return nil, fmt.Errorf("--set requires prop=value")
 				}
-				props, _ := params["props"].(map[string]any)
-				if props == nil {
-					props = map[string]any{}
-					params["props"] = props
-				}
-				props[prop] = value
+				props, _ := params["props"].([][]string)
+				params["props"] = append(props, []string{prop, value})
 				i = next - 1
 			case isFlag(rest[i], "--parent"):
 				raw, next, err := takeFlagValue(rest, i, "--parent")
@@ -169,12 +165,8 @@ func parseNodeArgs(args []string) (map[string]any, error) {
 				if !ok || prop == "" {
 					return nil, fmt.Errorf("--set requires prop=value")
 				}
-				props, _ := params["props"].(map[string]any)
-				if props == nil {
-					props = map[string]any{}
-					params["props"] = props
-				}
-				props[prop] = value
+				props, _ := params["props"].([][]string)
+				params["props"] = append(props, []string{prop, value})
 				i = next - 1
 			case isFlag(rest[i], "--parent"):
 				raw, next, err := takeFlagValue(rest, i, "--parent")

@@ -48,10 +48,20 @@ static func property_value(node: Node, name: String, max_value_len: int) -> Dict
 	return ValueCodec.property_value(node, name, max_value_len)
 
 static func prepare_properties(node: Node, raw: Variant) -> Dictionary:
-	if not raw is Dictionary:
-		return {"ok": false, "error": "props must be an object"}
-	var values: Dictionary = {}
-	for name: String in raw:
+	var entries: Array = []
+	if raw is Dictionary:
+		# Keep older CLI requests compatible; new clients send ordered pairs.
+		for name: String in raw:
+			entries.append([name, raw[name]])
+	elif raw is Array:
+		entries = raw
+	else:
+		return {"ok": false, "error": "props must be an object or ordered pairs"}
+	var values: Array = []
+	for entry: Variant in entries:
+		if not entry is Array or entry.size() != 2 or not entry[0] is String:
+			return {"ok": false, "error": "props entries must be [property, value] pairs"}
+		var name: String = entry[0]
 		var info: Dictionary = {}
 		for property: Dictionary in node.get_property_list():
 			if String(property.get("name", "")) == name:
@@ -59,14 +69,15 @@ static func prepare_properties(node: Node, raw: Variant) -> Dictionary:
 				break
 		if info.is_empty():
 			return {"ok": false, "error": "node has no property: %s" % name}
-		var coerced: Dictionary = coerce(raw[name], info)
+		var coerced: Dictionary = coerce(entry[1], info)
 		if not coerced.get("ok", false):
 			return coerced
-		values[name] = coerced.get("value")
+		values.append([name, coerced.get("value")])
 	return {"ok": true, "values": values}
 
-static func read_values(node: Node, values: Dictionary) -> Dictionary:
+static func read_values(node: Node, values: Array) -> Dictionary:
 	var result: Dictionary = {}
-	for name: String in values:
+	for pair: Array in values:
+		var name: String = pair[0]
 		result[name] = str(node.get(name))
 	return result
